@@ -1,0 +1,240 @@
+# Sistema de Cotización, Nesting y Aprobación para Cartelería
+
+Plataforma a medida para una empresa de cartelería de gran formato en chapa. Automatiza el armado de presupuestos, calcula cómo anidar las piezas sobre la plancha para desperdiciar lo menos posible, gestiona el circuito de autorización del dueño y envía el presupuesto al cliente con el fotomontaje del cartel sobre el frente del local.
+
+**Estado:** 📋 Documentación completa · Sprint 0 (relevamiento) sin arrancar · Sin código todavía
+**Equipo:** Enzo (carril A — cotización) · Vale (carril B — dashboard)
+**Última actualización:** 2026-08-29 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
+
+---
+
+## El problema en una línea
+
+Presupuestar toma mucho tiempo, acomodar las piezas sobre la chapa toma más, y el dashboard que usan hoy es lento. Este sistema ataca los tres.
+
+---
+
+## Estructura del proyecto
+
+```
+cartelería/
+├── README.md          ← estás acá. Índice y guía de lectura
+│
+├── docs/              ← documentación del proyecto (viva, se edita)
+│   ├── EPICA.md                      Documento maestro
+│   ├── BACKLOG.md                    68 historias con criterios de aceptación
+│   ├── REGISTRO.md                   Supuestos, parámetros, dudas, insumos
+│   ├── CONVENCIONES.md               Cómo trabajamos sin pisarnos
+│   ├── DECISIONES-Y-BLOQUEANTES.md   Correcciones a la spec técnica
+│   └── BITACORA.md                   Registro cronológico de todo
+│
+└── fuentes/           ← documentos originales (histórico, NO se editan)
+    ├── propuesta-carteleria-automatizacion.md
+    ├── Especificación Técnica de Desarrollo…md
+    └── Proyecto_Final_Automatizacion_Carteleria.md
+```
+
+---
+
+## Guía de lectura
+
+### 🆕 Es tu primera vez acá
+
+Una hora, en este orden:
+
+| # | Qué leer | Tiempo | Qué te llevás |
+|---|---|---|---|
+| 1 | [`docs/EPICA.md §1-2`](docs/EPICA.md) | 10 min | Qué problema resuelve y de dónde salió (con las citas del audio del cliente) |
+| 2 | [`docs/EPICA.md §7-8`](docs/EPICA.md) | 10 min | Las 9 features y el roadmap con los 6 hitos |
+| 3 | [`docs/EPICA.md §9`](docs/EPICA.md) | 15 min | Los 10 ADRs — las decisiones técnicas ya cerradas y por qué |
+| 4 | [`docs/CONVENCIONES.md`](docs/CONVENCIONES.md) | 15 min | **Obligatorio antes de escribir código** |
+| 5 | [`docs/REGISTRO.md §7`](docs/REGISTRO.md) | 5 min | El tablero: qué está abierto hoy |
+
+### 🔄 Volvés después de un tiempo
+
+[`docs/BITACORA.md`](docs/BITACORA.md) — las últimas tres entradas y ya sabés dónde estás parado. Después [`docs/REGISTRO.md §7`](docs/REGISTRO.md) para ver qué se movió.
+
+### 💻 Vas a tomar una historia
+
+1. [`docs/BACKLOG.md`](docs/BACKLOG.md) — la historia, sus criterios de aceptación y sus dependencias
+2. [`docs/REGISTRO.md §2`](docs/REGISTRO.md) — si la historia usa algún `PAR-xx`
+3. [`docs/DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) — si toca nesting, costeo, schema o fotomontaje: hay correcciones a la spec original que aplican
+4. [`docs/CONVENCIONES.md §9`](docs/CONVENCIONES.md) — el checklist antes de abrir el PR
+
+### 🗣️ Vas a reunirte con el cliente
+
+[`docs/REGISTRO.md §6`](docs/REGISTRO.md) — el guion de los tres encuentros, con qué preguntas hacer en cada uno y qué insumos llevarse.
+
+### 📊 Querés presentarle el proyecto a alguien
+
+[`docs/EPICA.md §1`](docs/EPICA.md) — el resumen ejecutivo está escrito para eso: una página, sin jerga, con los hitos y qué gana el cliente en cada uno.
+
+---
+
+## Índice completo de documentos
+
+### `docs/` — documentación viva
+
+| Documento | Qué contiene | Se actualiza |
+|---|---|---|
+| [`EPICA.md`](docs/EPICA.md) | Contexto y origen, requisitos R1-R11, roles, alcance IN/OUT, features F0-F8, roadmap, **10 ADRs**, arquitectura, 12 NFRs, 13 riesgos, DoR/DoD, matriz de trazabilidad, glosario | Cuando cambia el alcance o una decisión |
+| [`BACKLOG.md`](docs/BACKLOG.md) | 9 features, **68 historias**, 358 puntos. Cada una con narrativa, criterios Gherkin, estimación, dependencias y sprint | Al partir o agregar historias |
+| [`REGISTRO.md`](docs/REGISTRO.md) | **Fuente de verdad.** 16 supuestos (`SUP`), 37 parámetros (`PAR`), 23 insumos (`B`/`T`), 19 preguntas (`P`), 8 decisiones pendientes (`D`), guion de relevamiento, tablero de estado | **Cada sprint**, y cada vez que se cierra un ID |
+| [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división de carriles, propiedad del código, Git y commits, migraciones Alembic, convenciones de código, contratos entre carriles, ritmo de trabajo | Cuando acordamos una regla nueva |
+| [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | **13 correcciones** a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
+| [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
+
+### `fuentes/` — documentos originales
+
+No se editan. Quedan como contexto histórico y como respaldo de de dónde salió cada decisión.
+
+| Documento | Autor | Qué aportó | Vigencia |
+|---|---|---|---|
+| [`propuesta-carteleria-automatizacion.md`](fuentes/propuesta-carteleria-automatizacion.md) | Enzo | Análisis del problema, traducción del audio a los requisitos R1-R11, distinción nesting rectangular vs. irregular, riesgos, métricas de éxito | ✅ Base conceptual |
+| [`Especificación Técnica de Desarrollo…md`](fuentes/Especificación%20Técnica%20de%20Desarrollo_%20Sistema%20de%20Nesting,%20Cotización%20e%20IA%20para%20Cartelería.md) | Enzo | Stack tecnológico, schema SQL, código del motor de nesting, integración de IA, docker-compose, hitos | ⚠️ Vigente **con las 13 correcciones** de [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) |
+| [`Proyecto_Final_Automatizacion_Carteleria.md`](fuentes/Proyecto_Final_Automatizacion_Carteleria.md) | Vale | Síntesis de los dos anteriores, alcance por módulos, cronograma de 7 fases, checklist de insumos, 14 preguntas al cliente | ✅ Base del roadmap |
+
+---
+
+## Las tres reglas que no se negocian
+
+Desarrolladas en [`docs/CONVENCIONES.md`](docs/CONVENCIONES.md). Si te llevás solo tres cosas de este README:
+
+**1. No hardcode.** Ningún valor configurable va escrito en la lógica ni repetido en dos documentos. Todo default tiene un `PAR-xx` en [`docs/REGISTRO.md`](docs/REGISTRO.md) y el resto lo referencia por ID. Lo mismo con supuestos (`SUP-xx`) y dudas (`P-xx`). Si al cambiar un valor hay que tocar más de un lugar, es que estaba hardcodeado en algún lado.
+
+**2. Todo en milímetros.** Toda medida geométrica en mm, toda área en mm², y la unidad va en el nombre de la variable (`ancho_mm`, `area_mm2`). La conversión a m² es solo de presentación. Un SVG en px interpretado como mm produce un presupuesto catastróficamente equivocado que nadie detecta hasta que llega la chapa cortada.
+
+**3. Se documenta a medida que se avanza.** Entrada en [`docs/BITACORA.md`](docs/BITACORA.md) al cerrar cada jornada, y [`docs/REGISTRO.md`](docs/REGISTRO.md) actualizado al abrir y cerrar cada sprint. Un registro desactualizado es peor que no tenerlo, porque genera confianza falsa.
+
+---
+
+## Equipo y división del trabajo
+
+| Carril | Dueño | Alcance | Sprints |
+|---|---|---|---|
+| **A — Cotización** | Enzo | F0 a F7: fundaciones, catálogo, nesting, cotizador, aprobación, Corel, fotomontaje | S1 → S10 |
+| **B — Dashboard** | Vale | F8: reemplazo del dashboard de AppSheet | S2 → S5 |
+
+Los carriles son independientes por diseño: tocan tablas, endpoints y pantallas distintas. A partir de **S6 Vale entra al carril A**. Propiedad del código y protocolo para tocar la zona del otro en [`docs/CONVENCIONES.md §2-3`](docs/CONVENCIONES.md).
+
+**Capacidad asumida:** part-time, ~15-20 hs/semana cada uno (supuesto `SUP-15`).
+
+---
+
+## Roadmap
+
+| Hito | Qué entrega | Semana |
+|---|---|---|
+| **H1** | Cotizador con nesting rectangular, plano de corte y PDF | 7 |
+| **H2** | Aprobación desde el celular y envío automático al cliente | 9 |
+| **H6** | Dashboard rápido *(carril paralelo)* | 12 |
+| **H3** | Importación desde CorelDRAW | 13 |
+| **H4** | Fotomontaje en el presupuesto | 17 |
+| **H5** | Nesting irregular para letras corpóreas | 21 |
+
+**H1 es el punto de validación.** Si el nesting automático no mejora el aprovechamiento contra trabajos reales, el plan se replantea antes de invertir en Corel y fotomontaje. Está previsto que eso pueda pasar.
+
+Detalle en [`docs/EPICA.md §8`](docs/EPICA.md).
+
+---
+
+## Stack
+
+| Capa | Tecnología |
+|---|---|
+| Backend | Python 3.11 + FastAPI |
+| Base de datos | PostgreSQL 15 + SQLAlchemy + Alembic |
+| Cola de tareas | Celery + Redis |
+| Frontend | Next.js + TailwindCSS |
+| Geometría y nesting | `shapely`, `rectpack`, `nest2D` |
+| Parseo CAD | `ezdxf`, `svgelements` |
+| Imagen | OpenCV + Pillow |
+| PDF | WeasyPrint |
+| Mensajería | SendGrid + WhatsApp Business API / Twilio |
+| Infra | Docker Compose sobre VPS |
+
+Python en el backend es prácticamente obligatorio: el ecosistema de geometría computacional, parseo CAD y visión por computadora está ahí. Ver `ADR-05` en [`docs/EPICA.md §9`](docs/EPICA.md).
+
+---
+
+## Cómo arrancar
+
+### Ahora mismo — Sprint 0
+
+El proyecto está en relevamiento. **No hay código que correr.** Lo que hay que hacer:
+
+1. **Conseguir los insumos bloqueantes** — `B-01` a `B-08` y `B-17` en [`docs/REGISTRO.md §3`](docs/REGISTRO.md)
+2. **Cerrar las 8 preguntas bloqueantes** — `P-01` a `P-07` y `P-10` en [`docs/REGISTRO.md §4`](docs/REGISTRO.md)
+3. **Medir el baseline de las métricas** (`B-17`) — sin esto no se puede demostrar valor en ningún hito
+4. **Arrancar el trámite de WhatsApp Business API** (`B-12`) — demora semanas, por eso se empieza en S0 aunque se use en S4
+5. **Crear el repositorio Git** (`T-05`) y contratar el VPS (`T-01`)
+
+El guion de las tres reuniones está en [`docs/REGISTRO.md §6`](docs/REGISTRO.md).
+
+### Los cinco bloqueantes que más duelen
+
+1. **`SUP-04` / `P-01`** — ¿piezas rectas o corpóreas? Reordena el roadmap completo
+2. **`SUP-08` / `P-05`** — ¿cómo calculan el desarrollo de plegado? Sin esto el nesting calcula sobre medidas equivocadas
+3. **`B-02`** — formatos de chapa. Sin esto no hay nada contra qué probar
+4. **`B-17`** — baseline de métricas. Sin esto no se puede demostrar valor
+5. **`B-07`** — acceso a las tablas de AppSheet. Define si el carril B existe
+
+### Cuando exista código
+
+Estructura prevista del repositorio:
+
+```
+cartelería/
+├── README.md
+├── docs/                          # esta documentación
+├── fuentes/                       # documentos originales
+├── backend/
+│   ├── app/
+│   │   ├── core/                  # config, auth, permisos
+│   │   ├── models/                # SQLAlchemy
+│   │   ├── api/                   # endpoints
+│   │   ├── services/              # nesting, costeo, fotomontaje, ingesta, agregados
+│   │   └── tasks/                 # Celery
+│   ├── alembic/versions/
+│   └── tests/
+├── frontend/
+├── corel/                         # macro VBA de exportación
+├── docker-compose.yml
+└── .env.example
+```
+
+```bash
+cp .env.example .env      # completar las variables
+docker compose up         # levanta api, db, redis, worker y frontend
+```
+
+Ningún secreto va al repositorio. Ver `ADR-10` y [`docs/CONVENCIONES.md §4`](docs/CONVENCIONES.md).
+
+---
+
+## Glosario rápido
+
+| Término | Qué es |
+|---|---|
+| **Nesting** | Acomodar las piezas dentro de la plancha para desperdiciar lo menos posible |
+| **Kerf** | Ancho de material que consume la herramienta al cortar |
+| **Veta** | Dirección del material; si la tiene, las piezas no se pueden rotar libremente |
+| **Desarrollo de plegado** | La medida plana que hay que cortar para que, al doblarla, dé la pieza final |
+| **Homografía** | Transformación que permite pegar el cartel sobre la fachada respetando la perspectiva |
+| **Snapshot** | Copia congelada e inmutable de un presupuesto al momento de enviarlo |
+| **ADR** | *Architecture Decision Record*: registro corto de una decisión técnica y sus consecuencias |
+
+Glosario completo en [`docs/EPICA.md §16`](docs/EPICA.md).
+
+---
+
+## Contribuir
+
+Leé [`docs/CONVENCIONES.md`](docs/CONVENCIONES.md) completo antes del primer commit. El resumen:
+
+- Una rama por historia (`feat/CART-202-motor-bin-packing`), máximo 3 días de vida
+- Commits en Conventional Commits, en español, **sin trailers de atribución a herramientas**
+- Una migración Alembic por PR, generada justo antes de abrirlo
+- Sin números mágicos: todo default nuevo tiene su `PAR-xx` en `REGISTRO.md`
+- Nada del cliente (`.cdr`, fotos, precios reales) entra al repositorio
+- Entrada en `BITACORA.md` al cerrar la jornada

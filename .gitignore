@@ -1,0 +1,26 @@
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Python
+*.pyc
+__pycache__/
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+.next/
+
+# Archivos generados por el sistema (PDFs, planos, fotomontajes)
+media/
+uploads/
+
+# Archivos del cliente — nunca van al repositorio (ver CONVENCIONES.md §4)
+*.cdr
+*.dxf
+
+# Sistema
+.DS_Store
+Thumbs.db
