@@ -4,7 +4,7 @@ Plataforma a medida para una empresa de cartelería de gran formato en chapa. Au
 
 **Estado:** 📋 Documentación completa · Sprint 0 (relevamiento) sin arrancar · Sin código todavía
 **Equipo:** Enzo (carril A — cotización) · Vale (carril B — dashboard)
-**Última actualización:** 2026-08-29 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
+**Última actualización:** 2026-08-31 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 
@@ -63,7 +63,8 @@ Una hora, en este orden:
 
 ### 🗣️ Vas a reunirte con el cliente
 
-[`docs/REGISTRO.md §6`](docs/REGISTRO.md) — el guion de los tres encuentros, con qué preguntas hacer en cada uno y qué insumos llevarse.
+- **Reunión de arranque** (para que confirme el inicio) → [`docs/PROPUESTA-CLIENTE.md`](docs/PROPUESTA-CLIENTE.md) — problema, solución, cronograma de 2 meses, insumos e inversión, sin jerga interna.
+- **Los tres encuentros de relevamiento**, ya confirmado el inicio → [`docs/REGISTRO.md §6`](docs/REGISTRO.md) — el guion de cada uno, con qué preguntas hacer y qué insumos llevarse.
 
 ### 📊 Querés presentarle el proyecto a alguien
 
@@ -78,6 +79,7 @@ Una hora, en este orden:
 | Documento | Qué contiene | Se actualiza |
 |---|---|---|
 | [`EPICA.md`](docs/EPICA.md) | Contexto y origen, requisitos R1-R11, roles, alcance IN/OUT, features F0-F8, roadmap, **10 ADRs**, arquitectura, 12 NFRs, 13 riesgos, DoR/DoD, matriz de trazabilidad, glosario | Cuando cambia el alcance o una decisión |
+| [`PROPUESTA-CLIENTE.md`](docs/PROPUESTA-CLIENTE.md) | Prospecto para el cliente: problema, solución, cronograma de 2 meses, insumos necesarios e inversión — sin jerga interna, para la reunión de confirmación de inicio | Antes de la reunión de arranque, y cuando cambie el alcance o el cronograma ofrecido |
 | [`BACKLOG.md`](docs/BACKLOG.md) | 9 features, **68 historias**, 358 puntos. Cada una con narrativa, criterios Gherkin, estimación, dependencias y sprint | Al partir o agregar historias |
 | [`REGISTRO.md`](docs/REGISTRO.md) | **Fuente de verdad.** 16 supuestos (`SUP`), 37 parámetros (`PAR`), 23 insumos (`B`/`T`), 19 preguntas (`P`), 8 decisiones pendientes (`D`), guion de relevamiento, tablero de estado | **Cada sprint**, y cada vez que se cierra un ID |
 | [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división de carriles, propiedad del código, Git y commits, migraciones Alembic, convenciones de código, contratos entre carriles, ritmo de trabajo | Cuando acordamos una regla nueva |

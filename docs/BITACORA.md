@@ -58,6 +58,32 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-08-31 — Prospecto para el cliente con cronograma de 2 meses
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
+
+### Qué se hizo
+
+Se armó [`docs/PROPUESTA-CLIENTE.md`](PROPUESTA-CLIENTE.md): el documento para llevar a la reunión de arranque y que el cliente confirme el inicio. Traduce el problema, la solución y los hitos de `EPICA.md §1` a lenguaje sin jerga técnica — sin IDs (`PAR-xx`, `SUP-xx`, `CART-xxx`), sin puntos de historia, sin nombres de features (F0-F8) — pensado para leerse en una reunión con el cliente, no para el equipo.
+
+### Qué se decidió
+
+**El cronograma que se ofrece al cliente es de 2 meses (8 semanas), no las ~21 semanas de `EPICA.md §8`.** No es una compresión pareja: se mantiene la lógica de dependencias del roadmap original (nesting antes que cotizador, cotizador antes que aprobación, Corel después de validar el Hito 1) corrida sobre 8 semanas en vez de 21. El nesting irregular para piezas corpóreas (feature F7 / Hito 5) queda fuera del cronograma de 2 meses y se ofrece como segunda etapa condicionada a lo que se encuentre en el relevamiento sobre `SUP-04` — eso ya estaba identificado como el supuesto de mayor impacto del roadmap, así que no es un recorte nuevo: es correrlo a después de esta primera entrega.
+
+**Discrepancia pendiente de resolver:** `EPICA.md` y `BACKLOG.md` siguen diciendo ~21 semanas / 5 meses con dedicación part-time (`SUP-15`) como supuesto de cronograma. El prospecto nuevo le ofrece 2 meses al cliente. Mientras no se revise el roadmap interno, los dos documentos van a decir cosas distintas sobre cuándo se entrega cada hito. Queda para decidir entre Enzo y Vale: recalcular `EPICA.md §8` y `BACKLOG.md` para reflejar el ritmo de 2 meses, o dejarlos como estimación interna de referencia y ajustar el prospecto según cómo vaya el Hito 1.
+
+### Cambios en el registro
+
+Sin cambios en `REGISTRO.md`.
+
+### Pendiente
+
+- Completar en `docs/PROPUESTA-CLIENTE.md`: nombre de la empresa en el encabezado y los montos de la sección 8 (inversión) — quedaron con placeholders porque no hay ningún monto definido todavía en ningún documento del proyecto.
+- Decidir si se ajusta `EPICA.md §8` / `BACKLOG.md` al ritmo de 2 meses, o quedan como estimación interna.
+- Coordinar la reunión de arranque con el prospecto ya armado.
+
+---
+
 ## 2026-08-29 — Consolidación de los tres documentos en una épica ejecutable
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
