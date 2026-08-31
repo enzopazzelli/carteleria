@@ -72,13 +72,15 @@ Se armó [`docs/PROPUESTA-CLIENTE.md`](PROPUESTA-CLIENTE.md): el documento para 
 
 **Discrepancia pendiente de resolver:** `EPICA.md` y `BACKLOG.md` siguen diciendo ~21 semanas / 5 meses con dedicación part-time (`SUP-15`) como supuesto de cronograma. El prospecto nuevo le ofrece 2 meses al cliente. Mientras no se revise el roadmap interno, los dos documentos van a decir cosas distintas sobre cuándo se entrega cada hito. Queda para decidir entre Enzo y Vale: recalcular `EPICA.md §8` y `BACKLOG.md` para reflejar el ritmo de 2 meses, o dejarlos como estimación interna de referencia y ajustar el prospecto según cómo vaya el Hito 1.
 
+**Se definió el precio: $2.000.000 (ARS) por el desarrollo completo de los 2 meses**, a pagar por hito (20% de anticipo en la semana 1, el resto repartido entre los cinco hitos según su peso relativo dentro del alcance de esta primera etapa — el Hito 1, que incluye fundaciones, catálogo y el motor de anidado, es la porción más grande). Los costos de servicios (hosting, dominio, WhatsApp Business, IA del fotomontaje) quedan aparte, no incluidos en ese monto. Es un valor de la conversación con el cliente, no un parámetro del sistema — no genera `PAR-xx` nuevo en `REGISTRO.md`.
+
 ### Cambios en el registro
 
 Sin cambios en `REGISTRO.md`.
 
 ### Pendiente
 
-- Completar en `docs/PROPUESTA-CLIENTE.md`: nombre de la empresa en el encabezado y los montos de la sección 8 (inversión) — quedaron con placeholders porque no hay ningún monto definido todavía en ningún documento del proyecto.
+- Completar en `docs/PROPUESTA-CLIENTE.md` el nombre de la empresa en el encabezado.
 - Decidir si se ajusta `EPICA.md §8` / `BACKLOG.md` al ritmo de 2 meses, o quedan como estimación interna.
 - Coordinar la reunión de arranque con el prospecto ya armado.
 

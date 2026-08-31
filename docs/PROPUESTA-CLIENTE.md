@@ -1,4 +1,4 @@
-> **Nota interna (no es para el cliente):** completar el nombre de la empresa y los montos de la sección 8 antes de enviar o presentar este documento. A propósito no tiene jerga interna del proyecto (IDs, ADRs, puntos de historia) — está escrito para leerse en una reunión con el cliente, no para el equipo. La versión de trabajo del equipo sigue siendo [`EPICA.md`](EPICA.md).
+> **Nota interna (no es para el cliente):** completar el nombre de la empresa antes de enviar o presentar este documento. A propósito no tiene jerga interna del proyecto (IDs, ADRs, puntos de historia) — está escrito para leerse en una reunión con el cliente, no para el equipo. La versión de trabajo del equipo sigue siendo [`EPICA.md`](EPICA.md).
 
 ---
 
@@ -131,19 +131,21 @@ Nada de esto está descartado para más adelante — solo no es parte de estos d
 
 ## 8. Inversión
 
-La inversión se organiza por hito — cada entrega es un sistema que ya funciona, no una promesa a dos meses.
+**El desarrollo completo tiene un valor de $2.000.000 (ARS).**
+
+La mayor parte de esta inversión está en el motor de anidado: el algoritmo que calcula cómo ubicar cada forma a cortar sobre la plancha para aprovechar el material al máximo. No es la parte administrativa del sistema — es el desarrollo técnico más complejo de estos dos meses, y es justamente el problema que hoy más tiempo y material les hace perder.
+
+La inversión se organiza por hito — cada entrega es un sistema que ya funciona, no una promesa a dos meses:
 
 | Etapa | Semana | % | Monto (ARS) |
 |---|---|---|---|
-| Anticipo de arranque | Semana 1 | | $ |
-| Hito 1 — Cotizador con anidado | Semana 4 | | $ |
-| Hito 2 — Aprobación y envío | Semana 5 | | $ |
-| Hito 3 — Importación desde Corel | Semana 6 | | $ |
-| Dashboard rápido | Semana 6 | | $ |
-| Hito 4 — Fotomontaje | Semana 7 | | $ |
-| **Total** | | **100%** | **$** |
-
-*(Cuadro para completar en la reunión.)*
+| Anticipo de arranque | Semana 1 | 20% | $400.000 |
+| Hito 1 — Cotizador con anidado | Semana 4 | 36,5% | $730.000 |
+| Hito 2 — Aprobación y envío | Semana 5 | 9,5% | $190.000 |
+| Hito 3 — Importación desde Corel | Semana 6 | 12,5% | $250.000 |
+| Dashboard rápido | Semana 6 | 11% | $220.000 |
+| Hito 4 — Fotomontaje | Semana 7 | 10,5% | $210.000 |
+| **Total** | | **100%** | **$2.000.000** |
 
 Aparte del desarrollo, hay costos de servicios que se acuerdan por separado y no forman parte de este monto: el hosting del sistema, el dominio, WhatsApp Business API si lo usan para el envío, y el servicio de IA que retoca el fotomontaje (tiene un costo chico por imagen generada).
 
