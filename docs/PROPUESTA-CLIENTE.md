@@ -5,7 +5,7 @@
 # Propuesta de trabajo: presupuestos, anidado automático y aprobación
 
 **Para:** [nombre de la empresa]
-**Equipo:** Enzo Pazzelli (cotizador, anidado, aprobación, fotomontaje) y Vale (dashboard)
+**Equipo:** Enzo Pazzelli y Vale
 **Fecha:** 31 de agosto de 2026
 **Qué esperamos de este documento:** que lo revisemos juntos y nos den la confirmación para arrancar.
 
@@ -13,13 +13,7 @@
 
 ## 1. El problema que nos plantearon
 
-De la charla que tuvimos nos quedaron grabadas estas frases:
-
-> *"El presupuestar les toma mucho tiempo, después lo otro que les toma mucho tiempo es en el uso del material. [...] lo que les lleva tiempo es acomodar esa imagen en la tabla de la chapa para hacer rendir lo más posible."*
-
-> *"Uno de los chicos que trabaja ahí con AppSheet había hecho todo un dashboard buenísimo, pero le resulta muy lento porque tiene un montón de tablas atrás funcionando."*
-
-De ahí sacamos tres problemas concretos, en el orden en que más pesan:
+De la charla que tuvimos identificamos tres problemas concretos, en el orden en que más pesan:
 
 1. **Presupuestar tarda demasiado.** Cada cotización se arma a mano, de cero.
 2. **El material se desperdicia.** Alguien acomoda las piezas sobre la plancha a ojo, y eso deja chapa sin usar que se paga igual.
@@ -135,19 +129,18 @@ Nada de esto está descartado para más adelante — solo no es parte de estos d
 
 La mayor parte de esta inversión está en el motor de anidado: el algoritmo que calcula cómo ubicar cada forma a cortar sobre la plancha para aprovechar el material al máximo. No es la parte administrativa del sistema — es el desarrollo técnico más complejo de estos dos meses, y es justamente el problema que hoy más tiempo y material les hace perder.
 
-La inversión se organiza por hito — cada entrega es un sistema que ya funciona, no una promesa a dos meses:
+La inversión se organiza por hito, contra la entrega de cada uno — no pedimos anticipo:
 
 | Etapa | Semana | % | Monto (ARS) |
 |---|---|---|---|
-| Anticipo de arranque | Semana 1 | 20% | $400.000 |
-| Hito 1 — Cotizador con anidado | Semana 4 | 36,5% | $730.000 |
-| Hito 2 — Aprobación y envío | Semana 5 | 9,5% | $190.000 |
-| Hito 3 — Importación desde Corel | Semana 6 | 12,5% | $250.000 |
-| Dashboard rápido | Semana 6 | 11% | $220.000 |
-| Hito 4 — Fotomontaje | Semana 7 | 10,5% | $210.000 |
+| Hito 1 — Cotizador con anidado | Semana 4 | 46% | $920.000 |
+| Hito 2 — Aprobación y envío | Semana 5 | 11,5% | $230.000 |
+| Hito 3 — Importación desde Corel | Semana 6 | 15,5% | $310.000 |
+| Dashboard rápido | Semana 6 | 13,5% | $270.000 |
+| Hito 4 — Fotomontaje | Semana 7 | 13,5% | $270.000 |
 | **Total** | | **100%** | **$2.000.000** |
 
-Aparte del desarrollo, hay costos de servicios que se acuerdan por separado y no forman parte de este monto: el hosting del sistema, el dominio, WhatsApp Business API si lo usan para el envío, y el servicio de IA que retoca el fotomontaje (tiene un costo chico por imagen generada).
+Aparte del desarrollo, hay costos de servicios que corren por cuenta de ustedes, no nuestra, y no forman parte de este monto: el hosting del sistema, el dominio, WhatsApp Business API si lo usan para el envío, y el servicio de IA que retoca el fotomontaje (tiene un costo chico por imagen generada). Nosotros los dejamos configurados; se contratan y se pagan a nombre de la empresa.
 
 ---
 

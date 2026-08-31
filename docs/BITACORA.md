@@ -72,7 +72,9 @@ Se armó [`docs/PROPUESTA-CLIENTE.md`](PROPUESTA-CLIENTE.md): el documento para 
 
 **Discrepancia pendiente de resolver:** `EPICA.md` y `BACKLOG.md` siguen diciendo ~21 semanas / 5 meses con dedicación part-time (`SUP-15`) como supuesto de cronograma. El prospecto nuevo le ofrece 2 meses al cliente. Mientras no se revise el roadmap interno, los dos documentos van a decir cosas distintas sobre cuándo se entrega cada hito. Queda para decidir entre Enzo y Vale: recalcular `EPICA.md §8` y `BACKLOG.md` para reflejar el ritmo de 2 meses, o dejarlos como estimación interna de referencia y ajustar el prospecto según cómo vaya el Hito 1.
 
-**Se definió el precio: $2.000.000 (ARS) por el desarrollo completo de los 2 meses**, a pagar por hito (20% de anticipo en la semana 1, el resto repartido entre los cinco hitos según su peso relativo dentro del alcance de esta primera etapa — el Hito 1, que incluye fundaciones, catálogo y el motor de anidado, es la porción más grande). Los costos de servicios (hosting, dominio, WhatsApp Business, IA del fotomontaje) quedan aparte, no incluidos en ese monto. Es un valor de la conversación con el cliente, no un parámetro del sistema — no genera `PAR-xx` nuevo en `REGISTRO.md`.
+**Se definió el precio: $2.000.000 (ARS) por el desarrollo completo de los 2 meses**, a pagar por hito, repartido entre los cinco hitos según su peso relativo dentro del alcance de esta primera etapa (el Hito 1, que incluye fundaciones, catálogo y el motor de anidado, es la porción más grande). **Sin anticipo** — Enzo aclaró que no se había hablado con Vale de pedir uno, así que se sacó del prospecto en vez de asumirlo. Los costos de servicios (hosting, dominio, WhatsApp Business, IA del fotomontaje) quedan aparte, no incluidos en ese monto, **y corren por cuenta del cliente** — se aclaró explícitamente en el prospecto para que no quede ambiguo quién los contrata y los paga. Es un valor de la conversación con el cliente, no un parámetro del sistema — no genera `PAR-xx` nuevo en `REGISTRO.md`.
+
+**Correcciones de Enzo después de la primera versión:** el prospecto citaba dos frases textuales del audio del cliente en la sección del problema — Enzo pidió no citar al cliente en un documento de presentación, así que se sacaron y quedó solo la síntesis de los tres problemas. También tenía una atribución de tareas en el encabezado ("Enzo: cotizador, anidado, aprobación, fotomontaje · Vale: dashboard") tomada de `README.md`/`CONVENCIONES.md §2` — Enzo marcó que esa no es la separación real. Se sacó del prospecto (queda solo "Enzo Pazzelli y Vale", sin desglose) hasta confirmar cuál es la separación correcta; **no se tocó** `README.md`, `CONVENCIONES.md` ni `EPICA.md`, que todavía describen carril A (Enzo) / carril B (Vale) — si la separación real es otra, esos tres documentos están desactualizados y conviene revisarlos, no solo el prospecto.
 
 ### Cambios en el registro
 
@@ -81,6 +83,7 @@ Sin cambios en `REGISTRO.md`.
 ### Pendiente
 
 - Completar en `docs/PROPUESTA-CLIENTE.md` el nombre de la empresa en el encabezado.
+- **Confirmar cuál es la separación real de tareas entre Enzo y Vale** y, si es distinta de carril A / carril B, corregirla en `README.md`, `CONVENCIONES.md §2-3` y el roadmap de `EPICA.md §8` (hoy asumen ese split en la asignación de sprints y en la propiedad de carpetas del código).
 - Decidir si se ajusta `EPICA.md §8` / `BACKLOG.md` al ritmo de 2 meses, o quedan como estimación interna.
 - Coordinar la reunión de arranque con el prospecto ya armado.
 
