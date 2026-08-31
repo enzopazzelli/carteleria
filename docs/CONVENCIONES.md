@@ -4,7 +4,7 @@
 >
 > Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`REGISTRO.md`](REGISTRO.md) · [`BITACORA.md`](BITACORA.md) · [`DECISIONES-Y-BLOQUEANTES.md`](DECISIONES-Y-BLOQUEANTES.md)
 >
-> **Versión:** 1.1 · **Fecha:** 2026-08-29
+> **Versión:** 1.2 · **Fecha:** 2026-08-31
 >
 > **Estas reglas aplican a los dos carriles por igual.** No son sugerencias de estilo: son lo que hace que dos personas part-time en horarios distintos no se rompan el trabajo mutuamente.
 
@@ -297,7 +297,13 @@ Sin `Ñ` ni acentos en identificadores de base de datos ni en nombres de archivo
 
 ### Tests obligatorios
 
-No todo necesita test, pero **estas tres cosas sí**, sin excepción:
+**Regla general: todo módulo nuevo lleva sus tests en el mismo PR que lo crea.** No se abre un PR de "agrego tests después" — el test nace junto con el código, no queda como deuda técnica para otro día. Un PR que agrega un servicio, un endpoint o un componente con lógica y no trae tests no pasa review, salvo que sea un caso trivial (un getter, un re-export) que se aclara en la descripción del PR.
+
+La ubicación espeja la del código (ver [§3](#3-propiedad-del-código)): `backend/tests/` reproduce la estructura de `backend/app/`, y `frontend/` sigue el mismo criterio con sus tests junto al componente o en su carpeta `__tests__`. Cada módulo tiene su `test_<modulo>.py` (o equivalente) al lado en el árbol de tests, no todo junto en un archivo gigante.
+
+No todo necesita el mismo nivel de exigencia. Para la mayoría de los módulos (endpoints CRUD, parsers, servicios de agregados, componentes de frontend con lógica) alcanza con cubrir el caso feliz y los bordes obvios: input vacío, valor fuera de rango, permiso denegado.
+
+Pero **estas tres cosas sí necesitan cobertura exhaustiva**, sin excepción:
 
 | Qué | Por qué |
 |---|---|
@@ -391,7 +397,8 @@ El punto 4 es el que más importa. Cerrar `SUP-04` (rectos vs. corpóreos) puede
 Está en [`EPICA.md §14`](EPICA.md). Se repite acá solo el checklist operativo del PR, para tenerlo a mano:
 
 - [ ] Criterios de aceptación de la historia, todos verdes
-- [ ] Tests de lógica de negocio si toca nesting, costeo o máquina de estados
+- [ ] Todo módulo nuevo (servicio, endpoint, componente con lógica) trae sus tests en el mismo PR
+- [ ] Si toca nesting, costeo o máquina de estados: cobertura exhaustiva, no solo caso feliz
 - [ ] Migración Alembic si hubo cambio de schema, con `downgrade()` funcional
 - [ ] Sin números mágicos: todo default nuevo tiene su `PAR-xx` en `REGISTRO.md`
 - [ ] Sin secretos fuera del `.env`
@@ -420,3 +427,4 @@ Está en [`EPICA.md §14`](EPICA.md). Se repite acá solo el checklist operativo
 | 10 | Antes de tocar la zona del otro: avisar |
 | 11 | Entrada en `BITACORA.md` al cerrar la jornada |
 | 12 | Si cerrás un ID del registro, actualizalo **y avisá** si afecta al otro carril |
+| 13 | Todo módulo nuevo trae sus tests en el mismo PR — nesting, costeo y máquina de estados con cobertura exhaustiva |
