@@ -75,7 +75,7 @@ Una hora, en este orden:
 ### 🗣️ Vas a reunirte con el cliente
 
 - **Reunión de arranque** (para que confirme el inicio) → [`docs/PROPUESTA-CLIENTE.md`](docs/PROPUESTA-CLIENTE.md) — problema, solución, cronograma de 2 meses, insumos e inversión, sin jerga interna.
-- **Los tres encuentros de relevamiento**, ya confirmado el inicio → [`docs/REGISTRO.md §6`](docs/REGISTRO.md) — el guion de cada uno, con qué preguntas hacer y qué insumos llevarse.
+- **Los tres encuentros de relevamiento**, ya confirmado el inicio → [`docs/GUION-ENTREVISTAS-RELEVAMIENTO.md`](docs/GUION-ENTREVISTAS-RELEVAMIENTO.md) — las 19 preguntas desarrolladas para llevar a la reunión: en lenguaje llano, por qué importa cada una y qué insumos pedir. Versión condensada en [`docs/REGISTRO.md §6`](docs/REGISTRO.md).
 
 ### 📊 Querés presentarle el proyecto a alguien
 
@@ -93,6 +93,7 @@ Una hora, en este orden:
 | [`PROPUESTA-CLIENTE.md`](docs/PROPUESTA-CLIENTE.md) | Prospecto para el cliente: problema, solución, cronograma de 2 meses, insumos necesarios e inversión — sin jerga interna, para la reunión de confirmación de inicio | Antes de la reunión de arranque, y cuando cambie el alcance o el cronograma ofrecido |
 | [`BACKLOG.md`](docs/BACKLOG.md) | 9 features, **68 historias**, 358 puntos. Cada una con narrativa, criterios Gherkin, estimación, dependencias y sprint | Al partir o agregar historias |
 | [`REGISTRO.md`](docs/REGISTRO.md) | **Fuente de verdad.** 16 supuestos (`SUP`), 37 parámetros (`PAR`), 23 insumos (`B`/`T`), 19 preguntas (`P`), 8 decisiones pendientes (`D`), guion de relevamiento, tablero de estado | **Cada sprint**, y cada vez que se cierra un ID |
+| [`GUION-ENTREVISTAS-RELEVAMIENTO.md`](docs/GUION-ENTREVISTAS-RELEVAMIENTO.md) | Las 19 preguntas de `REGISTRO.md §6` desarrolladas para llevar a los tres encuentros de relevamiento: en lenguaje llano, por qué importa cada una y qué insumos pedir | Cuando cambie el guion de `REGISTRO.md §6` |
 | [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división de carriles, propiedad del código, Git y commits, migraciones Alembic, convenciones de código, contratos entre carriles, ritmo de trabajo | Cuando acordamos una regla nueva |
 | [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | **13 correcciones** a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |

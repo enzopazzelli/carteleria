@@ -58,6 +58,28 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-09-01 (5) — Guion de entrevistas para el relevamiento de Sprint 0
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
+
+### Qué se hizo
+
+Se armó [`docs/GUION-ENTREVISTAS-RELEVAMIENTO.md`](GUION-ENTREVISTAS-RELEVAMIENTO.md): versión de campo de las 19 preguntas de `REGISTRO.md §6`, desarrolladas por encuentro (negocio/taller/diseño) con la pregunta en lenguaje llano, por qué importa y qué insumos pedir. Arriba de todo destaca las 4 preguntas más determinantes (`P-01`, `P-05`, `P-02`, `B-17`) para que quede claro qué no se puede resignar si el tiempo aprieta. Se agregó el pointer en `README.md` (índice de documentos y guía de "vas a reunirte con el cliente").
+
+### Qué se decidió
+
+Ninguna decisión de producto — es material de preparación para las entrevistas, no cambia ningún `SUP`/`PAR`/`ADR`.
+
+### Cambios en el registro
+
+Se corrigió un gap real en `REGISTRO.md §6`: `P-18` (fotomontaje — banco de fotos y si es requisito formal) no estaba asignada a ningún encuentro. Se agregó al Encuentro 1, junto a `P-07` (prioridad de negocio), porque es la pregunta que decide si F6 puede ser opcional o no.
+
+### Pendiente
+
+- Ninguno propio de esta entrada — el guion queda listo para cuando se coordinen los tres encuentros (ver `Pendiente` de la entrada del 2026-08-31).
+
+---
+
 ## 2026-09-01 (4) — Plan del motor de nesting único basado en Deepnest
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0

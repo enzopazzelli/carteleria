@@ -265,7 +265,7 @@ Una sola reunión no alcanza. Tres encuentros, cada uno con sus IDs a cerrar.
 
 | Encuentro | Con quién | Duración | Preguntas | Insumos a llevarse |
 |---|---|---|---|---|
-| **1 — Negocio y proceso** | Dueño + administración | 90 min | `P-07`, `P-08`, `P-09`, `P-10`, `P-11`, `P-15`, `P-16`, `P-17` | `B-01`, `B-09`, `B-10`, `B-11`, `B-13`, `B-17` |
+| **1 — Negocio y proceso** | Dueño + administración | 90 min | `P-07`, `P-08`, `P-09`, `P-10`, `P-11`, `P-15`, `P-16`, `P-17`, `P-18` | `B-01`, `B-09`, `B-10`, `B-11`, `B-13`, `B-17` |
 | **2 — Taller y materiales** | Encargado de taller / operario de corte | 60 min | `P-01`, `P-02`, `P-03`, `P-04`, `P-05` | `B-02`, `B-03`, `B-04`, `B-05`, `B-06` |
 | **3 — Diseño y sistemas** | Diseñadores + autor del dashboard | 60 min | `P-12`, `P-13`, `P-14`, `P-19` | `B-07`, `B-08`, `B-14`, `B-15` |
 
