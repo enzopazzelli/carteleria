@@ -72,6 +72,8 @@ Replicar primero las 9 vistas completas (con sus formularios) y aplicar la restr
 
 Esto puso en tensión el alcance de F8 que ya estaba cerrado en `ADR-06` (dashboard = solo lectura sobre agregados). Se registró como bloqueante de decisión, no se resolvió unilateralmente: **`D-09`** en `REGISTRO.md §5`.
 
+**El PR de este trabajo (`claude/client-proposal-timeline-df4xvc`) se mergeó directo a `main`**, sin pasar por revisión intermedia. Criterio de Enzo: esto es un documento de relevamiento de **lo que hay hoy** (inventario del dashboard actual + un prototipo para validar diseño) — información de preparación para arrancar, no un avance de sprint sobre el producto que se está construyendo. La distinción queda para aplicar hacia adelante: material que describe el estado actual (inventarios, capturas, prototipos de validación) puede ir directo a `main`; el código y las decisiones de producto que sí cuentan como avance del proyecto (F0-F8) siguen el flujo de PR habitual.
+
 ### Cambios en el registro
 
 - Nuevo documento `docs/DASHBOARD-VISTAS.md`: las 9 vistas, de qué tabla real sale cada una, y cómo construirlas — avanza `CART-801` (ver nota agregada ahí en `BACKLOG.md`).
