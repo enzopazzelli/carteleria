@@ -58,6 +58,28 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-09-01 (3) — Investigación de nesting en el navegador (SVGnest, Deepnest, SheetNest)
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
+
+### Qué se hizo
+
+A pedido de Enzo, se investigaron tres motores de nesting open source para evaluar si conviene anidar piezas del lado del navegador en vez de (o además de) el motor Python de backend. Se verificaron datos reales de cada repo (licencia, stack, actividad) vía la API de GitHub, no de memoria. Resultado completo en el nuevo [`docs/FACTIBILIDAD-NESTING-WEB.md`](FACTIBILIDAD-NESTING-WEB.md), con pointer agregado en `README.md`.
+
+### Qué se decidió
+
+No se tocó `ADR-05`. `rectpack` + `nest2D`/`libnest2d` siguen siendo la elección correcta para F2/F7 — la investigación no encontró motivo técnico ni de licencia para moverlos al navegador. Si en algún momento se evalúa una previsualización de nesting del lado del cliente, la base recomendada es SVGnest (JS puro, ya corre 100% en el navegador, licencia MIT limpia), no Deepnest.
+
+### Cambios en el registro
+
+Sin cambios en `REGISTRO.md`. Hallazgo nuevo sin ID todavía: la tabla de stack de `EPICA.md` (línea ~396) menciona "Deepnest" como alternativa a `nest2D` para F7, pero **el repo de Deepnest no tiene archivo de licencia** — sin permiso legal explícito para reusar su código en un sistema comercial. No bloquea nada hoy (F7 es Hito 5), pero queda pendiente decidir si se le agrega una nota a esa línea de `EPICA.md`.
+
+### Pendiente
+
+- Decidir si la mención de "Deepnest" en la tabla de stack de `EPICA.md` se corrige con una nota de licencia, o si alcanza con `FACTIBILIDAD-NESTING-WEB.md` como referencia cuando llegue S9-S10.
+
+---
+
 ## 2026-09-01 (2) — Prototipo de las 9 vistas del dashboard + permisos por rol
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0

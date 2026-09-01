@@ -4,7 +4,13 @@ Plataforma a medida para una empresa de cartelería de gran formato en chapa. Au
 
 **Estado:** 📋 Documentación completa · Sprint 0 (relevamiento) sin arrancar · Sin código todavía
 **Equipo:** Enzo (carril A — cotización) · Vale (carril B — dashboard)
-**Última actualización:** 2026-08-31 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
+**Última actualización:** 2026-09-01 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
+
+---
+
+## 🆕 Novedad para Vale
+
+Enzo investigó tres motores de nesting open source (SVGnest, Deepnest, SheetNest) para evaluar si conviene anidar piezas del lado del navegador. Resultado en [`docs/FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md) — no cambia nada de lo ya decidido en `ADR-05`, pero encontró un hallazgo que vale la pena leer: la alternativa "Deepnest" que la tabla de stack de `EPICA.md` menciona de pasada para F7 no tiene licencia de código abierto (el repo no tiene archivo `LICENSE`), así que no es una opción segura para usar tal cual.
 
 ---
 
@@ -89,6 +95,7 @@ Una hora, en este orden:
 | [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | **13 correcciones** a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
 | [`DASHBOARD-VISTAS.md`](docs/DASHBOARD-VISTAS.md) | Las 9 vistas del dashboard actual, de qué tabla real sale cada una y cómo construirlas en F8 — avanza `CART-801` | Cuando se releve o confirme una vista nueva |
+| [`FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores de nesting en el navegador — insumo para F7, no cambia `ADR-05` | Rara vez — es una investigación puntual |
 
 ### `fuentes/` — documentos originales
 
