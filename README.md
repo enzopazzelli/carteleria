@@ -14,6 +14,8 @@ Enzo investigó tres motores de nesting open source (SVGnest, Deepnest, SheetNes
 
 El plan técnico de esa implementación está en [`docs/PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/PLAN-MOTOR-NESTING-DEEPNEST.md): resuelve `D-01` a favor de Deepnest, como microservicio Node llamado desde Celery, reemplazando tanto `rectpack` (F2) como `nest2D` (F7). **Todavía no se ejecutó** — no se tocó `REGISTRO.md`, `BACKLOG.md` ni `EPICA.md` — es la Fase 4 del plan, pendiente de PR.
 
+Hay un segundo plan como alternativa/contingencia: [`docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) — cómo acercarse al mismo valor (huecos, corte de líneas compartidas) sin sumar el microservicio Node, construyendo esas dos features encima de `shapely`/`rectpack`/`nest2D` dentro del mismo backend Python. Ninguno de los dos planes está ejecutado; la idea es probar primero este (sin infraestructura ni riesgo legal nuevo) y escalar al de Deepnest solo si no alcanza en el punto de validación de H1.
+
 ---
 
 ## El problema en una línea
@@ -100,6 +102,7 @@ Una hora, en este orden:
 | [`DASHBOARD-VISTAS.md`](docs/DASHBOARD-VISTAS.md) | Las 9 vistas del dashboard actual, de qué tabla real sale cada una y cómo construirlas en F8 — avanza `CART-801` | Cuando se releve o confirme una vista nueva |
 | [`FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores de nesting en el navegador — insumo para F7, no cambia `ADR-05` | Rara vez — es una investigación puntual |
 | [`PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/PLAN-MOTOR-NESTING-DEEPNEST.md) | Plan técnico para reemplazar `rectpack`/`nest2D` por un motor único basado en Deepnest (`deepnest-next`) como microservicio Node — resuelve `D-01`. Plan, no ejecutado todavía | Cuando avance alguna de sus 5 fases |
+| [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) | Plan de contingencia: cómo aproximar huecos y corte de líneas compartidas sin servicios externos, construido encima de `shapely`/`rectpack`/`nest2D` en el mismo backend Python | Cuando se decida probarlo o se mida contra el plan de Deepnest |
 
 ### `fuentes/` — documentos originales
 

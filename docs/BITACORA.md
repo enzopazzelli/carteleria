@@ -58,6 +58,28 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-09-01 (6) — Plan alternativo: motor de nesting nativo en Python, sin servicios externos
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
+
+### Qué se hizo
+
+A pedido de Enzo ("una planificación de nesting... hecha si no pudiéramos consumir otros servicios... parte de la app que estamos construyendo"), se armó [`docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](PLAN-MOTOR-NESTING-PYTHON-NATIVO.md): un plan de contingencia al de Deepnest, que busca aproximar anidado-en-huecos y corte de líneas compartidas construyendo dos capas nuevas (encima de `shapely`/`rectpack`/`nest2D`) dentro del mismo proceso Python del backend — sin el microservicio Node que plantea `PLAN-MOTOR-NESTING-DEEPNEST.md`. Se confirmó que `nest2D` (la opción de `ADR-05`) declara en su propia documentación que no soporta huecos ni concavidades, así que ambas features hay que construirlas sí o sí, con Deepnest o sin él. Se agregaron los pointers en `README.md` (novedad + índice de documentos).
+
+### Qué se decidió
+
+Ninguna decisión de producto todavía — quedan dos planes documentados y ninguno ejecutado. La secuencia recomendada, si se decide avanzar: probar primero este plan (sin infraestructura ni riesgo legal nuevo) y escalar al de Deepnest solo si no alcanza el objetivo de aprovechamiento (`PAR-33`) en el punto de validación de H1.
+
+### Cambios en el registro
+
+Sin cambios en `REGISTRO.md` — `D-01` sigue sin resolver. Se identificó que la pregunta de `D-01` está planteada como binaria (`nest2D` o Deepnest) cuando en realidad hay una tercera vía (`nest2D` + capas propias en Python) — queda para cuando se ejecute cualquiera de los dos planes.
+
+### Pendiente
+
+- Decidir cuál de los dos planes se prueba primero, o si se ejecutan ambos como se sugiere (nativo primero, Deepnest como escalamiento).
+
+---
+
 ## 2026-09-01 (5) — Guion de entrevistas para el relevamiento de Sprint 0
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
