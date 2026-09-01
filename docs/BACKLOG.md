@@ -1694,6 +1694,8 @@ Entonces queda registrado el tiempo de carga de cada vista, como baseline de M5
 
 > **No es una historia de código.** Replicar un dashboard sin saber qué se usa produce trabajo desperdiciado. El baseline de performance sin esto no existe.
 
+> **Avance 2026-09-01:** las 9 vistas ya están relevadas y documentadas en [`DASHBOARD-VISTAS.md`](DASHBOARD-VISTAS.md), con un prototipo de UI en `prototipo-dashboard/`. Falta lo que esta historia todavía no puede resolver sin el cliente: priorizarlas (imprescindible/útil/descartable) y medir el tiempo de carga real como baseline de M5. También quedó abierta `D-09` (ver `REGISTRO.md §5`) sobre cuánto de esas 9 vistas es solo lectura.
+
 **Puntos:** 5 · **Depende de:** acceso a AppSheet · **Sprint:** S2
 
 ---

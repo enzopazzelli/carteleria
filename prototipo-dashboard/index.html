@@ -1,0 +1,1253 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MegaCarteles Rápido — prototipo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ---------- tokens ---------- */
+:root{
+  color-scheme:light;
+  --font-ui:'IBM Plex Sans',system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,"SFMono-Regular",Menlo,monospace;
+
+  --rail-bg:#1c2024;
+  --rail-bg-raised:#262b30;
+  --rail-line:rgba(255,255,255,.09);
+  --rail-ink:#eceae6;
+  --rail-ink-2:#9aa0a6;
+  --rail-ink-3:#6b7075;
+  --accent-bright:#22d3ee;
+
+  --stage:#f6f4f0;
+  --card:#ffffff;
+  --card-2:#faf9f6;
+  --ink:#191714;
+  --ink-2:#5c584f;
+  --ink-3:#8b877c;
+  --hair:#e6e2d8;
+  --accent-ink:#0b7285;
+  --accent-wash:#e3f4f6;
+
+  --good:#0ca30c;
+  --warning:#c98500;
+  --serious:#ec835a;
+  --critical:#d03b3b;
+  --good-wash:#e4f6e1;
+  --warning-wash:#fdf1da;
+  --critical-wash:#fbe4e2;
+
+  --cat-blue:#2a78d6;
+  --seq-blue:#2a78d6;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --stage:#141416; --card:#1d1e20; --card-2:#202225;
+    --ink:#f2f0ec; --ink-2:#b9b6ac; --ink-3:#83807a;
+    --hair:rgba(255,255,255,.09);
+    --accent-ink:#5fd8ea; --accent-wash:#12333a;
+    --warning:#eda100;
+    --good-wash:#122a12; --warning-wash:#332a12; --critical-wash:#3a1616;
+    --cat-blue:#3987e5; --seq-blue:#3987e5;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --stage:#141416; --card:#1d1e20; --card-2:#202225;
+  --ink:#f2f0ec; --ink-2:#b9b6ac; --ink-3:#83807a;
+  --hair:rgba(255,255,255,.09);
+  --accent-ink:#5fd8ea; --accent-wash:#12333a;
+  --warning:#eda100;
+  --good-wash:#122a12; --warning-wash:#332a12; --critical-wash:#3a1616;
+  --cat-blue:#3987e5; --seq-blue:#3987e5;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--stage);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+h1,h2,h3{text-wrap:balance;margin:0;}
+button{font-family:inherit;}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important;}}
+.tabular{font-variant-numeric:tabular-nums;}
+
+/* ---------- shell ---------- */
+.app{display:flex;min-height:100vh;}
+.rail{width:240px;flex:0 0 240px;background:var(--rail-bg);color:var(--rail-ink);display:flex;flex-direction:column;padding:18px 14px;gap:14px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.rail-brand{display:flex;align-items:center;gap:10px;padding:2px 6px;}
+.rail-brand .name{font-weight:700;font-size:16px;letter-spacing:.2px;}
+.rail-brand .name b{color:var(--accent-bright);}
+.rail-tag{font-size:10.5px;color:var(--rail-ink-3);text-transform:uppercase;letter-spacing:.09em;padding:0 6px;margin-top:-10px;}
+
+.fresh{background:var(--rail-bg-raised);border:1px solid var(--rail-line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.fresh-top{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--rail-ink-2);}
+.fresh-dot{width:7px;height:7px;border-radius:50%;background:var(--accent-bright);box-shadow:0 0 0 3px rgba(34,211,238,.18);flex:0 0 auto;}
+.fresh-time{font-family:var(--font-mono);font-size:13px;color:var(--rail-ink);}
+.fresh-bar{height:3px;border-radius:2px;background:var(--rail-line);overflow:hidden;}
+.fresh-bar>i{display:block;height:100%;background:var(--accent-bright);width:0%;}
+.fresh-note{font-size:10.5px;color:var(--rail-ink-3);}
+
+.role-switch{display:flex;flex-direction:column;gap:5px;}
+.role-switch label{font-size:10.5px;color:var(--rail-ink-3);text-transform:uppercase;letter-spacing:.06em;}
+.role-switch select{width:100%;background:var(--rail-bg-raised);color:var(--rail-ink);border:1px solid var(--rail-line);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit;}
+
+.rail-nav{display:flex;flex-direction:column;gap:2px;margin-top:2px;}
+.rail-btn{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:8px;border:none;background:transparent;color:var(--rail-ink-2);font-size:13.5px;font-weight:500;cursor:pointer;text-align:left;width:100%;}
+.rail-btn svg{flex:0 0 auto;opacity:.9;}
+.rail-btn:hover{background:var(--rail-bg-raised);color:var(--rail-ink);}
+.rail-btn.is-active{background:var(--rail-bg-raised);color:var(--rail-ink);box-shadow:inset 2px 0 0 var(--accent-bright);}
+.rail-spacer{flex:1;}
+.rail-foot{border-top:1px solid var(--rail-line);padding-top:12px;font-size:11px;color:var(--rail-ink-3);line-height:1.5;}
+
+.stage{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:24px 32px 16px;border-bottom:1px solid var(--hair);}
+.topbar h1{font-size:22px;font-weight:700;}
+.topbar p{margin:4px 0 0;color:var(--ink-3);font-size:13px;}
+.topbar-actions{display:flex;gap:10px;align-items:center;}
+
+main{padding:22px 32px 60px;max-width:1280px;width:100%;margin:0 auto;}
+.view{display:none;flex-direction:column;gap:20px;}
+.view.is-active{display:flex;}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;}
+.kpi{background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:16px 18px;border-top:3px solid var(--kpi-c,var(--seq-blue));display:flex;flex-direction:column;gap:4px;}
+.kpi .label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);}
+.kpi .value{font-family:var(--font-mono);font-size:26px;font-weight:600;line-height:1.1;}
+.kpi .sub{font-size:12px;color:var(--ink-3);}
+
+.grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;}
+@media (max-width:880px){.grid-2{grid-template-columns:1fr;}}
+.card{background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:18px 20px;}
+.card h3{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.card h3 span.muted{font-size:11.5px;font-weight:500;color:var(--ink-3);}
+
+.donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+.legend{display:flex;flex-direction:column;gap:10px;flex:1;min-width:160px;}
+.legend-row{display:flex;align-items:center;gap:9px;font-size:13px;}
+.legend-row .sw{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
+.legend-row .lbl{flex:1;}
+.legend-row .val{font-family:var(--font-mono);font-weight:600;}
+.legend-row .pct{color:var(--ink-3);font-size:12px;width:38px;text-align:right;}
+
+.barlist{display:flex;flex-direction:column;gap:11px;}
+.barlist-row{display:grid;grid-template-columns:150px 1fr 74px;align-items:center;gap:10px;font-size:12.5px;}
+.barlist-row .name{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.barlist-track{background:var(--hair);border-radius:4px;height:9px;overflow:hidden;}
+.barlist-track>i{display:block;height:100%;border-radius:4px;background:var(--seq-blue);}
+.barlist-row .amt{font-family:var(--font-mono);text-align:right;color:var(--ink-2);}
+
+.rows{display:flex;flex-direction:column;}
+.row-item{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--hair);}
+.row-item:last-child{border-bottom:none;}
+.row-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+.row-item .main{flex:1;min-width:0;}
+.row-item .n{font-family:var(--font-mono);font-size:12px;color:var(--ink-3);}
+.row-item .t{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.row-item .c{font-size:12px;color:var(--ink-3);}
+.row-item .go{border:1px solid var(--hair);background:transparent;color:var(--ink-2);padding:5px 11px;border-radius:7px;font-size:12px;cursor:pointer;flex:0 0 auto;}
+.row-item .go:hover{border-color:var(--accent-ink);color:var(--accent-ink);}
+
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+.pill.p-pendiente{background:var(--warning-wash);color:var(--warning);}
+.pill.p-proceso{background:var(--accent-wash);color:var(--accent-ink);}
+.pill.p-finalizado{background:var(--good-wash);color:var(--good);}
+.pill.p-critico{background:var(--critical-wash);color:var(--critical);}
+.pill.p-alerta{background:var(--warning-wash);color:var(--warning);}
+.pill.p-ok{background:var(--good-wash);color:var(--good);}
+.pill.p-aprobada{background:var(--good-wash);color:var(--good);}
+.pill.p-rechazada{background:var(--critical-wash);color:var(--critical);}
+.pill.p-comprado{background:var(--good-wash);color:var(--good);}
+.rolepill{background:var(--accent-wash);color:var(--accent-ink);padding:5px 11px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap;}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.chipset{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{border:1px solid var(--hair);background:var(--card);color:var(--ink-2);padding:7px 13px;border-radius:8px;font-size:12.5px;font-weight:500;cursor:pointer;}
+.chip.is-on{background:var(--ink);color:var(--stage);border-color:var(--ink);}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip.is-on{background:var(--accent-ink);color:#04202a;border-color:var(--accent-ink);}}
+:root[data-theme="dark"] .chip.is-on{background:var(--accent-ink);color:#04202a;border-color:var(--accent-ink);}
+.search{flex:1;min-width:220px;position:relative;}
+.search input{width:100%;padding:9px 13px 9px 34px;border-radius:8px;border:1px solid var(--hair);background:var(--card);color:var(--ink);font-size:13px;}
+.search input::placeholder{color:var(--ink-3);}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.5;}
+.hint{font-size:11.5px;color:var(--ink-3);}
+.selectbox select{border:1px solid var(--hair);background:var(--card);color:var(--ink);border-radius:8px;padding:9px 12px;font-size:12.5px;font-family:inherit;}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--hair);border-radius:12px;background:var(--card);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:720px;}
+thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);padding:11px 14px;border-bottom:1px solid var(--hair);white-space:nowrap;position:sticky;top:0;background:var(--card);}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--hair);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr.click{cursor:pointer;}
+tbody tr.click:hover{background:var(--card-2);}
+td.mono,th.num{font-family:var(--font-mono);}
+th.num,td.num{text-align:right;}
+.tname{font-weight:500;}
+.tsub{color:var(--ink-3);font-size:12px;}
+.tag{font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:3px 7px;border-radius:6px;background:var(--card-2);color:var(--ink-2);}
+
+.qcards{display:flex;flex-direction:column;gap:10px;}
+.qcard{background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.qcard .id{font-family:var(--font-mono);font-size:12px;color:var(--ink-3);}
+.qcard .cli{font-weight:600;font-size:14.5px;}
+.qcard .meta{color:var(--ink-3);font-size:12.5px;}
+.qcard .grow{flex:1;min-width:180px;}
+.qcard .amt{font-family:var(--font-mono);font-weight:600;font-size:16px;}
+.btnline{border:1px solid var(--hair);background:transparent;color:var(--ink-2);padding:7px 13px;border-radius:8px;font-size:12.5px;cursor:pointer;}
+.btnline:hover{border-color:var(--accent-ink);color:var(--accent-ink);}
+.btnline.go{border-color:var(--good);color:var(--good);}
+.btnline.no{border-color:var(--critical);color:var(--critical);}
+
+.note{border:1px dashed var(--hair);border-radius:10px;padding:11px 14px;font-size:12px;color:var(--ink-3);display:flex;gap:9px;align-items:flex-start;}
+.note svg{flex:0 0 auto;margin-top:1px;opacity:.7;}
+
+.opgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+.opcard{background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.opcard .who{display:flex;align-items:center;gap:10px;}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent-wash);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 auto;}
+.opcard .who .n{font-weight:600;font-size:13.5px;}
+.opcard .who .r{font-size:11.5px;color:var(--ink-3);}
+.opwarn{font-size:11px;color:var(--warning);display:flex;align-items:center;gap:5px;}
+.opwarn.ok{color:var(--ink-3);}
+.opstats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.opstat{background:var(--card-2);border-radius:8px;padding:8px 10px;}
+.opstat .v{font-family:var(--font-mono);font-weight:600;font-size:16px;}
+.opstat .l{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;}
+.opfoot{font-size:11.5px;color:var(--ink-3);border-top:1px solid var(--hair);padding-top:9px;}
+.opfoot b{color:var(--ink-2);font-weight:600;}
+
+.ring{width:52px;height:52px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--ring-c,var(--good)) calc(var(--p,0)*1%), var(--hair) 0);}
+.ring-hole{width:38px;height:38px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;font-weight:700;}
+.sector-head{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid var(--hair);border-radius:12px;background:var(--card);flex-wrap:wrap;}
+.sector-head .who{flex:1;min-width:160px;}
+.sector-head .who .n{font-weight:700;font-size:15px;}
+.sector-head .who .r{font-size:12px;color:var(--ink-3);}
+.tsel{border:1px solid var(--hair);background:var(--card);color:var(--ink);border-radius:7px;padding:6px 9px;font-size:12.5px;font-family:inherit;}
+.tobs{width:100%;min-width:150px;border:1px solid var(--hair);background:var(--card);color:var(--ink);border-radius:7px;padding:6px 9px;font-size:12.5px;font-family:inherit;}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field label{display:block;font-size:11px;color:var(--ink-3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+.field select,.field input,.field textarea{width:100%;border:1px solid var(--hair);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;}
+.field textarea{min-height:58px;resize:vertical;}
+.op-chip{border:1px solid var(--hair);background:var(--card);color:var(--ink-2);padding:6px 11px;border-radius:8px;font-size:12px;cursor:pointer;}
+.op-chip.is-on{background:var(--accent-ink);color:var(--card);border-color:var(--accent-ink);}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px;}
+.btn-primary{background:var(--accent-ink);color:var(--card);border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.formerr{font-size:12px;color:var(--critical);min-height:16px;margin:0;}
+
+.permtable td,.permtable th{text-align:center;}
+.permtable td:first-child,.permtable th:first-child{text-align:left;}
+.permtable input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent-ink);}
+.optag{border:1px solid var(--hair);background:var(--card-2);border-radius:8px;padding:6px 12px;font-size:12.5px;}
+.savebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.savehint{font-size:12px;color:var(--warning);}
+.sesscard{display:flex;align-items:center;gap:12px;}
+
+.scrim{position:fixed;inset:0;background:rgba(10,10,10,.4);z-index:20;}
+.scrim[hidden]{display:none;}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:min(480px,94vw);background:var(--card);border-left:1px solid var(--hair);z-index:21;display:flex;flex-direction:column;box-shadow:-18px 0 40px rgba(0,0,0,.18);}
+.drawer[hidden]{display:none;}
+.drawer-head{padding:20px 22px 14px;border-bottom:1px solid var(--hair);display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.drawer-head .n{font-family:var(--font-mono);color:var(--ink-3);font-size:12px;}
+.drawer-head h2{font-size:16.5px;margin-top:3px;}
+.drawer-close{border:none;background:var(--card-2);border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-2);flex:0 0 auto;}
+.drawer-body{padding:18px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:18px;flex:1;}
+.dfacts{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.dfact .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);}
+.dfact .v{font-size:14px;font-weight:600;margin-top:2px;}
+.compare{display:flex;flex-direction:column;gap:7px;}
+.compare-row{display:grid;grid-template-columns:60px 1fr 50px;align-items:center;gap:8px;font-size:12px;}
+.compare-track{background:var(--hair);border-radius:4px;height:10px;overflow:hidden;}
+.compare-track>i{display:block;height:100%;border-radius:4px;}
+.hist{display:flex;flex-direction:column;gap:0;}
+.hist-item{padding:10px 0;border-bottom:1px solid var(--hair);}
+.hist-item:last-child{border-bottom:none;}
+.hist-top{display:flex;justify-content:space-between;font-size:12.5px;gap:8px;}
+.hist-top .p{font-weight:600;}
+.hist-top .t{font-family:var(--font-mono);color:var(--ink-3);white-space:nowrap;}
+.hist-who{font-size:12px;color:var(--ink-3);margin-top:2px;}
+.hist-obs{font-size:12px;color:var(--ink-2);margin-top:5px;background:var(--card-2);padding:7px 9px;border-radius:7px;}
+.empty{font-size:12.5px;color:var(--ink-3);padding:14px 0;}
+h4.sec{font-size:13px;margin:0 0 8px;}
+
+@media (max-width:760px){
+  .rail{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);transition:transform .18s ease;z-index:30;}
+  .rail.is-open{transform:translateX(0);}
+  main{padding:18px 16px 50px;}
+  .topbar{padding:18px 16px 14px;}
+  .form-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="rail" id="rail">
+    <div>
+      <div class="rail-brand">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M3 20L11 4H15L23 20" stroke="#22d3ee" stroke-width="2" stroke-linejoin="round"/><path d="M8 20L13 9L18 20" stroke="#eceae6" stroke-width="2" stroke-linejoin="round"/></svg>
+        <div class="name">MEGA<b>CARTELES</b></div>
+      </div>
+      <div class="rail-tag">Panel rápido · prototipo F8</div>
+    </div>
+
+    <div class="fresh">
+      <div class="fresh-top"><span class="fresh-dot"></span>Datos actualizados hace <span class="fresh-time tabular" id="freshTime">0s</span></div>
+      <div class="fresh-bar"><i id="freshBar"></i></div>
+      <div class="fresh-note">Agregado precalculado · refresco cada 15 min (<span class="tabular">PAR-23</span>)</div>
+    </div>
+
+    <div class="role-switch">
+      <label for="roleSelect">Viendo como</label>
+      <select id="roleSelect"></select>
+    </div>
+
+    <nav class="rail-nav" id="nav"></nav>
+
+    <div class="rail-spacer"></div>
+    <div class="rail-foot">
+      Prototipo local — los formularios no guardan en ningún sistema real. Todas las vistas están replicadas; el selector de arriba simula la restricción por rol.
+    </div>
+  </aside>
+
+  <div class="stage">
+    <header class="topbar">
+      <div>
+        <h1 id="viewTitle">Inicio</h1>
+        <p id="viewSubtitle">Resumen de todos los proyectos activos</p>
+      </div>
+      <div class="topbar-actions"><span class="rolepill" id="roleTopPill"></span></div>
+    </header>
+
+    <main id="main">
+
+      <!-- INICIO -->
+      <section class="view is-active" data-view="inicio">
+        <div class="kpis" id="inicioKpis"></div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Estado de proyectos</h3>
+            <div class="donut-wrap">
+              <svg width="140" height="140" viewBox="0 0 140 140" id="donutSvg"></svg>
+              <div class="legend" id="donutLegend"></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Actividad reciente <span class="muted">últimos movimientos</span></h3>
+            <div class="rows" id="actividadRows"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Línea de tiempo <span class="muted">proyectos en proceso</span></h3>
+          <div class="rows" id="timelineRows"></div>
+        </div>
+      </section>
+
+      <!-- PROYECTOS -->
+      <section class="view" data-view="proyectos">
+        <div class="toolbar">
+          <div class="chipset" id="proyChips"></div>
+          <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="proySearch" placeholder="Buscar por N°, cliente o proyecto…"></div>
+        </div>
+        <p class="hint" id="proyHint"></p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>N° nota</th><th>Cliente</th><th>Proyecto</th><th>Estado</th><th class="num">Hs. est.</th><th class="num">Hs. real</th><th>Último proceso</th><th>Entrega</th></tr></thead>
+            <tbody id="proyBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- STOCK -->
+      <section class="view" data-view="stock">
+        <div class="kpis" id="stockKpis"></div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Distribución por categoría</h3>
+            <div class="barlist" id="catBars"></div>
+          </div>
+          <div class="card">
+            <h3>Top materiales <span class="muted">por salidas</span></h3>
+            <div class="barlist" id="topBars"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Registrar movimiento <span class="muted" id="movTypeLabel">Ingreso</span></h3>
+          <div class="chiprow" style="margin-bottom:12px;">
+            <button class="chip is-on" id="movIngresoBtn" type="button">Ingreso</button>
+            <button class="chip" id="movEgresoBtn" type="button">Egreso</button>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>Material</label><select id="movMaterial"></select></div>
+            <div class="field"><label>Cantidad</label><input type="number" id="movCantidad" min="0" step="0.1" placeholder="0.00"></div>
+            <div class="field"><label>Responsable</label><input id="movResponsable" placeholder="Nombre del responsable"></div>
+            <div class="field"><label>Proveedor / comprobante</label><input id="movProveedor" placeholder="Opcional"></div>
+          </div>
+          <p class="formerr" id="movErr"></p>
+          <button class="btn-primary" id="movSubmit" type="button">Registrar movimiento</button>
+        </div>
+        <div class="toolbar">
+          <div class="chipset" id="stockChips"></div>
+          <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="stockSearch" placeholder="Buscar por código o descripción…"></div>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th class="num">Disponible</th><th class="num">Reservado</th><th class="num">Mínimo</th><th>Estado</th></tr></thead>
+            <tbody id="stockBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- REVISION / REGISTROS -->
+      <section class="view" data-view="revision">
+        <div class="toolbar">
+          <div class="chipset" id="regChips"></div>
+        </div>
+        <div id="regOperadores" class="opgrid"></div>
+        <div class="card" id="regHistCard" style="display:none;">
+          <h3>Historial de producción <span class="muted">últimos registros</span></h3>
+          <div class="tablewrap">
+            <table>
+              <thead><tr><th>Fecha</th><th>Proceso</th><th>Operario</th><th>Proyecto</th><th class="num">Duración</th></tr></thead>
+              <tbody id="regHistBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- COTIZACIONES -->
+      <section class="view" data-view="cotizaciones">
+        <div class="kpis" id="cotKpis"></div>
+        <div class="toolbar">
+          <div class="chipset" id="cotChips"></div>
+        </div>
+        <div class="qcards" id="cotCards"></div>
+        <div class="note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>Aprobar/Rechazar actualiza este panel al instante, pero en el sistema real conviene que siga pasando por el cotizador (F3/F4) — acá es solo para completar la vista.</div>
+      </section>
+
+      <!-- CONTROL DE TALLER -->
+      <section class="view" data-view="taller">
+        <div class="toolbar">
+          <div class="chipset" id="tallerChips"></div>
+        </div>
+        <div class="sector-head" id="tallerHead"></div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Tipo</th><th>Ítem</th><th>Estado</th><th>Observación</th></tr></thead>
+            <tbody id="tallerBody"></tbody>
+          </table>
+        </div>
+        <div class="toolbar" style="justify-content:space-between;">
+          <p class="hint" id="tallerHint"></p>
+          <button class="btn-primary" id="tallerCompletar" type="button">Completar</button>
+        </div>
+      </section>
+
+      <!-- LISTA DE PRECIOS -->
+      <section class="view" data-view="precios">
+        <div class="toolbar">
+          <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="precSearch" placeholder="Buscar por código o descripción…"></div>
+          <div class="selectbox"><select id="precCat"></select></div>
+        </div>
+        <p class="hint" id="precHint"></p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Código</th><th>Descripción</th><th>Proveedor</th><th>Categoría</th><th>U. venta</th><th class="num">Costo unit.</th><th class="num">Margen ×3</th><th class="num">Margen ×6</th></tr></thead>
+            <tbody id="precBody"></tbody>
+          </table>
+        </div>
+        <div class="note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>La tabla real de AppSheet trae más columnas (unidad de compra, factor, precio bruto, IVA). Se simplificó acá a costo + 2 niveles de margen.</div>
+      </section>
+
+      <!-- COMPRAS -->
+      <section class="view" data-view="compras">
+        <div class="kpis" id="comprasKpis"></div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Código</th><th>Descripción</th><th>Proveedor</th><th class="num">Cant. sugerida</th><th>Origen</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+            <tbody id="comprasBody"></tbody>
+          </table>
+        </div>
+        <div class="note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><b style="color:var(--ink-2)">Vista inferida:</b>&nbsp;no había captura real de Compras entre las 10 fotos — se armó a partir de la tabla <code>COMPRAS</code> del xlsx. Confirmar el diseño real antes de darla por buena.</div>
+      </section>
+
+      <!-- CONFIGURACION -->
+      <section class="view" data-view="config">
+        <div class="card">
+          <h3>Sesión simulada</h3>
+          <div class="sesscard"><div class="avatar" id="sessAvatar"></div><div><div style="font-weight:700;" id="sessName"></div><div class="tsub" id="sessRole"></div></div></div>
+        </div>
+        <div class="card">
+          <h3>Operarios registrados</h3>
+          <div class="chiprow" id="operariosChips"></div>
+        </div>
+        <div class="card">
+          <h3>Habilitación de módulos por rol <span class="muted">controla lo que ve cada rol en el selector de la izquierda</span></h3>
+          <div class="tablewrap">
+            <table class="permtable">
+              <thead><tr id="permHead"></tr></thead>
+              <tbody id="permBody"></tbody>
+            </table>
+          </div>
+          <p class="hint" style="margin-top:8px;">* El módulo Inicio es obligatorio para todos los roles.</p>
+          <div class="savebar" style="margin-top:10px;">
+            <button class="btn-primary" id="permSave" type="button">Guardar cambios</button>
+            <span class="savehint" id="permHint"></span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden>
+  <div class="drawer-head">
+    <div><div class="n" id="drawerN"></div><h2 id="drawerTitle"></h2></div>
+    <button class="drawer-close" id="drawerClose" aria-label="Cerrar">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<script>
+(function(){
+"use strict";
+var TODAY = "01/09/2026";
+
+/* ================= DATA (de muestra — estructura real, valores inventados) ================= */
+
+var PROCESOS = ["Corte de Chapa","Armado de Estructura","Soldadura","Esmerilado / Pintura","Armado de Acrílico","Corte de Acrílico","Impresión","Corte de Vinilo","Montaje","Iluminación","Desmontaje","Embalaje / Preparación"];
+
+var OPERARIOS = ["Martín Aguirre","Sofía Kessler","Diego Ferretti","Lucía Mendoza","Braian Sosa","Karina Duarte"];
+
+var PROYECTOS = [
+  {id:100201, cliente:"Ferretería Suárez", proyecto:"Cartel luminoso chapa 3,20 × 0,90 m", estado:"finalizado", hsEst:18, hsReal:16.5, ultimo:"Montaje", entrega:"14/08/2026",
+    hist:[{f:"12/08/2026",p:"Montaje",op:"Diego Ferretti, Karina Duarte",min:180},{f:"10/08/2026",p:"Soldadura",op:"Martín Aguirre",min:240},{f:"07/08/2026",p:"Corte de Chapa",op:"Braian Sosa",min:150}]},
+  {id:100202, cliente:"Farmacia San Martín", proyecto:"Cruz chapa/acrílico iluminada 1,35 × 1,45 m", estado:"finalizado", hsEst:14, hsReal:15.2, ultimo:"Iluminación", entrega:"18/08/2026",
+    hist:[{f:"17/08/2026",p:"Iluminación",op:"Karina Duarte",min:120},{f:"15/08/2026",p:"Armado de Acrílico",op:"Sofía Kessler",min:200}]},
+  {id:100203, cliente:"Panadería El Trigal", proyecto:"Letras corpóreas ACM 2,50 m", estado:"proceso", hsEst:22, hsReal:14.8, ultimo:"Soldadura", entrega:"—",
+    hist:[{f:"31/08/2026",p:"Soldadura",op:"Martín Aguirre",min:220,obs:"Falta soldar 2 letras, se corta por horario de taller"},{f:"28/08/2026",p:"Corte de Chapa",op:"Braian Sosa",min:180},{f:"26/08/2026",p:"Armado de Estructura",op:"Diego Ferretti",min:190}]},
+  {id:100204, cliente:"Gomería Rutas", proyecto:"Tótem chapa galvanizada 4,00 × 1,20 m", estado:"proceso", hsEst:30, hsReal:19.4, ultimo:"Corte de Chapa", entrega:"—",
+    hist:[{f:"31/08/2026",p:"Corte de Chapa",op:"Braian Sosa",min:210},{f:"29/08/2026",p:"Armado de Estructura",op:"Diego Ferretti",min:260},{f:"24/08/2026",p:"Corte de Chapa",op:"Braian Sosa",min:200}]},
+  {id:100205, cliente:"Óptica Central", proyecto:"Logo PVC espumado ducco 1,80 × 0,60 m", estado:"finalizado", hsEst:9, hsReal:8.1, ultimo:"Montaje", entrega:"05/08/2026",
+    hist:[{f:"05/08/2026",p:"Montaje",op:"Karina Duarte",min:90}]},
+  {id:100206, cliente:"Distribuidora Norte", proyecto:"Cartel frente local ACM 6,50 × 1,10 m", estado:"finalizado", hsEst:26, hsReal:29.6, ultimo:"Montaje", entrega:"22/08/2026",
+    hist:[{f:"22/08/2026",p:"Montaje",op:"Diego Ferretti, Braian Sosa",min:300,obs:"Frente irregular, se agregó una visita extra de medición"}]},
+  {id:100207, cliente:"Estudio Jurídico Vega", proyecto:"Señalética interior MDF (12 unidades)", estado:"finalizado", hsEst:12, hsReal:10.9, ultimo:"Embalaje / Preparación", entrega:"11/08/2026", hist:[]},
+  {id:100208, cliente:"Supermercado Los Andes", proyecto:"Banderola lona 3,00 × 1,00 m (x6)", estado:"finalizado", hsEst:5, hsReal:4.5, ultimo:"Corte de Vinilo", entrega:"02/08/2026", hist:[]},
+  {id:100209, cliente:"Clínica Vida", proyecto:"Vinilo impreso vidriera 8,40 × 2,10 m", estado:"pendiente", hsEst:7, hsReal:0, ultimo:"—", entrega:"—", hist:[]},
+  {id:100210, cliente:"Automotores Bianchi", proyecto:"Marquesina chapa + acrílico 5,00 × 0,80 m", estado:"proceso", hsEst:24, hsReal:11.2, ultimo:"Armado de Acrílico", entrega:"—",
+    hist:[{f:"30/08/2026",p:"Armado de Acrílico",op:"Sofía Kessler",min:180},{f:"27/08/2026",p:"Corte de Chapa",op:"Braian Sosa",min:150}]},
+  {id:100211, cliente:"Ferretería Suárez", proyecto:"Letras PVC ducco blanco 1,60 m", estado:"finalizado", hsEst:6, hsReal:5.4, ultimo:"Montaje", entrega:"09/08/2026", hist:[]},
+  {id:100212, cliente:"Panadería El Trigal", proyecto:"Cartel de pilar chapa 2,20 × 3,00 m", estado:"pendiente", hsEst:20, hsReal:0, ultimo:"—", entrega:"—", hist:[]},
+  {id:100213, cliente:"Farmacia San Martín", proyecto:"Exhibidor de mostrador acrílico", estado:"finalizado", hsEst:8, hsReal:7.2, ultimo:"Armado de Acrílico", entrega:"29/07/2026", hist:[]},
+  {id:100214, cliente:"Óptica Central", proyecto:"Logo recepción MDF + vinilo dorado", estado:"proceso", hsEst:10, hsReal:6.5, ultimo:"Corte de Vinilo", entrega:"—",
+    hist:[{f:"31/08/2026",p:"Corte de Vinilo",op:"Sofía Kessler",min:150},{f:"29/08/2026",p:"Corte de Chapa",op:"Braian Sosa",min:90}]},
+  {id:100215, cliente:"Distribuidora Norte", proyecto:"Cartel de obra chapa 2,00 × 1,00 m", estado:"pendiente", hsEst:9, hsReal:0, ultimo:"—", entrega:"—", hist:[]},
+  {id:100216, cliente:"Gomería Rutas", proyecto:"Banderolas lona promocionales (x10)", estado:"finalizado", hsEst:6, hsReal:5.8, ultimo:"Embalaje / Preparación", entrega:"25/07/2026", hist:[]},
+  {id:100217, cliente:"Clínica Vida", proyecto:"Cartel direccional PVC interior", estado:"finalizado", hsEst:4, hsReal:3.6, ultimo:"Montaje", entrega:"20/07/2026", hist:[]},
+  {id:100218, cliente:"Supermercado Los Andes", proyecto:"Tótem de precios chapa 2,00 × 3,50 m", estado:"finalizado", hsEst:28, hsReal:31.0, ultimo:"Montaje", entrega:"30/07/2026", hist:[]},
+  {id:100219, cliente:"Automotores Bianchi", proyecto:"Letras corpóreas chapa iluminadas 3,00 m", estado:"finalizado", hsEst:20, hsReal:18.3, ultimo:"Iluminación", entrega:"12/07/2026", hist:[]},
+  {id:100220, cliente:"Estudio Jurídico Vega", proyecto:"Cartel de puerta acrílico grabado", estado:"finalizado", hsEst:3, hsReal:2.8, ultimo:"Montaje", entrega:"08/07/2026", hist:[]}
+];
+
+var COTIZACIONES = [
+  {id:"COT-2026-014", cliente:"Distribuidora Norte", items:3, total:1850000, estado:"aprobada", fecha:"12/08/2026"},
+  {id:"COT-2026-015", cliente:"Clínica Vida", items:2, total:640000, estado:"pendiente", fecha:"20/08/2026"},
+  {id:"COT-2026-016", cliente:"Automotores Bianchi", items:4, total:2980000, estado:"aprobada", fecha:"22/08/2026"},
+  {id:"COT-2026-017", cliente:"Panadería El Trigal", items:1, total:210000, estado:"rechazada", fecha:"25/08/2026"},
+  {id:"COT-2026-018", cliente:"Óptica Central", items:2, total:415000, estado:"pendiente", fecha:"28/08/2026"},
+  {id:"COT-2026-019", cliente:"Ferretería Suárez", items:3, total:1120000, estado:"aprobada", fecha:"30/08/2026"}
+];
+
+var STOCK_CATS = [
+  {n:"ILUMINACIÓN", v:55},{n:"CHAPA", v:42},{n:"ACRÍLICOS", v:38},{n:"PINTURA", v:33},
+  {n:"PVC", v:27},{n:"BULONERÍA / ANCLAJE", v:24},{n:"MDF", v:21},{n:"VINILOS DE IMPRESIÓN", v:17}
+];
+var STOCK_TOP = [
+  {c:"CHA0011", d:"Chapa negra 1,22×2,44 cal.20", v:96, u:"m²"},
+  {c:"LED0006", d:"Leds zigzag cálido", v:74, u:"un."},
+  {c:"ACR0002", d:"Acrílico cristal 1,22×2,44 3mm", v:58, u:"m²"},
+  {c:"VIN0014", d:"Vinilo de corte blanco", v:210, u:"m.lin."},
+  {c:"TOR0003", d:"Tornillo autoperforante 8×1", v:480, u:"un."}
+];
+var STOCK_ROWS = [
+  {c:"CHA0009", d:"Chapa negra 1,22×2,44 cal.16", cat:"CHAPA", disp:8.4, res:2.1, min:15, u:"m²", estado:"critico"},
+  {c:"CHA0011", d:"Chapa negra 1,22×2,44 cal.20", cat:"CHAPA", disp:34.6, res:6.0, min:20, u:"m²", estado:"ok"},
+  {c:"CHA0014", d:"Chapa galvanizada 1,22×2,44 cal.20", cat:"CHAPA", disp:11.2, res:4.4, min:18, u:"m²", estado:"alerta"},
+  {c:"ACR0002", d:"Acrílico cristal 1,22×2,44 3mm", cat:"ACRÍLICOS", disp:22.0, res:3.0, min:10, u:"m²", estado:"ok"},
+  {c:"LED0006", d:"Leds zigzag cálido", cat:"ILUMINACIÓN", disp:40, res:15, min:30, u:"un.", estado:"alerta"},
+  {c:"MDF0002", d:"MDF 1,83×2,60 5mm", cat:"MDF", disp:6, res:1, min:8, u:"un.", estado:"critico"},
+  {c:"PVC0001", d:"PVC espumado 1,22×2,44 3mm", cat:"PVC", disp:18, res:2, min:10, u:"m²", estado:"ok"},
+  {c:"PIN0004", d:"Pintura ducco blanco satinado 1L", cat:"PINTURA", disp:12, res:3, min:10, u:"L", estado:"alerta"},
+  {c:"TOR0003", d:"Tornillo autoperforante 8×1", cat:"BULONERÍA / ANCLAJE", disp:850, res:120, min:500, u:"un.", estado:"ok"},
+  {c:"VIN0014", d:"Vinilo de corte blanco", cat:"VINILOS DE IMPRESIÓN", disp:45, res:10, min:40, u:"m.lin.", estado:"alerta"}
+];
+
+var TALLER_SECTORES = [
+  {key:"pintura", nombre:"Pintura", responsable:"Lucía Mendoza", items:[
+    {tipo:"EQUIPO", item:"Máscara de Pintura", estado:"", obs:""},
+    {tipo:"EQUIPO", item:"Compresor de Aire", estado:"", obs:""},
+    {tipo:"EQUIPO", item:"Pistolas de Pintura", estado:"", obs:""},
+    {tipo:"LIMPIEZA", item:"Mesa de Trabajo", estado:"", obs:""},
+    {tipo:"LIMPIEZA", item:"Zona de Residuos", estado:"", obs:""},
+    {tipo:"LIMPIEZA", item:"Piso y Paredes del Sector", estado:"", obs:""},
+    {tipo:"INSUMO", item:"Lijas", estado:"", obs:""},
+    {tipo:"INSUMO", item:"Pinturas / Diluyentes", estado:"", obs:""},
+    {tipo:"INSUMO", item:"Thinner / Acetona", estado:"", obs:""}
+  ]},
+  {key:"soldadura", nombre:"Soldadura", responsable:"Martín Aguirre", items:[
+    {tipo:"EQUIPO", item:"Máscara de Soldar", estado:"ok", obs:""},
+    {tipo:"EQUIPO", item:"Soldadora Inverter", estado:"ok", obs:""},
+    {tipo:"EQUIPO", item:"Amoladora Angular", estado:"mantenimiento", obs:"Cambiar cable de alimentación"},
+    {tipo:"LIMPIEZA", item:"Mesa de Soldar", estado:"ok", obs:""},
+    {tipo:"LIMPIEZA", item:"Zona de Chispas", estado:"ok", obs:""},
+    {tipo:"INSUMO", item:"Electrodos", estado:"ok", obs:""},
+    {tipo:"INSUMO", item:"Discos de Corte", estado:"ok", obs:""},
+    {tipo:"INSUMO", item:"Guantes de Cuero", estado:"ok", obs:""}
+  ]},
+  {key:"corte", nombre:"Corte de Chapa", responsable:"Braian Sosa", items:[
+    {tipo:"EQUIPO", item:"Guillotina", estado:"ok", obs:""},
+    {tipo:"EQUIPO", item:"Plegadora", estado:"ok", obs:""},
+    {tipo:"EQUIPO", item:"Sierra Sin Fin", estado:"fuera", obs:"En reparación, se está usando la de respaldo"},
+    {tipo:"LIMPIEZA", item:"Rack de Chapa", estado:"ok", obs:""},
+    {tipo:"LIMPIEZA", item:"Piso del Sector", estado:"", obs:""},
+    {tipo:"INSUMO", item:"Lubricante de Corte", estado:"ok", obs:""},
+    {tipo:"INSUMO", item:"Guantes Anticorte", estado:"ok", obs:""}
+  ]}
+];
+var TALLER_ESTADOS = {"":"— Seleccionar —", ok:"En buen estado", mantenimiento:"Necesita mantenimiento", fuera:"Fuera de servicio"};
+
+var LISTA_PRECIOS = [
+  {c:"CHA0007", d:"Chapa negra 1,00×2,00 cal.20", prov:"Metalúrgica Sur", cat:"CHAPA", u:"M2", costo:9800, m3:29400, m6:58800},
+  {c:"CHA0011", d:"Chapa negra 1,22×2,44 cal.20", prov:"Metalúrgica Sur", cat:"CHAPA", u:"M2", costo:13700, m3:41100, m6:82200},
+  {c:"CHA0014", d:"Chapa galvanizada 1,22×2,44 cal.20", prov:"Metalúrgica Sur", cat:"CHAPA", u:"M2", costo:15200, m3:45600, m6:91200},
+  {c:"ACR0001", d:"Acrílico blanco traslúcido 1,22×2,44 2mm", prov:"Plásticos del Litoral", cat:"ACRILICOS", u:"M2", costo:12300, m3:36900, m6:73800},
+  {c:"ACR0002", d:"Acrílico cristal 1,22×2,44 3mm", prov:"Plásticos del Litoral", cat:"ACRILICOS", u:"M2", costo:15800, m3:47400, m6:94800},
+  {c:"ACR0005", d:"Acrílico color a elección 1,22×2,44 3mm", prov:"Plásticos del Litoral", cat:"ACRILICOS", u:"M2", costo:17200, m3:51600, m6:103200},
+  {c:"MDF0002", d:"MDF 1,83×2,60 5mm", prov:"Maderas del Este", cat:"MDF", u:"UNIDAD", costo:33500, m3:100500, m6:201000},
+  {c:"MDF0004", d:"MDF 1,83×2,60 9mm", prov:"Maderas del Este", cat:"MDF", u:"UNIDAD", costo:41200, m3:123600, m6:247200},
+  {c:"LED0003", d:"Leds neón flex frío", prov:"IluminaTec", cat:"ILUMINACION", u:"METROS LINEALES", costo:4900, m3:14700, m6:29400},
+  {c:"LED0006", d:"Leds zigzag cálido", prov:"IluminaTec", cat:"ILUMINACION", u:"UNIDAD", costo:5100, m3:15300, m6:30600},
+  {c:"FUE0002", d:"Fuente metálica 12V - 10A", prov:"IluminaTec", cat:"ILUMINACION", u:"UNIDAD", costo:22800, m3:68400, m6:136800},
+  {c:"PVC0001", d:"PVC espumado 1,22×2,44 3mm", prov:"Polímeros Andina", cat:"PVC", u:"M2", costo:14100, m3:42300, m6:84600},
+  {c:"PVC0003", d:"PVC espumado 1,22×2,44 5mm", prov:"Polímeros Andina", cat:"PVC", u:"M2", costo:18700, m3:56100, m6:112200},
+  {c:"PIN0004", d:"Pintura ducco blanco satinado 1L", prov:"Pinturas Cardinal", cat:"PINTURA", u:"LITROS", costo:29500, m3:88500, m6:177000}
+];
+
+var COMPRAS = [
+  {c:"CHA0009", d:"Chapa negra 1,22×2,44 cal.16", prov:"Metalúrgica Sur", cant:40, u:"M2", np:100203, cli:"Panadería El Trigal", estado:"pendiente", fecha:"30/08/2026"},
+  {c:"MDF0002", d:"MDF 1,83×2,60 5mm", prov:"Maderas del Este", cant:6, u:"UNIDAD", np:100207, cli:"Estudio Jurídico Vega", estado:"comprado", fecha:"20/08/2026"},
+  {c:"LED0006", d:"Leds zigzag cálido", prov:"IluminaTec", cant:30, u:"UNIDAD", np:100202, cli:"Farmacia San Martín", estado:"pendiente", fecha:"29/08/2026"},
+  {c:"VIN0014", d:"Vinilo de corte blanco", prov:"Gráfica Insumos", cant:60, u:"METROS LINEALES", np:100214, cli:"Óptica Central", estado:"pendiente", fecha:"31/08/2026"},
+  {c:"TOR0003", d:"Tornillo autoperforante 8×1", prov:"Ferretería Industrial", cant:1000, u:"UNIDAD", np:100206, cli:"Distribuidora Norte", estado:"comprado", fecha:"18/08/2026"},
+  {c:"ACR0002", d:"Acrílico cristal 1,22×2,44 3mm", prov:"Plásticos del Litoral", cant:12, u:"M2", np:100213, cli:"Farmacia San Martín", estado:"comprado", fecha:"22/07/2026"},
+  {c:"PIN0004", d:"Pintura ducco blanco satinado 1L", prov:"Pinturas Cardinal", cant:8, u:"LITROS", np:100201, cli:"Ferretería Suárez", estado:"pendiente", fecha:"05/08/2026"},
+  {c:"CHA0014", d:"Chapa galvanizada 1,22×2,44 cal.20", prov:"Metalúrgica Sur", cant:25, u:"M2", np:100204, cli:"Gomería Rutas", estado:"pendiente", fecha:"28/08/2026"}
+];
+
+var REGISTROS_OP = [
+  {n:"Martín Aguirre", rol:"Soldador", hs:86.5, activos:3, proc:"Soldadura", ultimo:"30/08/2026", dias:2},
+  {n:"Sofía Kessler", rol:"Diseñadora", hs:41.0, activos:2, proc:"Corte de Vinilo", ultimo:"29/08/2026", dias:3},
+  {n:"Diego Ferretti", rol:"Armador de Estructuras", hs:102.3, activos:4, proc:"Armado de Estructura", ultimo:"31/08/2026", dias:1},
+  {n:"Lucía Mendoza", rol:"Pintora", hs:58.7, activos:2, proc:"Esmerilado / Pintura", ultimo:"18/08/2026", dias:14},
+  {n:"Braian Sosa", rol:"Operario de Corte", hs:73.2, activos:3, proc:"Corte de Chapa", ultimo:"27/08/2026", dias:5},
+  {n:"Karina Duarte", rol:"Coordinadora de Producción", hs:24.0, activos:5, proc:"Montaje", ultimo:"31/08/2026", dias:1}
+];
+
+var REGISTROS_LOG = (function(){
+  var log=[];
+  PROYECTOS.forEach(function(pr){(pr.hist||[]).forEach(function(h){
+    log.push({f:h.f,p:h.p,op:h.op,proy:pr.proyecto,min:h.min});
+  });});
+  return log.sort(function(a,b){return b.f.localeCompare(a.f);});
+})();
+
+/* ================= roles y permisos (Configuración → Habilitación de Módulos por Rol) ================= */
+var MODULES = [
+  {k:"inicio", label:"Inicio"},
+  {k:"proyectos", label:"Proyectos"},
+  {k:"stock", label:"Stock"},
+  {k:"revision", label:"Registros"},
+  {k:"cotizaciones", label:"Cotizaciones"},
+  {k:"taller", label:"Control de Taller"},
+  {k:"precios", label:"Lista de Precios"},
+  {k:"compras", label:"Compras"},
+  {k:"config", label:"Configuración"}
+];
+var ROLE_META = {
+  operario:        {label:"Operario", sample:"Braian Sosa"},
+  disenador:       {label:"Diseñador", sample:"Sofía Kessler"},
+  jefe_taller:     {label:"Jefe de Taller", sample:"Rubén Ibáñez"},
+  coord_proyectos: {label:"Coordinador de Proyectos", sample:"Valeria Nuñez"},
+  coord_fabrica:   {label:"Coordinadora de Fábrica", sample:"Karina Duarte"},
+  gerente:         {label:"Gerente General", sample:"Aníbal Domínguez"}
+};
+var ROLE_ORDER = ["operario","disenador","jefe_taller","coord_proyectos","coord_fabrica","gerente"];
+var PERMS = {
+  operario:        {inicio:true, proyectos:true,  stock:false, revision:false, cotizaciones:false, taller:true,  precios:true, compras:true, config:false},
+  disenador:       {inicio:true, proyectos:true,  stock:false, revision:false, cotizaciones:true,  taller:true,  precios:true, compras:true, config:false},
+  jefe_taller:     {inicio:true, proyectos:true,  stock:false, revision:true,  cotizaciones:false, taller:true,  precios:true, compras:true, config:false},
+  coord_proyectos: {inicio:true, proyectos:true,  stock:true,  revision:true,  cotizaciones:true,  taller:true,  precios:true, compras:true, config:true},
+  coord_fabrica:   {inicio:true, proyectos:true,  stock:true,  revision:true,  cotizaciones:true,  taller:true,  precios:true, compras:true, config:true},
+  gerente:         {inicio:true, proyectos:true,  stock:true,  revision:true,  cotizaciones:true,  taller:true,  precios:true, compras:true, config:true}
+};
+var configDraft = JSON.parse(JSON.stringify(PERMS));
+var currentRole = "gerente";
+
+/* ================= helpers ================= */
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
+function money(n){return "$"+Math.round(n).toLocaleString("es-AR");}
+function pillEstado(e){
+  var map={pendiente:["p-pendiente","Pendiente"],proceso:["p-proceso","En proceso"],finalizado:["p-finalizado","Finalizado"],
+           critico:["p-critico","Crítico"],alerta:["p-alerta","Alerta"],ok:["p-ok","OK"],
+           aprobada:["p-aprobada","Aprobada"],rechazada:["p-rechazada","Rechazada"],comprado:["p-comprado","Comprado"]};
+  var m = map[e] || ["p-ok",e];
+  return '<span class="pill '+m[0]+'">'+m[1]+'</span>';
+}
+function initials(name){return name.split(" ").map(function(p){return p[0];}).join("").slice(0,2).toUpperCase();}
+
+/* ================= nav / view switching ================= */
+var VIEW_META = {
+  inicio:{title:"Inicio", sub:"Resumen de todos los proyectos activos"},
+  proyectos:{title:"Proyectos", sub:"Listado completo de notas de pedido y su estado"},
+  stock:{title:"Stock e Inventario", sub:"Análisis y control de materiales en depósito"},
+  revision:{title:"Registros", sub:"Control de producción y operarios"},
+  cotizaciones:{title:"Cotizaciones", sub:"Presupuestos generados por el equipo de ventas"},
+  taller:{title:"Control de Taller", sub:"Checklist diario de equipos, limpieza e insumos"},
+  precios:{title:"Lista de Precios", sub:"Catálogo de materiales y márgenes"},
+  compras:{title:"Compras", sub:"Sugerencias de compra por faltante de stock"},
+  config:{title:"Configuración", sub:"Roles, permisos y usuarios"}
+};
+var NAV_ICONS = {
+  inicio:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+  proyectos:'<path d="M3 7a1.5 1.5 0 0 1 1.5-1.5H9l2 2h8.5A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18Z"/>',
+  stock:'<path d="M3 8.5 12 4l9 4.5-9 4.5-9-4.5Z"/><path d="M3 8.5V16l9 4.5 9-4.5V8.5M12 13v7.5"/>',
+  revision:'<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="18" cy="9" r="2.4"/><path d="M15.5 20a4 4 0 0 1 7 0"/>',
+  cotizaciones:'<path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M9 12h7M9 16h5"/>',
+  taller:'<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L5 16l3 3 4.3-4.3a4 4 0 0 1 5.4-5.4l-2.5 2.5-2-2 2.5-2.5Z"/>',
+  precios:'<path d="M3 11.5V4h7.5L21 14.5 13.5 22 3 11.5Z"/><circle cx="7.5" cy="8.5" r="1.3"/>',
+  compras:'<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L21 8H6"/>',
+  config:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'
+};
+var NAV_ORDER = ["inicio","proyectos","stock","revision","cotizaciones","taller","precios","compras","config"];
+
+/* nav uses shorter labels than page titles for a tighter sidebar */
+var NAV_LABEL = {inicio:"Inicio",proyectos:"Proyectos",stock:"Stock",revision:"Revisión Diaria",cotizaciones:"Cotizaciones",taller:"Control Taller",precios:"Lista de Precios",compras:"Compras",config:"Configuración"};
+function buildNav(){
+  document.getElementById("nav").innerHTML = NAV_ORDER.map(function(k){
+    return '<button class="rail-btn'+(k==="inicio"?" is-active":"")+'" data-view="'+k+'">'+
+      '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'+NAV_ICONS[k]+'</svg>'+NAV_LABEL[k]+
+      '</button>';
+  }).join("");
+}
+buildNav();
+
+function showView(name){
+  document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("is-active", v.dataset.view===name);});
+  document.querySelectorAll(".rail-btn").forEach(function(b){b.classList.toggle("is-active", b.dataset.view===name);});
+  document.getElementById("viewTitle").textContent = VIEW_META[name].title;
+  document.getElementById("viewSubtitle").textContent = VIEW_META[name].sub;
+  document.getElementById("rail").classList.remove("is-open");
+}
+document.getElementById("nav").addEventListener("click", function(e){
+  var b = e.target.closest(".rail-btn"); if(!b) return;
+  showView(b.dataset.view);
+});
+
+/* role select */
+(function(){
+  var sel=document.getElementById("roleSelect");
+  sel.innerHTML = ROLE_ORDER.map(function(r){return '<option value="'+r+'">'+ROLE_META[r].label+'</option>';}).join("");
+  sel.value = currentRole;
+  sel.addEventListener("change", function(){ applyRoleFilter(this.value); });
+})();
+
+function applyRoleFilter(role){
+  currentRole = role;
+  document.querySelectorAll(".rail-btn").forEach(function(b){
+    var mod=b.dataset.view;
+    var allowed = mod==="inicio" || (PERMS[role] && PERMS[role][mod]);
+    b.style.display = allowed ? "" : "none";
+  });
+  var active=document.querySelector(".rail-btn.is-active");
+  if(active && active.style.display==="none"){ showView("inicio"); }
+  document.getElementById("roleTopPill").textContent = ROLE_META[role].label+" · "+ROLE_META[role].sample;
+  renderConfigSession();
+}
+
+/* ================= INICIO ================= */
+function renderInicio(){
+  var total=PROYECTOS.length;
+  var byEstado={pendiente:0,proceso:0,finalizado:0};
+  PROYECTOS.forEach(function(p){byEstado[p.estado]++;});
+
+  var kpis=[
+    {label:"Pendientes", value:byEstado.pendiente, sub:"Esperando inicio", c:"var(--warning)"},
+    {label:"En proceso", value:byEstado.proceso, sub:"En producción activa", c:"var(--cat-blue)"},
+    {label:"Finalizados", value:byEstado.finalizado, sub:"Proyectos completados", c:"var(--good)"},
+    {label:"Total", value:total, sub:"Todos los proyectos", c:"var(--ink-3)"}
+  ];
+  document.getElementById("inicioKpis").innerHTML = kpis.map(function(k){
+    return '<div class="kpi" style="--kpi-c:'+k.c+'"><div class="label">'+k.label+'</div><div class="value tabular">'+k.value+'</div><div class="sub">'+k.sub+'</div></div>';
+  }).join("");
+
+  var segs=[["proceso","cat-blue"],["pendiente","warning"],["finalizado","good"]];
+  var r=58,cx=70,cy=70,circ=2*Math.PI*r,offset=0,svg="";
+  segs.forEach(function(s){
+    var val=byEstado[s[0]], frac=val/total, len=frac*circ;
+    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="var(--'+s[1]+')" stroke-width="16" '+
+         'stroke-dasharray="'+len+' '+(circ-len)+'" stroke-dashoffset="'+(-offset)+'" transform="rotate(-90 '+cx+' '+cy+')"/>';
+    offset+=len;
+  });
+  document.getElementById("donutSvg").innerHTML = svg +
+    '<text x="70" y="66" text-anchor="middle" font-family="IBM Plex Mono" font-size="22" font-weight="600" fill="var(--ink)">'+total+'</text>'+
+    '<text x="70" y="84" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" fill="var(--ink-3)">total</text>';
+
+  var legendMap={pendiente:["warning","Pendiente"],proceso:["cat-blue","En proceso"],finalizado:["good","Finalizado"]};
+  document.getElementById("donutLegend").innerHTML = Object.keys(legendMap).map(function(k){
+    var v=byEstado[k], pct=Math.round(v/total*100);
+    return '<div class="legend-row"><span class="sw" style="background:var(--'+legendMap[k][0]+')"></span><span class="lbl">'+legendMap[k][1]+'</span><span class="val tabular">'+v+'</span><span class="pct">'+pct+'%</span></div>';
+  }).join("");
+
+  var activos = PROYECTOS.filter(function(p){return p.estado==="proceso";}).sort(function(a,b){return b.hsReal-a.hsReal;});
+  document.getElementById("timelineRows").innerHTML = activos.map(function(p){
+    return '<div class="row-item"><span class="row-dot" style="background:var(--cat-blue)"></span>'+
+      '<div class="main"><span class="n">N°'+p.id+'</span> · <span class="t">'+esc(p.proyecto)+'</span><div class="c">'+esc(p.cliente)+' · último proceso: '+esc(p.ultimo)+'</div></div>'+
+      '<button class="go" data-open="'+p.id+'">Ver</button></div>';
+  }).join("") || '<div class="empty">No hay proyectos en proceso.</div>';
+
+  var actividad = REGISTROS_LOG.slice(0,6);
+  document.getElementById("actividadRows").innerHTML = actividad.map(function(h){
+    return '<div class="row-item"><span class="row-dot" style="background:var(--cat-blue)"></span>'+
+      '<div class="main"><span class="t">'+esc(h.p)+'</span><div class="c">'+esc(h.proy)+' · '+esc(h.op)+' · '+h.f+'</div></div></div>';
+  }).join("");
+}
+
+/* ================= PROYECTOS ================= */
+var proyFilter="todos", proyQuery="";
+function renderProyChips(){
+  var counts={todos:PROYECTOS.length,pendiente:0,proceso:0,finalizado:0};
+  PROYECTOS.forEach(function(p){counts[p.estado]++;});
+  var defs=[["todos","Todos"],["pendiente","Pendiente"],["proceso","En proceso"],["finalizado","Finalizado"]];
+  document.getElementById("proyChips").innerHTML = defs.map(function(d){
+    return '<button class="chip'+(proyFilter===d[0]?" is-on":"")+'" data-f="'+d[0]+'">'+d[1]+' ('+counts[d[0]]+')</button>';
+  }).join("");
+}
+function renderProyTable(){
+  var q=proyQuery.trim().toLowerCase();
+  var rows=PROYECTOS.filter(function(p){
+    if(proyFilter!=="todos" && p.estado!==proyFilter) return false;
+    if(!q) return true;
+    return (""+p.id).indexOf(q)>=0 || p.cliente.toLowerCase().indexOf(q)>=0 || p.proyecto.toLowerCase().indexOf(q)>=0;
+  });
+  document.getElementById("proyHint").textContent = rows.length+" de "+PROYECTOS.length+" proyectos · filtro instantáneo, sin ida y vuelta al servidor";
+  document.getElementById("proyBody").innerHTML = rows.map(function(p){
+    return '<tr class="click" data-open="'+p.id+'"><td class="mono">N°'+p.id+'</td><td class="tname">'+esc(p.cliente)+'</td><td>'+esc(p.proyecto)+'</td>'+
+      '<td>'+pillEstado(p.estado)+'</td><td class="num mono">'+(p.hsEst||"—")+'</td><td class="num mono">'+(p.hsReal?p.hsReal.toFixed(1):"—")+'</td>'+
+      '<td>'+esc(p.ultimo)+'</td><td>'+esc(p.entrega)+'</td></tr>';
+  }).join("");
+}
+document.getElementById("proyChips").addEventListener("click", function(e){
+  var b=e.target.closest(".chip"); if(!b) return;
+  proyFilter=b.dataset.f; renderProyChips(); renderProyTable();
+});
+document.getElementById("proySearch").addEventListener("input", function(e){ proyQuery=e.target.value; renderProyTable(); });
+document.getElementById("proyBody").addEventListener("click", function(e){
+  var r=e.target.closest("[data-open]"); if(r) openProyecto(+r.dataset.open);
+});
+document.getElementById("timelineRows").addEventListener("click", function(e){
+  var r=e.target.closest("[data-open]"); if(r) openProyecto(+r.dataset.open);
+});
+
+/* ================= drawer: detalle de proyecto + registrar proceso ================= */
+var drawer=document.getElementById("drawer"), scrim=document.getElementById("scrim");
+function diffMinutes(hi,hf){
+  var a=hi.split(":").map(Number), b=hf.split(":").map(Number);
+  var mi=a[0]*60+a[1], mf=b[0]*60+b[1];
+  return mf-mi;
+}
+function openProyecto(id){
+  var p=PROYECTOS.filter(function(x){return x.id===id;})[0]; if(!p) return;
+  document.getElementById("drawerN").textContent="N°"+p.id;
+  document.getElementById("drawerTitle").textContent=p.proyecto;
+  var maxH=Math.max(p.hsEst,p.hsReal,1);
+  var realColor = p.hsReal<=p.hsEst ? "var(--good)" : "var(--critical)";
+  var body =
+    '<div class="dfacts">'+
+      '<div class="dfact"><div class="l">Cliente</div><div class="v">'+esc(p.cliente)+'</div></div>'+
+      '<div class="dfact"><div class="l">Estado</div><div class="v">'+pillEstado(p.estado)+'</div></div>'+
+      '<div class="dfact"><div class="l">Entrega</div><div class="v">'+esc(p.entrega)+'</div></div>'+
+      '<div class="dfact"><div class="l">Último proceso</div><div class="v">'+esc(p.ultimo)+'</div></div>'+
+    '</div>'+
+    '<div class="compare">'+
+      '<div class="compare-row"><span>Estimado</span><div class="compare-track"><i style="width:'+(p.hsEst/maxH*100)+'%;background:var(--ink-3)"></i></div><span class="mono">'+p.hsEst+'h</span></div>'+
+      '<div class="compare-row"><span>Real</span><div class="compare-track"><i style="width:'+(p.hsReal/maxH*100)+'%;background:'+realColor+'"></i></div><span class="mono">'+p.hsReal.toFixed(1)+'h</span></div>'+
+    '</div>'+
+    '<div><h4 class="sec">Registrar proceso de producción</h4>'+
+      '<div class="form-grid">'+
+        '<div class="field" style="grid-column:1/-1;"><label>Proceso</label><select id="regProceso">'+PROCESOS.map(function(pr){return '<option>'+pr+'</option>';}).join("")+'</select></div>'+
+        '<div class="field" style="grid-column:1/-1;"><label>Operarios</label><div class="chiprow">'+OPERARIOS.map(function(o){return '<button type="button" class="op-chip" data-op="'+esc(o)+'">'+esc(o)+'</button>';}).join("")+'</div></div>'+
+        '<div class="field"><label>Hora inicio</label><input type="time" id="regHoraIni"></div>'+
+        '<div class="field"><label>Hora fin</label><input type="time" id="regHoraFin"></div>'+
+        '<div class="field" style="grid-column:1/-1;"><label>Observación</label><textarea id="regObs" placeholder="Opcional"></textarea></div>'+
+      '</div>'+
+      '<p class="formerr" id="regErr"></p>'+
+      '<button class="btn-primary" id="regSubmit" type="button" data-id="'+p.id+'">Guardar registro</button>'+
+    '</div>'+
+    '<div><h4 class="sec">Historial de producción</h4><div class="hist">'+
+      (p.hist&&p.hist.length ? p.hist.map(function(h){
+        return '<div class="hist-item"><div class="hist-top"><span class="p">'+esc(h.p)+'</span><span class="t">'+(Math.round(h.min/60*10)/10)+'h</span></div>'+
+          '<div class="hist-who">'+esc(h.op)+' · '+h.f+'</div>'+
+          (h.obs?'<div class="hist-obs">'+esc(h.obs)+'</div>':'')+'</div>';
+      }).join("") : '<div class="empty">Sin registros de producción todavía.</div>')+
+    '</div></div>'+
+    '<div class="note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>El registro de acá se guarda solo en memoria del navegador — sirve para probar el flujo, no persiste al recargar la página.</div>';
+  document.getElementById("drawerBody").innerHTML = body;
+  drawer.hidden=false; scrim.hidden=false;
+
+  document.querySelectorAll(".op-chip").forEach(function(el){
+    el.addEventListener("click", function(){ el.classList.toggle("is-on"); });
+  });
+  document.getElementById("regSubmit").addEventListener("click", function(){
+    var proc=document.getElementById("regProceso").value;
+    var ops=Array.from(document.querySelectorAll(".op-chip.is-on")).map(function(el){return el.dataset.op;});
+    var hi=document.getElementById("regHoraIni").value, hf=document.getElementById("regHoraFin").value;
+    var obs=document.getElementById("regObs").value;
+    var err=document.getElementById("regErr");
+    if(ops.length===0){ err.textContent="Elegí al menos un operario."; return; }
+    if(!hi||!hf){ err.textContent="Completá hora de inicio y fin."; return; }
+    var mins=diffMinutes(hi,hf);
+    if(mins<=0){ err.textContent="La hora de fin tiene que ser posterior a la de inicio."; return; }
+    err.textContent="";
+    p.hist.unshift({f:TODAY, p:proc, op:ops.join(", "), min:mins, obs:obs||undefined});
+    p.hsReal = Math.round((p.hsReal+mins/60)*10)/10;
+    p.ultimo = proc;
+    if(p.estado==="pendiente") p.estado="proceso";
+    REGISTROS_LOG.unshift({f:TODAY,p:proc,op:ops.join(", "),proy:p.proyecto,min:mins});
+    openProyecto(p.id);
+    renderProyChips(); renderProyTable(); renderInicio(); renderRegistros();
+  });
+}
+function closeDrawer(){ drawer.hidden=true; scrim.hidden=true; }
+document.getElementById("drawerClose").addEventListener("click", closeDrawer);
+scrim.addEventListener("click", closeDrawer);
+document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeDrawer(); });
+
+/* ================= COTIZACIONES ================= */
+var cotFilter="todos";
+function renderCotizaciones(){
+  var counts={pendiente:0,aprobada:0,rechazada:0};
+  var sumAprob=0;
+  COTIZACIONES.forEach(function(c){counts[c.estado]++; if(c.estado==="aprobada") sumAprob+=c.total;});
+  var kpis=[
+    {label:"Pend. aprobación", value:counts.pendiente, sub:"Esperando revisión", c:"var(--warning)"},
+    {label:"Aprobadas", value:money(sumAprob), sub:counts.aprobada+" cotizaciones", c:"var(--good)"},
+    {label:"Rechazadas", value:counts.rechazada, sub:"No siguieron adelante", c:"var(--critical)"},
+    {label:"Total", value:COTIZACIONES.length, sub:"Todas las cotizaciones", c:"var(--ink-3)"}
+  ];
+  document.getElementById("cotKpis").innerHTML = kpis.map(function(k){
+    return '<div class="kpi" style="--kpi-c:'+k.c+'"><div class="label">'+k.label+'</div><div class="value tabular">'+k.value+'</div><div class="sub">'+k.sub+'</div></div>';
+  }).join("");
+
+  var defs=[["todos","Todas"],["pendiente","Pendiente"],["aprobada","Aprobada"],["rechazada","Rechazada"]];
+  document.getElementById("cotChips").innerHTML = defs.map(function(d){
+    return '<button class="chip'+(cotFilter===d[0]?" is-on":"")+'" data-f="'+d[0]+'">'+d[1]+'</button>';
+  }).join("");
+
+  var rows=COTIZACIONES.filter(function(c){return cotFilter==="todos"||c.estado===cotFilter;});
+  document.getElementById("cotCards").innerHTML = rows.map(function(c){
+    var actions = c.estado==="pendiente" ?
+      '<button class="btnline go" data-approve="'+c.id+'">Aprobar</button><button class="btnline no" data-reject="'+c.id+'">Rechazar</button>' :
+      '<button class="btnline">Ver</button><button class="btnline">PDF</button>';
+    return '<div class="qcard"><div class="grow"><div class="id">'+c.id+' · '+c.fecha+'</div><div class="cli">'+esc(c.cliente)+'</div><div class="meta">'+c.items+' ítem(s)</div></div>'+
+      pillEstado(c.estado)+'<div class="amt">'+money(c.total)+'</div>'+actions+'</div>';
+  }).join("");
+}
+document.getElementById("cotChips").addEventListener("click", function(e){
+  var b=e.target.closest(".chip"); if(!b) return;
+  cotFilter=b.dataset.f; renderCotizaciones();
+});
+document.getElementById("cotCards").addEventListener("click", function(e){
+  var a=e.target.closest("[data-approve]"), r=e.target.closest("[data-reject]");
+  if(a){ COTIZACIONES.find(function(c){return c.id===a.dataset.approve;}).estado="aprobada"; renderCotizaciones(); }
+  if(r){ COTIZACIONES.find(function(c){return c.id===r.dataset.reject;}).estado="rechazada"; renderCotizaciones(); }
+});
+
+/* ================= STOCK ================= */
+var stockFilter="todos", stockQuery="", movTipo="ingreso";
+function renderStock(){
+  var counts={critico:0,alerta:0,ok:0};
+  STOCK_ROWS.forEach(function(r){counts[r.estado]++;});
+  var kpis=[
+    {label:"Críticos", value:counts.critico, sub:"Bajo el mínimo", c:"var(--critical)"},
+    {label:"En alerta", value:counts.alerta, sub:"Nivel bajo, revisar", c:"var(--warning)"},
+    {label:"OK", value:counts.ok, sub:"Stock suficiente", c:"var(--good)"},
+    {label:"Total ítems", value:320, sub:"Materiales registrados", c:"var(--ink-3)"}
+  ];
+  document.getElementById("stockKpis").innerHTML = kpis.map(function(k){
+    return '<div class="kpi" style="--kpi-c:'+k.c+'"><div class="label">'+k.label+'</div><div class="value tabular">'+k.value+'</div><div class="sub">'+k.sub+'</div></div>';
+  }).join("");
+
+  var maxCat=Math.max.apply(null,STOCK_CATS.map(function(c){return c.v;}));
+  document.getElementById("catBars").innerHTML = STOCK_CATS.map(function(c){
+    return '<div class="barlist-row"><span class="name">'+c.n+'</span><div class="barlist-track"><i style="width:'+(c.v/maxCat*100)+'%"></i></div><span class="amt tabular">'+c.v+'</span></div>';
+  }).join("");
+  var maxTop=Math.max.apply(null,STOCK_TOP.map(function(c){return c.v;}));
+  document.getElementById("topBars").innerHTML = STOCK_TOP.map(function(c){
+    return '<div class="barlist-row"><span class="name">'+c.c+'</span><div class="barlist-track"><i style="width:'+(c.v/maxTop*100)+'%"></i></div><span class="amt tabular">'+c.v+' '+c.u+'</span></div>';
+  }).join("");
+
+  var cats=["todos"].concat(Array.from(new Set(STOCK_ROWS.map(function(r){return r.cat;}))));
+  document.getElementById("stockChips").innerHTML = cats.map(function(c){
+    return '<button class="chip'+(stockFilter===c?" is-on":"")+'" data-f="'+c+'">'+(c==="todos"?"Todas":c)+'</button>';
+  }).join("");
+
+  var msel=document.getElementById("movMaterial");
+  msel.innerHTML = STOCK_ROWS.map(function(r,i){return '<option value="'+i+'">'+r.c+' — '+r.d+'</option>';}).join("");
+
+  renderStockTable();
+}
+function renderStockTable(){
+  var q=stockQuery.trim().toLowerCase();
+  var rows=STOCK_ROWS.map(function(r,i){r._i=i; return r;}).filter(function(r){
+    if(stockFilter!=="todos" && r.cat!==stockFilter) return false;
+    if(!q) return true;
+    return r.c.toLowerCase().indexOf(q)>=0 || r.d.toLowerCase().indexOf(q)>=0;
+  });
+  document.getElementById("stockBody").innerHTML = rows.map(function(r){
+    return '<tr><td class="mono">'+r.c+'</td><td>'+esc(r.d)+'</td><td class="tsub">'+r.cat+'</td>'+
+      '<td class="num mono">'+(Math.round(r.disp*10)/10)+' '+r.u+'</td><td class="num mono">'+r.res+' '+r.u+'</td><td class="num mono">'+r.min+'</td><td>'+pillEstado(r.estado)+'</td></tr>';
+  }).join("");
+}
+function recalcStockEstado(r){
+  if(r.disp<r.min*0.6) r.estado="critico";
+  else if(r.disp<r.min) r.estado="alerta";
+  else r.estado="ok";
+}
+document.getElementById("stockChips").addEventListener("click", function(e){
+  var b=e.target.closest(".chip"); if(!b) return;
+  stockFilter=b.dataset.f; renderStock();
+});
+document.getElementById("stockSearch").addEventListener("input", function(e){ stockQuery=e.target.value; renderStockTable(); });
+document.getElementById("movIngresoBtn").addEventListener("click", function(){
+  movTipo="ingreso"; this.classList.add("is-on"); document.getElementById("movEgresoBtn").classList.remove("is-on");
+  document.getElementById("movTypeLabel").textContent="Ingreso";
+});
+document.getElementById("movEgresoBtn").addEventListener("click", function(){
+  movTipo="egreso"; this.classList.add("is-on"); document.getElementById("movIngresoBtn").classList.remove("is-on");
+  document.getElementById("movTypeLabel").textContent="Egreso";
+});
+document.getElementById("movSubmit").addEventListener("click", function(){
+  var idx=+document.getElementById("movMaterial").value;
+  var cant=parseFloat(document.getElementById("movCantidad").value);
+  var err=document.getElementById("movErr");
+  if(!(cant>0)){ err.textContent="Ingresá una cantidad mayor a 0."; return; }
+  err.textContent="";
+  var r=STOCK_ROWS[idx];
+  r.disp = movTipo==="ingreso" ? r.disp+cant : Math.max(0, r.disp-cant);
+  recalcStockEstado(r);
+  document.getElementById("movCantidad").value="";
+  document.getElementById("movResponsable").value="";
+  document.getElementById("movProveedor").value="";
+  renderStock();
+});
+
+/* ================= REVISION / REGISTROS ================= */
+var regView="operadores";
+function renderRegChips(){
+  var defs=[["operadores","Por operario"],["historial","Historial"]];
+  document.getElementById("regChips").innerHTML = defs.map(function(d){
+    return '<button class="chip'+(regView===d[0]?" is-on":"")+'" data-f="'+d[0]+'">'+d[1]+'</button>';
+  }).join("");
+}
+function renderRegistros(){
+  renderRegChips();
+  document.getElementById("regOperadores").style.display = regView==="operadores" ? "grid" : "none";
+  document.getElementById("regHistCard").style.display = regView==="historial" ? "block" : "none";
+
+  document.getElementById("regOperadores").innerHTML = REGISTROS_OP.map(function(o){
+    var warn = o.dias>=7;
+    return '<div class="opcard"><div class="who"><div class="avatar">'+initials(o.n)+'</div><div><div class="n">'+esc(o.n)+'</div><div class="r">'+esc(o.rol)+'</div></div></div>'+
+      '<div class="'+(warn?"opwarn":"opwarn ok")+'">'+(warn?"⚠ ":"")+o.dias+' día'+(o.dias===1?"":"s")+' sin registros</div>'+
+      '<div class="opstats"><div class="opstat"><div class="v tabular">'+o.hs+'h</div><div class="l">Horas totales</div></div><div class="opstat"><div class="v tabular">'+o.activos+'</div><div class="l">Proy. activos</div></div></div>'+
+      '<div class="opfoot">Proceso + frecuente: <b>'+esc(o.proc)+'</b><br>Último registro: '+o.ultimo+'</div></div>';
+  }).join("");
+
+  document.getElementById("regHistBody").innerHTML = REGISTROS_LOG.map(function(h){
+    return '<tr><td class="mono">'+h.f+'</td><td>'+esc(h.p)+'</td><td>'+esc(h.op)+'</td><td>'+esc(h.proy)+'</td><td class="num mono">'+(Math.round(h.min/60*10)/10)+'h</td></tr>';
+  }).join("");
+}
+document.getElementById("regChips").addEventListener("click", function(e){
+  var b=e.target.closest(".chip"); if(!b) return;
+  regView=b.dataset.f; renderRegistros();
+});
+
+/* ================= CONTROL DE TALLER ================= */
+var tallerActivo="pintura";
+function renderTallerChips(){
+  document.getElementById("tallerChips").innerHTML = TALLER_SECTORES.map(function(s){
+    var done = s.items.every(function(it){return it.estado!=="";});
+    return '<button class="chip'+(tallerActivo===s.key?" is-on":"")+'" data-f="'+s.key+'">'+s.nombre+(done?" ✓":"")+'</button>';
+  }).join("");
+}
+function renderTaller(){
+  renderTallerChips();
+  var sector=TALLER_SECTORES.filter(function(s){return s.key===tallerActivo;})[0];
+  var done=sector.items.filter(function(it){return it.estado!=="";}).length;
+  var total=sector.items.length;
+  var pct=Math.round(done/total*100);
+  var ringColor = pct===100 ? "var(--good)" : (pct===0 ? "var(--hair)" : "var(--warning)");
+  document.getElementById("tallerHead").innerHTML =
+    '<div class="ring" style="--p:'+pct+';--ring-c:'+ringColor+'"><div class="ring-hole">'+pct+'%</div></div>'+
+    '<div class="who"><div class="n">Sector '+sector.nombre+'</div><div class="r">'+esc(sector.responsable)+' · '+done+'/'+total+' registrados</div></div>'+
+    (pct<100 ? pillEstado("alerta").replace("Alerta","Atención") : pillEstado("ok").replace("OK","Completo"));
+
+  document.getElementById("tallerBody").innerHTML = sector.items.map(function(it,i){
+    return '<tr><td><span class="tag">'+it.tipo+'</span></td><td>'+esc(it.item)+'</td>'+
+      '<td><select class="tsel" data-i="'+i+'" data-f="estado">'+Object.keys(TALLER_ESTADOS).map(function(k){
+        return '<option value="'+k+'"'+(it.estado===k?" selected":"")+'>'+TALLER_ESTADOS[k]+'</option>';
+      }).join("")+'</select></td>'+
+      '<td><input class="tobs" data-i="'+i+'" data-f="obs" value="'+esc(it.obs)+'" placeholder="Observación…"></td></tr>';
+  }).join("");
+
+  document.getElementById("tallerHint").textContent = done+" de "+total+" ítems completados";
+  var btn=document.getElementById("tallerCompletar");
+  btn.disabled = done<total;
+  btn.textContent = pct===100 ? "Sector completo ✓" : "Completar ("+done+"/"+total+")";
+}
+document.getElementById("tallerChips").addEventListener("click", function(e){
+  var b=e.target.closest(".chip"); if(!b) return;
+  tallerActivo=b.dataset.f; renderTaller();
+});
+document.getElementById("tallerBody").addEventListener("change", function(e){
+  var sel=e.target.closest("[data-i]"); if(!sel) return;
+  var sector=TALLER_SECTORES.filter(function(s){return s.key===tallerActivo;})[0];
+  var it=sector.items[+sel.dataset.i];
+  it[sel.dataset.f]=sel.value;
+  renderTaller();
+});
+
+/* ================= LISTA DE PRECIOS ================= */
+var precQuery="", precCat="todas";
+function renderPrecios(){
+  var cats=["todas"].concat(Array.from(new Set(LISTA_PRECIOS.map(function(r){return r.cat;}))));
+  document.getElementById("precCat").innerHTML = cats.map(function(c){
+    return '<option value="'+c+'">'+(c==="todas"?"Todas las categorías":c)+'</option>';
+  }).join("");
+  document.getElementById("precCat").value=precCat;
+  renderPreciosTable();
+}
+function renderPreciosTable(){
+  var q=precQuery.trim().toLowerCase();
+  var rows=LISTA_PRECIOS.filter(function(r){
+    if(precCat!=="todas" && r.cat!==precCat) return false;
+    if(!q) return true;
+    return r.c.toLowerCase().indexOf(q)>=0 || r.d.toLowerCase().indexOf(q)>=0;
+  });
+  document.getElementById("precHint").textContent = rows.length+" de "+LISTA_PRECIOS.length+" materiales";
+  document.getElementById("precBody").innerHTML = rows.map(function(r){
+    return '<tr><td class="mono">'+r.c+'</td><td>'+esc(r.d)+'</td><td class="tsub">'+r.prov+'</td><td><span class="tag">'+r.cat+'</span></td><td>'+r.u+'</td>'+
+      '<td class="num mono">'+money(r.costo)+'</td><td class="num mono">'+money(r.m3)+'</td><td class="num mono">'+money(r.m6)+'</td></tr>';
+  }).join("");
+}
+document.getElementById("precSearch").addEventListener("input", function(e){ precQuery=e.target.value; renderPreciosTable(); });
+document.getElementById("precCat").addEventListener("change", function(e){ precCat=e.target.value; renderPreciosTable(); });
+
+/* ================= COMPRAS ================= */
+function renderCompras(){
+  var pend=COMPRAS.filter(function(c){return c.estado==="pendiente";}).length;
+  var comp=COMPRAS.length-pend;
+  var kpis=[
+    {label:"Pendientes", value:pend, sub:"Falta comprar", c:"var(--warning)"},
+    {label:"Compradas", value:comp, sub:"Ya resueltas", c:"var(--good)"},
+    {label:"Total", value:COMPRAS.length, sub:"Sugerencias activas", c:"var(--ink-3)"}
+  ];
+  document.getElementById("comprasKpis").innerHTML = kpis.map(function(k){
+    return '<div class="kpi" style="--kpi-c:'+k.c+'"><div class="label">'+k.label+'</div><div class="value tabular">'+k.value+'</div><div class="sub">'+k.sub+'</div></div>';
+  }).join("");
+  document.getElementById("comprasBody").innerHTML = COMPRAS.map(function(c,i){
+    return '<tr><td class="mono">'+c.c+'</td><td>'+esc(c.d)+'</td><td class="tsub">'+esc(c.prov)+'</td><td class="num mono">'+c.cant+' '+c.u+'</td>'+
+      '<td>N°'+c.np+' · '+esc(c.cli)+'</td><td>'+pillEstado(c.estado)+'</td><td>'+c.fecha+'</td>'+
+      '<td><button class="btnline" data-toggle="'+i+'">'+(c.estado==="pendiente"?"Marcar comprada":"Reabrir")+'</button></td></tr>';
+  }).join("");
+}
+document.getElementById("comprasBody").addEventListener("click", function(e){
+  var b=e.target.closest("[data-toggle]"); if(!b) return;
+  var c=COMPRAS[+b.dataset.toggle];
+  c.estado = c.estado==="pendiente" ? "comprado" : "pendiente";
+  renderCompras();
+});
+
+/* ================= CONFIGURACION ================= */
+function renderConfigSession(){
+  document.getElementById("sessAvatar").textContent = initials(ROLE_META[currentRole].sample);
+  document.getElementById("sessName").textContent = ROLE_META[currentRole].sample;
+  document.getElementById("sessRole").textContent = ROLE_META[currentRole].label;
+}
+function renderConfig(){
+  renderConfigSession();
+  document.getElementById("operariosChips").innerHTML = OPERARIOS.concat(["Otros"]).map(function(o){
+    return '<span class="optag">'+esc(o)+'</span>';
+  }).join("");
+
+  document.getElementById("permHead").innerHTML = '<th>Rol</th>'+MODULES.map(function(m){return '<th>'+m.label+'</th>';}).join("");
+  document.getElementById("permBody").innerHTML = ROLE_ORDER.map(function(role){
+    return '<tr><td>'+ROLE_META[role].label+'</td>'+MODULES.map(function(m){
+      var checked = m.k==="inicio" ? true : !!configDraft[role][m.k];
+      var disabled = m.k==="inicio" ? " disabled" : "";
+      return '<td><input type="checkbox" data-role="'+role+'" data-mod="'+m.k+'"'+(checked?" checked":"")+disabled+'></td>';
+    }).join("")+'</tr>';
+  }).join("");
+  document.getElementById("permHint").textContent="";
+}
+document.getElementById("permBody").addEventListener("change", function(e){
+  var cb=e.target.closest("input[type=checkbox]"); if(!cb) return;
+  configDraft[cb.dataset.role][cb.dataset.mod]=cb.checked;
+  document.getElementById("permHint").textContent="Cambios sin guardar";
+});
+document.getElementById("permSave").addEventListener("click", function(){
+  PERMS = JSON.parse(JSON.stringify(configDraft));
+  applyRoleFilter(currentRole);
+  var hint=document.getElementById("permHint");
+  hint.style.color="var(--good)"; hint.textContent="Cambios guardados ✓";
+  setTimeout(function(){ hint.style.color=""; hint.textContent=""; }, 1800);
+});
+
+/* ================= freshness ticker (NFR-04) ================= */
+var REFRESH_S=900; /* PAR-23: 15 min */
+var elapsed=0;
+function fmtElapsed(s){
+  if(s<60) return s+"s";
+  var m=Math.floor(s/60), r=s%60;
+  return m+"m "+(r<10?"0":"")+r+"s";
+}
+function tickFresh(){
+  document.getElementById("freshTime").textContent=fmtElapsed(elapsed);
+  document.getElementById("freshBar").style.width=(elapsed/REFRESH_S*100)+"%";
+  elapsed=(elapsed+1)%REFRESH_S;
+}
+tickFresh();
+setInterval(tickFresh, 1000);
+
+/* ================= init ================= */
+renderInicio();
+renderProyChips(); renderProyTable();
+renderStock();
+renderRegistros();
+renderCotizaciones();
+renderTaller();
+renderPrecios();
+renderCompras();
+renderConfig();
+applyRoleFilter(currentRole);
+
+})();
+</script>
+</body>
+</html>

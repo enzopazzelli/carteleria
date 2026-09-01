@@ -28,10 +28,13 @@ cartelería/
 │   ├── DECISIONES-Y-BLOQUEANTES.md   Correcciones a la spec técnica
 │   └── BITACORA.md                   Registro cronológico de todo
 │
-└── fuentes/           ← documentos originales (histórico, NO se editan)
-    ├── propuesta-carteleria-automatizacion.md
-    ├── Especificación Técnica de Desarrollo…md
-    └── Proyecto_Final_Automatizacion_Carteleria.md
+├── fuentes/           ← documentos originales (histórico, NO se editan)
+│   ├── propuesta-carteleria-automatizacion.md
+│   ├── Especificación Técnica de Desarrollo…md
+│   └── Proyecto_Final_Automatizacion_Carteleria.md
+│
+└── prototipo-dashboard/   ← maqueta HTML del dashboard rápido (F8), sin dependencias
+    └── index.html             Abrir directo en el navegador — ver su README
 ```
 
 ---
@@ -85,6 +88,7 @@ Una hora, en este orden:
 | [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división de carriles, propiedad del código, Git y commits, migraciones Alembic, convenciones de código, contratos entre carriles, ritmo de trabajo | Cuando acordamos una regla nueva |
 | [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | **13 correcciones** a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
+| [`DASHBOARD-VISTAS.md`](docs/DASHBOARD-VISTAS.md) | Las 9 vistas del dashboard actual, de qué tabla real sale cada una y cómo construirlas en F8 — avanza `CART-801` | Cuando se releve o confirme una vista nueva |
 
 ### `fuentes/` — documentos originales
 

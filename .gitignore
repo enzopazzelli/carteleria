@@ -20,6 +20,8 @@ uploads/
 # Archivos del cliente — nunca van al repositorio (ver CONVENCIONES.md §4)
 *.cdr
 *.dxf
+*.xlsx
+img_dashboard_real/
 
 # Sistema
 .DS_Store

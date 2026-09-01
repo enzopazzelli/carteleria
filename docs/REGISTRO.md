@@ -40,14 +40,14 @@ Cosas que damos por ciertas sin haberlas confirmado. Un supuesto que se cae pued
 | ID | Supuesto | Estado | Se confirma con | Qué se rompe si es falso |
 |---|---|---|---|---|
 | **SUP-01** | La empresa tiene una tabla de precios por m² ya existente y mantenida | 🔴 | `P-11`, insumo `B-01` | F1 y F3 arrancan sin datos reales; **H1** no se puede validar |
-| **SUP-02** | Los formatos de chapa que compran son un conjunto finito y conocido, no cortes a medida arbitrarios | 🔴 | `P-02`, insumo `B-02` | El comparador de formatos (`CART-205`) pierde sentido y el modelo de datos de `formatos_chapa` cambia |
+| **SUP-02** | Los formatos de chapa que compran son un conjunto finito y conocido, no cortes a medida arbitrarios | 🟡 | `P-02`, insumo `B-02` — parcial: catálogo de 16 formatos hallado en `INVENTARIO` (ver `§3`), falta confirmación explícita del cliente | El comparador de formatos (`CART-205`) pierde sentido y el modelo de datos de `formatos_chapa` cambia |
 | **SUP-03** | La máquina de corte tiene un kerf conocido y constante por material y espesor | 🔴 | `P-03`, insumo `B-03` | `PAR-01` deja de ser un valor y pasa a ser una función; `CART-203` se complica |
 | **SUP-04** | La mayoría de las piezas que cortan son paneles rectangulares | 🔴 | `P-01`, insumo `B-06` | **Reordena el roadmap entero**: F7 sube a crítica y F5/F6 se corren. Es el supuesto de mayor impacto |
 | **SUP-05** | Los diseñadores están dispuestos a adoptar una convención de capas nueva | 🔴 | `P-14`, insumo `B-15` | F5 completa no es viable; queda solo carga manual de piezas |
 | **SUP-06** | Existe una sola persona (o un grupo chico y definido) con autoridad de aprobación | 🔴 | `P-15`, insumo `B-11` | El modelo de permisos de `CART-002` necesita aprobación multinivel o por monto |
 | **SUP-07** | Se cobra la plancha entera consumida, no los m² efectivamente aprovechados | 🔴 | `P-10` → decisión `D-02` | Cambia la fórmula de `CART-302` y el sentido comercial de la métrica M2 |
 | **SUP-08** | Existe un método consistente para calcular el desarrollo de plegado | 🔴 | `P-05`, insumo `B-05` | **Todo el nesting queda calculado sobre medidas equivocadas.** Fallback: carga manual (`CART-209`) |
-| **SUP-09** | Las tablas del dashboard de AppSheet son accesibles en modo lectura sin romper lo existente | 🔴 | `P-06`, insumo `B-07` | El carril B no arranca; Vale se reasigna al carril A |
+| **SUP-09** | Las tablas del dashboard de AppSheet son accesibles en modo lectura sin romper lo existente | 🟢 | `P-06`, insumo `B-07` — confirmado 2026-09-01: export recibido (ver `§3`) | El carril B no arranca; Vale se reasigna al carril A |
 | **SUP-10** | La versión de CorelDRAW instalada expone API VBA utilizable | 🔴 | `P-12`, insumo `B-08` | `CART-502` se degrada a export manual documentado |
 | **SUP-11** | La empresa tiene o puede gestionar WhatsApp Business API | 🔴 | `P-16`, insumo `B-12` | **H2** sale solo con mail; WhatsApp se agrega después |
 | **SUP-12** | Hay conectividad e infraestructura para usar un sistema web desde la empresa y el taller | 🔴 | Encuentro 2 de relevamiento | El plano de corte necesita distribución offline (PDF impreso o carpeta local) |
@@ -147,17 +147,23 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 
 ### Bloqueantes de Sprint 0
 
-| ID | Insumo | Responsable | Bloquea | Fallback |
-|---|---|---|---|---|
-| **B-01** | Tabla de precios actual por m² de cada material | Administración | `CART-103`, `CART-104`, `CART-302`, `SUP-01` | Datos de prueba; **H1** no se valida |
-| **B-02** | Formatos de chapa con medidas exactas y espesores | Compras | `CART-102`, `CART-202`, `CART-205`, `SUP-02` | **Sin fallback.** El nesting no se prueba contra nada real |
-| **B-03** | Kerf y margen de borde por material | Taller | `PAR-01`, `PAR-02`, `PAR-03`, `CART-105` | Defaults provisorios con advertencia visible |
-| **B-04** | Qué materiales tienen veta | Taller | `PAR-04`, `CART-204` | Se asume veta en todos (conservador) |
-| **B-05** | Método de cálculo del desarrollo de plegado | Taller | `PAR-10`, `CART-209`, `CART-508`, `SUP-08` | Carga manual de la medida desarrollada |
-| **B-06** | Proporción real de piezas rectas vs. corpóreas | Producción | Prioridad de **F7**, `SUP-04` | Se asume mayoría rectas; F7 al final |
-| **B-07** | Acceso a las tablas del dashboard de AppSheet | IT / autor del dashboard | Todo **F8**, `SUP-09` | El carril B no arranca |
-| **B-08** | Versión y licencia de CorelDRAW | Diseño | `CART-502`, `SUP-10` | Export manual a DXF documentado |
-| **B-17** | Baseline de las métricas M1-M5 medido antes de empezar | Enzo + cliente | `PAR-32` a `PAR-36` | **Sin fallback.** Sin baseline no se puede demostrar valor en ningún hito |
+| ID | Insumo | Responsable | Bloquea | Fallback | Estado |
+|---|---|---|---|---|---|
+| **B-01** | Tabla de precios actual por m² de cada material | Administración | `CART-103`, `CART-104`, `CART-302`, `SUP-01` | Datos de prueba; **H1** no se valida | 🔴 |
+| **B-02** | Formatos de chapa con medidas exactas y espesores | Compras | `CART-102`, `CART-202`, `CART-205`, `SUP-02` | **Sin fallback.** El nesting no se prueba contra nada real | 🟡 Parcial |
+| **B-03** | Kerf y margen de borde por material | Taller | `PAR-01`, `PAR-02`, `PAR-03`, `CART-105` | Defaults provisorios con advertencia visible | 🔴 |
+| **B-04** | Qué materiales tienen veta | Taller | `PAR-04`, `CART-204` | Se asume veta en todos (conservador) | 🔴 |
+| **B-05** | Método de cálculo del desarrollo de plegado | Taller | `PAR-10`, `CART-209`, `CART-508`, `SUP-08` | Carga manual de la medida desarrollada | 🔴 |
+| **B-06** | Proporción real de piezas rectas vs. corpóreas | Producción | Prioridad de **F7**, `SUP-04` | Se asume mayoría rectas; F7 al final | 🔴 |
+| **B-07** | Acceso a las tablas del dashboard de AppSheet | IT / autor del dashboard | Todo **F8**, `SUP-09` | El carril B no arranca | 🟢 Resuelto |
+| **B-08** | Versión y licencia de CorelDRAW | Diseño | `CART-502`, `SUP-10` | Export manual a DXF documentado | 🔴 |
+| **B-17** | Baseline de las métricas M1-M5 medido antes de empezar | Enzo + cliente | `PAR-32` a `PAR-36` | **Sin fallback.** Sin baseline no se puede demostrar valor en ningún hito | 🟡 Parcial |
+
+> **B-07 — resuelto (2026-09-01).** Se recibió el export completo de las tablas del dashboard AppSheet (`CARTELERIA 2026.xlsx`, en la raíz del repo, **no versionado** — contiene datos reales del cliente, ver `CONVENCIONES.md §4` y `.gitignore`). Esquema relevado: 18 tablas, entre ellas `COTIZACIONES` (con `ITEMS_JSON` de materiales, costos y precios), `INVENTARIO`, `NOTAS_PEDIDO`, `PRODUCCION`, `PARAMETROS` (listas maestras de responsables, proveedores, categorías, ubicaciones, unidades y procesos) y `PERMISOS_MODULOS` (matriz real de 6 roles × 7 módulos). Alcanza para que el carril B empiece a modelar el nuevo dashboard sin esperar al relevamiento.
+>
+> **B-02 — parcial (2026-09-01).** El mismo export trae en `INVENTARIO` un catálogo de 16 ítems de chapa: dos medidas de plancha (1,00 × 2,00 m y 1,22 × 2,44 m) en calibres 14 a 27 (chapa negra: cal. 14/16/18/20/22; galvanizada: cal. 18/20/25/27), más un ítem especial de acero inoxidable A240 esmerilado 430 en 0,70 × 1,25/2,50 m. Sirve como insumo real para probar el nesting, pero falta confirmar con el cliente (`P-02`) si compran algo fuera de este catálogo — de ahí que quede parcial y no cierre `SUP-02` del todo.
+>
+> **B-17 — parcial (2026-09-01).** `PRODUCCION` trae 220 registros de tiempo real de trabajo sobre 59 notas de pedido distintas, pero **no sirve todavía como baseline confiable**: los nombres de proceso están sin normalizar (mayúsculas/minúsculas y variantes distintas para el mismo proceso, ej. "Corte Chapa" / "Corte de Chapa" / "CORTE DE CHAPA"), y solo 33 de las 552 notas en `NOTAS_PEDIDO` tienen `HS_ESTIMADAS` cargado — sin eso no hay con qué comparar el tiempo real. Es insumo crudo, no el baseline en sí; falta limpieza y probablemente `P-08` en el relevamiento para completar lo que falta.
 
 ### Bloqueantes de fase
 
@@ -249,6 +255,7 @@ Decisiones que hay que tomar y todavía no se pueden cerrar.
 | **D-06** | Estructura del modelo de agregados del dashboard | `P-19` + `CART-801` | S2 | — |
 | **D-07** | ¿El presupuesto vencido se reajusta por inflación o solo se marca vencido? | Conversación con el dueño | S4 | `SUP-13` = solo se marca vencido |
 | **D-08** | Política de retención y backup de archivos generados | Volumen estimado tras H1 | S4 | Backup diario completo |
+| **D-09** | ¿F8 se queda solo-lectura sobre agregados (`ADR-06`) o crece para absorber también las pantallas de escritura del dashboard actual (control de taller, movimientos de stock, aprobación de cotizaciones, edición de permisos)? | Revisión de alcance con el cliente y con Vale, ver `docs/DASHBOARD-VISTAS.md §3` | Antes de **S2** (arranca `CART-801`) | Prototipo de UI muestra las 9 vistas completas para validar diseño; `ADR-06` sigue vigente para lo que se construya en serio |
 
 ---
 
@@ -272,11 +279,11 @@ Resumen para revisar de un vistazo en cada daily.
 
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
-| Supuestos (`SUP`) | 16 | 14 | 1 | 1 |
+| Supuestos (`SUP`) | 16 | 12 | 2 | 2 |
 | Parámetros (`PAR`) | 37 | 11 | 14 | 12 |
-| Insumos (`B` + `T`) | 23 | 23 | 0 | 0 |
+| Insumos (`B` + `T`) | 23 | 20 | 2 | 1 |
 | Preguntas (`P`) | 19 | 19 | 0 | 0 |
-| Decisiones (`D`) | 8 | 8 | 0 | 0 |
+| Decisiones (`D`) | 9 | 9 | 0 | 0 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).
 
@@ -286,4 +293,4 @@ Resumen para revisar de un vistazo en cada daily.
 2. **`SUP-08` / `P-05` / `PAR-10`** — desarrollo de plegado. Invalida los cálculos del motor.
 3. **`B-02` / `P-02`** — formatos de chapa. Sin esto no hay nada contra qué probar.
 4. **`B-17`** — baseline de métricas. Sin esto no se puede demostrar valor en ningún hito.
-5. **`SUP-09` / `B-07`** — acceso a AppSheet. Define si el carril B existe.
+5. ~~`SUP-09` / `B-07`~~ — acceso a AppSheet. **Resuelto 2026-09-01**, ver nota en `§3`.

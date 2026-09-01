@@ -58,6 +58,63 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-09-01 (2) — Prototipo de las 9 vistas del dashboard + permisos por rol
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
+
+### Qué se hizo
+
+A partir de las 10 capturas del dashboard real (mezcla de la sesión de un Diseñador, que ve 6 módulos, y la de Anibal Dumit como Gerente General, que los ve todos) y del xlsx de AppSheet, se relevaron las **9 vistas completas** del dashboard actual (Inicio, Proyectos, Stock e Inventario, Registros, Cotizaciones, Control de Taller, Lista de Precios, Compras, Configuración) y se armó un prototipo interactivo en `prototipo-dashboard/index.html` — HTML/CSS/JS sin dependencias, con datos de muestra (no reales) y un selector de rol que aplica en vivo la matriz de permisos real. Se pidió explícitamente no publicarlo como artefacto externo: vive en el repo, en su propia carpeta con README.
+
+### Qué se decidió
+
+Replicar primero las 9 vistas completas (con sus formularios) y aplicar la restricción por rol después, como una capa aparte — así quedó construido: cualquier vista se puede ver sin restricción y el selector "Viendo como" es lo que filtra el menú según `PERMISOS_MODULOS`.
+
+Esto puso en tensión el alcance de F8 que ya estaba cerrado en `ADR-06` (dashboard = solo lectura sobre agregados). Se registró como bloqueante de decisión, no se resolvió unilateralmente: **`D-09`** en `REGISTRO.md §5`.
+
+### Cambios en el registro
+
+- Nuevo documento `docs/DASHBOARD-VISTAS.md`: las 9 vistas, de qué tabla real sale cada una, y cómo construirlas — avanza `CART-801` (ver nota agregada ahí en `BACKLOG.md`).
+- `D-09` (nueva): ¿F8 se queda solo-lectura o absorbe también las escrituras (control de taller, movimientos de stock, aprobación de cotizaciones, permisos)? Sin resolver, S0-S2.
+- Hallazgo nuevo sin ID todavía: `NOTAS_PEDIDO` y `NOTAS_PEDIDO_V2` conviven en el xlsx con esquemas distintos y no queda claro cuál es la fuente de verdad — afecta el modelo de datos de "Proyectos". Falta decidir si esto amerita un `SUP-xx`/`P-xx` propio.
+- La aprobación de cotizaciones en el dato real (`COT_APROBACIONES`) es **por ítem**, no por cotización completa — el prototipo simplificó esto; anotado en `DASHBOARD-VISTAS.md §1.5` para no perderlo cuando se construya en serio.
+
+### Pendiente
+
+- Conseguir una captura real de "Compras" — la vista del prototipo es inferida de la tabla `COMPRAS` del xlsx, no de la pantalla real, y es el punto más flojo del relevamiento.
+- Confirmar con el cliente la discrepancia entre la matriz de permisos de 9 columnas de Configuración y las 7 columnas de `PERMISOS_MODULOS` del xlsx.
+- Cerrar `D-09` antes de que arranque `CART-801`/`CART-802` en S2.
+
+---
+
+## 2026-09-01 — Export real de AppSheet: cierra B-07, avanza B-02 y B-17
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
+
+### Qué se hizo
+
+Enzo dejó `CARTELERIA 2026.xlsx` en la raíz del repo: el export completo de las 18 tablas que usa hoy el dashboard de AppSheet de la empresa (`COTIZACIONES`, `INVENTARIO`, `NOTAS_PEDIDO`, `PRODUCCION`, `PARAMETROS`, `PERMISOS_MODULOS`, entre otras). Se relevó el esquema completo y se identificó que trae datos reales sensibles — PII de clientes (CUIL, teléfono, email), precios reales de presupuestos y, en `PARAMETROS`, las contraseñas de los empleados en texto plano. Por eso **no se commiteó**: se agregó `*.xlsx` al `.gitignore` (ver `CONVENCIONES.md §4`, que ya prohibía `.cdr` y `.dxf` del cliente).
+
+### Qué se decidió
+
+Usar el export para cerrar o avanzar bloqueantes de Sprint 0 sin volcar datos sensibles en documentación versionada: del archivo solo pasan a `REGISTRO.md` el esquema, catálogos y agregados no identificables, nunca nombres de clientes, precios ni credenciales.
+
+### Cambios en el registro
+
+- `SUP-09` 🔴 → 🟢 confirmado: el export prueba que las tablas de AppSheet son accesibles en modo lectura sin romper lo existente.
+- `B-07` 🔴 → 🟢 resuelto: acceso a las tablas de AppSheet obtenido. El carril B puede empezar a modelar el nuevo dashboard sin esperar al relevamiento.
+- `SUP-02` 🔴 → 🟡 parcial: `INVENTARIO` trae un catálogo de 16 formatos de chapa (2 medidas de plancha, calibres 14 a 27), pero falta que el cliente confirme que no compran nada fuera de ese conjunto.
+- `B-02` 🔴 → 🟡 parcial: mismo catálogo — detalle en `REGISTRO.md §3`.
+- `B-17` 🔴 → 🟡 parcial: `PRODUCCION` trae 220 registros de tiempo real sobre 59 notas de pedido, pero no sirve como baseline todavía — los nombres de proceso no están normalizados y solo 33 de 552 notas en `NOTAS_PEDIDO` tienen `HS_ESTIMADAS` cargado para comparar.
+
+### Pendiente
+
+- Confirmar con el cliente si compran formatos de chapa fuera del catálogo relevado (`P-02`, encuentro 2 del relevamiento).
+- Decidir si vale la pena limpiar `PRODUCCION`/`NOTAS_PEDIDO` para sacar de ahí un baseline real de `PAR-32`-`PAR-36`, o si conviene medirlo de cero en el relevamiento (`P-08`).
+- El xlsx sigue suelto en la raíz del repo (ignorado por git, no se pierde el trabajo, pero tampoco es su lugar definitivo). Decidir dónde vivir a largo plazo — no debería quedar indefinidamente ahí.
+
+---
+
 ## 2026-08-31 — Prospecto para el cliente con cronograma de 2 meses
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
