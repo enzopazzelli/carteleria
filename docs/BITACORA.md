@@ -58,6 +58,29 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-09-01 (4) — Plan del motor de nesting único basado en Deepnest
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
+
+### Qué se hizo
+
+A partir del hallazgo de la entrada anterior, Enzo decidió avanzar con Deepnest igual —pese al costo y riesgo— porque es el único de los tres proyectos investigados con anidado dentro de huecos, DXF y corte de líneas compartidas juntos. Se armó [`docs/PLAN-MOTOR-NESTING-DEEPNEST.md`](PLAN-MOTOR-NESTING-DEEPNEST.md) con 4 decisiones confirmadas: usar el fork comunitario `deepnest-next` (MIT, mantenido) en vez del Deepnest original (sin licencia); alcance F2+F7 con un motor único, no dos conviviendo; integración como microservicio Node llamado por Celery vía HTTP; y el riesgo legal residual del código heredado se acepta y queda documentado. Se agregó el pointer en `README.md` (sección "Novedad para Vale" actualizada + índice de documentos).
+
+### Qué se decidió
+
+**El plan resuelve `D-01` a favor de Deepnest**, pero **no se ejecutó todavía**: `REGISTRO.md`, `BACKLOG.md` y `EPICA.md` siguen sin tocar. La Fase 4 del plan (actualizar esos documentos) queda pendiente y, a diferencia de este relevamiento, sigue el flujo de PR normal cuando se encare — es una decisión de producto, no una investigación de lo que hay afuera.
+
+### Cambios en el registro
+
+Sin cambios en `REGISTRO.md` todavía — `D-01` sigue mostrando el default provisorio (`nest2D`) hasta que se ejecute la Fase 4 del plan.
+
+### Pendiente
+
+- Ejecutar la Fase 0 del plan (spike de viabilidad) cuando se habilite Sprint 0/S1.
+- Cuando el spike dé go: Fase 4 (actualizar `REGISTRO.md` `D-01`, `BACKLOG.md` `CART-702`, `EPICA.md` con `ADR-11`) como PR normal.
+
+---
+
 ## 2026-09-01 (3) — Investigación de nesting en el navegador (SVGnest, Deepnest, SheetNest)
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0

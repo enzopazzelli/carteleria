@@ -10,7 +10,9 @@ Plataforma a medida para una empresa de cartelería de gran formato en chapa. Au
 
 ## 🆕 Novedad para Vale
 
-Enzo investigó tres motores de nesting open source (SVGnest, Deepnest, SheetNest) para evaluar si conviene anidar piezas del lado del navegador. Resultado en [`docs/FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md) — no cambia nada de lo ya decidido en `ADR-05`, pero encontró un hallazgo que vale la pena leer: la alternativa "Deepnest" que la tabla de stack de `EPICA.md` menciona de pasada para F7 no tiene licencia de código abierto (el repo no tiene archivo `LICENSE`), así que no es una opción segura para usar tal cual.
+Enzo investigó tres motores de nesting open source (SVGnest, Deepnest, SheetNest) para evaluar si conviene anidar piezas del lado del navegador — resultado en [`docs/FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md). Encontró que el Deepnest original no tiene licencia de código abierto (el repo no tiene archivo `LICENSE`), pero decidió avanzar igual con Deepnest porque es el único de los tres con anidado dentro de huecos, DXF y corte de líneas compartidas — usando un fork comunitario con licencia MIT (`deepnest-next`) en vez del original.
+
+El plan técnico de esa implementación está en [`docs/PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/PLAN-MOTOR-NESTING-DEEPNEST.md): resuelve `D-01` a favor de Deepnest, como microservicio Node llamado desde Celery, reemplazando tanto `rectpack` (F2) como `nest2D` (F7). **Todavía no se ejecutó** — no se tocó `REGISTRO.md`, `BACKLOG.md` ni `EPICA.md` — es la Fase 4 del plan, pendiente de PR.
 
 ---
 
@@ -96,6 +98,7 @@ Una hora, en este orden:
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
 | [`DASHBOARD-VISTAS.md`](docs/DASHBOARD-VISTAS.md) | Las 9 vistas del dashboard actual, de qué tabla real sale cada una y cómo construirlas en F8 — avanza `CART-801` | Cuando se releve o confirme una vista nueva |
 | [`FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores de nesting en el navegador — insumo para F7, no cambia `ADR-05` | Rara vez — es una investigación puntual |
+| [`PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/PLAN-MOTOR-NESTING-DEEPNEST.md) | Plan técnico para reemplazar `rectpack`/`nest2D` por un motor único basado en Deepnest (`deepnest-next`) como microservicio Node — resuelve `D-01`. Plan, no ejecutado todavía | Cuando avance alguna de sus 5 fases |
 
 ### `fuentes/` — documentos originales
 
