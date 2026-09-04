@@ -58,6 +58,36 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-09-01 (7) — Relevamiento de la reunión de arranque con Megacarteles
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
+
+### Qué se hizo
+
+Se depuró la transcripción de la reunión de presentación de `fuentes/Propuesta carteleria.pptx` a Aníbal (dueño de Megacarteles) y se armó [`docs/RELEVAMIENTO-REUNION-ARRANQUE.md`](RELEVAMIENTO-REUNION-ARRANQUE.md): hallazgos organizados por tema, cruzados contra los IDs de `REGISTRO.md`, con la charla lateral (otro proyecto sin relación) descartada.
+
+### Qué se decidió
+
+Ninguna decisión de producto nueva. El hallazgo más importante no cierra nada por sí solo: sobre `SUP-04`/`P-01` (rectos vs. corpóreos), Aníbal describe su negocio como "vendemos letras" (formas irregulares), lo cual pesa en contra de la hipótesis de "mayoría paneles rectos" — pero sigue sin cuantificarse, así que queda para el Encuentro 2 confirmarlo con el operario.
+
+### Cambios en el registro
+
+- `SUP-04` 🔴 → 🟡 parcial (ver nota arriba).
+- `SUP-14` 🔴 → 🟡 parcial: el fotomontaje sigue siendo herramienta de venta, pero pesa distinto según si el cliente es nuevo o recurrente.
+- `B-01`/`B-09` 🔴 → 🟡 parcial: acceso confirmado a un Drive compartido con presupuestos reales; faltan los dos archivos de ejemplo (complejo/simple) que Aníbal prometió mandar por mail.
+- Nota agregada sobre `B-02`/`SUP-02`: el catálogo de materiales real es más amplio que "formatos de chapa" (MDF, ACM, acrílico, PVC, tubos por metro lineal, LED) — no cierra ni refuta el supuesto, pero avisa que el modelo de materiales necesita distinguir nesting-por-área de facturación-por-metro-lineal.
+- Tablero de estado (`REGISTRO.md §7`) actualizado con los conteos nuevos.
+- Hallazgos nuevos sin ID todavía: mano de obra calculada pero con revisión obligatoria del dueño antes de cerrar (más estricta que el override general); recargo por demora de cobro (~2,8%) y umbral de imprevistos (~5%, el propio cliente lo considera corto) que no existen en `PAR-11`-`PAR-16`; posibilidad de marcar un material como "provisto por el cliente" (costo $0); flujo de variantes de color en el fotomontaje con selección fija del cliente; confirmación de que el módulo de Compras del dashboard actual está roto (relevante para `D-09`/`DASHBOARD-VISTAS.md`); idea a futuro (fuera de alcance) de cotización remota a partir de una foto.
+
+### Pendiente
+
+- Conseguir los dos archivos de ejemplo prometidos por Aníbal (`B-14`).
+- Confirmar la proporción real recta/corpórea en el Encuentro 2, mirando el trabajo del taller.
+- Confirmar si "Hombre 1" (uno de los presentes de Megacarteles) es el autor del dashboard de AppSheet, para el Encuentro 3.
+- Preguntar explícito el % de imprevistos y el recargo por demora de cobro en el Encuentro 1, en vez de asumir los defaults provisorios.
+
+---
+
 ## 2026-09-01 (6) — Plan alternativo: motor de nesting nativo en Python, sin servicios externos
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0

@@ -42,7 +42,7 @@ Cosas que damos por ciertas sin haberlas confirmado. Un supuesto que se cae pued
 | **SUP-01** | La empresa tiene una tabla de precios por m² ya existente y mantenida | 🔴 | `P-11`, insumo `B-01` | F1 y F3 arrancan sin datos reales; **H1** no se puede validar |
 | **SUP-02** | Los formatos de chapa que compran son un conjunto finito y conocido, no cortes a medida arbitrarios | 🟡 | `P-02`, insumo `B-02` — parcial: catálogo de 16 formatos hallado en `INVENTARIO` (ver `§3`), falta confirmación explícita del cliente | El comparador de formatos (`CART-205`) pierde sentido y el modelo de datos de `formatos_chapa` cambia |
 | **SUP-03** | La máquina de corte tiene un kerf conocido y constante por material y espesor | 🔴 | `P-03`, insumo `B-03` | `PAR-01` deja de ser un valor y pasa a ser una función; `CART-203` se complica |
-| **SUP-04** | La mayoría de las piezas que cortan son paneles rectangulares | 🔴 | `P-01`, insumo `B-06` | **Reordena el roadmap entero**: F7 sube a crítica y F5/F6 se corren. Es el supuesto de mayor impacto |
+| **SUP-04** | La mayoría de las piezas que cortan son paneles rectangulares | 🟡 | `P-01`, insumo `B-06` — parcial: reunión de arranque 2026-09-01 (ver `RELEVAMIENTO-REUNION-ARRANQUE.md`), Aníbal describe el negocio como "vendemos letras" (formas irregulares); falta cuantificar en el Encuentro 2 | **Reordena el roadmap entero**: F7 sube a crítica y F5/F6 se corren. Es el supuesto de mayor impacto |
 | **SUP-05** | Los diseñadores están dispuestos a adoptar una convención de capas nueva | 🔴 | `P-14`, insumo `B-15` | F5 completa no es viable; queda solo carga manual de piezas |
 | **SUP-06** | Existe una sola persona (o un grupo chico y definido) con autoridad de aprobación | 🔴 | `P-15`, insumo `B-11` | El modelo de permisos de `CART-002` necesita aprobación multinivel o por monto |
 | **SUP-07** | Se cobra la plancha entera consumida, no los m² efectivamente aprovechados | 🔴 | `P-10` → decisión `D-02` | Cambia la fórmula de `CART-302` y el sentido comercial de la métrica M2 |
@@ -52,7 +52,7 @@ Cosas que damos por ciertas sin haberlas confirmado. Un supuesto que se cae pued
 | **SUP-11** | La empresa tiene o puede gestionar WhatsApp Business API | 🔴 | `P-16`, insumo `B-12` | **H2** sale solo con mail; WhatsApp se agrega después |
 | **SUP-12** | Hay conectividad e infraestructura para usar un sistema web desde la empresa y el taller | 🔴 | Encuentro 2 de relevamiento | El plano de corte necesita distribución offline (PDF impreso o carpeta local) |
 | **SUP-13** | Un presupuesto vencido se vuelve a cotizar de cero, no se ajusta automáticamente por inflación | 🔴 | Decisión `D-07` | Se necesita lógica de reajuste y una política de indexación |
-| **SUP-14** | El fotomontaje es una herramienta de venta, no un requisito formal del presupuesto | 🔴 | `P-18` | F6 sube de prioridad y no puede ser opcional en el PDF |
+| **SUP-14** | El fotomontaje es una herramienta de venta, no un requisito formal del presupuesto | 🟡 | `P-18` — parcial: reunión de arranque 2026-09-01, confirmado como herramienta de venta pero su peso varía por tipo de cliente (nuevo vs. recurrente) | F6 sube de prioridad y no puede ser opcional en el PDF |
 | **SUP-15** | El equipo trabaja part-time, ~15-20 hs/semana cada uno | 🟡 | Enzo y Vale | Todo el cronograma de `EPICA.md §8` se recalcula |
 | **SUP-16** | Una sola empresa, una sola instancia: no hace falta multi-tenancy | 🟢 | Alcance definido en `EPICA.md §6` | El modelo de datos necesitaría `empresa_id` en todas las tablas — caro de agregar después |
 
@@ -149,7 +149,7 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 
 | ID | Insumo | Responsable | Bloquea | Fallback | Estado |
 |---|---|---|---|---|---|
-| **B-01** | Tabla de precios actual por m² de cada material | Administración | `CART-103`, `CART-104`, `CART-302`, `SUP-01` | Datos de prueba; **H1** no se valida | 🔴 |
+| **B-01** | Tabla de precios actual por m² de cada material | Administración | `CART-103`, `CART-104`, `CART-302`, `SUP-01` | Datos de prueba; **H1** no se valida | 🟡 Parcial |
 | **B-02** | Formatos de chapa con medidas exactas y espesores | Compras | `CART-102`, `CART-202`, `CART-205`, `SUP-02` | **Sin fallback.** El nesting no se prueba contra nada real | 🟡 Parcial |
 | **B-03** | Kerf y margen de borde por material | Taller | `PAR-01`, `PAR-02`, `PAR-03`, `CART-105` | Defaults provisorios con advertencia visible | 🔴 |
 | **B-04** | Qué materiales tienen veta | Taller | `PAR-04`, `CART-204` | Se asume veta en todos (conservador) | 🔴 |
@@ -164,6 +164,10 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 > **B-02 — parcial (2026-09-01).** El mismo export trae en `INVENTARIO` un catálogo de 16 ítems de chapa: dos medidas de plancha (1,00 × 2,00 m y 1,22 × 2,44 m) en calibres 14 a 27 (chapa negra: cal. 14/16/18/20/22; galvanizada: cal. 18/20/25/27), más un ítem especial de acero inoxidable A240 esmerilado 430 en 0,70 × 1,25/2,50 m. Sirve como insumo real para probar el nesting, pero falta confirmar con el cliente (`P-02`) si compran algo fuera de este catálogo — de ahí que quede parcial y no cierre `SUP-02` del todo.
 >
 > **B-17 — parcial (2026-09-01).** `PRODUCCION` trae 220 registros de tiempo real de trabajo sobre 59 notas de pedido distintas, pero **no sirve todavía como baseline confiable**: los nombres de proceso están sin normalizar (mayúsculas/minúsculas y variantes distintas para el mismo proceso, ej. "Corte Chapa" / "Corte de Chapa" / "CORTE DE CHAPA"), y solo 33 de las 552 notas en `NOTAS_PEDIDO` tienen `HS_ESTIMADAS` cargado — sin eso no hay con qué comparar el tiempo real. Es insumo crudo, no el baseline en sí; falta limpieza y probablemente `P-08` en el relevamiento para completar lo que falta.
+>
+> **B-01 / B-09 — parcial (2026-09-01).** En la reunión de arranque con Aníbal (ver `RELEVAMIENTO-REUNION-ARRANQUE.md`) se confirmó acceso a un Drive compartido con parte de su información de costeo real (mostró en vivo los presupuestos de Prolum, Farmacia Güemes, Terminal de Termas y "Activar"). Falta confirmar qué tan completo es ese Drive contra lo que pide `B-01`, y todavía no llegaron los dos archivos de ejemplo (uno complejo, uno simple) que Aníbal se comprometió a mandar por mail para `B-09`.
+>
+> **Nota sobre `B-02`/`SUP-02` (2026-09-01).** La misma reunión reveló que el catálogo de materiales real es más amplio que "formatos de chapa": aparecieron polyfan (0,60 × 1,20 m), MDF (1,83 × 2,60 m), ACM, acrílico, PVC, tubos estructurales (25×25 y 40×40 mm, facturados por metro lineal, no por nesting de área) y tiras de LED (por longitud). No cierra ni refuta `SUP-02` — que sigue siendo específicamente sobre chapa — pero advierte que el modelo de materiales necesita distinguir "nesteable por área" de "facturable por metro lineal", y contemplar materiales provistos por el cliente (costo $0, entra igual al plano de corte). Detalle completo en `RELEVAMIENTO-REUNION-ARRANQUE.md`.
 
 ### Bloqueantes de fase
 
@@ -279,9 +283,9 @@ Resumen para revisar de un vistazo en cada daily.
 
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
-| Supuestos (`SUP`) | 16 | 12 | 2 | 2 |
+| Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
 | Parámetros (`PAR`) | 37 | 11 | 14 | 12 |
-| Insumos (`B` + `T`) | 23 | 20 | 2 | 1 |
+| Insumos (`B` + `T`) | 23 | 19 | 3 | 1 |
 | Preguntas (`P`) | 19 | 19 | 0 | 0 |
 | Decisiones (`D`) | 9 | 9 | 0 | 0 |
 
