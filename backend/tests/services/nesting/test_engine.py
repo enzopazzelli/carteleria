@@ -1,4 +1,4 @@
-"""Tests del motor de nesting rectangular — CART-202.
+"""Tests del motor de nesting rectangular — CART-202 y CART-203.
 
 Convención `CONVENCIONES.md §6`: el motor de nesting es una de las tres
 cosas que sí o sí necesitan test, porque un error acá se manifiesta como
@@ -11,18 +11,56 @@ equivalente sintético mientras tanto.
 """
 from __future__ import annotations
 
+import math
 from decimal import Decimal
+from itertools import combinations
 
 import pytest
 
 from app.services.nesting.engine import MotorNestingRectangular
-from app.services.nesting.models import Pieza, Plancha, RotacionPermitida
+from app.services.nesting.models import ParametrosCorte, Pieza, Plancha, RotacionPermitida
 
 PLANCHA_1000X1000 = Plancha(ancho_mm=Decimal("1000"), alto_mm=Decimal("1000"))
 
 
-def _motor(plancha: Plancha = PLANCHA_1000X1000, rotacion=RotacionPermitida.LIBRE_0_90):
-    return MotorNestingRectangular(plancha=plancha, rotaciones_permitidas=rotacion)
+def _params(
+    kerf_mm=Decimal("0"),
+    margen_borde_mm=Decimal("0"),
+    separacion_piezas_mm=Decimal("0"),
+    rotaciones_permitidas=RotacionPermitida.LIBRE_0_90,
+) -> ParametrosCorte:
+    return ParametrosCorte(
+        kerf_mm=kerf_mm,
+        margen_borde_mm=margen_borde_mm,
+        separacion_piezas_mm=separacion_piezas_mm,
+        rotaciones_permitidas=rotaciones_permitidas,
+    )
+
+
+def _motor(plancha: Plancha = PLANCHA_1000X1000, params: ParametrosCorte | None = None):
+    return MotorNestingRectangular(plancha=plancha, params=params or _params())
+
+
+def _distancia_mm(a, b) -> float:
+    """Distancia entre los contornos de dos `PosicionPieza` (0 si se tocan
+    o se superponen en un eje). Sirve para verificar PAR-03 sin asumir en
+    qué posición exacta decidió ubicarlas el packer."""
+    ax1, ay1 = a.x_mm, a.y_mm
+    ax2, ay2 = a.x_mm + a.ancho_colocado_mm, a.y_mm + a.alto_colocado_mm
+    bx1, by1 = b.x_mm, b.y_mm
+    bx2, by2 = b.x_mm + b.ancho_colocado_mm, b.y_mm + b.alto_colocado_mm
+
+    dx = max(ax1 - bx2, bx1 - ax2, Decimal("0"))
+    dy = max(ay1 - by2, by1 - ay2, Decimal("0"))
+
+    if dx == 0:
+        return float(dy)
+    if dy == 0:
+        return float(dx)
+    return math.hypot(float(dx), float(dy))
+
+
+# --- CART-202: bin packing puro (kerf = margen = separación = 0) ----------
 
 
 def test_devuelve_posicion_y_rotacion_de_cada_pieza():
@@ -89,7 +127,7 @@ def test_veta_impide_rotacion_de_90_grados():
     # si el motor decidió rotar o no.
     piezas = [Pieza(id="p1", ancho_mm=Decimal("700"), alto_mm=Decimal("300"))]
 
-    resultado_con_veta = _motor(rotacion=RotacionPermitida.SOLO_0_180).anidar(
+    resultado_con_veta = _motor(params=_params(rotaciones_permitidas=RotacionPermitida.SOLO_0_180)).anidar(
         piezas, tope_planchas_advertencia=500
     )
 
@@ -128,3 +166,87 @@ def test_par_26_dentro_del_limite_par_25():
 
     assert len(resultado.posiciones) == 200
     assert duracion_s < 3.0
+
+
+# --- CART-203: kerf, margen de borde y separación --------------------------
+
+
+def test_margen_de_borde_reduce_area_util_y_desplaza_las_piezas():
+    pieza = Pieza(id="p1", ancho_mm=Decimal("500"), alto_mm=Decimal("500"))
+    params = _params(margen_borde_mm=Decimal("200"))
+
+    resultado = _motor(params=params).anidar([pieza], tope_planchas_advertencia=500)
+
+    (posicion,) = resultado.posiciones
+    assert posicion.x_mm == Decimal("200")
+    assert posicion.y_mm == Decimal("200")
+
+
+def test_margen_de_borde_hace_fallar_una_pieza_que_sin_margen_entraba():
+    # Sin margen, 950x950 entra justo en una plancha de 1000x1000.
+    pieza = Pieza(id="p1", ancho_mm=Decimal("950"), alto_mm=Decimal("950"))
+
+    _motor(params=_params()).anidar([pieza], tope_planchas_advertencia=500)  # no falla
+
+    with pytest.raises(ValueError, match="no colocadas"):
+        _motor(params=_params(margen_borde_mm=Decimal("50"))).anidar(
+            [pieza], tope_planchas_advertencia=500
+        )
+
+
+def test_kerf_no_cambia_el_tamano_reportado_de_la_pieza_solo_su_ubicacion():
+    pieza = Pieza(id="p1", ancho_mm=Decimal("500"), alto_mm=Decimal("300"))
+
+    sin_kerf = _motor(params=_params()).anidar([pieza], tope_planchas_advertencia=500)
+    con_kerf = _motor(params=_params(kerf_mm=Decimal("4"))).anidar(
+        [pieza], tope_planchas_advertencia=500
+    )
+
+    (pos_sin,) = sin_kerf.posiciones
+    (pos_con,) = con_kerf.posiciones
+
+    # El corte real de la pieza mide lo mismo — el kerf es buffer de
+    # ubicación, no un cambio de las medidas que ve el diseñador.
+    assert pos_con.ancho_colocado_mm == pos_sin.ancho_colocado_mm == Decimal("500")
+    assert pos_con.alto_colocado_mm == pos_sin.alto_colocado_mm == Decimal("300")
+
+    # Medio kerf por lado (PAR-01): la pieza se corre kerf/2 desde el borde.
+    assert pos_con.x_mm == pos_sin.x_mm + Decimal("2")
+    assert pos_con.y_mm == pos_sin.y_mm + Decimal("2")
+
+
+def test_separacion_entre_piezas_contiguas_respeta_el_minimo():
+    # Formato que fuerza a las 4 piezas a compartir plancha, contiguas.
+    plancha = Plancha(ancho_mm=Decimal("210"), alto_mm=Decimal("210"))
+    piezas = [
+        Pieza(id=f"p{i}", ancho_mm=Decimal("100"), alto_mm=Decimal("100")) for i in range(4)
+    ]
+    separacion = Decimal("5")
+
+    resultado = _motor(plancha=plancha, params=_params(separacion_piezas_mm=separacion)).anidar(
+        piezas, tope_planchas_advertencia=500
+    )
+
+    misma_plancha = [p for p in resultado.posiciones if p.plancha_indice == 0]
+    for a, b in combinations(misma_plancha, 2):
+        assert _distancia_mm(a, b) >= float(separacion) - 1e-9
+
+
+def test_kerf_margen_y_separacion_se_aplican_de_forma_independiente():
+    """El criterio central de CART-203: los tres parámetros conviven sin
+    sumarse en uno solo ni pisarse — se puede aislar el efecto de cada
+    uno en el resultado final."""
+    pieza = Pieza(id="p1", ancho_mm=Decimal("400"), alto_mm=Decimal("400"))
+    kerf, margen, separacion = Decimal("4"), Decimal("30"), Decimal("6")
+
+    resultado = _motor(
+        params=_params(kerf_mm=kerf, margen_borde_mm=margen, separacion_piezas_mm=separacion)
+    ).anidar([pieza], tope_planchas_advertencia=500)
+
+    (posicion,) = resultado.posiciones
+    # Con una sola pieza, la separación entre piezas no participa: la
+    # posición depende solo de margen + medio kerf, sumados, no colapsados.
+    assert posicion.x_mm == margen + kerf / 2
+    assert posicion.y_mm == margen + kerf / 2
+    assert posicion.ancho_colocado_mm == pieza.ancho_mm
+    assert posicion.alto_colocado_mm == pieza.alto_mm

@@ -1,8 +1,4 @@
-"""Modelos de dominio del motor de nesting rectangular (CART-202).
-
-Kerf, margen de borde y separación entre piezas (PAR-01 a PAR-03) no
-están acá todavía: los aplica `CART-203` sobre el resultado de este
-motor, como capa geométrica independiente."""
+"""Modelos de dominio del motor de nesting rectangular (CART-202, CART-203)."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -20,6 +16,29 @@ class RotacionPermitida(str, Enum):
 
     SOLO_0_180 = "SOLO_0_180"  # material con veta (CART-204): sin giro de 90
     LIBRE_0_90 = "LIBRE_0_90"  # material sin veta: el motor puede rotar 90
+
+
+@dataclass(frozen=True)
+class ParametrosCorte:
+    """Parámetros de corte por material (CART-105): PAR-01 a PAR-04.
+
+    Tres efectos geométricos distintos que se aplican de forma
+    independiente (DECISIONES-Y-BLOQUEANTES.md §1.4) — nunca colapsados
+    en un solo número:
+
+    - `kerf_mm` (PAR-01): medio kerf de buffer por lado del contorno de
+      cada pieza. Entre dos piezas contiguas, ese buffer se combina en
+      un único ancho de corte compartido.
+    - `margen_borde_mm` (PAR-02): reduce el área útil de la plancha,
+      perimetral, antes de anidar nada.
+    - `separacion_piezas_mm` (PAR-03): espaciado mínimo adicional entre
+      el contorno de dos piezas contiguas, sobre el que ya deja el kerf.
+    """
+
+    kerf_mm: Decimal
+    margen_borde_mm: Decimal
+    separacion_piezas_mm: Decimal
+    rotaciones_permitidas: RotacionPermitida
 
 
 @dataclass(frozen=True)

@@ -1,18 +1,27 @@
-"""Motor de bin packing rectangular — CART-202.
+"""Motor de bin packing rectangular — CART-202 + CART-203.
 
-Usa `rectpack` (ADR-05, EPICA.md §9). Dos correcciones obligatorias sobre
-la especificación técnica original, de DECISIONES-Y-BLOQUEANTES.md:
+Usa `rectpack` (ADR-05, EPICA.md §9). Correcciones obligatorias sobre la
+especificación técnica original, de DECISIONES-Y-BLOQUEANTES.md:
 
 - **§1.2** — sin tope arbitrario de planchas. Se usa
   `add_bin(..., count=float("inf"))` y se valida el resultado contra el
   tope de negocio PAR-05 con una advertencia, nunca truncando.
 - **§1.3** — la rotación no es un booleano fijo en el código. Depende de
-  `PAR-04` (si el material tiene veta), que llega como
-  `RotacionPermitida`.
+  `PAR-04` (si el material tiene veta), en `ParametrosCorte`.
+- **§1.4** — kerf, margen de borde y separación son tres parámetros
+  independientes (PAR-01 a PAR-03), no uno solo. Cómo se aplica cada
+  uno, en `_armar_packer` y `_extraer_posiciones`:
 
-Kerf, margen de borde y separación entre piezas (PAR-01 a PAR-03) no se
-aplican acá: es la capa geométrica de `CART-203`, que se monta sobre
-este resultado.
+  1. **Margen de borde** reduce el área útil de la plancha que se le
+     pasa al packer — nunca se anida sobre el margen.
+  2. **Kerf** infla cada pieza en `kerf_mm` (kerf/2 por lado) antes de
+     empaquetarla, y ese mismo kerf/2 se descuenta al reportar la
+     posición real de la pieza. Cuando dos piezas quedan contiguas, sus
+     dos buffers de kerf/2 se combinan en el único corte que las separa.
+  3. **Separación entre piezas** agrega un margen extra fijo al lado
+     derecho/inferior de la celda de cada pieza, garantizando que el
+     hueco entre dos piezas contiguas sea de al menos ese valor, encima
+     del kerf — nunca en su lugar.
 """
 from __future__ import annotations
 
@@ -20,7 +29,7 @@ from decimal import Decimal
 
 from rectpack import MaxRectsBssf, PackingMode, newPacker
 
-from .models import Pieza, Plancha, PosicionPieza, ResultadoAnidado, RotacionPermitida
+from .models import ParametrosCorte, Pieza, Plancha, PosicionPieza, ResultadoAnidado, RotacionPermitida
 
 # rectpack empaqueta en enteros. Se escala a micrones para no perder la
 # precisión submilimétrica que exige PAR-29 (±0,5 mm).
@@ -43,9 +52,9 @@ class MotorNestingRectangular:
     sistema (CART-202): si el número cambia solo, nadie confía en él.
     """
 
-    def __init__(self, plancha: Plancha, rotaciones_permitidas: RotacionPermitida):
+    def __init__(self, plancha: Plancha, params: ParametrosCorte):
         self.plancha = plancha
-        self.rotaciones_permitidas = rotaciones_permitidas
+        self.params = params
 
     def anidar(self, piezas: list[Pieza], tope_planchas_advertencia: int) -> ResultadoAnidado:
         piezas_expandidas = self._expandir_piezas(piezas)
@@ -75,8 +84,16 @@ class MotorNestingRectangular:
             for indice in range(pieza.cantidad)
         ]
 
+    def _tamano_celda_mm(self, pieza: Pieza) -> tuple[Decimal, Decimal]:
+        """El tamaño que ocupa la pieza en el packer: la pieza real más el
+        buffer de kerf (PAR-01, por lado) más la separación (PAR-03,
+        agregada una sola vez, no por lado — alcanza para garantizar el
+        mínimo entre dos celdas contiguas)."""
+        extra_mm = self.params.kerf_mm + self.params.separacion_piezas_mm
+        return pieza.ancho_mm + extra_mm, pieza.alto_mm + extra_mm
+
     def _armar_packer(self, piezas_expandidas: list[Pieza]):
-        permite_rotacion_90 = self.rotaciones_permitidas is RotacionPermitida.LIBRE_0_90
+        permite_rotacion_90 = self.params.rotaciones_permitidas is RotacionPermitida.LIBRE_0_90
 
         packer = newPacker(
             mode=PackingMode.Offline,
@@ -84,19 +101,20 @@ class MotorNestingRectangular:
             rotation=permite_rotacion_90,
         )
 
+        margen = self.params.margen_borde_mm
+        ancho_util_mm = self.plancha.ancho_mm - 2 * margen
+        alto_util_mm = self.plancha.alto_mm - 2 * margen
+
         # count=float("inf"): nunca un `for i in range(N)` con tope arbitrario.
         packer.add_bin(
-            _a_micrones(self.plancha.ancho_mm),
-            _a_micrones(self.plancha.alto_mm),
+            _a_micrones(ancho_util_mm),
+            _a_micrones(alto_util_mm),
             count=float("inf"),
         )
 
         for pieza in piezas_expandidas:
-            packer.add_rect(
-                _a_micrones(pieza.ancho_mm),
-                _a_micrones(pieza.alto_mm),
-                rid=pieza.id,
-            )
+            ancho_celda_mm, alto_celda_mm = self._tamano_celda_mm(pieza)
+            packer.add_rect(_a_micrones(ancho_celda_mm), _a_micrones(alto_celda_mm), rid=pieza.id)
 
         return packer
 
@@ -113,22 +131,28 @@ class MotorNestingRectangular:
 
     def _extraer_posiciones(self, packer, piezas_expandidas: list[Pieza]) -> list[PosicionPieza]:
         por_id = {pieza.id: pieza for pieza in piezas_expandidas}
+        margen = self.params.margen_borde_mm
+        medio_kerf = self.params.kerf_mm / 2
 
         posiciones = []
         for indice_plancha, bin_ in enumerate(packer):
             for rect in bin_:
                 original = por_id[rect.rid]
-                ancho_sin_rotar = _a_micrones(original.ancho_mm)
+                ancho_celda_mm, _ = self._tamano_celda_mm(original)
+                rotada_90 = rect.width != _a_micrones(ancho_celda_mm)
+
+                ancho_pieza_mm = original.alto_mm if rotada_90 else original.ancho_mm
+                alto_pieza_mm = original.ancho_mm if rotada_90 else original.alto_mm
 
                 posiciones.append(
                     PosicionPieza(
                         pieza_id=rect.rid,
                         plancha_indice=indice_plancha,
-                        x_mm=_a_mm(rect.x),
-                        y_mm=_a_mm(rect.y),
-                        ancho_colocado_mm=_a_mm(rect.width),
-                        alto_colocado_mm=_a_mm(rect.height),
-                        rotada_90=rect.width != ancho_sin_rotar,
+                        x_mm=margen + _a_mm(rect.x) + medio_kerf,
+                        y_mm=margen + _a_mm(rect.y) + medio_kerf,
+                        ancho_colocado_mm=ancho_pieza_mm,
+                        alto_colocado_mm=alto_pieza_mm,
+                        rotada_90=rotada_90,
                     )
                 )
         return posiciones
