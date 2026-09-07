@@ -2,9 +2,9 @@
 
 Plataforma a medida para una empresa de cartelería de gran formato en chapa. Automatiza el armado de presupuestos, calcula cómo anidar las piezas sobre la plancha para desperdiciar lo menos posible, gestiona el circuito de autorización del dueño y envía el presupuesto al cliente con el fotomontaje del cartel sobre el frente del local.
 
-**Estado:** 📋 Documentación completa · Sprint 0 (relevamiento) sin arrancar · Sin código todavía
+**Estado:** 🚧 En desarrollo · F2 (motor de nesting rectangular) en curso, 6 de 9 historias hechas · F0/F1 (fundaciones y catálogo) todavía no arrancaron en código
 **Equipo:** Enzo (carril A — cotización) · Vale (carril B — dashboard)
-**Última actualización:** 2026-09-01 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
+**Última actualización:** 2026-09-06 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 
@@ -43,9 +43,22 @@ cartelería/
 │   ├── Especificación Técnica de Desarrollo…md
 │   └── Proyecto_Final_Automatizacion_Carteleria.md
 │
+├── backend/           ← código real, en desarrollo (F2 en curso)
+│   ├── app/services/
+│   │   ├── piezas/                   Alta manual de piezas (CART-201)
+│   │   └── nesting/                  Motor de bin packing + kerf/margen/separación,
+│   │                                 rotación por veta, comparador de formatos,
+│   │                                 aprovechamiento real y listado de materiales
+│   │                                 (CART-202 a CART-206)
+│   ├── tests/                        Espeja `app/`, corre con pytest
+│   ├── requirements.txt / requirements-dev.txt
+│   └── pytest.ini
+│
 └── prototipo-dashboard/   ← maqueta HTML del dashboard rápido (F8), sin dependencias
     └── index.html             Abrir directo en el navegador — ver su README
 ```
+
+**Lo que todavía no existe:** API (FastAPI), base de datos, auth/roles, frontend, Docker, Celery. El `backend/` de hoy es solo la capa de dominio (`services/`) con tests — ni CART-001 (esqueleto Docker) ni F1 (catálogo y precios) se empezaron. Ver el detalle historia por historia en [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 ---
 
@@ -104,6 +117,7 @@ Una hora, en este orden:
 | [`FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores de nesting en el navegador — insumo para F7, no cambia `ADR-05` | Rara vez — es una investigación puntual |
 | [`PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/PLAN-MOTOR-NESTING-DEEPNEST.md) | Plan técnico para reemplazar `rectpack`/`nest2D` por un motor único basado en Deepnest (`deepnest-next`) como microservicio Node — resuelve `D-01`. Plan, no ejecutado todavía | Cuando avance alguna de sus 5 fases |
 | [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) | Plan de contingencia: cómo aproximar huecos y corte de líneas compartidas sin servicios externos, construido encima de `shapely`/`rectpack`/`nest2D` en el mismo backend Python | Cuando se decida probarlo o se mida contra el plan de Deepnest |
+| [`GUIA-PRUEBAS-LOCALES.md`](docs/GUIA-PRUEBAS-LOCALES.md) | Cómo probar el motor de nesting con datos reales del cliente: el xlsx de AppSheet y los DXF de `modelos/` — scripts de preparación, nunca se commitea lo que producen | Cuando cambie qué datos reales hay disponibles para probar |
 
 ### `fuentes/` — documentos originales
 
@@ -180,29 +194,31 @@ Python en el backend es prácticamente obligatorio: el ecosistema de geometría 
 
 ## Cómo arrancar
 
-### Ahora mismo — Sprint 0
+### Correr lo que ya existe
 
-El proyecto está en relevamiento. **No hay código que correr.** Lo que hay que hacer:
+Todavía es solo la capa de dominio del nesting, sin API ni base de datos:
 
-1. **Conseguir los insumos bloqueantes** — `B-01` a `B-08` y `B-17` en [`docs/REGISTRO.md §3`](docs/REGISTRO.md)
-2. **Cerrar las 8 preguntas bloqueantes** — `P-01` a `P-07` y `P-10` en [`docs/REGISTRO.md §4`](docs/REGISTRO.md)
-3. **Medir el baseline de las métricas** (`B-17`) — sin esto no se puede demostrar valor en ningún hito
-4. **Arrancar el trámite de WhatsApp Business API** (`B-12`) — demora semanas, por eso se empieza en S0 aunque se use en S4
-5. **Crear el repositorio Git** (`T-05`) y contratar el VPS (`T-01`)
+```bash
+cd backend
+pip install -r requirements-dev.txt
+pytest                     # 34 tests, motor de nesting + carga de piezas
+```
 
-El guion de las tres reuniones está en [`docs/REGISTRO.md §6`](docs/REGISTRO.md).
+No hay `.env`, Docker ni servidor que levantar todavía — eso es F0 (`CART-001`), que no se empezó.
 
-### Los cinco bloqueantes que más duelen
+### Bloqueantes de negocio que siguen abiertos
+
+El relevamiento con el cliente (Sprint 0) avanzó parcialmente pero no cerró del todo — ver el tablero de estado en [`docs/REGISTRO.md §7`](docs/REGISTRO.md) y la última entrada de [`docs/BITACORA.md`](docs/BITACORA.md) para el detalle actualizado. Los que más duelen:
 
 1. **`SUP-04` / `P-01`** — ¿piezas rectas o corpóreas? Reordena el roadmap completo
 2. **`SUP-08` / `P-05`** — ¿cómo calculan el desarrollo de plegado? Sin esto el nesting calcula sobre medidas equivocadas
-3. **`B-02`** — formatos de chapa. Sin esto no hay nada contra qué probar
-4. **`B-17`** — baseline de métricas. Sin esto no se puede demostrar valor
-5. **`B-07`** — acceso a las tablas de AppSheet. Define si el carril B existe
+3. **`B-02`** — formatos de chapa (🟡 parcial: catálogo de 16 formatos relevado, falta confirmar si compran algo fuera de ese conjunto)
+4. **`B-17`** — baseline de métricas (🟡 parcial: hay datos de producción pero sin normalizar)
+5. **`B-07`** — 🟢 resuelto: acceso a las tablas de AppSheet obtenido
 
-### Cuando exista código
+### Lo que falta para tener algo desplegable
 
-Estructura prevista del repositorio:
+Estructura prevista del repositorio completo (todavía no existe API, DB, frontend ni Docker):
 
 ```
 cartelería/

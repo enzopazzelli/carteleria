@@ -58,6 +58,77 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-09-06 — README al día + CART-503 (parseo DXF) adelantada para pruebas con datos reales
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+**`README.md` actualizado al estado real del código.** Decía "Sprint 0 sin arrancar, sin código todavía", pero la rama `feat/F2-motor-nesting-rectangular` ya tiene 6 de las 9 historias de F2 hechas (`CART-201` a `CART-206`, 34 tests). Se corrigió el estado, se documentó la estructura real de `backend/` y se cambiaron las instrucciones de arranque de "no hay nada que correr" a `cd backend && pytest`.
+
+**Se adelantó `CART-503` (ingesta y parseo de DXF), fuera del orden del roadmap** (es F5, F2 todavía no cerró `CART-207`-`209`), a pedido explícito para poder probar el motor de nesting con datos reales: tres DXF de ejemplo en `modelos/` (`carrusel.dxf`, `esqueletos.dxf`, `repisas.dxf`) y el export de AppSheet (`CARTELERIA 2026.xlsx`, ya documentado en sesiones previas). Nuevo módulo `backend/app/services/ingesta/dxf.py` con 8 tests (42 en total en la suite).
+
+Se armaron además dos scripts de preparación para pruebas locales (no son features del backlog, viven en `backend/scripts/`, nunca se commitea lo que producen):
+- `extraer_catalogo_chapa_xlsx.py` — parsea `INVENTARIO` (formatos de chapa) y busca precio de referencia en el historial de `COTIZACIONES.ITEMS_JSON`.
+- `probar_nesting_real.py` — conecta un DXF real con el catálogo anterior y corre `comparar_formatos` (`CART-205`) de punta a punta.
+
+**Se adelantó también `CART-208` (visor SVG del anidado)**, a pedido explícito de tener algo visual y no solo texto/JSON para mirar lo que el motor produce: `app/services/nesting/visualizacion.py` (3 tests, 45 en total en la suite) genera el SVG de cada plancha con sus piezas, tooltip nativo con nombre/medidas/rotación al pasar el cursor. `scripts/generar_visor_html.py` lo empaqueta en un `.html` local (`local/visor.html`, ignorado por git) que abre solo en el navegador — mismo criterio de "nunca sale de esta máquina" que el resto de la guía, porque dibuja geometría y precios reales del cliente. Se evaluó publicarlo como Artifact (link compartible) pero se descartó: implicaría subir datos reales del cliente a un servicio externo aunque sea privado por default, y el archivo local ya resuelve la necesidad.
+
+**Se sumó además una grilla de referencia de 100mm sobre cada plancha y se dejó de dibujar la etiqueta de texto en piezas muy chicas** (con muchas piezas importadas de DXF se superponían y volvían el visor ilegible) — la forma sigue ahí, el nombre queda disponible al pasar el cursor.
+
+**Se agregó `app/services/nesting/validacion_manual.py`** (7 tests): valida si una posición elegida a mano para una pieza ya anidada sigue respetando kerf, margen y separación (`ADR-09`) contra el resto de las piezas de su plancha — no es el motor automático, es la misma regla geométrica aplicada a un movimiento manual.
+
+**Se agregó `scripts/servidor_visor.py`** — visor interactivo con servidor local (`http.server`, sin dependencias nuevas, solo `localhost`): arrastrar una pieza la valida en vivo contra `validacion_manual.py`; seleccionar piezas y mandarlas a una "Tanda 2" hace que el servidor vuelva a correr `MotorNestingRectangular` de verdad tanto para lo que queda como para lo nuevo — dos aprovechamientos y costos reales, no una lista separada sin sentido. Probado de punta a punta contra `repisas.dxf`: separar 2 de 16 piezas hizo que Tanda 1 pasara de 2 planchas/54.5% a 1 plancha/74.5%, con Tanda 2 en 1 plancha/34.5% — el recálculo es real, no cosmético.
+
+**Hallazgo casual relevante:** con `escala_a_mm=10` (en vez de 1) sobre `repisas.dxf`, el aprovechamiento real pasó de ~1% a ~54-74% — mucho más consistente con lo que un taller esperaría de piezas de cartelería. No es una confirmación de que 10 sea la escala correcta (sigue siendo una decisión del usuario, ver `GUIA-PRUEBAS-LOCALES.md §2`), pero es la primera señal concreta de que la escala real de estos DXF probablemente no es 1:1.
+
+**Se rehizo la validación manual para ángulo libre y colisión por polígono real.** El pedido inicial era rotar 90° nada más, pero no tenía sentido restringir a mano una pieza irregular a 0°/90° cuando esa restricción es solo del *packer* automático (`ADR-01`), no de la geometría. `validacion_manual.py` pasó a usar `shapely` (ya era dependencia por `ingesta/dxf.py`) para validar colisión entre polígonos reales a cualquier ángulo — respeta `PAR-04` (veta = solo 0°/180°). El anclaje también cambió de "esquina" (motor automático) a "centro" (edición manual), para que rotar no desplace la pieza. 11 tests nuevos, reemplazan a los 7 anteriores (rectángulo).
+
+**Kerf, margen y separación pasaron de constante fija a parámetro configurable** en los tres scripts (`--kerf-mm`/`--margen-mm`/`--separacion-mm`), con el provisorio (`PAR-01/02/03`) como default. En el visor interactivo hay además un panel para cambiarlos en vivo y recalcular — motivado por un caso real: piezas con bordes rectos que podrían ir con menos separación que la que trae el default.
+
+**`servidor_visor.py`** quedó con tres capacidades reales, probadas de punta a punta contra `repisas.dxf`: mover/rotar validado (rechaza correctamente superposición y avance de margen, incluso en rotaciones de pocos grados si la pieza ya está ajustada), reconfigurar parámetros de corte (recalcula y la posición de las piezas cambia de verdad), y separar en tandas (cada una con su aprovechamiento y costo real). El aprovechamiento que reporta ahora usa área real de polígono (vía `shapely`), no bounding box — bajó de ~55% a ~40% en `repisas.dxf` respecto de la versión anterior del visor, que sí usaba bounding box vía `aprovechamiento.py`: el número viejo estaba inflado por la misma razón que corrige `ADR-08`.
+
+**La validación manual dejó de bloquear y pasó a informar.** El primer diseño revertía la pieza a su posición anterior si el movimiento quedaba inválido — frustrante para ajuste fino cerca de una posición válida, y directamente incompatible con una técnica real que el usuario pidió habilitar: "corte de línea compartida" (dos triángulos por la hipotenusa, cortados de una sola pasada). Ahora `mover_o_rotar_pieza` siempre aplica la posición; la pieza en conflicto queda resaltada (naranja) con el motivo, sin interrumpir el arrastre.
+
+**Bug real encontrado y corregido: `.buffer()` de shapely no sirve para kerf/separación cercanos a cero.** Con kerf=0,1mm y separación=0, el resultado directo del motor automático (sin tocar nada a mano) marcaba 8 piezas en conflicto — falsos positivos. Causa: `.buffer()` aproxima curvas con segmentos, y a radios de buffer tan chicos (0,05mm) el error de esa aproximación supera la propia tolerancia que se quería medir. Se reemplazó por `poligono.distance(otro_poligono)` (distancia exacta entre contornos, sin buffer) comparada contra el gap requerido — con el mismo conjunto de piezas, 0 conflictos tras el fix. Los 12 tests de `validacion_manual.py` seguían pasando con el cambio, pero el caso real (kerf casi nulo, piezas irregulares apretadas) no estaba cubierto por ningún test unitario — es la clase de bug que solo aparece con datos reales, no con los valores holgados que se usan en los tests.
+
+**Manijas de rotación:** se redujo la distancia (que quedó demasiado lejos tras el ajuste anterior) y quedaron con halo de agarre más grande.
+
+**Tres ajustes de UX más sobre el visor, a pedido:** (1) guardia de secuencia contra respuestas de `/api/mover`/`/api/separar`/`/api/parametros` fuera de orden — si dos movimientos se disparan rápido, una respuesta vieja ya no puede pisar a una más nueva (posible causa de que el naranja de conflicto "quedara pegado" un rato). (2) Zoom con rueda del mouse centrado en el cursor + doble click para volver a la vista completa, usando el propio `viewBox` del SVG — no rompe el arrastre porque toda la geometría de mouse ya pasaba por `getScreenCTM()`. (3) La manija de rotación dejó de dibujarse en todas las piezas a la vez (con muchas piezas chicas tapaba todo) y ahora solo aparece en la seleccionada.
+
+**Zoom: bug real encontrado y corregido.** El "no puedo restablecer la vista" era `ondblclick` sobre un elemento que un `render()` concurrente (ej. la respuesta de un movimiento en curso) podía reemplazar entre el primer y el segundo click, rompiendo la detección nativa de doble-click del navegador. Se reemplazó por un botón fijo ("Vista completa"), inmune a eso. El "descentrado" era falta de límites: se podía panear la vista más allá del borde de la plancha. Se agregó `limitarVista()`, que fija el centro dentro de un rango que garantiza que el viewBox nunca se salga de la plancha.
+
+**`CART-505` (agujeros) implementado de punta a punta**, a partir de un pedido concreto: piezas chicas que deberían anidar dentro del hueco de una "O" y no lo hacían. Encontramos que la causa era doble: (1) el parser de DXF trataba cada contorno cerrado como una pieza independiente, agujero o no — confirmado con datos reales: `carrusel.dxf` pasó de 147 "piezas" a 35 reales (31 con agujeros) al corregirlo; (2) aunque el parser lo hubiera sabido, el polígono se construía sólido (sin el hueco), así que ni siquiera mover la pieza a mano funcionaba. Se resolvió con clasificación por nivel de anidamiento en `dxf.py` (par = pieza, impar = agujero de la pieza contenedora más chica — soporta agujero-dentro-de-agujero) y `Polygon(exterior, holes=[...])` en toda la cadena de validación/render. Probado de punta a punta contra `carrusel.dxf`: una pieza chica se coloca válida exactamente en el hueco más grande de una pieza real de 315x315mm. **Es explícitamente el límite conocido lo que sigue faltando:** el motor automático (`rectpack`) todavía no puede anidar sola una pieza *dentro* de un hueco — eso es F7 (nesting irregular), con los dos planes ya escritos en el repo; lo que se resolvió es que ahora SÍ se puede hacer a mano en el visor, validado de verdad.
+
+**Bug encontrado el mismo día que se implementó `CART-505`: la clasificación de agujeros era demasiado agresiva y hacía desaparecer piezas reales.** El usuario notó, comparando contra un visor DXF online, que faltaban piezas y que había piezas chicas (destinadas a los huecos entre las "llantas" de una rueda decorativa) que la app no contemplaba. Investigado con datos reales: `carrusel.dxf` tenía 112 contornos "contenidos" clasificados como agujero, con tamaños de 3×3mm (tornillos, correcto) hasta 98×68mm (demasiado grande para ser un agujero — eran piezas independientes que el diseñador había pre-anidado a mano en el hueco de una pieza más grande, indistinguible geométricamente de un agujero real sin la convención de capas de `CART-501`). Se agregó un umbral de tamaño (`tamano_maximo_agujero_mm`, default 25mm, expuesto como `--agujero-max-mm`): un contorno más grande que eso nunca se clasifica como agujero, la contenga quien la contenga. Con el fix, `carrusel.dxf` pasó de 35 a 47 piezas reales (12 recuperadas). El caso de "huecos entre las llantas" (cóncavos del contorno exterior, no agujeros cerrados) no necesitó ningún cambio — la validación manual ya compara contorno real, no bounding box, así que ya reconocía esos huecos como espacio libre.
+
+28 tests nuevos entre `test_dxf.py`, `test_validacion_manual.py` y `test_visualizacion.py` (70 en total en la suite).
+
+Documentado todo en [`docs/GUIA-PRUEBAS-LOCALES.md`](GUIA-PRUEBAS-LOCALES.md) (nueva).
+
+### Qué se decidió
+
+**Sin capa `CORTE` (los DXF de prueba no siguen la convención de `CART-501`/`ADR-02` — todo viene en `Layer 1`), `parsear_dxf` trata todo contorno cerrable como pieza**, en vez de rechazar el archivo. Decisión explícita de alcance, reversible en una línea cuando exista la convención acordada con diseño.
+
+**La escala nunca se asume del header del DXF.** Los tres archivos de prueba no traen `$INSUNITS`. `parsear_dxf(ruta, escala_a_mm)` exige el factor como parámetro obligatorio sin default — mismo criterio que `CART-504` ya preveía para SVG en mm vs. px, extendido acá a DXF porque el problema es el mismo y apareció con datos reales, no hipotéticos.
+
+### Cambios en el registro
+
+Alta de `PAR-38` — tolerancia de deduplicación de líneas superpuestas (0,1 mm, provisorio, `CART-503`).
+
+### Hallazgos técnicos que importan
+
+1. **Los DXF reales confirman `RI-01` con un número concreto:** en `esqueletos.dxf`, 247 de 313 contornos (79%) no cierran dentro de `PAR-06`. Sin capas, no hay forma de saber si son piezas mal exportadas o líneas de construcción que nunca debieron cortarse.
+2. **El xlsx no tiene geometría de piezas.** Se confirmó explorando `COT_ITEMS` (vacía) y `COTIZACIONES.ITEMS_JSON` (desglose de costo por material, sin ancho/alto). El catálogo de formatos de chapa sí está — 16 filas en `INVENTARIO`— pero **solo 2 de 16 tienen algún precio en el historial de cotizaciones**; los otros 14 nunca fueron cotizados. Confirma lo que `B-17`/`B-01` ya marcaban como parcial, con el número exacto esta vez.
+
+### Pendiente
+
+- Determinar la escala real de al menos uno de los DXF de `modelos/` contra una medida física conocida, para que `probar_nesting_real.py` deje de dar aprovechamientos irreales (~1%, con `escala_a_mm=1`).
+- Decidir si `CART-503` (este código) se mergea a `main`/`feat/F2-...` ahora o espera a que F2 cierre — quedó en el working tree, sin commitear.
+- Cuando se cierre `CART-501` con diseño, agregar el filtro por capa `CORTE` a `parsear_dxf` (hoy comentado como decisión temporal en el docstring del módulo).
+
+---
+
 ## 2026-09-01 (7) — Relevamiento de la reunión de arranque con Megacarteles
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
