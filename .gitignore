@@ -23,6 +23,10 @@ uploads/
 *.xlsx
 img_dashboard_real/
 
+# Salidas locales derivadas de datos reales del cliente (scripts/) —
+# mismo criterio que el xlsx/dxf de origen: nunca al repositorio
+backend/local/
+
 # Sistema
 .DS_Store
 Thumbs.db
