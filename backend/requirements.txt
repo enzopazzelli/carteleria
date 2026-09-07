@@ -1,1 +1,3 @@
 rectpack==0.2.2
+ezdxf==1.4.4
+shapely==2.1.2
