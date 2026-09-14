@@ -18,6 +18,7 @@ from fastapi import FastAPI
 
 from ..modelos.base import inicializar
 from .rutas_catalogo import router as router_catalogo
+from .rutas_trabajos import router as router_trabajos
 
 
 @asynccontextmanager
@@ -33,3 +34,4 @@ app = FastAPI(
     lifespan=_ciclo_de_vida,
 )
 app.include_router(router_catalogo)
+app.include_router(router_trabajos)

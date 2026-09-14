@@ -52,7 +52,8 @@ cartelería/
 │   │                                 (CART-202 a CART-206)
 │   ├── app/modelos/                  Tablas SQLAlchemy (catálogo, trabajos, grupos de
 │   │                                 corte) — docs/PLAN-SLICE-VERTICAL.md
-│   ├── app/api/                      FastAPI: ABM de catálogo (CART-102/105) por ahora
+│   ├── app/api/                      FastAPI: catálogo (CART-102/105), trabajos y
+│   │                                 subida de DXF (CART-503), grupos de corte (CART-211)
 │   ├── alembic/                      Migraciones — `alembic upgrade head`
 │   ├── tests/                        Espeja `app/`, corre con pytest
 │   ├── requirements.txt / requirements-dev.txt
@@ -211,7 +212,7 @@ Python en el backend es prácticamente obligatorio: el ecosistema de geometría 
 ```bash
 cd backend
 pip install -r requirements-dev.txt
-pytest                     # 127 tests: dominio del nesting + API
+pytest                     # 144 tests: dominio del nesting + API
 ```
 
 Ya hay una API real, siguiendo [`docs/PLAN-SLICE-VERTICAL.md`](docs/PLAN-SLICE-VERTICAL.md) — SQLite local sin instalar nada, FastAPI, Alembic:
@@ -222,7 +223,7 @@ alembic upgrade head        # crea backend/local/carteleria.db
 uvicorn app.api.app:app --reload
 ```
 
-Documentación interactiva en `http://localhost:8000/docs`. Por ahora solo el ABM de catálogo (`CART-102`/`CART-105`: materiales, formatos, parámetros de corte) — sin autenticación (`CART-002` se difiere) y por eso **no se expone fuera de `localhost`**. Trabajos, cola de anidado y ajuste manual son los pasos que siguen del plan.
+Documentación interactiva en `http://localhost:8000/docs`. Por ahora: ABM de catálogo (`CART-102`/`CART-105`), trabajos con subida y parseo de DXF (`CART-503`) y grupos de corte (`CART-211`) — sin autenticación (`CART-002` se difiere) y por eso **no se expone fuera de `localhost`**. La cola de anidado y el ajuste manual son los pasos que siguen del plan.
 
 No hay Docker todavía — eso es la versión de producción de F0 (`CART-001`), que sigue sin empezar; el modo local de arriba corre sin instalar nada pesado y el cambio a PostgreSQL/Docker es de configuración, no de código.
 
