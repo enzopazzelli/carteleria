@@ -21,6 +21,8 @@ from .esquemas_presupuesto import (
     ClienteActualizar,
     ClienteCrear,
     ClienteLeer,
+    LineaCostoActualizar,
+    LineaCostoCrear,
     LineaCostoLeer,
     LineaCostoOverride,
     PresupuestoActualizar,
@@ -279,7 +281,7 @@ def listar_lineas_costo(
     return list(sesion.execute(consulta).scalars().all())
 
 
-# --- Override manual (paso 3: `CART-303`) ---------------------------------
+# --- Líneas de costo: comunes a MATERIAL y a las libres -------------------
 
 
 def _linea_costo_o_404(sesion: Session, linea_id: int) -> LineaCosto:
@@ -289,15 +291,24 @@ def _linea_costo_o_404(sesion: Session, linea_id: int) -> LineaCosto:
     return linea
 
 
-@router.patch("/lineas-costo/{linea_id}", response_model=LineaCostoLeer)
+def _rechazar_si_es_material(linea: LineaCosto, accion: str) -> None:
+    if linea.rubro == RubroLineaCosto.MATERIAL.value:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Una línea de rubro MATERIAL no se {accion} a mano — se regenera con "
+            "recalcular-materiales, o se corrige con un override.",
+        )
+
+
+@router.patch("/lineas-costo/{linea_id}/override", response_model=LineaCostoLeer)
 def aplicar_override(
     linea_id: int, datos: LineaCostoOverride, sesion: Session = Depends(obtener_sesion)
 ) -> LineaCosto:
     """Corregir a mano el valor de una línea, con quién y cuándo
-    (`ADR-07`). `valor_override: null` revierte al valor calculado y
-    limpia `override_por`/`override_en` — no hay un endpoint aparte
-    para "volver al calculado". `valor_calculado` nunca se toca acá:
-    sigue disponible entero si se revierte."""
+    (`ADR-07`, `CART-303`) — de cualquier rubro, incluido `MATERIAL`:
+    overridear un costo calculado es exactamente el punto acá.
+    `valor_override: null` revierte al valor calculado y limpia
+    `override_por`/`override_en`. `valor_calculado` nunca se toca."""
     linea = _linea_costo_o_404(sesion, linea_id)
     linea.valor_override = datos.valor_override
     if datos.valor_override is None:
@@ -308,3 +319,58 @@ def aplicar_override(
         linea.override_en = datetime.now(timezone.utc)
     sesion.commit()
     return linea
+
+
+# --- Líneas libres (paso 4: `CART-304`/`305`/`306`) -----------------------
+
+
+@router.post(
+    "/presupuestos/{presupuesto_id}/lineas-costo",
+    response_model=LineaCostoLeer,
+    status_code=status.HTTP_201_CREATED,
+)
+def crear_linea_libre(
+    presupuesto_id: int, datos: LineaCostoCrear, sesion: Session = Depends(obtener_sesion)
+) -> LineaCosto:
+    """Insumos, mano de obra, flete e instalación — sin catálogo
+    (`CART-106` no existe), siempre una línea libre. `valor_calculado`
+    lo calcula el servidor (`cantidad × precio_unitario`), nunca se
+    confía en un total que mande el cliente."""
+    _presupuesto_o_404(sesion, presupuesto_id)
+    linea = LineaCosto(
+        presupuesto_id=presupuesto_id,
+        rubro=datos.rubro,
+        descripcion=datos.descripcion,
+        cantidad=datos.cantidad,
+        unidad=datos.unidad,
+        precio_unitario=datos.precio_unitario,
+        valor_calculado=datos.cantidad * datos.precio_unitario,
+    )
+    sesion.add(linea)
+    sesion.commit()
+    return linea
+
+
+@router.patch("/lineas-costo/{linea_id}", response_model=LineaCostoLeer)
+def actualizar_linea_libre(
+    linea_id: int, datos: LineaCostoActualizar, sesion: Session = Depends(obtener_sesion)
+) -> LineaCosto:
+    """Editar una línea libre ya cargada — rechazado sobre `MATERIAL`."""
+    linea = _linea_costo_o_404(sesion, linea_id)
+    _rechazar_si_es_material(linea, "edita")
+    for campo, valor in datos.model_dump(exclude_unset=True).items():
+        setattr(linea, campo, valor)
+    linea.valor_calculado = linea.cantidad * linea.precio_unitario
+    sesion.commit()
+    return linea
+
+
+@router.delete("/lineas-costo/{linea_id}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_linea_libre(linea_id: int, sesion: Session = Depends(obtener_sesion)) -> None:
+    """Elimina una línea libre — rechazado sobre `MATERIAL`: esas
+    desaparecen solas cuando su grupo de corte ya no existe, vía
+    `recalcular-materiales`, nunca por un `DELETE` directo."""
+    linea = _linea_costo_o_404(sesion, linea_id)
+    _rechazar_si_es_material(linea, "elimina")
+    sesion.delete(linea)
+    sesion.commit()
