@@ -187,6 +187,49 @@ def test_un_contorno_contenido_pero_demasiado_grande_se_promueve_a_pieza_propia_
     assert promovida.area_real_mm2 == Decimal("1600")  # su propia área completa, no restada de nadie
 
 
+def test_contenida_en_id_apunta_a_la_contenedora_inmediata(tmp_path):
+    # Representación dual (CART-505): la pieza promovida sigue sabiendo
+    # de qué contenedora salió — es lo que le permite a `anidado_huecos`
+    # reponerla exactamente donde el diseñador ya la había anidado a
+    # mano, en vez de buscarle lugar de nuevo por grilla.
+    def agregar(msp):
+        msp.add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], close=True)  # exterior
+        msp.add_lwpolyline([(30, 30), (70, 30), (70, 70), (30, 70)], close=True)  # contenido, 40x40
+
+    ruta = _guardar_dxf(tmp_path, "contenida_en_id.dxf", agregar)
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    exterior = next(p for p in resultado.piezas if p.ancho_mm == Decimal("100"))
+    promovida = next(p for p in resultado.piezas if p.ancho_mm == Decimal("40"))
+    assert exterior.contenida_en_id is None
+    assert promovida.contenida_en_id == exterior.id
+
+
+def test_contenida_en_id_soporta_dos_niveles_de_anidamiento(tmp_path):
+    # El caso real de carrusel.dxf: una pieza (la rueda) contiene a otra
+    # (un "caballito", contenido pero grande — se promueve) que a su vez
+    # contiene una tercera (una piecita decorativa, nivel par — isla
+    # propia automática). `contenida_en_id` de la más chica tiene que
+    # apuntar a su padre INMEDIATO (el caballito), no a la rueda —
+    # aunque geométricamente esté adentro de las dos.
+    def agregar(msp):
+        msp.add_lwpolyline([(0, 0), (200, 0), (200, 200), (0, 200)], close=True)  # rueda
+        msp.add_lwpolyline([(70, 70), (130, 70), (130, 130), (70, 130)], close=True)  # caballito, 60x60
+        msp.add_lwpolyline([(90, 90), (100, 90), (100, 100), (90, 100)], close=True)  # accent, 10x10
+
+    ruta = _guardar_dxf(tmp_path, "dos_niveles.dxf", agregar)
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert len(resultado.piezas) == 3
+    rueda = next(p for p in resultado.piezas if p.ancho_mm == Decimal("200"))
+    caballito = next(p for p in resultado.piezas if p.ancho_mm == Decimal("60"))
+    accent = next(p for p in resultado.piezas if p.ancho_mm == Decimal("10"))
+    assert caballito.contenida_en_id == rueda.id
+    assert accent.contenida_en_id == caballito.id  # el padre INMEDIATO, no la rueda
+
+
 def test_el_umbral_de_agujero_es_configurable(tmp_path):
     def agregar(msp):
         msp.add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], close=True)

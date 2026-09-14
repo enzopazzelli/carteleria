@@ -30,7 +30,14 @@ class PiezaImportada:
     `agujeros_mm` (CART-505): contornos cerrados que quedan enteramente
     adentro de `contorno_mm` no son piezas propias — son huecos de
     ÉSTA pieza (una "O", un marco, una letra con ojal). `area_real_mm2`
-    ya los descuenta. Vacío si la pieza no tiene agujeros."""
+    ya los descuenta. Vacío si la pieza no tiene agujeros.
+
+    `contenida_en_id` (CART-505, representación dual): si esta pieza
+    estaba geométricamente adentro de un hueco de otra pieza en el
+    archivo original — el diseñador ya la anidó ahí a mano — es el `id`
+    de esa pieza contenedora; `None` si no venía adentro de nada. Sirve
+    para reconstruir esa posición exacta más adelante (`anidado_huecos`)
+    en vez de tener que volver a encontrarla por búsqueda geométrica."""
 
     id: str
     capa: str
@@ -39,6 +46,7 @@ class PiezaImportada:
     area_real_mm2: Decimal
     contorno_mm: list[tuple[Decimal, Decimal]]
     agujeros_mm: list[list[tuple[Decimal, Decimal]]] = field(default_factory=list)
+    contenida_en_id: str | None = None
 
 
 @dataclass(frozen=True)

@@ -4,11 +4,15 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from app.services.nesting.models import ParametrosCorte, Plancha, RotacionPermitida
+import pytest
+
+from app.services.nesting.models import ParametrosCorte, Plancha, PosicionPieza, RotacionPermitida
 from app.services.nesting.validacion_manual import (
     GeometriaPieza,
     PosicionManual,
+    pieza_desde_posicion_manual,
     poligono_colocado,
+    posicion_manual_desde_pieza,
     validar_posicion_manual,
 )
 
@@ -155,6 +159,31 @@ def test_dos_triangulos_que_comparten_la_hipotenusa_no_cuentan_como_superpuestos
     assert resultado.valida
 
 
+def test_separacion_extra_por_par_sube_el_piso_solo_entre_esas_dos():
+    # PAR-03 (separación global) + kerf da un gap requerido de 7mm acá.
+    # "a" y "b" quedan a 10mm de borde a borde — válido con el default.
+    a = _pos("a", 500, 500)
+    b = _pos("b", 610, 500)  # borde a borde: 110 - 100 = 10mm
+    resultado_default = validar_posicion_manual(b, _CUADRADO_100, [(a, _CUADRADO_100)], _PLANCHA, _PARAMS)
+    assert resultado_default.valida
+
+    # El usuario selecciona "a" y "b" en el visor y pide 20mm entre
+    # ellas — 10mm ya no alcanza para ESE par puntual.
+    separacion_extra = {frozenset({"a", "b"}): Decimal("20")}
+    resultado_extra = validar_posicion_manual(
+        b, _CUADRADO_100, [(a, _CUADRADO_100)], _PLANCHA, _PARAMS, separacion_extra_mm=separacion_extra,
+    )
+    assert not resultado_extra.valida
+
+    # Un par que NO fue seleccionado sigue con la separación global de
+    # siempre — el piso puntual no se filtra a otras piezas.
+    c = _pos("c", 610, 500)
+    resultado_otro_par = validar_posicion_manual(
+        c, _CUADRADO_100, [(a, _CUADRADO_100)], _PLANCHA, _PARAMS, separacion_extra_mm=separacion_extra,
+    )
+    assert resultado_otro_par.valida
+
+
 def test_pieza_chica_adentro_del_agujero_de_una_o_es_valida():
     # La "O": un marco de 100x100 con un agujero cuadrado de 60x60 en
     # el medio (borde de 20mm por lado) — como pide el caso real de
@@ -178,7 +207,12 @@ def test_pieza_chica_adentro_del_agujero_de_una_o_es_valida():
     assert resultado.valida
 
 
-def test_pieza_que_toca_el_borde_del_agujero_de_una_o_es_invalida():
+def test_pieza_que_llena_el_hueco_exacto_es_valida_tocar_no_es_superponer():
+    # Una pieza de 60x60 que ocupa EXACTAMENTE un hueco de 60x60 toca
+    # las cuatro paredes con distancia cero, pero no invade el material
+    # sólido de "o" — es el mismo criterio de "tocarse no es
+    # superponerse" que el corte de línea compartida entre dos piezas,
+    # aplicado ahora al borde de un hueco.
     marco_o = GeometriaPieza(
         ancho_mm=Decimal("100"), alto_mm=Decimal("100"),
         contorno_local_mm=[(Decimal("0"), Decimal("0")), (Decimal("100"), Decimal("0")),
@@ -188,14 +222,30 @@ def test_pieza_que_toca_el_borde_del_agujero_de_una_o_es_invalida():
     )
     o = _pos("o", 500, 500)  # hueco entre x:[480,520] y:[480,520]
 
-    # Pieza de 60x60: no entra en un hueco de 60x60 respetando el buffer
-    # de kerf+separación (7mm) contra las cuatro paredes.
-    pieza_grande = GeometriaPieza(ancho_mm=Decimal("60"), alto_mm=Decimal("60"))
-    apretada = _pos("grande", 500, 500)
+    pieza_justa = GeometriaPieza(ancho_mm=Decimal("60"), alto_mm=Decimal("60"))
+    exacta = _pos("justa", 500, 500)
 
-    resultado = validar_posicion_manual(
-        apretada, pieza_grande, [(o, marco_o)], _PLANCHA, _PARAMS
+    resultado = validar_posicion_manual(exacta, pieza_justa, [(o, marco_o)], _PLANCHA, _PARAMS)
+
+    assert resultado.valida
+
+
+def test_pieza_que_excede_el_hueco_e_invade_la_pared_es_invalida():
+    # 62x62 en un hueco de 60x60: 1mm de superposición real contra el
+    # material sólido de "o" en cada lado — esto sí tiene que rechazarse.
+    marco_o = GeometriaPieza(
+        ancho_mm=Decimal("100"), alto_mm=Decimal("100"),
+        contorno_local_mm=[(Decimal("0"), Decimal("0")), (Decimal("100"), Decimal("0")),
+                            (Decimal("100"), Decimal("100")), (Decimal("0"), Decimal("100"))],
+        agujeros_local_mm=[[(Decimal("20"), Decimal("20")), (Decimal("80"), Decimal("20")),
+                             (Decimal("80"), Decimal("80")), (Decimal("20"), Decimal("80"))]],
     )
+    o = _pos("o", 500, 500)
+
+    pieza_grande = GeometriaPieza(ancho_mm=Decimal("62"), alto_mm=Decimal("62"))
+    demasiado_grande = _pos("grande", 500, 500)
+
+    resultado = validar_posicion_manual(demasiado_grande, pieza_grande, [(o, marco_o)], _PLANCHA, _PARAMS)
 
     assert not resultado.valida
     assert "o" in resultado.motivo
@@ -211,3 +261,96 @@ def test_poligono_colocado_usa_el_contorno_real_cuando_esta_disponible():
     poligono = poligono_colocado(posicion, geometria)
 
     assert poligono.area == 5000
+
+
+def test_posicion_manual_desde_pieza_calcula_el_centro_desde_la_esquina():
+    pieza = PosicionPieza(
+        pieza_id="p1", plancha_indice=0, x_mm=Decimal("100"), y_mm=Decimal("200"),
+        ancho_colocado_mm=Decimal("50"), alto_colocado_mm=Decimal("30"), rotada_90=False,
+    )
+
+    pm = posicion_manual_desde_pieza(pieza)
+
+    assert pm.centro_x_mm == Decimal("125")  # 100 + 50/2
+    assert pm.centro_y_mm == Decimal("215")  # 200 + 30/2
+    assert pm.angulo_grados == Decimal("0")
+
+
+def test_posicion_manual_desde_pieza_rotada_da_90_grados():
+    pieza = PosicionPieza(
+        pieza_id="p1", plancha_indice=0, x_mm=Decimal("0"), y_mm=Decimal("0"),
+        ancho_colocado_mm=Decimal("30"), alto_colocado_mm=Decimal("50"), rotada_90=True,
+    )
+
+    pm = posicion_manual_desde_pieza(pieza)
+
+    assert pm.angulo_grados == Decimal("90")
+
+
+def test_pieza_desde_posicion_manual_es_la_inversa_exacta():
+    original = PosicionPieza(
+        pieza_id="p1", plancha_indice=2, x_mm=Decimal("10"), y_mm=Decimal("20"),
+        ancho_colocado_mm=Decimal("50"), alto_colocado_mm=Decimal("30"), rotada_90=False,
+    )
+    geometria = GeometriaPieza(ancho_mm=Decimal("50"), alto_mm=Decimal("30"))
+
+    ida_vuelta = pieza_desde_posicion_manual(posicion_manual_desde_pieza(original), geometria)
+
+    assert ida_vuelta == original
+
+
+def test_pieza_desde_posicion_manual_rotada_intercambia_ancho_y_alto():
+    # Pieza original 50x30 (ancho x alto); colocada rotada, en pantalla
+    # ocupa 30x50 — mismo criterio que engine.py.
+    pm = PosicionManual(
+        pieza_id="p1", plancha_indice=0, centro_x_mm=Decimal("100"), centro_y_mm=Decimal("100"),
+        angulo_grados=Decimal("90"),
+    )
+    geometria = GeometriaPieza(ancho_mm=Decimal("50"), alto_mm=Decimal("30"))
+
+    pieza = pieza_desde_posicion_manual(pm, geometria)
+
+    assert pieza.ancho_colocado_mm == Decimal("30")
+    assert pieza.alto_colocado_mm == Decimal("50")
+    assert pieza.rotada_90 is True
+    assert pieza.x_mm == Decimal("85")  # 100 - 30/2
+    assert pieza.y_mm == Decimal("75")  # 100 - 50/2
+
+
+def test_pieza_desde_posicion_manual_guarda_angulo_libre_y_bbox_conservador():
+    # Excepción puntual a ADR-01 (ver docstring de `PosicionPieza`): un
+    # ángulo que no es 0 ni 90 ya no es un error — se guarda la
+    # posición real en los campos `_libre_` y ADEMÁS se completa un
+    # bounding box axis-aligned conservador para el código que todavía
+    # no sabe de ángulo libre.
+    pm = PosicionManual(
+        pieza_id="p1", plancha_indice=0, centro_x_mm=Decimal("50"), centro_y_mm=Decimal("50"),
+        angulo_grados=Decimal("37"),
+    )
+    geometria = GeometriaPieza(ancho_mm=Decimal("10"), alto_mm=Decimal("10"))
+
+    resultado = pieza_desde_posicion_manual(pm, geometria)
+
+    assert resultado.angulo_libre_grados == Decimal("37")
+    assert resultado.centro_libre_x_mm == Decimal("50")
+    assert resultado.centro_libre_y_mm == Decimal("50")
+    # Un cuadrado de 10x10 rotado 37° tiene un bounding box MÁS GRANDE
+    # que 10x10 (la diagonal se proyecta sobre los ejes) — nunca más
+    # chico: es la aproximación conservadora.
+    assert resultado.ancho_colocado_mm > Decimal("10")
+    assert resultado.alto_colocado_mm > Decimal("10")
+
+
+def test_pieza_desde_posicion_manual_y_de_vuelta_conserva_el_angulo_libre():
+    pm = PosicionManual(
+        pieza_id="p1", plancha_indice=0, centro_x_mm=Decimal("50"), centro_y_mm=Decimal("50"),
+        angulo_grados=Decimal("37"),
+    )
+    geometria = GeometriaPieza(ancho_mm=Decimal("10"), alto_mm=Decimal("10"))
+
+    ida = pieza_desde_posicion_manual(pm, geometria)
+    vuelta = posicion_manual_desde_pieza(ida)
+
+    assert vuelta.angulo_grados == Decimal("37")
+    assert vuelta.centro_x_mm == Decimal("50")
+    assert vuelta.centro_y_mm == Decimal("50")

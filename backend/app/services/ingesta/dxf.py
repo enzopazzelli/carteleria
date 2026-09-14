@@ -205,12 +205,20 @@ def _clasificar_piezas_y_agujeros(
         # promuevan o no a pieza propia por separado (representación
         # doble, ver docstring).
         agujeros = [contornos[k] for k in range(n) if padre_inmediato[k] == i]
-        resultado.append((contornos[i], agujeros))
+        # `padre_inmediato[i]` siempre es, si existe, una pieza propia
+        # (nivel par por construcción: el padre inmediato de un nivel
+        # impar es un nivel par) — por eso no hace falta chequear
+        # `es_pieza_propia[padre_inmediato[i]]` acá.
+        contenedora = contornos[padre_inmediato[i]] if padre_inmediato[i] is not None else None
+        resultado.append((contornos[i], agujeros, contenedora))
     return resultado
 
 
 def _pieza_desde_clasificacion(
-    ruta: str | Path, pieza: _ContornoValido, agujeros: list[_ContornoValido]
+    ruta: str | Path,
+    pieza: _ContornoValido,
+    agujeros: list[_ContornoValido],
+    contenedora: _ContornoValido | None,
 ) -> PiezaImportada:
     poligono_con_huecos = Polygon(pieza.poligono.exterior.coords, [a.poligono.exterior.coords for a in agujeros])
     minx, miny, maxx, maxy = pieza.poligono.bounds
@@ -222,6 +230,7 @@ def _pieza_desde_clasificacion(
         area_real_mm2=Decimal(str(poligono_con_huecos.area)),
         contorno_mm=pieza.puntos,
         agujeros_mm=[a.puntos for a in agujeros],
+        contenida_en_id=f"{Path(ruta).stem}-{contenedora.indice}" if contenedora is not None else None,
     )
 
 
@@ -285,8 +294,8 @@ def parsear_dxf(
         indice += 1
 
     piezas = [
-        _pieza_desde_clasificacion(ruta, pieza, agujeros)
-        for pieza, agujeros in _clasificar_piezas_y_agujeros(contornos_validos, tamano_maximo_agujero_mm)
+        _pieza_desde_clasificacion(ruta, pieza, agujeros, contenedora)
+        for pieza, agujeros, contenedora in _clasificar_piezas_y_agujeros(contornos_validos, tamano_maximo_agujero_mm)
     ]
 
     advertencias = []

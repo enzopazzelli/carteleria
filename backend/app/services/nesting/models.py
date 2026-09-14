@@ -65,7 +65,20 @@ class PosicionPieza:
 
     `pieza_id` identifica la instancia colocada (una `Pieza` con
     `cantidad > 1` genera una `PosicionPieza` por copia).
-    """
+
+    `angulo_libre_grados`/`centro_libre_x_mm`/`centro_libre_y_mm`:
+    excepción puntual a `ADR-01`, solo para piezas reubicadas por
+    `anidado_huecos.py` dentro de un agujero rotado (p. ej. un hueco
+    radial de una rueda decorativa) — el motor automático
+    (`MotorNestingRectangular`) nunca los completa, sigue anidando
+    exclusivamente en 0°/90°. Cuando están presentes, son la posición
+    REAL (equivalente a una `PosicionManual`); `x_mm`/`y_mm`/
+    `ancho_colocado_mm`/`alto_colocado_mm`/`rotada_90` quedan igual
+    poblados con el bounding box axis-aligned de esa misma forma
+    rotada — una aproximación conservadora (nunca más chica que el
+    área real) para que el código que todavía no sabe de ángulo libre
+    (`comparador.py`, `aprovechamiento.py`) siga funcionando sin
+    romperse, aunque sin el detalle fino de la rotación real."""
 
     pieza_id: str
     plancha_indice: int
@@ -74,6 +87,9 @@ class PosicionPieza:
     ancho_colocado_mm: Decimal
     alto_colocado_mm: Decimal
     rotada_90: bool
+    angulo_libre_grados: Decimal | None = None
+    centro_libre_x_mm: Decimal | None = None
+    centro_libre_y_mm: Decimal | None = None
 
 
 @dataclass(frozen=True)

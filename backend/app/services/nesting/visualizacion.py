@@ -24,10 +24,31 @@ liso, que es exactamente lo que hay.
 """
 from __future__ import annotations
 
+import math
 from decimal import Decimal
 
 from .models import Plancha, PosicionPieza, ResultadoAnidado
 from .validacion_manual import GeometriaPieza
+
+#: Estilos de lo que dibuja `render_svg_plancha`.
+#:
+#: El SVG sale con clases (`plancha`, `pieza`, `grilla-referencia`) pero
+#: sin estilos: quién lo muestra decide el tamaño y dónde lo mete. Lo que
+#: NO puede decidir es el significado de cada clase — y sin ninguna regla
+#: de relleno, el `<rect>` de la plancha se pinta negro por default de
+#: SVG y tapa todo. Por eso las reglas viven acá, al lado del código que
+#: emite las clases, en vez de copiadas en cada página que las usa.
+#:
+#: El tamaño del `.plancha-svg` (ancho, borde, márgenes) sí es de cada
+#: página: eso no está acá a propósito.
+CSS_SVG_PLANCHA = """
+.plancha-svg .plancha { fill: #f0efe9; stroke: #666; stroke-width: 2; }
+.plancha-svg .pieza rect, .plancha-svg .pieza path { fill: #7aa6c2; stroke: #2c4a5e; stroke-width: 1; cursor: default; }
+.plancha-svg .pieza rect:hover, .plancha-svg .pieza path:hover { fill: #5a86a2; }
+.plancha-svg .pieza text { font-size: 10px; fill: #0b1f2a; text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+.plancha-svg .grilla-referencia .grilla { stroke: #c9c4b8; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.plancha-svg .grilla-referencia .grilla-etiqueta { font-size: 9px; fill: #a39d8c; pointer-events: none; }
+"""
 
 _ESCALA_PX_POR_MM_DEFAULT = Decimal("0.3")
 _PASO_GRILLA_MM = Decimal("100")  # regla de referencia: una línea cada 100 mm reales
@@ -37,31 +58,74 @@ GeometriasPorId = dict[str, GeometriaPieza]
 
 
 def _titulo_pieza(posicion: PosicionPieza) -> str:
-    rotacion = "90°" if posicion.rotada_90 else "0°"
+    if posicion.angulo_libre_grados is not None:
+        rotacion = f"{posicion.angulo_libre_grados.normalize():f}°"
+    else:
+        rotacion = "90°" if posicion.rotada_90 else "0°"
     return f"{posicion.pieza_id} — {posicion.ancho_colocado_mm}×{posicion.alto_colocado_mm} mm — rotación {rotacion}"
 
 
-def _transformar_punto(
-    x_local: Decimal, y_local: Decimal, posicion: PosicionPieza, ancho_original_mm: Decimal
-) -> tuple[Decimal, Decimal]:
-    """Aplica la misma rotación de 90° que el motor le aplicó al
-    rectángulo (si aplica) y traslada a `(x_mm, y_mm)`, la esquina
-    donde el packer ubicó la pieza."""
-    if posicion.rotada_90:
-        x_rel, y_rel = y_local, ancho_original_mm - x_local
-    else:
-        x_rel, y_rel = x_local, y_local
-    return posicion.x_mm + x_rel, posicion.y_mm + y_rel
+def transformador_de_pieza(posicion: PosicionPieza, geometria: GeometriaPieza):
+    """Devuelve la función que lleva un punto del marco local de la pieza
+    a coordenadas de plancha.
+
+    Es público porque no es solo cosa del dibujo: exportar el DXF de
+    corte (`exportacion_dxf.py`) necesita exactamente la misma
+    transformación. Tener dos implementaciones de esto es cómo el plano
+    que ve el operario y el archivo que recibe la máquina terminan
+    discrepando.
+
+    Dos casos, y el segundo no es un detalle:
+
+    - **0°/90°** (`rotada_90`): es lo único que produce el motor
+      automático (`ADR-01`). Ancla en la esquina `(x_mm, y_mm)`.
+    - **Ángulo libre** (`angulo_libre_grados`): la excepción que
+      introdujo `anidado_huecos.py` para piezas reubicadas dentro de un
+      hueco rotado, y que también usa el motor irregular
+      (`deepnest_cliente.py`, que rota a 0/90/180/270). Ancla en el
+      CENTRO del bounding box de la pieza, igual que `PosicionManual`,
+      para que rotar no la mueva de lugar.
+
+    Sin la segunda rama, una pieza a 180° o 270° se dibujaba con la
+    silueta de 0°, dentro del bounding box correcto: el rectángulo
+    quedaba bien y la forma mal.
+    """
+    if posicion.angulo_libre_grados is not None:
+        radianes = math.radians(float(posicion.angulo_libre_grados))
+        cos, sin = Decimal(str(math.cos(radianes))), Decimal(str(math.sin(radianes)))
+        centro_local_x = geometria.ancho_mm / 2
+        centro_local_y = geometria.alto_mm / 2
+
+        def transformar_libre(x_local: Decimal, y_local: Decimal) -> tuple[Decimal, Decimal]:
+            dx, dy = x_local - centro_local_x, y_local - centro_local_y
+            return (
+                posicion.centro_libre_x_mm + dx * cos - dy * sin,
+                posicion.centro_libre_y_mm + dx * sin + dy * cos,
+            )
+
+        return transformar_libre
+
+    # El ancho ORIGINAL (antes de rotar) es el que corresponde al marco
+    # local en el que viven `contorno_local_mm`/`agujeros_local_mm` —
+    # ver PosicionPieza: ancho/alto se intercambian al rotar 90°.
+    ancho_original_mm = posicion.alto_colocado_mm if posicion.rotada_90 else posicion.ancho_colocado_mm
+
+    def transformar_ortogonal(x_local: Decimal, y_local: Decimal) -> tuple[Decimal, Decimal]:
+        if posicion.rotada_90:
+            x_rel, y_rel = y_local, ancho_original_mm - x_local
+        else:
+            x_rel, y_rel = x_local, y_local
+        return posicion.x_mm + x_rel, posicion.y_mm + y_rel
+
+    return transformar_ortogonal
 
 
-def _anillo_path(
-    puntos_locales: list[tuple[Decimal, Decimal]], posicion: PosicionPieza, ancho_original_mm: Decimal, escala: float
-) -> str:
+def _anillo_path(puntos_locales: list[tuple[Decimal, Decimal]], transformar, escala: float) -> str:
     """Un anillo (contorno exterior o un agujero) como subtrazado de un
     `<path>`: `M x,y L x,y ... Z`."""
     comandos = []
     for indice, (x_local, y_local) in enumerate(puntos_locales):
-        x_abs, y_abs = _transformar_punto(x_local, y_local, posicion, ancho_original_mm)
+        x_abs, y_abs = transformar(x_local, y_local)
         x_px, y_px = x_abs * Decimal(str(escala)), y_abs * Decimal(str(escala))
         comandos.append(f"{'M' if indice == 0 else 'L'}{x_px:.2f},{y_px:.2f}")
     return " ".join(comandos) + " Z"
@@ -76,12 +140,9 @@ def _forma_pieza(posicion: PosicionPieza, geometria: GeometriaPieza | None, esca
             f"<title>{_titulo_pieza(posicion)}</title></rect>"
         )
 
-    # El ancho ORIGINAL (antes de rotar) es el que corresponde al marco
-    # local en el que viven `contorno_local_mm`/`agujeros_local_mm` —
-    # ver PosicionPieza: ancho/alto se intercambian al rotar 90°.
-    ancho_original_mm = posicion.alto_colocado_mm if posicion.rotada_90 else posicion.ancho_colocado_mm
+    transformar = transformador_de_pieza(posicion, geometria)
     anillos = [geometria.contorno_local_mm, *geometria.agujeros_local_mm]
-    trazado = " ".join(_anillo_path(anillo, posicion, ancho_original_mm, escala) for anillo in anillos)
+    trazado = " ".join(_anillo_path(anillo, transformar, escala) for anillo in anillos)
     regla_relleno = ' fill-rule="evenodd"' if geometria.agujeros_local_mm else ""
     return f'<path d="{trazado}"{regla_relleno}><title>{_titulo_pieza(posicion)}</title></path>'
 
@@ -101,7 +162,13 @@ def _etiqueta_pieza(posicion: PosicionPieza, escala: float) -> str:
 
 
 def _grupo_pieza(posicion: PosicionPieza, geometrias: GeometriasPorId | None, escala: float) -> str:
-    geometria = (geometrias or {}).get(posicion.pieza_id.split("#")[0])
+    # Primero por id de instancia (`panel#2`), después por id base
+    # (`panel`). Con `MotorNestingRectangular` todas las instancias de
+    # una pieza comparten geometría y alcanza con la base; un motor que
+    # rota cada instancia a un ángulo distinto (`deepnest_cliente.py`)
+    # necesita dar la geometría ya colocada, una por instancia.
+    disponibles = geometrias or {}
+    geometria = disponibles.get(posicion.pieza_id) or disponibles.get(posicion.pieza_id.split("#")[0])
     return (
         f'<g class="pieza">'
         f"{_forma_pieza(posicion, geometria, escala)}"

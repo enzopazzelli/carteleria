@@ -1,0 +1,10 @@
+{
+  "repo": "https://github.com/deepnest-next/deepnest.git",
+  "commit": "4d8b57f85ffc1831069549e3555eb7d97c408967",
+  "extraido": "2026-09-08",
+  "licencia": "MIT",
+  "excluido_a_proposito": {
+    "@deepnest/svg-preprocessor": "AGPL-3.0-only. Solo lo usa el pipeline de importación SVG, que acá no se usa: el DXF lo parsea Python con ezdxf.",
+    "deepnest-next/deepnest-next": "La v2.0 del proyecto es AGPL-3.0 + licencia comercial. No se toma nada de ahí."
+  }
+}
