@@ -58,6 +58,74 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-09-14 — Spike de Deepnest headless (D-01), visor con motor seleccionable (CART-210), esqueleto de persistencia del backend (CART-211) y relevamiento de AppSheet/.cdr
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+**Spike de la Fase 0 de [`PLAN-MOTOR-NESTING-DEEPNEST.md`](PLAN-MOTOR-NESTING-DEEPNEST.md).** Nuevo paquete `nesting-engine/`: el motor de `deepnest-next/deepnest` (MIT) corriendo en Node headless, sin Electron ni Web Workers, vendorizado con procedencia documentada (`vendor/PROCEDENCIA.json`) y reproducible (`npm run vendorizar`). Se excluyó a propósito todo lo AGPL — `@deepnest/svg-preprocessor` y el fork `deepnest-next/deepnest-next` ("v2.0", dual AGPL/comercial) — solo se usa el repo original y `@deepnest/calculate-nfp`, ambos MIT. Los 5 criterios de go/no-go del plan pasan (`npm test`). `deepnest_cliente.py` es el adaptador Python→Node por `subprocess.Popen` (cancelable de verdad), devuelve un `ResultadoAnidado` normal que el resto del código (`visualizacion.py`, `comparador.py`) consume sin saber que hubo otro motor atrás. `exportacion_dxf.py` exporta el anidado a DXF de corte por capas (`CORTE`/`GUIA`/`TEXTO`, `ADR-02`), verificado ida y vuelta contra el propio parser. `comparar_motores.py` midió rectpack contra Deepnest sobre DXF reales con la misma vara (área real vía `shapely`, `ADR-08`) — resultado completo en [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md). El dominio existente ganó `angulo_libre_grados` en `PosicionPieza`/`GeometriaPieza` (piezas rotadas a cualquier ángulo — `ADR-01` sigue vigente para el motor automático) y `dxf.py` expone `contenida_en_id` para reconstruir el anidado en huecos que el diseñador ya hizo a mano.
+
+**El visor interactivo (`servidor_visor.py`) dejó de ser de un solo motor y una sola tanda fija.** Carga de DXF desde el navegador (escala + umbral de agujero, sin volver a la terminal); selector de motor (rectpack | deepnest) y de orientación (libre | apilar contra el ancho); el anidado corre en un hilo aparte y se consulta por polling (`ThreadingHTTPServer` — Deepnest tarda minutos y un servidor de un solo hilo dejaba colgado el resto de la página); cancelar mata el proceso de Node de verdad y restaura el layout anterior si falla; `allow_reuse_address=False` para no tener dos servidores escuchando el mismo puerto sin avisar (un modo de falla indistinguible de un bug); materiales que no son chapa (Polyfan, MDF, acrílico/PVC/ACM) y "retazo" como formato personalizado; exporta el plano y el DXF de corte por plancha con la posición que está en pantalla (si el operario movió algo a mano, exporta eso). `Visor de anidado.cmd` lo levanta con doble click, sin terminal.
+
+**Esqueleto de persistencia del backend**, siguiendo [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md): SQLite en local / PostgreSQL en producción cambiando solo `DATABASE_URL` (`ADR-05`), Alembic desde el primer commit, sin nada específico de un motor en el schema. `Milimetros` (tipo custom, `app/modelos/tipos.py`) resuelve que SQLite no tiene decimal real y `Numeric` ahí guarda float en silencio — exactamente el bug que la convención "milímetros en Decimal" (`CONVENCIONES.md §6`) existe para evitar; lo guarda como texto y lo reconstruye exacto, con test que lo demuestra contra `0.1+0.2`. `GrupoDeCorte` reemplaza la idea fija de "Tanda 1/Tanda 2" (siempre el mismo material) por N grupos por Trabajo, cada uno con su propio Formato y sus propios `PAR-01`..`04`; `Pieza.grupo_id` es nullable — "sin asignar" es un estado normal, no un caso de error. `EjecucionNesting` cuelga de `GrupoDeCorte`, no de Trabajo directamente, para poder comparar varias corridas del mismo grupo (rectpack vs. Deepnest). `Formato` se amplía con lo que `RELEVAMIENTO-EXPORT-APPSHEET.md` encontró en `COTIZADOR`: moneda, precio de compra, unidad de compra distinta de la de venta, factor de conversión. `app/costeo.py` arma el resumen de materiales de un trabajo (una línea por grupo) — nunca inventa un costo: sin material, sin anidar o sin precio de referencia, la línea queda con costo `None` y advertencia explícita, nunca en cero.
+
+113 tests en la suite del backend a esta altura.
+
+### Qué se decidió
+
+**El paralelismo de Deepnest no se portó.** `main/util/parallel.js` del upstream tiene `isNode = false` hardcodeado y su rama de Node importa un `Worker.js` que no existe en el repositorio — el cálculo de NFP corre en serie acá. Es pérdida de rendimiento, no de resultado (lo que se paralelizaba es geometría pura sin estado); traducirlo a `worker_threads` queda como mejora conocida, no se hizo ahora.
+
+**Tolerancia de solapamiento en 0,01 mm², no cero.** El upstream pregunta `Math.abs(Clipper.Area(...)) > 0` — a escala de milímetros esa tolerancia cero rechaza colocaciones válidas: el addon de NFP devuelve vértices con ~1e-6 de error relativo, y una pieza apoyada contra la pared de un hueco produce una astilla que cuenta como solapamiento. Con tolerancia cero el anidado en huecos no funciona nunca.
+
+**`costo_unidad_venta` se importa tal cual la planilla, no se recalcula.** La fórmula real de `%COSTO1`/`%COSTO2` y los 4 márgenes de venta de `COTIZADOR` es una pregunta sin confirmar con administración (alta de `D-10`) — inventarla sería un número adivinado disfrazado de cálculo.
+
+**El estado del visor sigue siendo global de proceso, no por Trabajo — a propósito.** Es correcto para seguir probando solo, antes de que exista el modelo de Trabajo real (este mismo backend nuevo); se resuelve cuando el visor se conecte a él, no antes.
+
+### Cambios en el registro
+
+Ya aplicados en el commit `a9e5001`, síntesis para no perderla: alta de `CART-210`/`CART-211` en `BACKLOG.md` (F2 pasa de 9 a 11 historias, de 49 a 62 puntos); `B-01` resuelto por otra vía (`COTIZADOR` es la tabla de precios vigente), `B-02` completado, `B-08` pasa de 🔴 a 🟡 (vía de conversión de `.cdr` probada); alta de `D-10`.
+
+**Hallazgo al actualizar el tablero de `§7` para esta entrada: `PAR-38` estaba duplicado.** Ya lo usaba la tolerancia de deduplicación de líneas superpuestas (dada de alta el 2026-09-07); el commit de hoy le asignó el mismo número a la moneda de referencia para `CotizacionMoneda`, además en la tabla equivocada (la de objetivos de métricas de negocio, con columnas que no le correspondían). Corregido en este cierre: la moneda de referencia pasa a **`PAR-40`**, movida a `§2.2 Parámetros comerciales`.
+
+El resumen de esfuerzo de `BACKLOG.md` (la tabla del encabezado) tampoco se había actualizado al sumar `CART-210`/`CART-211` — seguía en 68 historias/358 puntos. Corregido a 70/371, acorde a lo que ya dice el cuerpo del documento.
+
+El tablero de `§7` estaba desactualizado desde el 2026-09-07 (nunca sumó `PAR-38`/`PAR-39`). Recalculado a mano contra el estado real del documento:
+
+| Categoría | Antes | Ahora |
+|---|---|---|
+| Parámetros (`PAR`) | 37 total (11🔴/14🟡/12🟢) | 40 total (11🔴/17🟡/12🟢) |
+| Insumos (`B`+`T`) | 23 total (19🔴/3🟡/1🟢) | 23 total (18🔴/4🟡/1🟢) |
+| Decisiones (`D`) | 9 | 10 |
+
+Supuestos y Preguntas no cambiaron.
+
+### Pendiente
+
+- Fase 1 del plan Deepnest (servicio en Docker) y Fase 2 (`worker_threads`) — el spike solo prueba que anda, no que es productivo tal cual está.
+- Decidir `D-01` con las mediciones ya sobre la mesa — y de paso corregir su enunciado: hoy sigue preguntando "¿`nest2D` o Deepnest?", pero la comparación real que se hizo (`COMO-FUNCIONA-CADA-MOTOR.md`) fue rectpack vs. Deepnest — `nest2D` quedó afuera de la implementación sin que el registro lo diga explícitamente.
+- Fase 3 del plan nativo (integrar anidado en huecos con `aprovechamiento.py`/`comparador.py` reales, ver entrada `2026-09-07`) sigue sin arrancar.
+- Confirmar con administración la fórmula de `D-10` antes de recalcular ningún precio en serio.
+- Conectar el backend nuevo (`GrupoDeCorte`, `EjecucionNesting`, `app/costeo.py`) con el visor interactivo — hoy son dos cosas separadas que no se hablan.
+- Ordenar los duplicados de la propuesta comercial (ver addendum): quedan copias sueltas de `Propuesta carteleria.pptx` en la raíz del repo y en `fuentes/`, sin trackear en git.
+- La línea "Estado" de `README.md` sigue diciendo "6 de 9 historias hechas" de F2 — ahora son 11 historias en total (`CART-210`/`211` sumadas) y no quedó claro en esta sesión cuáles de las nuevas cuentan como hechas vs. parciales; queda para decidir, no se tocó a mano.
+
+### Addendum — mismo día: relevamiento de 19 hojas de AppSheet y spike de lectura de `.cdr` sin CorelDRAW
+
+[`RELEVAMIENTO-EXPORT-APPSHEET.md`](RELEVAMIENTO-EXPORT-APPSHEET.md) releva las 19 hojas de `CARTELERIA 2026.xlsx` (estructura y volúmenes, sin contenido sensible, `CONVENCIONES.md §4`). Hallazgo principal: `COTIZADOR` es la tabla de precios vigente que `B-01` daba como bloqueante — 289 insumos, 273 con precio, con moneda y conversión de unidad. También: solo 62 de 364 ítems de `INVENTARIO` (17%) son nesteables por área — el resto se cotiza por unidad o metro lineal, así que `CART-106` no es un complemento del catálogo, es el 83% de él. Todos los valores de precio/proveedor de ejemplo citados en el documento son ilustrativos, no los reales del cliente.
+
+[`SPIKE-CDR.md`](SPIKE-CDR.md) responde si se puede leer `.cdr` sin CorelDRAW (`ADR-02` lo había descartado por "formato cerrado, sin especificación pública"). Sí: el `.cdr` moderno es un ZIP con RIFF-CDR adentro, y `libcdr` (la librería que usa LibreOffice) lo lee — probado con 4 archivos reales, verificado visualmente. Dos límites reales: los nombres de capa de Corel no sobreviven la conversión (el color sí) y el render recorta a la página aunque el dato vectorial no. No reemplaza a `ADR-02`; el próximo paso es confirmar con diseño si usan capas nombradas (`B-15`/`SUP-05`).
+
+De paso se corrigieron dos errores de investigaciones anteriores, dejados explícitos en el propio documento en vez de revertidos en silencio: la escala de prueba de `carrusel`/`repisas` (era 10, es 1 — pero esos archivos resultaron ser contenido bajado de internet, no diseños del cliente, así que la escala dejó de importar para ningún benchmark real) y una medición de `Muestra Vectores.cdr` mal calculada (132×68mm real — una hoja de referencia de logos, no un trabajo de chapa — y no 3,24m, por no componer las transformaciones de grupo de las coordenadas SVG crudas). `GUIA-PRUEBAS-LOCALES.md` ganó una advertencia explícita sobre esto arriba de la sección de DXF, y se corrigió el heurístico "aprovechamiento bajo = escala mal" (era falso, faltaba `--repetir`).
+
+### Addendum 2 — mismo día: mapa del proyecto y limpieza de la propuesta comercial
+
+Nuevo [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md): diagramas Mermaid de las 9 features y sus dependencias, dónde se corta el flujo del dato (justo después del aprovechamiento — todo lo anterior anda con DXF reales, todo lo posterior no existe todavía), qué bloquea qué, y el árbol de decisión del motor de nesting. Conclusión propia del documento (`§7`): lo más urgente no es seguir el nesting, es cerrar `B-03`/`B-04` con el taller (media hora que vuelve presentables todos los números ya calculados) y construir F0+F1 — sin API ni base de datos, lo construido depende de un script local que no puede usar nadie más.
+
+Se consolidó `Propuesta-cliente-cartel 2.pptx` (una copia) en `Propuesta-cliente-cartel.pptx` dentro de `docs/presentaciones/`, con el contenido actualizado. **Quedan sueltos** `Propuesta carteleria.pptx` en la raíz del repo y en `fuentes/` — mismo contenido, sin trackear en git — señalado en el propio commit como pendiente de ordenar (ver `Pendiente` arriba).
+
+---
+
 ## 2026-09-07 — Commit del trabajo del día anterior + spike de Capa 2 (anidado en huecos)
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —

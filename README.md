@@ -4,7 +4,7 @@ Plataforma a medida para una empresa de cartelería de gran formato en chapa. Au
 
 **Estado:** 🚧 En desarrollo · F2 (motor de nesting rectangular) en curso, 6 de 9 historias hechas · F0/F1 (fundaciones y catálogo) todavía no arrancaron en código
 **Equipo:** Enzo (carril A — cotización) · Vale (carril B — dashboard)
-**Última actualización:** 2026-09-06 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
+**Última actualización:** 2026-09-14 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 

@@ -93,6 +93,7 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-14** | Moneda | ARS | — | Sistema | Config | `CART-307` | 🟢 |
 | **PAR-15** | Criterio de facturación de plancha | plancha entera | — | Sistema | Config | `CART-302` | 🔴 **bloqueante** (`P-10`, `D-02`) |
 | **PAR-16** | Precisión de redondeo del total | 2 | decimales | Sistema | Config | `CART-307` | 🟡 provisorio |
+| **PAR-40** | Moneda de referencia para conversión (`CotizacionMoneda`) | ARS | — | Sistema | Config + `CotizacionMoneda` | `CART-211` | 🟡 provisorio |
 
 ### 2.3 Parámetros de flujo y notificación
 
@@ -138,11 +139,10 @@ Los objetivos de `EPICA.md §4`. Se centralizan porque son negociables con el cl
 | **PAR-35** | M4 — aumento de presupuestos por semana | +30% | 🔴 `B-17` | H2 |
 | **PAR-36** | M5 — p95 del dashboard | ver `PAR-27` | 🔴 `B-17` | H6 |
 | **PAR-37** | M6 — presupuestos sin override de costo | > 60% | — | H2 + 4 semanas |
-| **PAR-38** | Moneda de referencia del sistema | ARS | Sistema | Config | `CART-211`, `F1` | 🟡 provisorio |
 
 > Los defaults marcados **🟡 provisorio** son elección nuestra y se pueden cambiar sin consultar. Los **🔴** dependen de una respuesta del cliente y hasta entonces el sistema los usa mostrando una advertencia visible en pantalla.
 
-**`PAR-38` y la tabla `CotizacionMoneda`** (2026-09-11): 48 de los 289 insumos de `COTIZADOR` están en USD, con la cotización del dólar en la cabecera de la misma hoja. `ADR-04` versiona precios por vigencia pero no dice nada de moneda — un precio en USD sin la cotización con la que se convirtió no es reproducible. `CotizacionMoneda` (moneda + valor_a_ars + fecha) queda dada de alta en el modelo (`backend/app/modelos/catalogo.py`) como el historial que le falta. Detalle en [`RELEVAMIENTO-EXPORT-APPSHEET.md`](RELEVAMIENTO-EXPORT-APPSHEET.md).
+**`PAR-40` y la tabla `CotizacionMoneda`** (2026-09-11): 48 de los 289 insumos de `COTIZADOR` están en USD, con la cotización del dólar en la cabecera de la misma hoja. `ADR-04` versiona precios por vigencia pero no dice nada de moneda — un precio en USD sin la cotización con la que se convirtió no es reproducible. `CotizacionMoneda` (moneda + valor_a_ars + fecha) queda dada de alta en el modelo (`backend/app/modelos/catalogo.py`) como el historial que le falta. Detalle en [`RELEVAMIENTO-EXPORT-APPSHEET.md`](RELEVAMIENTO-EXPORT-APPSHEET.md).
 
 ---
 
@@ -308,10 +308,10 @@ Resumen para revisar de un vistazo en cada daily.
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
 | Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
-| Parámetros (`PAR`) | 37 | 11 | 14 | 12 |
-| Insumos (`B` + `T`) | 23 | 19 | 3 | 1 |
+| Parámetros (`PAR`) | 40 | 11 | 17 | 12 |
+| Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 19 | 19 | 0 | 0 |
-| Decisiones (`D`) | 9 | 9 | 0 | 0 |
+| Decisiones (`D`) | 10 | 10 | 0 | 0 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).
 

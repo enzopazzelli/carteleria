@@ -30,14 +30,14 @@ Cada historia tiene: ID, narrativa, criterios de aceptación en Gherkin, estimac
 |---|---|---|---|---|
 | F0 — Fundaciones | 6 | 24 | S1 | A |
 | F1 — Catálogo y precios | 7 | 26 | S1 | A |
-| F2 — Nesting rectangular | 9 | 49 | S2 | A |
+| F2 — Nesting rectangular | 11 | 62 | S2 | A |
 | F3 — Cotizador y PDF | 10 | 47 | S3 | A |
 | F4 — Aprobación y envío | 8 | 37 | S4 | A |
 | F5 — Importación Corel | 8 | 50 | S5-S6 | A |
 | F6 — Fotomontaje | 7 | 42 | S7-S8 | A |
 | F7 — Nesting irregular | 5 | 39 | S9-S10 | A |
 | F8 — Dashboard | 8 | 44 | S2-S5 | B |
-| **Total** | **68** | **358** | | |
+| **Total** | **70** | **371** | | |
 
 ---
 
