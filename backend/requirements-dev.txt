@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest==9.1.1
+# TestClient de FastAPI corre sobre httpx, no es dependencia obligatoria
+# de fastapi/starlette.
+httpx==0.28.1

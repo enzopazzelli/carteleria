@@ -80,6 +80,8 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-08** | Tolerancia de simplificación de polígonos | 0,2 | mm | Sistema | Config | `CART-701` | 🟡 provisorio |
 | **PAR-09** | Timeout del nesting irregular | 120 | s | Por ejecución, con default de sistema | Config | `CART-703` | 🟡 provisorio |
 | **PAR-10** | Fórmula de desarrollo de plegado | *sin definir* | — | Por material y espesor | `materiales_parametros` | `CART-209` | 🔴 **bloqueante** (`P-05`) |
+| **PAR-38** | Tolerancia de deduplicación de líneas superpuestas | 0,1 | mm | Sistema | Config | `CART-503` | 🟡 provisorio |
+| **PAR-39** | Área mínima de hueco aprovechable para anidado en huecos | 100 | mm² | Sistema | Config | Capa 2, `PLAN-MOTOR-NESTING-PYTHON-NATIVO.md` | 🟡 provisorio |
 
 ### 2.2 Parámetros comerciales
 
@@ -91,6 +93,7 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-14** | Moneda | ARS | — | Sistema | Config | `CART-307` | 🟢 |
 | **PAR-15** | Criterio de facturación de plancha | plancha entera | — | Sistema | Config | `CART-302` | 🔴 **bloqueante** (`P-10`, `D-02`) |
 | **PAR-16** | Precisión de redondeo del total | 2 | decimales | Sistema | Config | `CART-307` | 🟡 provisorio |
+| **PAR-40** | Moneda de referencia para conversión (`CotizacionMoneda`) | ARS | — | Sistema | Config + `CotizacionMoneda` | `CART-211` | 🟡 provisorio |
 
 ### 2.3 Parámetros de flujo y notificación
 
@@ -139,6 +142,8 @@ Los objetivos de `EPICA.md §4`. Se centralizan porque son negociables con el cl
 
 > Los defaults marcados **🟡 provisorio** son elección nuestra y se pueden cambiar sin consultar. Los **🔴** dependen de una respuesta del cliente y hasta entonces el sistema los usa mostrando una advertencia visible en pantalla.
 
+**`PAR-40` y la tabla `CotizacionMoneda`** (2026-09-11): 48 de los 289 insumos de `COTIZADOR` están en USD, con la cotización del dólar en la cabecera de la misma hoja. `ADR-04` versiona precios por vigencia pero no dice nada de moneda — un precio en USD sin la cotización con la que se convirtió no es reproducible. `CotizacionMoneda` (moneda + valor_a_ars + fecha) queda dada de alta en el modelo (`backend/app/modelos/catalogo.py`) como el historial que le falta. Detalle en [`RELEVAMIENTO-EXPORT-APPSHEET.md`](RELEVAMIENTO-EXPORT-APPSHEET.md).
+
 ---
 
 ## 3. Insumos pendientes del cliente — `B-xx`
@@ -156,14 +161,32 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 | **B-05** | Método de cálculo del desarrollo de plegado | Taller | `PAR-10`, `CART-209`, `CART-508`, `SUP-08` | Carga manual de la medida desarrollada | 🔴 |
 | **B-06** | Proporción real de piezas rectas vs. corpóreas | Producción | Prioridad de **F7**, `SUP-04` | Se asume mayoría rectas; F7 al final | 🔴 |
 | **B-07** | Acceso a las tablas del dashboard de AppSheet | IT / autor del dashboard | Todo **F8**, `SUP-09` | El carril B no arranca | 🟢 Resuelto |
-| **B-08** | Versión y licencia de CorelDRAW | Diseño | `CART-502`, `SUP-10` | Export manual a DXF documentado | 🔴 |
+| **B-08** | Versión y licencia de CorelDRAW | Diseño | `CART-502`, `SUP-10` | Export manual a DXF documentado | 🟡 Parcial |
 | **B-17** | Baseline de las métricas M1-M5 medido antes de empezar | Enzo + cliente | `PAR-32` a `PAR-36` | **Sin fallback.** Sin baseline no se puede demostrar valor en ningún hito | 🟡 Parcial |
 
+> **B-08 — parcial, evidencia nueva (2026-09-11).** Confirmado: `.cdr` es el formato real de trabajo del equipo de diseño (dato de Enzo), CorelDRAW 2019 (versión de formato 21). Se probó una vía automática de conversión sin depender de la macro VBA de `ADR-02`: `.cdr` moderno es un ZIP con geometría binaria propietaria adentro, pero existe `libcdr` (Document Liberation Project, la librería que usa LibreOffice) para leerlo — probado y funcionando end-to-end con 4 archivos reales. Detalle completo, con los dos límites encontrados (capas no se conservan; contenido fuera de la página se puede recortar), en [`SPIKE-CDR.md`](SPIKE-CDR.md). **No resuelve `SUP-10`** (seguimos sin saber si el equipo de diseño usa capas con nombre en Corel) ni cierra `ADR-02` — el spike concluye que hace falta la respuesta de `B-15`/`SUP-05` antes de decidir.
+>
+> **Hallazgo colateral del mismo spike (2026-09-11): la escala usada para `carrusel.dxf` y `repisas.dxf` en toda la documentación de pruebas estaba mal.** Se venía usando `escala_a_mm=10`; la escala real, confirmada contra la unidad que CorelDRAW declara sin ambigüedad, es `escala_a_mm=1` — la pieza más grande del carrusel mide 31,6 mm, no 316 mm. Corregido en `GUIA-PRUEBAS-LOCALES.md` (el heurístico que llevó al valor equivocado también era falso: un aprovechamiento bajo con una sola unidad de cada pieza no prueba escala mal, prueba que faltaba `--repetir`).
+>
+> **Corrección más importante que la anterior (2026-09-14, dato de Enzo): `carrusel.dxf`, `esqueletos.dxf` y `repisas.dxf` no son archivos del cliente.** Son contenido genérico bajado de internet para poder probar el parser y el motor antes de tener archivos reales — el trabajo real de la cartelería es de otra escala (chapas de ~2 m, letras corpóreas y paneles grandes; consistente con `SUP-02`, los formatos 1,00×2,00 m y 1,22×2,44 m ya confirmados en `INVENTARIO`). La corrección de escala de arriba sigue siendo matemáticamente correcta para esos archivos puntuales, pero deja de ser lo importante: **ningún benchmark corrido contra los tres, a ninguna escala, representa el trabajo real** — solo sirven para ejercitar que el pipeline no se rompe con geometría real (agujeros, contornos abiertos, capas sucias). Anotado en `GUIA-PRUEBAS-LOCALES.md` y `COMO-FUNCIONA-CADA-MOTOR.md`.
+>
+> **El único archivo real disponible hoy es `Muestra Vectores.cdr`** (compartido por Enzo esta sesión, después de aceptar la propuesta), y **no es un trabajo de chapa** (2026-09-14, corregido: una medición anterior decía 3,24 m de ancho, era un error de método — sin componer las transformaciones de los grupos SVG, ver `SPIKE-CDR.md §3.1`). Medido bien: **132 × 68 mm reales**, 1056 trazos cerrados, pero también 282 elementos de texto sin convertir a curvas y 7 imágenes bitmap embebidas. Es una hoja de referencia/portfolio con una docena de logos de marcas de clientes distintos (nombres no transcritos acá — `CONVENCIONES.md §4`) — probablemente para vinilo de corte (`INVENTARIO` tiene 39 ítems reales en `VINILOS DE CORTE`), no el trabajo de chapa grande que describió Enzo. **No sirve como caso de prueba para el motor de nesting de chapa.** Podría ser uno de los dos archivos de ejemplo que Aníbal se comprometió a mandar para `B-09` (ver nota de abajo) — a confirmar, no asumido.
+>
 > **B-07 — resuelto (2026-09-01).** Se recibió el export completo de las tablas del dashboard AppSheet (`CARTELERIA 2026.xlsx`, en la raíz del repo, **no versionado** — contiene datos reales del cliente, ver `CONVENCIONES.md §4` y `.gitignore`). Esquema relevado: 18 tablas, entre ellas `COTIZACIONES` (con `ITEMS_JSON` de materiales, costos y precios), `INVENTARIO`, `NOTAS_PEDIDO`, `PRODUCCION`, `PARAMETROS` (listas maestras de responsables, proveedores, categorías, ubicaciones, unidades y procesos) y `PERMISOS_MODULOS` (matriz real de 6 roles × 7 módulos). Alcanza para que el carril B empiece a modelar el nuevo dashboard sin esperar al relevamiento.
 >
 > **B-02 — parcial (2026-09-01).** El mismo export trae en `INVENTARIO` un catálogo de 16 ítems de chapa: dos medidas de plancha (1,00 × 2,00 m y 1,22 × 2,44 m) en calibres 14 a 27 (chapa negra: cal. 14/16/18/20/22; galvanizada: cal. 18/20/25/27), más un ítem especial de acero inoxidable A240 esmerilado 430 en 0,70 × 1,25/2,50 m. Sirve como insumo real para probar el nesting, pero falta confirmar con el cliente (`P-02`) si compran algo fuera de este catálogo — de ahí que quede parcial y no cierre `SUP-02` del todo.
 >
 > **B-17 — parcial (2026-09-01).** `PRODUCCION` trae 220 registros de tiempo real de trabajo sobre 59 notas de pedido distintas, pero **no sirve todavía como baseline confiable**: los nombres de proceso están sin normalizar (mayúsculas/minúsculas y variantes distintas para el mismo proceso, ej. "Corte Chapa" / "Corte de Chapa" / "CORTE DE CHAPA"), y solo 33 de las 552 notas en `NOTAS_PEDIDO` tienen `HS_ESTIMADAS` cargado — sin eso no hay con qué comparar el tiempo real. Es insumo crudo, no el baseline en sí; falta limpieza y probablemente `P-08` en el relevamiento para completar lo que falta.
+>
+> **B-17 — dato nuevo del proceso manual (2026-09-08).** Enzo confirmó que **armar hoy el anidado de un trabajo lleva unas 2 horas** de trabajo manual, y que el nesting sí corre con alguien esperando. Es el primer número duro de baseline para `PAR-32` (M1, −70% de tiempo de armado) y **cambia cómo hay que leer `PAR-25`**: ese umbral (3 s) se fijó de nuestro lado para el motor rectangular, no salió de una necesidad del cliente. Contra un baseline de 2 horas, los ~150 s que tarda el motor irregular (`PLAN-MOTOR-NESTING-DEEPNEST.md`) son una reducción de ~98%, no un incumplimiento. `PAR-25` sigue valiendo como objetivo de calidad para F2 (respuesta interactiva), pero **no es criterio de rechazo para F7**. Falta confirmar con el taller si esas 2 horas son por trabajo típico o por trabajo complejo, y si incluyen o no el armado del presupuesto posterior.
+>
+> **B-01 — resuelto por otra vía (2026-09-10).** La hoja `COTIZADOR` del export de AppSheet **es** la tabla de precios vigente, y estaba ahí desde el principio: **289 insumos**, 273 con precio de compra, con la cadena de costeo completa (unidad de compra, factor de conversión, unidad de venta, IVA, dos porcentajes de costo, cuatro márgenes de venta). El relevamiento anterior no la había mirado porque se concentró en `INVENTARIO` y `COTIZACIONES`. Detalle completo en [`RELEVAMIENTO-EXPORT-APPSHEET.md`](RELEVAMIENTO-EXPORT-APPSHEET.md). **Queda pendiente confirmarlo con administración**: si es la lista vigente, cada cuánto se actualiza, y qué representa cada escalón de costo y margen.
+>
+> **B-02 — completado (2026-09-10).** El mismo export trae 364 ítems en 22 categorías, con unidad, proveedor y ubicación. Dato que reordena prioridades: **solo 62 ítems (17%) son nesteables por área** (chapa, MDF, acrílico, ACM, polyfan, PVC, metalex); los otros 302 son pintura, iluminación, vinilos, bulonería y herrería, que se cotizan por unidad. `CART-106` (insumos no dimensionales) no es un complemento del catálogo: es el 83% de él.
+>
+> **Alta nueva pendiente — moneda (2026-09-10).** 48 de los 289 insumos están cotizados en **USD**, y la cotización del dólar vive en la cabecera de la hoja `COTIZADOR`. `ADR-04` versiona precios por vigencia pero no dice nada de moneda: un precio en dólares sin la cotización con la que se convirtió no es reproducible. Hace falta dar de alta moneda + cotización como parámetros del sistema, y una tabla de cotizaciones con fecha.
+>
+> **`D-02` — evidencia nueva, sin resolver (2026-09-10).** En `COTIZADOR`, las planchas tienen **unidad de venta `M2`** y un factor de conversión que es el área de la plancha (2,97 para una de 1,22 × 2,44). Sugiere que cobran por metro cuadrado, pero no lo prueba: podrían estar cobrando los m² de la plancha entera. Sigue siendo `P-10`, pregunta para el dueño.
 >
 > **B-01 / B-09 — parcial (2026-09-01).** En la reunión de arranque con Aníbal (ver `RELEVAMIENTO-REUNION-ARRANQUE.md`) se confirmó acceso a un Drive compartido con parte de su información de costeo real (mostró en vivo los presupuestos de Prolum, Farmacia Güemes, Terminal de Termas y "Activar"). Falta confirmar qué tan completo es ese Drive contra lo que pide `B-01`, y todavía no llegaron los dos archivos de ejemplo (uno complejo, uno simple) que Aníbal se comprometió a mandar por mail para `B-09`.
 >
@@ -259,6 +282,7 @@ Decisiones que hay que tomar y todavía no se pueden cerrar.
 | **D-06** | Estructura del modelo de agregados del dashboard | `P-19` + `CART-801` | S2 | — |
 | **D-07** | ¿El presupuesto vencido se reajusta por inflación o solo se marca vencido? | Conversación con el dueño | S4 | `SUP-13` = solo se marca vencido |
 | **D-08** | Política de retención y backup de archivos generados | Volumen estimado tras H1 | S4 | Backup diario completo |
+| **D-10** | ¿Cómo se arma `costo_unidad_venta` a partir de `%COSTO1`, `%COSTO2` y los 4 márgenes de venta de `COTIZADOR`? | Conversación con administración | Antes de recalcular precios en serio | Se importa tal cual el valor que la planilla ya trae calculado (`backend/app/modelos/catalogo.py`), no se recalcula |
 | **D-09** | ¿F8 se queda solo-lectura sobre agregados (`ADR-06`) o crece para absorber también las pantallas de escritura del dashboard actual (control de taller, movimientos de stock, aprobación de cotizaciones, edición de permisos)? | Revisión de alcance con el cliente y con Vale, ver `docs/DASHBOARD-VISTAS.md §3` | Antes de **S2** (arranca `CART-801`) | Prototipo de UI muestra las 9 vistas completas para validar diseño; `ADR-06` sigue vigente para lo que se construya en serio |
 
 ---
@@ -284,10 +308,10 @@ Resumen para revisar de un vistazo en cada daily.
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
 | Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
-| Parámetros (`PAR`) | 37 | 11 | 14 | 12 |
-| Insumos (`B` + `T`) | 23 | 19 | 3 | 1 |
+| Parámetros (`PAR`) | 40 | 11 | 17 | 12 |
+| Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 19 | 19 | 0 | 0 |
-| Decisiones (`D`) | 9 | 9 | 0 | 0 |
+| Decisiones (`D`) | 10 | 10 | 0 | 0 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).
 

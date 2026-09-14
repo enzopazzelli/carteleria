@@ -1,0 +1,16 @@
+# Dominio: geometría, bin packing y parseo CAD (ADR-05).
+rectpack==0.2.2
+ezdxf==1.4.4
+shapely==2.1.2
+
+# API y persistencia (docs/PLAN-SLICE-VERTICAL.md).
+# La base es SQLite en local y PostgreSQL en producción: se cambia con
+# DATABASE_URL, no hay driver de PostgreSQL acá todavía porque no hace
+# falta para desarrollar. Cuando exista el VPS se suma `psycopg[binary]`.
+fastapi==0.120.0
+uvicorn==0.38.0
+sqlalchemy==2.0.41
+alembic==1.19.2
+pydantic==2.11.7
+# Subida de archivos DXF por multipart.
+python-multipart==0.0.20

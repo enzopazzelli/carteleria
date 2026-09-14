@@ -13,7 +13,7 @@ Guía de lectura completa en [`../README.md`](../README.md).
 |---|---|---|
 | [`../README.md`](../README.md) | Índice del proyecto y guía de lectura por situación | Primero, siempre |
 | **`EPICA.md`** | Este archivo. Contexto, objetivos, alcance, features, roadmap, ADRs, arquitectura, riesgos | Para entender el proyecto entero |
-| [`BACKLOG.md`](BACKLOG.md) | 68 historias con criterios de aceptación, estimación y dependencias | Al planificar y ejecutar un sprint |
+| [`BACKLOG.md`](BACKLOG.md) | 70 historias con criterios de aceptación, estimación y dependencias | Al planificar y ejecutar un sprint |
 | [`REGISTRO.md`](REGISTRO.md) | **Fuente de verdad** de supuestos (`SUP`), parámetros (`PAR`), preguntas (`P`), insumos (`B`) y decisiones pendientes (`D`) | Antes de escribir cualquier default o supuesto, y al abrir/cerrar cada sprint |
 | [`CONVENCIONES.md`](CONVENCIONES.md) | Regla de no-hardcode, división del trabajo, Git, migraciones, convenciones de código | Al arrancar el repo y en cada PR |
 | [`DECISIONES-Y-BLOQUEANTES.md`](DECISIONES-Y-BLOQUEANTES.md) | 13 correcciones a la especificación técnica original + resolución del fotomontaje | Al implementar el módulo afectado |

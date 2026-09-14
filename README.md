@@ -2,9 +2,9 @@
 
 Plataforma a medida para una empresa de cartelería de gran formato en chapa. Automatiza el armado de presupuestos, calcula cómo anidar las piezas sobre la plancha para desperdiciar lo menos posible, gestiona el circuito de autorización del dueño y envía el presupuesto al cliente con el fotomontaje del cartel sobre el frente del local.
 
-**Estado:** 📋 Documentación completa · Sprint 0 (relevamiento) sin arrancar · Sin código todavía
+**Estado:** 🚧 En desarrollo · F2 (motor de nesting rectangular) en curso, 6 de 9 historias hechas · F0/F1 (fundaciones y catálogo) todavía no arrancaron en código
 **Equipo:** Enzo (carril A — cotización) · Vale (carril B — dashboard)
-**Última actualización:** 2026-09-01 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
+**Última actualización:** 2026-09-14 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 
@@ -32,7 +32,7 @@ cartelería/
 │
 ├── docs/              ← documentación del proyecto (viva, se edita)
 │   ├── EPICA.md                      Documento maestro
-│   ├── BACKLOG.md                    68 historias con criterios de aceptación
+│   ├── BACKLOG.md                    70 historias con criterios de aceptación
 │   ├── REGISTRO.md                   Supuestos, parámetros, dudas, insumos
 │   ├── CONVENCIONES.md               Cómo trabajamos sin pisarnos
 │   ├── DECISIONES-Y-BLOQUEANTES.md   Correcciones a la spec técnica
@@ -43,9 +43,30 @@ cartelería/
 │   ├── Especificación Técnica de Desarrollo…md
 │   └── Proyecto_Final_Automatizacion_Carteleria.md
 │
+├── backend/           ← código real, en desarrollo (F2 en curso)
+│   ├── app/services/
+│   │   ├── piezas/                   Alta manual de piezas (CART-201)
+│   │   └── nesting/                  Motor de bin packing + kerf/margen/separación,
+│   │                                 rotación por veta, comparador de formatos,
+│   │                                 aprovechamiento real y listado de materiales
+│   │                                 (CART-202 a CART-206)
+│   ├── app/modelos/                  Tablas SQLAlchemy (catálogo, trabajos, grupos de
+│   │                                 corte) — docs/PLAN-SLICE-VERTICAL.md
+│   ├── app/api/                      FastAPI: catálogo (CART-102/105), trabajos y
+│   │                                 subida de DXF (CART-503), grupos de corte (CART-211),
+│   │                                 anidado en cola y costeo
+│   ├── app/cola/                     Encolar el anidado sin bloquear el request — hilos
+│   │                                 en local, Celery/Redis en producción (ADR-05)
+│   ├── alembic/                      Migraciones — `alembic upgrade head`
+│   ├── tests/                        Espeja `app/`, corre con pytest
+│   ├── requirements.txt / requirements-dev.txt
+│   └── pytest.ini
+│
 └── prototipo-dashboard/   ← maqueta HTML del dashboard rápido (F8), sin dependencias
     └── index.html             Abrir directo en el navegador — ver su README
 ```
+
+**Lo que todavía no existe:** API (FastAPI), base de datos, auth/roles, frontend, Docker, Celery. El `backend/` de hoy es solo la capa de dominio (`services/`) con tests — ni CART-001 (esqueleto Docker) ni F1 (catálogo y precios) se empezaron. Ver el detalle historia por historia en [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 ---
 
@@ -93,7 +114,7 @@ Una hora, en este orden:
 |---|---|---|
 | [`EPICA.md`](docs/EPICA.md) | Contexto y origen, requisitos R1-R11, roles, alcance IN/OUT, features F0-F8, roadmap, **10 ADRs**, arquitectura, 12 NFRs, 13 riesgos, DoR/DoD, matriz de trazabilidad, glosario | Cuando cambia el alcance o una decisión |
 | [`PROPUESTA-CLIENTE.md`](docs/PROPUESTA-CLIENTE.md) | Prospecto para el cliente: problema, solución, cronograma de 2 meses, insumos necesarios e inversión — sin jerga interna, para la reunión de confirmación de inicio | Antes de la reunión de arranque, y cuando cambie el alcance o el cronograma ofrecido |
-| [`BACKLOG.md`](docs/BACKLOG.md) | 9 features, **68 historias**, 358 puntos. Cada una con narrativa, criterios Gherkin, estimación, dependencias y sprint | Al partir o agregar historias |
+| [`BACKLOG.md`](docs/BACKLOG.md) | 9 features, **70 historias**, 371 puntos. Cada una con narrativa, criterios Gherkin, estimación, dependencias y sprint | Al partir o agregar historias |
 | [`REGISTRO.md`](docs/REGISTRO.md) | **Fuente de verdad.** 16 supuestos (`SUP`), 37 parámetros (`PAR`), 23 insumos (`B`/`T`), 19 preguntas (`P`), 8 decisiones pendientes (`D`), guion de relevamiento, tablero de estado | **Cada sprint**, y cada vez que se cierra un ID |
 | [`GUION-ENTREVISTAS-RELEVAMIENTO.md`](docs/GUION-ENTREVISTAS-RELEVAMIENTO.md) | Las 19 preguntas de `REGISTRO.md §6` desarrolladas para llevar a los tres encuentros de relevamiento: en lenguaje llano, por qué importa cada una y qué insumos pedir | Cuando cambie el guion de `REGISTRO.md §6` |
 | [`RELEVAMIENTO-REUNION-ARRANQUE.md`](docs/RELEVAMIENTO-REUNION-ARRANQUE.md) | Hallazgos depurados de la reunión de arranque con Aníbal (Megacarteles): confirma/matiza `SUP-04`, `SUP-14`, `B-01`, `B-02`, `B-09` y suma hallazgos nuevos sin ID todavía | No se actualiza — es una nota puntual de esa reunión |
@@ -101,9 +122,18 @@ Una hora, en este orden:
 | [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | **13 correcciones** a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
 | [`DASHBOARD-VISTAS.md`](docs/DASHBOARD-VISTAS.md) | Las 9 vistas del dashboard actual, de qué tabla real sale cada una y cómo construirlas en F8 — avanza `CART-801` | Cuando se releve o confirme una vista nueva |
+| [`RELEVAMIENTO-EXPORT-APPSHEET.md`](docs/RELEVAMIENTO-EXPORT-APPSHEET.md) | Las 19 hojas del export del cliente, qué hay en cada una y qué implica para el modelo — resuelve `B-01` y `B-02` | Antes de modelar catálogo, precios o cotizador |
+| [`PLAN-SLICE-VERTICAL.md`](docs/PLAN-SLICE-VERTICAL.md) | Cómo sacar el nesting del script local a una app real (API, persistencia, cola) sin Docker, dejando el paso a producción como configuración | Mientras se construyan las fundaciones |
+| [`PLAN-GRUPOS-DE-CORTE.md`](docs/PLAN-GRUPOS-DE-CORTE.md) | Catálogo con precio real (moneda, conversión de unidad) + un trabajo repartido en varios materiales, cada uno con su propio anidado — resuelve `CART-211` | Al tocar el modelo de trabajos, grupos o costeo |
+| [`SPIKE-CDR.md`](docs/SPIKE-CDR.md) | ¿Se puede leer `.cdr` sin CorelDRAW? Sí, vía LibreOffice/`libcdr` — con dos límites conocidos. De paso corrigió la escala usada en las pruebas de nesting (era 10, es 1) | Antes de tocar `ADR-02` o construir ingesta de `.cdr` |
+| [`PLANILLA-PARAMETROS-TALLER.md`](docs/PLANILLA-PARAMETROS-TALLER.md) | Planilla para llenar con el operario: cierra `B-03` y `B-04` y las preguntas que surgieron de construir el motor | Antes de la próxima visita al taller |
+| [`MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) | **Dónde estamos parados**: diagramas Mermaid con el estado de las 9 features, dónde se corta el flujo del dato, qué bloquea qué y qué sigue | Para ubicarse rápido, o cuando cambie el estado de una feature |
+| [`COMO-FUNCIONA-CADA-MOTOR.md`](docs/COMO-FUNCIONA-CADA-MOTOR.md) | Cómo funciona `rectpack` y cómo funciona Deepnest, qué da cada uno y las mediciones reales sobre DXF del cliente | Al decidir `D-01`, o antes de cambiar de motor |
+| [`CONTRATO-NESTING-ENGINE.md`](docs/CONTRATO-NESTING-ENGINE.md) | El JSON que hablan Python y el motor irregular (`nesting-engine/`) | Al tocar cualquiera de los dos lados |
 | [`FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores de nesting en el navegador — insumo para F7, no cambia `ADR-05` | Rara vez — es una investigación puntual |
 | [`PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/PLAN-MOTOR-NESTING-DEEPNEST.md) | Plan técnico para reemplazar `rectpack`/`nest2D` por un motor único basado en Deepnest (`deepnest-next`) como microservicio Node — resuelve `D-01`. Plan, no ejecutado todavía | Cuando avance alguna de sus 5 fases |
 | [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) | Plan de contingencia: cómo aproximar huecos y corte de líneas compartidas sin servicios externos, construido encima de `shapely`/`rectpack`/`nest2D` en el mismo backend Python | Cuando se decida probarlo o se mida contra el plan de Deepnest |
+| [`GUIA-PRUEBAS-LOCALES.md`](docs/GUIA-PRUEBAS-LOCALES.md) | Cómo probar el motor de nesting con datos reales del cliente: el xlsx de AppSheet y los DXF de `modelos/` — scripts de preparación, nunca se commitea lo que producen | Cuando cambie qué datos reales hay disponibles para probar |
 
 ### `fuentes/` — documentos originales
 
@@ -180,29 +210,39 @@ Python en el backend es prácticamente obligatorio: el ecosistema de geometría 
 
 ## Cómo arrancar
 
-### Ahora mismo — Sprint 0
+### Correr lo que ya existe
 
-El proyecto está en relevamiento. **No hay código que correr.** Lo que hay que hacer:
+```bash
+cd backend
+pip install -r requirements-dev.txt
+pytest                     # 159 tests: dominio del nesting + API
+```
 
-1. **Conseguir los insumos bloqueantes** — `B-01` a `B-08` y `B-17` en [`docs/REGISTRO.md §3`](docs/REGISTRO.md)
-2. **Cerrar las 8 preguntas bloqueantes** — `P-01` a `P-07` y `P-10` en [`docs/REGISTRO.md §4`](docs/REGISTRO.md)
-3. **Medir el baseline de las métricas** (`B-17`) — sin esto no se puede demostrar valor en ningún hito
-4. **Arrancar el trámite de WhatsApp Business API** (`B-12`) — demora semanas, por eso se empieza en S0 aunque se use en S4
-5. **Crear el repositorio Git** (`T-05`) y contratar el VPS (`T-01`)
+Ya hay una API real, siguiendo [`docs/PLAN-SLICE-VERTICAL.md`](docs/PLAN-SLICE-VERTICAL.md) — SQLite local sin instalar nada, FastAPI, Alembic:
 
-El guion de las tres reuniones está en [`docs/REGISTRO.md §6`](docs/REGISTRO.md).
+```bash
+cd backend
+alembic upgrade head        # crea backend/local/carteleria.db
+uvicorn app.api.app:app --reload
+```
 
-### Los cinco bloqueantes que más duelen
+Documentación interactiva en `http://localhost:8000/docs`. Por ahora: ABM de catálogo (`CART-102`/`CART-105`), trabajos con subida y parseo de DXF (`CART-503`), grupos de corte (`CART-211`) y anidado real en cola (`POST /grupos/{id}/anidar` con `rectpack` — Deepnest no está conectado a la API todavía) con costeo (`GET /trabajos/{id}/costeo`) — sin autenticación (`CART-002` se difiere) y por eso **no se expone fuera de `localhost`**. El ajuste manual (mover, rotar, exportar) es el paso que sigue del plan.
+
+No hay Docker todavía — eso es la versión de producción de F0 (`CART-001`), que sigue sin empezar; el modo local de arriba corre sin instalar nada pesado y el cambio a PostgreSQL/Docker es de configuración, no de código.
+
+### Bloqueantes de negocio que siguen abiertos
+
+El relevamiento con el cliente (Sprint 0) avanzó parcialmente pero no cerró del todo — ver el tablero de estado en [`docs/REGISTRO.md §7`](docs/REGISTRO.md) y la última entrada de [`docs/BITACORA.md`](docs/BITACORA.md) para el detalle actualizado. Los que más duelen:
 
 1. **`SUP-04` / `P-01`** — ¿piezas rectas o corpóreas? Reordena el roadmap completo
 2. **`SUP-08` / `P-05`** — ¿cómo calculan el desarrollo de plegado? Sin esto el nesting calcula sobre medidas equivocadas
-3. **`B-02`** — formatos de chapa. Sin esto no hay nada contra qué probar
-4. **`B-17`** — baseline de métricas. Sin esto no se puede demostrar valor
-5. **`B-07`** — acceso a las tablas de AppSheet. Define si el carril B existe
+3. **`B-02`** — formatos de chapa (🟡 parcial: catálogo de 16 formatos relevado, falta confirmar si compran algo fuera de ese conjunto)
+4. **`B-17`** — baseline de métricas (🟡 parcial: hay datos de producción pero sin normalizar)
+5. **`B-07`** — 🟢 resuelto: acceso a las tablas de AppSheet obtenido
 
-### Cuando exista código
+### Lo que falta para tener algo desplegable
 
-Estructura prevista del repositorio:
+Estructura prevista del repositorio completo (todavía no existe API, DB, frontend ni Docker):
 
 ```
 cartelería/

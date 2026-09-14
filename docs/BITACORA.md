@@ -58,6 +58,261 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-09-14 — Spike de Deepnest headless (D-01), visor con motor seleccionable (CART-210), esqueleto de persistencia del backend (CART-211) y relevamiento de AppSheet/.cdr
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+**Spike de la Fase 0 de [`PLAN-MOTOR-NESTING-DEEPNEST.md`](PLAN-MOTOR-NESTING-DEEPNEST.md).** Nuevo paquete `nesting-engine/`: el motor de `deepnest-next/deepnest` (MIT) corriendo en Node headless, sin Electron ni Web Workers, vendorizado con procedencia documentada (`vendor/PROCEDENCIA.json`) y reproducible (`npm run vendorizar`). Se excluyó a propósito todo lo AGPL — `@deepnest/svg-preprocessor` y el fork `deepnest-next/deepnest-next` ("v2.0", dual AGPL/comercial) — solo se usa el repo original y `@deepnest/calculate-nfp`, ambos MIT. Los 5 criterios de go/no-go del plan pasan (`npm test`). `deepnest_cliente.py` es el adaptador Python→Node por `subprocess.Popen` (cancelable de verdad), devuelve un `ResultadoAnidado` normal que el resto del código (`visualizacion.py`, `comparador.py`) consume sin saber que hubo otro motor atrás. `exportacion_dxf.py` exporta el anidado a DXF de corte por capas (`CORTE`/`GUIA`/`TEXTO`, `ADR-02`), verificado ida y vuelta contra el propio parser. `comparar_motores.py` midió rectpack contra Deepnest sobre DXF reales con la misma vara (área real vía `shapely`, `ADR-08`) — resultado completo en [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md). El dominio existente ganó `angulo_libre_grados` en `PosicionPieza`/`GeometriaPieza` (piezas rotadas a cualquier ángulo — `ADR-01` sigue vigente para el motor automático) y `dxf.py` expone `contenida_en_id` para reconstruir el anidado en huecos que el diseñador ya hizo a mano.
+
+**El visor interactivo (`servidor_visor.py`) dejó de ser de un solo motor y una sola tanda fija.** Carga de DXF desde el navegador (escala + umbral de agujero, sin volver a la terminal); selector de motor (rectpack | deepnest) y de orientación (libre | apilar contra el ancho); el anidado corre en un hilo aparte y se consulta por polling (`ThreadingHTTPServer` — Deepnest tarda minutos y un servidor de un solo hilo dejaba colgado el resto de la página); cancelar mata el proceso de Node de verdad y restaura el layout anterior si falla; `allow_reuse_address=False` para no tener dos servidores escuchando el mismo puerto sin avisar (un modo de falla indistinguible de un bug); materiales que no son chapa (Polyfan, MDF, acrílico/PVC/ACM) y "retazo" como formato personalizado; exporta el plano y el DXF de corte por plancha con la posición que está en pantalla (si el operario movió algo a mano, exporta eso). `Visor de anidado.cmd` lo levanta con doble click, sin terminal.
+
+**Esqueleto de persistencia del backend**, siguiendo [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md): SQLite en local / PostgreSQL en producción cambiando solo `DATABASE_URL` (`ADR-05`), Alembic desde el primer commit, sin nada específico de un motor en el schema. `Milimetros` (tipo custom, `app/modelos/tipos.py`) resuelve que SQLite no tiene decimal real y `Numeric` ahí guarda float en silencio — exactamente el bug que la convención "milímetros en Decimal" (`CONVENCIONES.md §6`) existe para evitar; lo guarda como texto y lo reconstruye exacto, con test que lo demuestra contra `0.1+0.2`. `GrupoDeCorte` reemplaza la idea fija de "Tanda 1/Tanda 2" (siempre el mismo material) por N grupos por Trabajo, cada uno con su propio Formato y sus propios `PAR-01`..`04`; `Pieza.grupo_id` es nullable — "sin asignar" es un estado normal, no un caso de error. `EjecucionNesting` cuelga de `GrupoDeCorte`, no de Trabajo directamente, para poder comparar varias corridas del mismo grupo (rectpack vs. Deepnest). `Formato` se amplía con lo que `RELEVAMIENTO-EXPORT-APPSHEET.md` encontró en `COTIZADOR`: moneda, precio de compra, unidad de compra distinta de la de venta, factor de conversión. `app/costeo.py` arma el resumen de materiales de un trabajo (una línea por grupo) — nunca inventa un costo: sin material, sin anidar o sin precio de referencia, la línea queda con costo `None` y advertencia explícita, nunca en cero.
+
+113 tests en la suite del backend a esta altura.
+
+### Qué se decidió
+
+**El paralelismo de Deepnest no se portó.** `main/util/parallel.js` del upstream tiene `isNode = false` hardcodeado y su rama de Node importa un `Worker.js` que no existe en el repositorio — el cálculo de NFP corre en serie acá. Es pérdida de rendimiento, no de resultado (lo que se paralelizaba es geometría pura sin estado); traducirlo a `worker_threads` queda como mejora conocida, no se hizo ahora.
+
+**Tolerancia de solapamiento en 0,01 mm², no cero.** El upstream pregunta `Math.abs(Clipper.Area(...)) > 0` — a escala de milímetros esa tolerancia cero rechaza colocaciones válidas: el addon de NFP devuelve vértices con ~1e-6 de error relativo, y una pieza apoyada contra la pared de un hueco produce una astilla que cuenta como solapamiento. Con tolerancia cero el anidado en huecos no funciona nunca.
+
+**`costo_unidad_venta` se importa tal cual la planilla, no se recalcula.** La fórmula real de `%COSTO1`/`%COSTO2` y los 4 márgenes de venta de `COTIZADOR` es una pregunta sin confirmar con administración (alta de `D-10`) — inventarla sería un número adivinado disfrazado de cálculo.
+
+**El estado del visor sigue siendo global de proceso, no por Trabajo — a propósito.** Es correcto para seguir probando solo, antes de que exista el modelo de Trabajo real (este mismo backend nuevo); se resuelve cuando el visor se conecte a él, no antes.
+
+### Cambios en el registro
+
+Ya aplicados en el commit `a9e5001`, síntesis para no perderla: alta de `CART-210`/`CART-211` en `BACKLOG.md` (F2 pasa de 9 a 11 historias, de 49 a 62 puntos); `B-01` resuelto por otra vía (`COTIZADOR` es la tabla de precios vigente), `B-02` completado, `B-08` pasa de 🔴 a 🟡 (vía de conversión de `.cdr` probada); alta de `D-10`.
+
+**Hallazgo al actualizar el tablero de `§7` para esta entrada: `PAR-38` estaba duplicado.** Ya lo usaba la tolerancia de deduplicación de líneas superpuestas (dada de alta el 2026-09-07); el commit de hoy le asignó el mismo número a la moneda de referencia para `CotizacionMoneda`, además en la tabla equivocada (la de objetivos de métricas de negocio, con columnas que no le correspondían). Corregido en este cierre: la moneda de referencia pasa a **`PAR-40`**, movida a `§2.2 Parámetros comerciales`.
+
+El resumen de esfuerzo de `BACKLOG.md` (la tabla del encabezado) tampoco se había actualizado al sumar `CART-210`/`CART-211` — seguía en 68 historias/358 puntos. Corregido a 70/371, acorde a lo que ya dice el cuerpo del documento.
+
+El tablero de `§7` estaba desactualizado desde el 2026-09-07 (nunca sumó `PAR-38`/`PAR-39`). Recalculado a mano contra el estado real del documento:
+
+| Categoría | Antes | Ahora |
+|---|---|---|
+| Parámetros (`PAR`) | 37 total (11🔴/14🟡/12🟢) | 40 total (11🔴/17🟡/12🟢) |
+| Insumos (`B`+`T`) | 23 total (19🔴/3🟡/1🟢) | 23 total (18🔴/4🟡/1🟢) |
+| Decisiones (`D`) | 9 | 10 |
+
+Supuestos y Preguntas no cambiaron.
+
+### Pendiente
+
+- Fase 1 del plan Deepnest (servicio en Docker) y Fase 2 (`worker_threads`) — el spike solo prueba que anda, no que es productivo tal cual está.
+- Decidir `D-01` con las mediciones ya sobre la mesa — y de paso corregir su enunciado: hoy sigue preguntando "¿`nest2D` o Deepnest?", pero la comparación real que se hizo (`COMO-FUNCIONA-CADA-MOTOR.md`) fue rectpack vs. Deepnest — `nest2D` quedó afuera de la implementación sin que el registro lo diga explícitamente.
+- Fase 3 del plan nativo (integrar anidado en huecos con `aprovechamiento.py`/`comparador.py` reales, ver entrada `2026-09-07`) sigue sin arrancar.
+- Confirmar con administración la fórmula de `D-10` antes de recalcular ningún precio en serio.
+- Conectar el backend nuevo (`GrupoDeCorte`, `EjecucionNesting`, `app/costeo.py`) con el visor interactivo — hoy son dos cosas separadas que no se hablan.
+- Ordenar los duplicados de la propuesta comercial (ver addendum): quedan copias sueltas de `Propuesta carteleria.pptx` en la raíz del repo y en `fuentes/`, sin trackear en git.
+- La línea "Estado" de `README.md` sigue diciendo "6 de 9 historias hechas" de F2 — ahora son 11 historias en total (`CART-210`/`211` sumadas) y no quedó claro en esta sesión cuáles de las nuevas cuentan como hechas vs. parciales; queda para decidir, no se tocó a mano.
+
+### Addendum — mismo día: relevamiento de 19 hojas de AppSheet y spike de lectura de `.cdr` sin CorelDRAW
+
+[`RELEVAMIENTO-EXPORT-APPSHEET.md`](RELEVAMIENTO-EXPORT-APPSHEET.md) releva las 19 hojas de `CARTELERIA 2026.xlsx` (estructura y volúmenes, sin contenido sensible, `CONVENCIONES.md §4`). Hallazgo principal: `COTIZADOR` es la tabla de precios vigente que `B-01` daba como bloqueante — 289 insumos, 273 con precio, con moneda y conversión de unidad. También: solo 62 de 364 ítems de `INVENTARIO` (17%) son nesteables por área — el resto se cotiza por unidad o metro lineal, así que `CART-106` no es un complemento del catálogo, es el 83% de él. Todos los valores de precio/proveedor de ejemplo citados en el documento son ilustrativos, no los reales del cliente.
+
+[`SPIKE-CDR.md`](SPIKE-CDR.md) responde si se puede leer `.cdr` sin CorelDRAW (`ADR-02` lo había descartado por "formato cerrado, sin especificación pública"). Sí: el `.cdr` moderno es un ZIP con RIFF-CDR adentro, y `libcdr` (la librería que usa LibreOffice) lo lee — probado con 4 archivos reales, verificado visualmente. Dos límites reales: los nombres de capa de Corel no sobreviven la conversión (el color sí) y el render recorta a la página aunque el dato vectorial no. No reemplaza a `ADR-02`; el próximo paso es confirmar con diseño si usan capas nombradas (`B-15`/`SUP-05`).
+
+De paso se corrigieron dos errores de investigaciones anteriores, dejados explícitos en el propio documento en vez de revertidos en silencio: la escala de prueba de `carrusel`/`repisas` (era 10, es 1 — pero esos archivos resultaron ser contenido bajado de internet, no diseños del cliente, así que la escala dejó de importar para ningún benchmark real) y una medición de `Muestra Vectores.cdr` mal calculada (132×68mm real — una hoja de referencia de logos, no un trabajo de chapa — y no 3,24m, por no componer las transformaciones de grupo de las coordenadas SVG crudas). `GUIA-PRUEBAS-LOCALES.md` ganó una advertencia explícita sobre esto arriba de la sección de DXF, y se corrigió el heurístico "aprovechamiento bajo = escala mal" (era falso, faltaba `--repetir`).
+
+### Addendum 2 — mismo día: mapa del proyecto y limpieza de la propuesta comercial
+
+Nuevo [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md): diagramas Mermaid de las 9 features y sus dependencias, dónde se corta el flujo del dato (justo después del aprovechamiento — todo lo anterior anda con DXF reales, todo lo posterior no existe todavía), qué bloquea qué, y el árbol de decisión del motor de nesting. Conclusión propia del documento (`§7`): lo más urgente no es seguir el nesting, es cerrar `B-03`/`B-04` con el taller (media hora que vuelve presentables todos los números ya calculados) y construir F0+F1 — sin API ni base de datos, lo construido depende de un script local que no puede usar nadie más.
+
+Se consolidó `Propuesta-cliente-cartel 2.pptx` (una copia) en `Propuesta-cliente-cartel.pptx` dentro de `docs/presentaciones/`, con el contenido actualizado. **Quedan sueltos** `Propuesta carteleria.pptx` en la raíz del repo y en `fuentes/` — mismo contenido, sin trackear en git — señalado en el propio commit como pendiente de ordenar (ver `Pendiente` arriba).
+
+---
+
+## 2026-09-07 — Commit del trabajo del día anterior + spike de Capa 2 (anidado en huecos)
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+**Se commiteó todo lo de la sesión anterior** (CART-503/505, CART-208, validación manual, scripts de prueba) en 5 commits sobre `feat/F2-motor-nesting-rectangular` — sin `Co-Authored-By`, según `CONVENCIONES.md` (quedó un conflicto puntual con la atribución default de la sesión, resuelto a favor de la convención del proyecto).
+
+**Arrancó el spike de la Capa 2** de [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) — anidado en huecos — a pedido explícito: "que las piezas puedan trabar entre sí y que piezas chicas entren en huecos de piezas un poco más grandes". Se aclaró el alcance real con el cliente interno (Enzo): esto cubre huecos reales (agujeros cerrados); interlocking orgánico general de formas curvas sigue siendo NFP completo (Deepnest, el plan alternativo) — el propio plan nativo ya lo dice para su Capa 3 (corte de líneas compartidas), y aplica más todavía acá.
+
+Nuevo módulo `app/services/nesting/anidado_huecos.py`: segunda pasada greedy sobre un `ResultadoAnidado` ya calculado por `MotorNestingRectangular` — para cada agujero real de una pieza colocada (`CART-505`), intenta reubicar ahí otra pieza colocada más chica (candidatas ordenadas de menor a mayor área, ángulo 0°/90° solamente — lo único que `PosicionPieza` puede representar, `ADR-01`). Si entra, esa pieza deja de necesitar su propio lugar — puede liberar una plancha entera si era la única razón de que existiera.
+
+Reutiliza toda la infraestructura de la sesión anterior: `poligono_colocado`/`validar_posicion_manual` (colisión por polígono real, no rectángulo) y los agujeros reales de `CART-505`. Se agregaron dos conversores compartidos (`posicion_manual_desde_pieza`/`pieza_desde_posicion_manual`) a `validacion_manual.py`, sacados de una copia que tenía `servidor_visor.py` — ahora hay una sola versión.
+
+**Conectado al visor interactivo**: `servidor_visor.py` corre la Capa 2 automáticamente después de cada anidado, y avisa cuántas piezas reubicó. Probado con datos reales: en `carrusel.dxf`, 9 piezas se reubicaron dentro de agujeros de otras — no bajó el conteo de planchas (ya entraba todo en 1), pero confirma que el mecanismo encuentra encajes reales, no solo en el test sintético.
+
+9 tests nuevos (`test_anidado_huecos.py`) + 6 de los conversores (`test_validacion_manual.py`) — 80 en total en la suite.
+
+### Qué se decidió
+
+**Bug real encontrado en la primera versión del algoritmo**: buscaba huecos solo en la MISMA plancha que el motor automático ya le había asignado a la pieza candidata — exactamente al revés de la idea (el punto es poder mudarla a la plancha de la contenedora, que puede ser otra, para liberar la plancha vieja). El primer test sintético lo detectó de inmediato (planchas_usadas no bajaba de 2 a 1 como se esperaba).
+
+**No se integró con `aprovechamiento.py`** — queda documentado como límite conocido en el docstring del módulo: ese cálculo suma bounding boxes sin chequear superposición, y una pieza reubicada en un hueco tiene su rectángulo *a propósito* adentro del rectángulo de su contenedora — daría un % inflado. El visor interactivo no tiene este problema porque ya calculaba aprovechamiento con área real de polígono (`shapely`), no con `aprovechamiento.py`. Integrar esto de verdad es la Fase 3 del plan, todavía pendiente.
+
+### Cambios en el registro
+
+Alta de `PAR-39` — área mínima de hueco aprovechable para anidado en huecos (100 mm², provisorio, Capa 2).
+
+### Pendiente
+
+- Fase 3 del plan (integración real con F2/F7): hacer que `aprovechamiento.py`/`comparador.py` sepan calcular área real cuando hay piezas reubicadas en huecos, en vez de solo el visor interactivo.
+- Capa 3 (corte de líneas compartidas) — todavía no arrancada, quedó explícitamente para después de validar la Capa 2.
+- Medir contra `PAR-33` en el punto de validación de H1, como pide el plan, cuando haya baseline real (`B-17`).
+
+### Addendum — mismo día: la primera versión solo colocaba una pieza por hueco, en el centro
+
+A partir de feedback visual directo ("se seleccionan al azar piezas que encajan... me gustaría que ocupe mejor los espacios, y que si entran más de uno los incluya"), se detectó que la V1 de `anidar_en_huecos` solo probaba el centroide de cada hueco y se quedaba con la primera candidata que entrara ahí — nunca intentaba una segunda pieza en el mismo hueco (siempre hubiera chocado contra la primera, mismo punto) ni comparaba candidatas entre sí para ver cuál aprovechaba mejor.
+
+**Rediseño**: por cada hueco (de más grande a más chico) se prueban las candidatas de más grande a más chica — la primera que entra es la que más aprovecha, no la primera de la lista — y se sigue intentando llenar el mismo hueco con lo que queda hasta que ya no entra nada más. Para cada intento se prueba una grilla de puntos dentro del hueco (no solo el centro), así una segunda pieza puede encontrar lugar al costado de la primera. En `carrusel.dxf`: pasó de 9 a 12 piezas reubicadas.
+
+**Bug real encontrado en el camino, más serio que el del algoritmo**: con kerf y separación ambos en 0 (un caso real, no inventado — es justo lo que se usa para "arrancar lo más anidado posible"), `validar_posicion_manual` dejaba de detectar superposiciones reales — dos piezas terminaban apiladas exactamente una arriba de la otra sin que el validador se diera cuenta. La causa: `Polygon.distance()` da 0 tanto para "se tocan" como para "se superponen", y con gap requerido 0 el chequeo `distancia < gap_requerido - epsilon` se volvía `distancia < -epsilon`, que nunca es cierto. Se corrigió agregando un chequeo de ÁREA de intersección específicamente para el caso `distancia == 0` — área cero es un simple contacto de borde (válido, corte de línea compartida), área positiva es superposición real (inválido). Un test viejo (`test_pieza_que_toca_el_borde_del_agujero...`) resultó estar escrito con la semántica vieja (antes de que "tocarse nunca es superponerse" se volviera la regla general) — se corrigió para reflejar la decisión ya tomada, en vez de revertir el fix.
+
+**Costo de rendimiento del rediseño**: el algoritmo más completo (grilla de puntos + múltiples piezas por hueco) tardaba ~20s sobre los datos reales de `carrusel.dxf` (47 piezas) — inaceptable para algo que corre en cada cambio de parámetro en el visor interactivo. Se agregó un filtro barato de bounding box antes de la geometría cara de `shapely` (si ni el bbox de la pieza entra en el bbox del hueco en ninguna rotación, ni vale la pena probar puntos/ángulos) más una grilla más gruesa (4x4 en vez de 6x6) — bajó a ~5,5s sin cambiar el resultado (mismas 12 piezas reubicadas). Sigue siendo notorio, no instantáneo; queda como límite conocido si hace falta más velocidad más adelante.
+
+12 tests nuevos/actualizados entre `test_validacion_manual.py` y `test_anidado_huecos.py` (82 en total en la suite).
+
+### Addendum 2 — mismo día: candidatas ordenadas por bounding box, no por área real; y un paso más de lookahead por hueco
+
+Feedback visual sobre `carrusel.dxf`: entraban piezas con forma de estrella en huecos donde, a simple vista, otras piezas más "macizas" aprovechaban mejor el espacio y quedaban afuera. Investigado: `anidar_en_huecos` ordenaba las candidatas por área del **bounding box** (`ancho_colocado_mm × alto_colocado_mm`), no por área real del polígono — una estrella tiene bbox grande (las puntas abren mucho) pero área real chica (puro hueco cóncavo entre puntas), así que se probaba antes que piezas con bbox más chico pero más superficie real aprovechable. Se corrigió precalculando el área real por `shapely` (`Polygon(contorno, agujeros).area`) y ordenando por eso.
+
+**El fix es correcto pero no explica del todo el síntoma reportado.** Se armó un experimento directo (sacar del diccionario de geometrías las 3 piezas de menor "% de relleno" — área real / área de bbox — y volver a correr `anidar_en_huecos` sobre los mismos datos) para ver si entraban piezas sistemáticamente mejores. Resultado: entraron 2 piezas nuevas, una genuinamente distinta (`carrusel-34`, más chica) y otra prácticamente idéntica a las sacadas (`carrusel-44`: misma área real ~698mm², mismo bbox 47×46mm — otra estrella). Conclusión: hay más candidatas "clase estrella" que lugares para todas, y cuál de ellas gana el hueco es en buena medida arbitrario entre casi-empatadas — el límite que el propio plan documenta como aceptado ("no es una optimización conjunta... suficientemente bueno, no óptimo"), no un bug de orden.
+
+**Un paso más, a pedido explícito ("probar varias combinaciones por hueco"):** se agregó un lookahead de un paso en `anidar_en_huecos`. Por cada hueco se arman y comparan dos planes — llenarlo tomando la primera candidata que entra (como hasta ahora), o saltear esa primera candidata y llenar el hueco con lo que sigue — y se aplica el que en total deje más área real colocada. Se extrajo el bucle de relleno de un hueco a una función nueva, `_llenar_hueco_greedy`, que no toca ningún estado global (para poder correrla dos veces por hueco sin comprometerse a ninguna hasta comparar).
+
+Costó bastante armar un caso de prueba realista para esto: con rectángulos sólidos, "bloquear" un hueco para que nada más entre está fuertemente correlacionado con tener área grande — así que una pieza que bloquea de verdad casi nunca pierde por área contra una combinación de piezas más chicas (si perdiera, probablemente no bloqueaba tanto como parecía). Se encontró el caso ensayando varias combinaciones de tamaños directamente contra el código (`test_prefiere_dos_piezas_juntas_si_aprovechan_mas_area_que_una_sola`, `test_anidado_huecos.py`): una pieza de 52×18mm (936mm²) que sola ocupa el hueco de punta a punta y no deja lugar para nada más, contra dos de 25×25mm (625mm² cada una, 1250mm² juntas) que si se saltea la primera sí entran ambas — el lookahead elige el combo.
+
+**Corrido contra `carrusel.dxf` real: el resultado no cambió** (mismas piezas reubicadas con o sin el lookahead) — para los huecos de este archivo en particular, la primera candidata que entra ya es, hueco por hueco, mejor o igual que cualquier combinación alternativa de lo que queda. Confirma la lectura del punto anterior: el residuo de "por qué esta estrella y no aquella otra" es un empate entre candidatas muy parecidas, no algo que un combo de piezas distintas fuera a resolver. Sin regresión de rendimiento (~4,8s sobre los mismos datos, contra ~5,45s antes).
+
+1 test nuevo (83 en total en la suite).
+
+### Addendum 3 — mismo día: reponer el anidado original del diseñador, no solo buscar uno nuevo
+
+Feedback puntual sobre `carrusel.dxf` señalando piezas concretas ("carrusel-75 y 96 entran dentro de la rueda", "carrusel-34 y 11 entre carrusel-133 y 135") llevó a una pregunta distinta de las anteriores: ¿por qué el motor tiene que *reencontrar* un encaje que el diseñador ya resolvió a mano en el DXF original?
+
+**Hallazgo clave**: `CART-505` ya calcula, al clasificar contornos, qué contorno está contenido en cuál (`padre_inmediato`) — esa información se usaba solo para decidir hueco-vs-pieza y se descartaba después. Verificado con datos reales: los centroides absolutos de `carrusel-75`/`carrusel-96` en el DXF original coinciden casi exactamente con dos de los huecos de `carrusel-131` (la rueda) — el diseñador ya las había anidado ahí. Más aún, apareció una jerarquía de TRES niveles no documentada hasta ahora: la rueda contiene 8 piezas tipo "caballito" (~98×67mm), y cada una de esas contiene a su vez su propia piecita decorativa — 20 piezas en total con relación de contención real.
+
+**Implementado**: `PiezaImportada.contenida_en_id` (`dxf.py`) — el id de la contenedora inmediata, si la hay. `_datos_reales.py` calcula además `offset_original_mm`: el desplazamiento (en el mismo sistema de coordenadas que `contorno_local_mm` de la contenedora) que reconstruye la posición exacta. Nueva función `_posicion_reconstruida` en `anidado_huecos.py`: dado el `offset` y la posición ACTUAL de la contenedora, calcula dónde va la pieza hija — es una traslación pura, hereda el mismo ángulo que la contenedora tenga en ese momento (0°/90°), así que sigue siendo 100% representable como `PosicionPieza` sin tocar `ADR-01`. `_llenar_hueco_greedy` prueba esta reconstrucción ANTES de caer a la búsqueda por grilla para cualquier candidata cuyo `contenida_en_id` coincida con la contenedora del hueco que se está llenando.
+
+**Tres bugs reales encontrados validando esto contra `carrusel.dxf`** (cada uno con su test de regresión):
+
+1. **Huecos con posición congelada.** `_huecos_usables` calculaba TODOS los polígonos de agujeros una sola vez al principio, usando la posición ORIGINAL de cada contenedora. Con esta funcionalidad nueva, una contenedora intermedia (un "caballito") puede reubicarse DURANTE la misma pasada — su agujero seguía anclado al lugar viejo, así que cualquier pieza que "entrara ahí" quedaba flotando en el vacío. Se separó en `_HuecoInfo` (referencia liviana, sin resolver) + `_hueco_resuelto` (recalcula el polígono con la posición actual, justo antes de procesarlo).
+
+2. **Un hueco ya ocupado seguía "disponible" para cualquier otra.** Cada agujero de una pieza es su PROPIA pasada de `_llenar_hueco_greedy` — un "caballito" colocado durante la pasada de un agujero de la rueda seguía teniendo su propio hueco "libre" en las pasadas de los OTROS agujeros de la rueda (que ya no lo tienen en su `plan` local). Una pieza sin ninguna relación se colaba ahí (encontrado con datos reales: `carrusel-32`/`carrusel-36` ocupando el lugar que le correspondía a `carrusel-68`/`carrusel-103`). Se agregó `_invade_hueco_de_otra_ya_colocada`: el agujero de cualquier pieza YA colocada (en este plan o en una pasada anterior) queda reservado para su propio `contenida_en_id`.
+
+3. **La reserva del punto 2 no reconocía a los abuelos.** Con la reserva recién agregada, una pieza nieta (`carrusel-68`, adentro de un "caballito" que a su vez está adentro de la rueda) se rechazaba a sí misma: su posición reconstruida "invadía" el hueco de la RUEDA (su abuela), porque el chequeo solo eximía al padre INMEDIATO. Se corrigió caminando toda la cadena `contenida_en_id` hacia arriba (`_es_ancestro_o_igual`) — un ancestro a cualquier nivel es un lugar legítimo, no una intrusión.
+
+**Resultado contra `carrusel.dxf` real**: pasó de 12 a 21 piezas reubicadas — los 8 "caballitos" completos más 7 de sus 8 piecitas decorativas (la octava, hija de `carrusel-119`, no tiene contorno propio bajo el umbral de promoción). Verificado que `carrusel-75`/`96`/`68`/`103`/`61`/`82`/`89` caen exactamente dentro de su contenedora reubicada, y que las piezas sin relación (`36`/`38`/`32`/`31`) ya no se cuelan en esos huecos.
+
+**No resuelto, y por qué no es lo mismo que esto**: dos pedidos más del mismo feedback quedan afuera de esta funcionalidad — "carrusel-3 en vez de carrusel-42" (ninguna de las dos estaba originalmente en la rueda: la rueda tiene sus 8 huecos radiales rotados ~31°, y el motor de Capa 2 solo prueba 0°/90° por `ADR-01`, así que esto necesitaría una excepción de ángulo libre para piezas reubicadas en huecos) y "carrusel-34/11 entre carrusel-133 y 135" más "los caballitos podrían trabarse" (esto no es un hueco de una pieza — es espacio entre DOS piezas ya colocadas por separado, algo que `anidar_en_huecos` no contempla; es más cercano a la Capa 3 del plan, corte de líneas compartidas). Quedan pendientes de decisión de alcance, no de implementación menor.
+
+**Bug de UX corregido de paso**: la manija de rotación (`servidor_visor.py`) tenía un halo de agarre de radio FIJO en píxeles de pantalla (14px ≈ 40mm reales, con `ESCALA_PX_POR_MM=0.35`), sin sumarlo como margen a la distancia a la que se dibuja — en una pieza chica, ese halo terminaba tapando la pieza entera e interceptando el arrastre que debía moverla. Se corrigió sumando el radio del halo (ya en píxeles) después de convertir el resto de la fórmula a píxeles, así el borde interno del halo siempre queda más allá del borde real de la pieza.
+
+**Investigado y descartado como bug real**: "al aumentar el kerf, salen piezas sin que otras las reemplacen" — se verificó directamente contra el código (kerf 0,1 → 12 reubicadas, kerf 2 → 11 con dos piezas distintas de las anteriores, kerf 5 → 6) que el mecanismo SÍ reintenta candidatas alternativas al crecer el kerf; el conteo total baja porque un hueco más chico (efectivamente, tras el buffer) admite menos piezas, no porque el algoritmo deje de buscar. Si en el visor se ve algo distinto, hace falta un caso concreto para reproducirlo.
+
+3 tests nuevos (`test_contenida_en_id_apunta_a_la_contenedora_inmediata`, `test_contenida_en_id_soporta_dos_niveles_de_anidamiento` en `test_dxf.py`; `test_reconstruye_dos_niveles_de_anidamiento_original_sin_que_una_intrusa_se_cuele` en `test_anidado_huecos.py`) — 86 en total en la suite.
+
+### Addendum 4 — mismo día: excepción puntual a ADR-01 para huecos rotados
+
+De los dos pedidos que quedaron afuera del Addendum 3 ("carrusel-3 en vez de carrusel-42" — huecos radiales rotados ~31° que Capa 2 no podía usar bien porque solo probaba 0°/90°), el usuario pidió avanzar con ángulo libre, acotado a piezas reubicadas en huecos (no toca el motor automático ni `ADR-01` en general).
+
+**Implementado** sin romper la firma de `ResultadoAnidado`: `PosicionPieza` (`models.py`) suma tres campos opcionales — `angulo_libre_grados`/`centro_libre_x_mm`/`centro_libre_y_mm`, `None` en el 99% de los casos (motor automático, piezas 0°/90°). Cuando están poblados, son la posición REAL; `x_mm`/`y_mm`/`ancho_colocado_mm`/`alto_colocado_mm` se completan igual con el bounding box axis-aligned de esa forma ya rotada — conservador (nunca más chico que el área real), para que `comparador.py`/`aprovechamiento.py` (que todavía no saben de ángulo libre) sigan andando sin romperse. `pieza_desde_posicion_manual`/`posicion_manual_desde_pieza` (`validacion_manual.py`) ya no rechazan un ángulo que no sea 0/90 — hacen la ida y vuelta completa.
+
+`anidado_huecos.py` prueba ahora, por cada hueco, 0°/90° MÁS el ángulo natural del rectángulo mínimo rotado que lo envuelve (y su perpendicular) — `_angulo_del_hueco`/`_angulos_candidatos_para_hueco`. El filtro barato de bounding box (`_bbox_no_puede_entrar`) se extendió para no descartar de entrada una candidata que solo entra rotada al ángulo del hueco. Verificado con un caso sintético (hueco 80x15 rotado 40°, candidata 70x12): con solo 0°/90° no encaja, con el ángulo del hueco sí — test de regresión (`test_encaja_en_un_hueco_rotado_con_angulo_libre`).
+
+**El visor interactivo no necesitó ningún cambio** — ya renderizaba con `PosicionManual` (ángulo libre) desde que existe la edición manual; con el backend emitiendo el ángulo real, el SVG lo dibuja bien sin tocar `servidor_visor.py`.
+
+**No se pudo demostrar contra el caso real que lo motivó**: con los fixes del Addendum 3 ya aplicados, ninguna de las dos piezas originales (`carrusel-3`, `carrusel-42`) sigue compitiendo por un hueco de la rueda — los 8 huecos radiales grandes ya los ocupan los "caballitos" correctos, y `carrusel-42` terminó reubicada en un hueco completamente distinto, sin relación con la rueda. El mecanismo de ángulo libre queda implementado y probado, pero el escenario puntual que lo motivó dejó de existir como tal al mejorar el resto del algoritmo en el mismo día.
+
+**Costo de rendimiento**: de ~7s a ~11,8s sobre `carrusel.dxf` (47 piezas) — el doble de ángulos a probar por punto de grilla. Se cachea el ángulo/rectángulo-mínimo-rotado del hueco una sola vez (`_Hueco.angulos_candidatos`/`mrr_lados_mm`), no por candidata — sin este cacheo el costo hubiera sido bastante mayor. Sigue siendo un límite conocido de rendimiento, no resuelto de fondo.
+
+1 test nuevo (88 en total en la suite).
+
+### Addendum 5 — mismo día: separación mínima puntual entre piezas seleccionadas
+
+La segunda mitad del pedido del Addendum 4 (Capa 3 aparte, ver pendiente): poder seleccionar un grupo de piezas en el visor y pedirles más separación SOLO entre ellas, sin subir `PAR-03` para toda la tanda.
+
+**Implementado**: `validar_posicion_manual` (`validacion_manual.py`) suma un parámetro opcional `separacion_extra_mm: dict[frozenset[str], Decimal] | None` — separación mínima PISO para pares puntuales de `pieza_id`, `max()` contra la separación global (nunca la baja). `servidor_visor.py`: cada `_Tanda` guarda `separaciones_extra` (sobrevive a `recalcular()`, indexado por par de ids, se pierde si una pieza cambia de tanda); dos endpoints nuevos, `/api/separacion-extra` (aplica un valor a todos los pares dentro de la selección actual) y `/api/separacion-extra-reset` (limpia todo). En el visor: un input de mm + dos botones junto al de "mandar a la otra tanda"; las piezas con separación puntual activa se marcan con un borde violeta (`.separacion-extra`) para que se note cuáles están afectadas.
+
+Probado de punta a punta contra el servidor real corriendo: aplicar 15mm entre dos piezas reales de `carrusel.dxf` las marca en conflicto (con la separación global en 0mm), y el reset las vuelve a dejar en 0 conflictos. 1 test nuevo (`test_separacion_extra_por_par_sube_el_piso_solo_entre_esas_dos`) — 89 en total en la suite.
+
+### Pendiente (de esta sesión)
+
+- **Capa 3 sigue sin arrancar en código**: "carrusel-34/11 entre carrusel-133 y 135" y "los caballitos podrían trabarse" no son huecos de una pieza — son espacio entre piezas ya colocadas por separado (interlocking orgánico / corte de líneas compartidas). Es la pieza más grande y menos acotada de todo lo pedido hoy — más cercana en tamaño a un NFP que a llenar un hueco. Recomendado escribir primero un plan (`docs/PLAN-...md`, mismo criterio que ya se usó para Capa 2) antes de empezar a programarla a ciegas, dado el tamaño.
+
+---
+
+## 2026-09-06 — README al día + CART-503 (parseo DXF) adelantada para pruebas con datos reales
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+**`README.md` actualizado al estado real del código.** Decía "Sprint 0 sin arrancar, sin código todavía", pero la rama `feat/F2-motor-nesting-rectangular` ya tiene 6 de las 9 historias de F2 hechas (`CART-201` a `CART-206`, 34 tests). Se corrigió el estado, se documentó la estructura real de `backend/` y se cambiaron las instrucciones de arranque de "no hay nada que correr" a `cd backend && pytest`.
+
+**Se adelantó `CART-503` (ingesta y parseo de DXF), fuera del orden del roadmap** (es F5, F2 todavía no cerró `CART-207`-`209`), a pedido explícito para poder probar el motor de nesting con datos reales: tres DXF de ejemplo en `modelos/` (`carrusel.dxf`, `esqueletos.dxf`, `repisas.dxf`) y el export de AppSheet (`CARTELERIA 2026.xlsx`, ya documentado en sesiones previas). Nuevo módulo `backend/app/services/ingesta/dxf.py` con 8 tests (42 en total en la suite).
+
+Se armaron además dos scripts de preparación para pruebas locales (no son features del backlog, viven en `backend/scripts/`, nunca se commitea lo que producen):
+- `extraer_catalogo_chapa_xlsx.py` — parsea `INVENTARIO` (formatos de chapa) y busca precio de referencia en el historial de `COTIZACIONES.ITEMS_JSON`.
+- `probar_nesting_real.py` — conecta un DXF real con el catálogo anterior y corre `comparar_formatos` (`CART-205`) de punta a punta.
+
+**Se adelantó también `CART-208` (visor SVG del anidado)**, a pedido explícito de tener algo visual y no solo texto/JSON para mirar lo que el motor produce: `app/services/nesting/visualizacion.py` (3 tests, 45 en total en la suite) genera el SVG de cada plancha con sus piezas, tooltip nativo con nombre/medidas/rotación al pasar el cursor. `scripts/generar_visor_html.py` lo empaqueta en un `.html` local (`local/visor.html`, ignorado por git) que abre solo en el navegador — mismo criterio de "nunca sale de esta máquina" que el resto de la guía, porque dibuja geometría y precios reales del cliente. Se evaluó publicarlo como Artifact (link compartible) pero se descartó: implicaría subir datos reales del cliente a un servicio externo aunque sea privado por default, y el archivo local ya resuelve la necesidad.
+
+**Se sumó además una grilla de referencia de 100mm sobre cada plancha y se dejó de dibujar la etiqueta de texto en piezas muy chicas** (con muchas piezas importadas de DXF se superponían y volvían el visor ilegible) — la forma sigue ahí, el nombre queda disponible al pasar el cursor.
+
+**Se agregó `app/services/nesting/validacion_manual.py`** (7 tests): valida si una posición elegida a mano para una pieza ya anidada sigue respetando kerf, margen y separación (`ADR-09`) contra el resto de las piezas de su plancha — no es el motor automático, es la misma regla geométrica aplicada a un movimiento manual.
+
+**Se agregó `scripts/servidor_visor.py`** — visor interactivo con servidor local (`http.server`, sin dependencias nuevas, solo `localhost`): arrastrar una pieza la valida en vivo contra `validacion_manual.py`; seleccionar piezas y mandarlas a una "Tanda 2" hace que el servidor vuelva a correr `MotorNestingRectangular` de verdad tanto para lo que queda como para lo nuevo — dos aprovechamientos y costos reales, no una lista separada sin sentido. Probado de punta a punta contra `repisas.dxf`: separar 2 de 16 piezas hizo que Tanda 1 pasara de 2 planchas/54.5% a 1 plancha/74.5%, con Tanda 2 en 1 plancha/34.5% — el recálculo es real, no cosmético.
+
+**Hallazgo casual relevante:** con `escala_a_mm=10` (en vez de 1) sobre `repisas.dxf`, el aprovechamiento real pasó de ~1% a ~54-74% — mucho más consistente con lo que un taller esperaría de piezas de cartelería. No es una confirmación de que 10 sea la escala correcta (sigue siendo una decisión del usuario, ver `GUIA-PRUEBAS-LOCALES.md §2`), pero es la primera señal concreta de que la escala real de estos DXF probablemente no es 1:1.
+
+**Se rehizo la validación manual para ángulo libre y colisión por polígono real.** El pedido inicial era rotar 90° nada más, pero no tenía sentido restringir a mano una pieza irregular a 0°/90° cuando esa restricción es solo del *packer* automático (`ADR-01`), no de la geometría. `validacion_manual.py` pasó a usar `shapely` (ya era dependencia por `ingesta/dxf.py`) para validar colisión entre polígonos reales a cualquier ángulo — respeta `PAR-04` (veta = solo 0°/180°). El anclaje también cambió de "esquina" (motor automático) a "centro" (edición manual), para que rotar no desplace la pieza. 11 tests nuevos, reemplazan a los 7 anteriores (rectángulo).
+
+**Kerf, margen y separación pasaron de constante fija a parámetro configurable** en los tres scripts (`--kerf-mm`/`--margen-mm`/`--separacion-mm`), con el provisorio (`PAR-01/02/03`) como default. En el visor interactivo hay además un panel para cambiarlos en vivo y recalcular — motivado por un caso real: piezas con bordes rectos que podrían ir con menos separación que la que trae el default.
+
+**`servidor_visor.py`** quedó con tres capacidades reales, probadas de punta a punta contra `repisas.dxf`: mover/rotar validado (rechaza correctamente superposición y avance de margen, incluso en rotaciones de pocos grados si la pieza ya está ajustada), reconfigurar parámetros de corte (recalcula y la posición de las piezas cambia de verdad), y separar en tandas (cada una con su aprovechamiento y costo real). El aprovechamiento que reporta ahora usa área real de polígono (vía `shapely`), no bounding box — bajó de ~55% a ~40% en `repisas.dxf` respecto de la versión anterior del visor, que sí usaba bounding box vía `aprovechamiento.py`: el número viejo estaba inflado por la misma razón que corrige `ADR-08`.
+
+**La validación manual dejó de bloquear y pasó a informar.** El primer diseño revertía la pieza a su posición anterior si el movimiento quedaba inválido — frustrante para ajuste fino cerca de una posición válida, y directamente incompatible con una técnica real que el usuario pidió habilitar: "corte de línea compartida" (dos triángulos por la hipotenusa, cortados de una sola pasada). Ahora `mover_o_rotar_pieza` siempre aplica la posición; la pieza en conflicto queda resaltada (naranja) con el motivo, sin interrumpir el arrastre.
+
+**Bug real encontrado y corregido: `.buffer()` de shapely no sirve para kerf/separación cercanos a cero.** Con kerf=0,1mm y separación=0, el resultado directo del motor automático (sin tocar nada a mano) marcaba 8 piezas en conflicto — falsos positivos. Causa: `.buffer()` aproxima curvas con segmentos, y a radios de buffer tan chicos (0,05mm) el error de esa aproximación supera la propia tolerancia que se quería medir. Se reemplazó por `poligono.distance(otro_poligono)` (distancia exacta entre contornos, sin buffer) comparada contra el gap requerido — con el mismo conjunto de piezas, 0 conflictos tras el fix. Los 12 tests de `validacion_manual.py` seguían pasando con el cambio, pero el caso real (kerf casi nulo, piezas irregulares apretadas) no estaba cubierto por ningún test unitario — es la clase de bug que solo aparece con datos reales, no con los valores holgados que se usan en los tests.
+
+**Manijas de rotación:** se redujo la distancia (que quedó demasiado lejos tras el ajuste anterior) y quedaron con halo de agarre más grande.
+
+**Tres ajustes de UX más sobre el visor, a pedido:** (1) guardia de secuencia contra respuestas de `/api/mover`/`/api/separar`/`/api/parametros` fuera de orden — si dos movimientos se disparan rápido, una respuesta vieja ya no puede pisar a una más nueva (posible causa de que el naranja de conflicto "quedara pegado" un rato). (2) Zoom con rueda del mouse centrado en el cursor + doble click para volver a la vista completa, usando el propio `viewBox` del SVG — no rompe el arrastre porque toda la geometría de mouse ya pasaba por `getScreenCTM()`. (3) La manija de rotación dejó de dibujarse en todas las piezas a la vez (con muchas piezas chicas tapaba todo) y ahora solo aparece en la seleccionada.
+
+**Zoom: bug real encontrado y corregido.** El "no puedo restablecer la vista" era `ondblclick` sobre un elemento que un `render()` concurrente (ej. la respuesta de un movimiento en curso) podía reemplazar entre el primer y el segundo click, rompiendo la detección nativa de doble-click del navegador. Se reemplazó por un botón fijo ("Vista completa"), inmune a eso. El "descentrado" era falta de límites: se podía panear la vista más allá del borde de la plancha. Se agregó `limitarVista()`, que fija el centro dentro de un rango que garantiza que el viewBox nunca se salga de la plancha.
+
+**`CART-505` (agujeros) implementado de punta a punta**, a partir de un pedido concreto: piezas chicas que deberían anidar dentro del hueco de una "O" y no lo hacían. Encontramos que la causa era doble: (1) el parser de DXF trataba cada contorno cerrado como una pieza independiente, agujero o no — confirmado con datos reales: `carrusel.dxf` pasó de 147 "piezas" a 35 reales (31 con agujeros) al corregirlo; (2) aunque el parser lo hubiera sabido, el polígono se construía sólido (sin el hueco), así que ni siquiera mover la pieza a mano funcionaba. Se resolvió con clasificación por nivel de anidamiento en `dxf.py` (par = pieza, impar = agujero de la pieza contenedora más chica — soporta agujero-dentro-de-agujero) y `Polygon(exterior, holes=[...])` en toda la cadena de validación/render. Probado de punta a punta contra `carrusel.dxf`: una pieza chica se coloca válida exactamente en el hueco más grande de una pieza real de 315x315mm. **Es explícitamente el límite conocido lo que sigue faltando:** el motor automático (`rectpack`) todavía no puede anidar sola una pieza *dentro* de un hueco — eso es F7 (nesting irregular), con los dos planes ya escritos en el repo; lo que se resolvió es que ahora SÍ se puede hacer a mano en el visor, validado de verdad.
+
+**Bug encontrado el mismo día que se implementó `CART-505`: la clasificación de agujeros era demasiado agresiva y hacía desaparecer piezas reales.** El usuario notó, comparando contra un visor DXF online, que faltaban piezas y que había piezas chicas (destinadas a los huecos entre las "llantas" de una rueda decorativa) que la app no contemplaba. Investigado con datos reales: `carrusel.dxf` tenía 112 contornos "contenidos" clasificados como agujero, con tamaños de 3×3mm (tornillos, correcto) hasta 98×68mm (demasiado grande para ser un agujero — eran piezas independientes que el diseñador había pre-anidado a mano en el hueco de una pieza más grande, indistinguible geométricamente de un agujero real sin la convención de capas de `CART-501`). Se agregó un umbral de tamaño (`tamano_maximo_agujero_mm`, default 25mm, expuesto como `--agujero-max-mm`): un contorno más grande que eso nunca se clasifica como agujero, la contenga quien la contenga. Con el fix, `carrusel.dxf` pasó de 35 a 47 piezas reales (12 recuperadas). El caso de "huecos entre las llantas" (cóncavos del contorno exterior, no agujeros cerrados) no necesitó ningún cambio — la validación manual ya compara contorno real, no bounding box, así que ya reconocía esos huecos como espacio libre.
+
+28 tests nuevos entre `test_dxf.py`, `test_validacion_manual.py` y `test_visualizacion.py` (70 en total en la suite).
+
+Documentado todo en [`docs/GUIA-PRUEBAS-LOCALES.md`](GUIA-PRUEBAS-LOCALES.md) (nueva).
+
+### Qué se decidió
+
+**Sin capa `CORTE` (los DXF de prueba no siguen la convención de `CART-501`/`ADR-02` — todo viene en `Layer 1`), `parsear_dxf` trata todo contorno cerrable como pieza**, en vez de rechazar el archivo. Decisión explícita de alcance, reversible en una línea cuando exista la convención acordada con diseño.
+
+**La escala nunca se asume del header del DXF.** Los tres archivos de prueba no traen `$INSUNITS`. `parsear_dxf(ruta, escala_a_mm)` exige el factor como parámetro obligatorio sin default — mismo criterio que `CART-504` ya preveía para SVG en mm vs. px, extendido acá a DXF porque el problema es el mismo y apareció con datos reales, no hipotéticos.
+
+### Cambios en el registro
+
+Alta de `PAR-38` — tolerancia de deduplicación de líneas superpuestas (0,1 mm, provisorio, `CART-503`).
+
+### Hallazgos técnicos que importan
+
+1. **Los DXF reales confirman `RI-01` con un número concreto:** en `esqueletos.dxf`, 247 de 313 contornos (79%) no cierran dentro de `PAR-06`. Sin capas, no hay forma de saber si son piezas mal exportadas o líneas de construcción que nunca debieron cortarse.
+2. **El xlsx no tiene geometría de piezas.** Se confirmó explorando `COT_ITEMS` (vacía) y `COTIZACIONES.ITEMS_JSON` (desglose de costo por material, sin ancho/alto). El catálogo de formatos de chapa sí está — 16 filas en `INVENTARIO`— pero **solo 2 de 16 tienen algún precio en el historial de cotizaciones**; los otros 14 nunca fueron cotizados. Confirma lo que `B-17`/`B-01` ya marcaban como parcial, con el número exacto esta vez.
+
+### Pendiente
+
+- Determinar la escala real de al menos uno de los DXF de `modelos/` contra una medida física conocida, para que `probar_nesting_real.py` deje de dar aprovechamientos irreales (~1%, con `escala_a_mm=1`).
+- Decidir si `CART-503` (este código) se mergea a `main`/`feat/F2-...` ahora o espera a que F2 cierre — quedó en el working tree, sin commitear.
+- Cuando se cierre `CART-501` con diseño, agregar el filtro por capa `CORTE` a `parsear_dxf` (hoy comentado como decisión temporal en el docstring del módulo).
+
+---
+
 ## 2026-09-01 (7) — Relevamiento de la reunión de arranque con Megacarteles
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** pre-S0
