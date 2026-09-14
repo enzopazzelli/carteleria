@@ -4,7 +4,7 @@
 >
 > Índice del proyecto: [`../README.md`](../README.md) · [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md)
 >
-> **Versión:** 1.2 · **Fecha:** 2026-09-14 · **Estado:** pasos 1 y 2 ejecutados (`CART-301`, `CART-302`), paso 3 (`CART-303`, override manual) sigue
+> **Versión:** 1.3 · **Fecha:** 2026-09-14 · **Estado:** pasos 1 y 2 ejecutados (`CART-301`, `CART-302`), paso 3 (`CART-303`, override manual) en curso
 
 ---
 
@@ -109,7 +109,7 @@ Una migración de Alembic (`alembic revision --autogenerate -m "presupuesto, cli
 
 1. **`Cliente` + `Presupuesto`.** ABM mínimo de `Cliente` (nombre, contacto — nada de `CART-004` completo) y de `Presupuesto` (crear con cliente + trabajo opcional, código autogenerado `P-{año}-{secuencial:04d}`, listar, leer, duplicar). Termina con poder crear un presupuesto vacío contra un trabajo ya anidado.
 2. **`LineaCosto` de rubro `MATERIAL`, generadas.** `POST /presupuestos/{id}/recalcular-materiales` llama a `costeo.resumen_materiales` y convierte cada `LineaMaterial` en una `LineaCosto` — 400 si el presupuesto no tiene `trabajo_id` todavía. Vuelve a llamarlo reemplaza las líneas `MATERIAL` anteriores, no las acumula. Un grupo sin costo (sin material, sin anidar, sin precio) genera igual su línea, con `valor_calculado=None` y su `advertencia` — nunca inventa un cero. Prueba end-to-end: crear presupuesto sobre un trabajo con grupos ya anidados y costeados, recalcular, ver las líneas.
-3. **Override manual (`CART-303`).** `PATCH /lineas-costo/{id}` con `valor_override`; un endpoint para "volver al calculado" (`valor_override = null`). Se guarda con qué se overrideó — sin usuarios reales, `override_por` es un string libre por ahora (no una FK a `Usuario`, que no existe), documentado como simplificación.
+3. **Override manual (`CART-303`).** `PATCH /lineas-costo/{id}` con `valor_override` y `override_por`; mandar `valor_override: null` revierte al calculado y limpia quién/cuándo. Sin usuarios reales, `override_por` es un string libre por ahora (no una FK a `Usuario`, que no existe), documentado como simplificación. **Revisión necesaria a `recalcular-materiales` (paso 2):** tal como quedó, borra todas las líneas `MATERIAL` y las recrea — perdería cualquier override al primer recálculo, justo lo que el 4° criterio de `CART-303` prohíbe ("los overrides se conservan y el sistema advierte cuáles quedaron desactualizados"). Pasa de "borrar y recrear" a "upsert por `grupo_id`": conserva el override si ya existía, actualiza los campos calculados, y si el nuevo `valor_calculado` difiere del que había cuando se overrideó, agrega una advertencia de que ese override puede estar desactualizado. Las líneas de grupos que ya no existen se eliminan.
 4. **Líneas libres (`CART-304`/`305`/`306`).** ABM directo de `LineaCosto` con rubro `INSUMO`/`MANO_DE_OBRA`/`FLETE`/`INSTALACION`/`OTRO`: crear con descripción/cantidad/precio, eliminar. `valor_calculado = cantidad × precio_unitario`, sin override inicial (recién se overridea si hace falta corregirlo).
 5. **Margen, IVA, total (`CART-307`).** Un cálculo derivado — `PUT /presupuestos/{id}/margen` para fijar `margen_pct` (default `PAR-12`, hoy sin definir → obligatorio explícito hasta que se confirme) — y `GET /presupuestos/{id}/totales` que suma por rubro, aplica margen, aplica IVA (`PAR-13` = 21%) y redondea **una sola vez**, al final.
 6. **Desglose completo (`CART-308`).** `GET /presupuestos/{id}` devuelve cliente, líneas agrupadas por rubro, cuáles tienen override, y los totales del paso 5 — todo en una sola respuesta, que es lo que la historia pide ("en una sola pantalla"), solo que la pantalla todavía no existe.
@@ -136,3 +136,4 @@ Cada paso deja algo probable solo, sin esperar al siguiente — mismo criterio q
 - No hay catálogo de insumos no dimensionales (`CART-106`): las líneas de mano de obra/insumos/flete son siempre libres, nunca elegidas de un catálogo.
 - No hay precios con vigencia real (`CART-103`/`104`): un cambio en `Formato.precio_compra` no genera historial, solo afecta al próximo recálculo.
 - No hay autenticación ni permisos por rol.
+- No hay historial completo de overrides (auditoría transversal, `CART-006`, F0): lo que se persiste es el estado actual (si hay override activo, de quién y cuándo es *ese* override), no una bitácora de cada vez que se overrideó y se revirtió una línea.
