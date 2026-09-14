@@ -8,6 +8,7 @@ API puede todo, igual que el resto de las rutas de este proyecto.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -28,6 +29,7 @@ from .esquemas_presupuesto import (
     PresupuestoActualizar,
     PresupuestoCrear,
     PresupuestoLeer,
+    TotalesLeer,
 )
 from .rutas_trabajos import _trabajo_o_404
 
@@ -165,10 +167,15 @@ def actualizar_presupuesto(
 def duplicar_presupuesto(
     presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
 ) -> Presupuesto:
-    """Copia cliente/trabajo/validez/moneda en un `BORRADOR` nuevo, con
-    código propio (`CART-301`). Las líneas de costo (`CART-302`/`303`)
-    todavía no existen en este paso del plan — cuando existan,
-    duplicar tiene que copiarlas también, no solo esto."""
+    """Copia cliente/trabajo/validez/moneda/márgenes en un `BORRADOR`
+    nuevo, con código propio (`CART-301`) — incluidas las líneas de
+    costo, overrides ya aplicados incluidos: es lo que pide "las mismas
+    piezas y configuración".
+
+    **Corrección sobre la versión de este endpoint del paso 1**: no
+    copiaba `LineaCosto` porque esa tabla no existía todavía cuando se
+    escribió (paso 2) — quedó sin revisar desde entonces. Era deuda
+    real, no una decisión de alcance."""
     original = _presupuesto_o_404(sesion, presupuesto_id)
     copia = Presupuesto(
         codigo=_generar_codigo(sesion),
@@ -176,8 +183,29 @@ def duplicar_presupuesto(
         trabajo_id=original.trabajo_id,
         validez_dias=original.validez_dias,
         moneda=original.moneda,
+        margen_pct=original.margen_pct,
+        iva_pct=original.iva_pct,
     )
     sesion.add(copia)
+    sesion.flush()  # necesita copia.id para las líneas
+    for linea in original.lineas:
+        sesion.add(
+            LineaCosto(
+                presupuesto_id=copia.id,
+                rubro=linea.rubro,
+                grupo_id=linea.grupo_id,
+                descripcion=linea.descripcion,
+                cantidad=linea.cantidad,
+                unidad=linea.unidad,
+                precio_unitario=linea.precio_unitario,
+                valor_calculado=linea.valor_calculado,
+                moneda=linea.moneda,
+                advertencia=linea.advertencia,
+                valor_override=linea.valor_override,
+                override_por=linea.override_por,
+                override_en=linea.override_en,
+            )
+        )
     sesion.commit()
     return copia
 
@@ -235,6 +263,11 @@ def recalcular_materiales(
         advertencia = "; ".join(linea.advertencias) or None
         existente = existentes_por_grupo.get(linea.grupo_id)
 
+        # Sin material asignado, `linea.moneda` es None (`costeo.py`) —
+        # cae a la moneda del presupuesto, no importa para la suma
+        # porque tampoco hay costo calculado que sumar.
+        moneda = linea.moneda or presupuesto.moneda
+
         if existente is None:
             nueva = LineaCosto(
                 presupuesto_id=presupuesto_id,
@@ -245,6 +278,7 @@ def recalcular_materiales(
                 unidad=linea.unidad_venta,
                 precio_unitario=linea.precio_unitario,
                 valor_calculado=linea.costo_estimado,
+                moneda=moneda,
                 advertencia=advertencia,
             )
             sesion.add(nueva)
@@ -263,6 +297,7 @@ def recalcular_materiales(
         existente.unidad = linea.unidad_venta
         existente.precio_unitario = linea.precio_unitario
         existente.valor_calculado = linea.costo_estimado
+        existente.moneda = moneda
         existente.advertencia = advertencia
         resultado.append(existente)
 
@@ -336,7 +371,7 @@ def crear_linea_libre(
     (`CART-106` no existe), siempre una línea libre. `valor_calculado`
     lo calcula el servidor (`cantidad × precio_unitario`), nunca se
     confía en un total que mande el cliente."""
-    _presupuesto_o_404(sesion, presupuesto_id)
+    presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
     linea = LineaCosto(
         presupuesto_id=presupuesto_id,
         rubro=datos.rubro,
@@ -345,6 +380,7 @@ def crear_linea_libre(
         unidad=datos.unidad,
         precio_unitario=datos.precio_unitario,
         valor_calculado=datos.cantidad * datos.precio_unitario,
+        moneda=presupuesto.moneda,
     )
     sesion.add(linea)
     sesion.commit()
@@ -374,3 +410,77 @@ def eliminar_linea_libre(linea_id: int, sesion: Session = Depends(obtener_sesion
     _rechazar_si_es_material(linea, "elimina")
     sesion.delete(linea)
     sesion.commit()
+
+
+# --- Totales: margen, IVA, redondeo único (paso 5: `CART-307`) ------------
+
+#: PAR-16: precisión de redondeo del total. Se aplica una sola vez, al
+#: final — nunca sobre un resultado intermedio que alimente el
+#: siguiente cálculo (3er criterio de CART-307).
+_DOS_DECIMALES = Decimal("0.01")
+
+
+def _redondear(valor: Decimal | None) -> Decimal | None:
+    return valor.quantize(_DOS_DECIMALES) if valor is not None else None
+
+
+@router.get("/presupuestos/{presupuesto_id}/totales", response_model=TotalesLeer)
+def obtener_totales(
+    presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
+) -> TotalesLeer:
+    """Suma por rubro, aplica margen (`PAR-12`) e IVA (`PAR-13`) sobre
+    el costo total, y redondea una sola vez al final.
+
+    Nunca mezcla monedas distintas sin una cotización explícita de por
+    medio (`docs/PLAN-SLICE-COTIZADOR.md`, mismo criterio que
+    `costeo.ResumenMateriales.costo_total_por_moneda`): una línea en
+    otra moneda que la del presupuesto queda afuera de la suma, con su
+    propia advertencia — igual que una línea sin costo calculado ni
+    override."""
+    presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    lineas = sesion.execute(
+        select(LineaCosto).where(LineaCosto.presupuesto_id == presupuesto_id)
+    ).scalars().all()
+
+    advertencias: list[str] = []
+    subtotales_por_rubro: dict[str, Decimal] = {}
+    costo_total = Decimal(0)
+    for linea in lineas:
+        valor = linea.valor_override if linea.valor_override is not None else linea.valor_calculado
+        if valor is None:
+            advertencias.append(f"«{linea.descripcion}» no tiene costo calculado ni override; no se sumó al total.")
+            continue
+        if linea.moneda != presupuesto.moneda:
+            advertencias.append(
+                f"«{linea.descripcion}» está en {linea.moneda}, el presupuesto es en "
+                f"{presupuesto.moneda}; no se sumó al total."
+            )
+            continue
+        subtotales_por_rubro[linea.rubro] = subtotales_por_rubro.get(linea.rubro, Decimal(0)) + valor
+        costo_total += valor
+
+    monto_margen = precio_venta = monto_iva = total = None
+    if presupuesto.margen_pct is None:
+        advertencias.append("El presupuesto no tiene margen configurado (PAR-12); no se calculó el precio de venta.")
+    else:
+        monto_margen = costo_total * presupuesto.margen_pct / 100
+        precio_venta = costo_total + monto_margen
+        if presupuesto.iva_pct is None:
+            advertencias.append("El presupuesto no tiene IVA configurado; no se calculó el total.")
+        else:
+            monto_iva = precio_venta * presupuesto.iva_pct / 100
+            total = precio_venta + monto_iva
+
+    return TotalesLeer(
+        presupuesto_id=presupuesto_id,
+        moneda=presupuesto.moneda,
+        subtotales_por_rubro={rubro: _redondear(valor) for rubro, valor in subtotales_por_rubro.items()},
+        costo_total=_redondear(costo_total),
+        margen_pct=presupuesto.margen_pct,
+        monto_margen=_redondear(monto_margen),
+        precio_venta=_redondear(precio_venta),
+        iva_pct=presupuesto.iva_pct,
+        monto_iva=_redondear(monto_iva),
+        total=_redondear(total),
+        advertencias=advertencias,
+    )

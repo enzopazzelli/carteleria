@@ -77,6 +77,13 @@ class Presupuesto(Base):
     estado: Mapped[str] = mapped_column(String(20), default=EstadoPresupuesto.BORRADOR.value)
     validez_dias: Mapped[int] = mapped_column(Integer)
     moneda: Mapped[str] = mapped_column(String(3), default=Moneda.ARS.value)
+    #: `PAR-12` sigue sin confirmar con el dueño — nullable y sin
+    #: default, se fija a mano (`PATCH`) cuando se sabe cuánto cobrar.
+    margen_pct: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    #: `PAR-13` sí está confirmado (21%, `REGISTRO.md`) — a diferencia
+    #: del margen, este default es un parámetro de sistema ya acordado,
+    #: no un número inventado.
+    iva_pct: Mapped[Decimal | None] = mapped_column(Milimetros(), default=Decimal("21"))
 
     cliente: Mapped[Cliente] = relationship(back_populates="presupuestos")
     lineas: Mapped[list[LineaCosto]] = relationship(
@@ -102,6 +109,14 @@ class LineaCosto(Base):
     `valor_calculado` nunca se pisa (`CART-303`, paso 3): el override
     vive aparte, en `valor_override`. El valor efectivo de una línea es
     `valor_override if valor_override is not None else valor_calculado`.
+
+    `moneda` (paso 5, `CART-307`): un grupo `MATERIAL` puede estar en
+    una moneda distinta del presupuesto (`COTIZADOR` real tiene
+    formatos en USD, `PAR-38`/`CotizacionMoneda`) — igual que
+    `costeo.ResumenMateriales.costo_total_por_moneda`, nunca se mezclan
+    ARS y USD en una sola suma sin una cotización explícita de por
+    medio. `GET /presupuestos/{id}/totales` excluye del total las
+    líneas cuya moneda no coincide con la del presupuesto, y avisa.
     """
 
     __tablename__ = "lineas_costo"
@@ -122,6 +137,7 @@ class LineaCosto(Base):
     unidad: Mapped[str | None] = mapped_column(String(20), default=None)
     precio_unitario: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
     valor_calculado: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    moneda: Mapped[str] = mapped_column(String(3), default=Moneda.ARS.value)
     advertencia: Mapped[str | None] = mapped_column(Text(), default=None)
     #: A partir de acá, campos del paso 3 (`CART-303`) — ya en el
     #: schema para no necesitar una segunda migración la semana que
