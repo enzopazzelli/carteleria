@@ -4,7 +4,7 @@
 >
 > Índice del proyecto: [`../README.md`](../README.md) · [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md)
 >
-> **Versión:** 1.0 · **Fecha:** 2026-09-14 · **Estado:** plan, no ejecutado
+> **Versión:** 1.1 · **Fecha:** 2026-09-14 · **Estado:** paso 1 (`CART-301`) ejecutado, paso 2 en curso
 
 ---
 
@@ -67,16 +67,18 @@ erDiagram
         string descripcion
         decimal cantidad
         string unidad
-        decimal precio_unitario
-        decimal valor_calculado "nunca se pisa"
+        decimal precio_unitario "nullable"
+        decimal valor_calculado "nullable — nunca se pisa"
+        string advertencia "nullable"
         decimal valor_override "nullable — CART-303"
         string override_por "nullable"
         datetime override_en "nullable"
     }
 ```
 
-**Tres decisiones que no son obvias, mismo espíritu que el plan de F2:**
+**Cuatro decisiones que no son obvias, mismo espíritu que el plan de F2:**
 
+- **`valor_calculado` (y `precio_unitario`) son nullable.** `costeo.resumen_materiales` ya tiene la regla "sin material, sin anidar o sin precio de referencia → el costo queda en `None` con una advertencia, nunca en cero" (probado así en `tests/test_costeo.py`). Si `LineaCosto.valor_calculado` fuera obligatorio, `recalcular-materiales` tendría que inventar un `0` en esos casos — justo lo que `costeo.py` prohíbe. `advertencia` guarda el motivo (`"sin precio de referencia"`, `"no tiene un anidado terminado"`...) para no perderlo al persistir.
 - **`LineaCosto.valor_calculado` nunca se pisa.** El override (`CART-303`) agrega `valor_override` al lado, no lo reemplaza — "volver al valor calculado" (3er criterio de `CART-303`) tiene que poder recuperar el número original sin volver a calcular nada. El valor efectivo de una línea es `valor_override if valor_override is not None else valor_calculado` — nunca al revés.
 - **Las líneas de rubro `MATERIAL` no se editan a mano, se regeneran.** Igual que el DXF de un trabajo (`POST /trabajos/{id}/dxf` reemplaza las piezas), un `POST /presupuestos/{id}/recalcular-materiales` borra las líneas `MATERIAL` viejas y las reconstruye desde `costeo.resumen_materiales` — la única forma de "editar" el costo de un material es un override, nunca tocar `descripcion`/`cantidad` a mano (esos números vienen del anidado real, no son de negocio).
 - **`Presupuesto.trabajo_id` es nullable.** `CART-301` no pide un trabajo para crear el presupuesto (solo cliente); `CART-302` sí lo necesita para calcular material. Un presupuesto sin trabajo asociado todavía puede existir — por ejemplo, para cargar solo mano de obra e insumos de un trabajo que no pasa por nesting (un cartel sin chapa, todo vinilo). Se valida en el servicio, no en el modelo — mismo criterio que `GrupoDeCorte.formato_id` nullable.
@@ -92,8 +94,12 @@ backend/app/
   api/
     esquemas_presupuesto.py
     rutas_presupuesto.py
-  costeo.py             ← NO se toca: rutas_presupuesto.py lo llama, no lo reimplementa
+  costeo.py             ← casi no se toca: `LineaMaterial` gana dos campos
+                           (precio_unitario, unidad_venta) que ya se calculaban
+                           adentro y se descartaban — ningún cálculo cambia
 ```
+
+**Ajuste sobre la versión anterior de este plan:** decía "`costeo.py` no se toca". En los hechos, `LineaMaterial` no exponía el `precio_unitario` ni la `unidad` que usó para llegar a `costo_estimado` — los calculaba `_linea_de_grupo` puertas adentro y los tiraba. Sin esos dos campos, `recalcular-materiales` (paso 2) tendría que volver a consultar el `Formato` por su cuenta para armar una `LineaCosto` completa, duplicando una cuenta que `costeo.py` ya hizo. La corrección es agregar los dos campos al dataclass — no cambia ningún valor que ya se calcula, solo deja de descartarlo.
 
 Una migración de Alembic (`alembic revision --autogenerate -m "presupuesto, cliente y lineas de costo"`), revisada a mano antes de aplicarla — mismo criterio de `CONVENCIONES.md §5`.
 
@@ -102,7 +108,7 @@ Una migración de Alembic (`alembic revision --autogenerate -m "presupuesto, cli
 ## Orden de trabajo
 
 1. **`Cliente` + `Presupuesto`.** ABM mínimo de `Cliente` (nombre, contacto — nada de `CART-004` completo) y de `Presupuesto` (crear con cliente + trabajo opcional, código autogenerado `P-{año}-{secuencial:04d}`, listar, leer, duplicar). Termina con poder crear un presupuesto vacío contra un trabajo ya anidado.
-2. **`LineaCosto` de rubro `MATERIAL`, generadas.** `POST /presupuestos/{id}/recalcular-materiales` llama a `costeo.resumen_materiales` (sin tocarlo) y convierte cada `LineaMaterial` en una `LineaCosto`. Prueba end-to-end: crear presupuesto sobre un trabajo con grupos ya anidados y costeados, recalcular, ver las líneas.
+2. **`LineaCosto` de rubro `MATERIAL`, generadas.** `POST /presupuestos/{id}/recalcular-materiales` llama a `costeo.resumen_materiales` y convierte cada `LineaMaterial` en una `LineaCosto` — 400 si el presupuesto no tiene `trabajo_id` todavía. Vuelve a llamarlo reemplaza las líneas `MATERIAL` anteriores, no las acumula. Un grupo sin costo (sin material, sin anidar, sin precio) genera igual su línea, con `valor_calculado=None` y su `advertencia` — nunca inventa un cero. Prueba end-to-end: crear presupuesto sobre un trabajo con grupos ya anidados y costeados, recalcular, ver las líneas.
 3. **Override manual (`CART-303`).** `PATCH /lineas-costo/{id}` con `valor_override`; un endpoint para "volver al calculado" (`valor_override = null`). Se guarda con qué se overrideó — sin usuarios reales, `override_por` es un string libre por ahora (no una FK a `Usuario`, que no existe), documentado como simplificación.
 4. **Líneas libres (`CART-304`/`305`/`306`).** ABM directo de `LineaCosto` con rubro `INSUMO`/`MANO_DE_OBRA`/`FLETE`/`INSTALACION`/`OTRO`: crear con descripción/cantidad/precio, eliminar. `valor_calculado = cantidad × precio_unitario`, sin override inicial (recién se overridea si hace falta corregirlo).
 5. **Margen, IVA, total (`CART-307`).** Un cálculo derivado — `PUT /presupuestos/{id}/margen` para fijar `margen_pct` (default `PAR-12`, hoy sin definir → obligatorio explícito hasta que se confirme) — y `GET /presupuestos/{id}/totales` que suma por rubro, aplica margen, aplica IVA (`PAR-13` = 21%) y redondea **una sola vez**, al final.
