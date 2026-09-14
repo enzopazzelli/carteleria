@@ -97,6 +97,8 @@ def test_calcula_el_costo_por_area_de_plancha_y_precio_de_m2(sesion):
     assert linea.area_total_m2 == area_una_plancha * 3
     assert linea.costo_estimado == esperado
     assert linea.moneda == "ARS"
+    assert linea.precio_unitario == Decimal("50732.41")
+    assert linea.unidad_venta == "M2"
     assert resumen.costo_total_por_moneda["ARS"] == esperado
     assert linea.advertencias == []
 
@@ -142,6 +144,7 @@ def test_un_formato_sin_precio_no_calcula_costo_cero(sesion):
     linea = resumen.lineas[0]
     assert linea.area_total_m2 is not None, "el área se calcula igual, con o sin precio"
     assert linea.costo_estimado is None
+    assert linea.precio_unitario is None
     assert any("no tiene precio de referencia" in a for a in linea.advertencias)
 
 

@@ -14,12 +14,14 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..modelos.presupuesto import Cliente, Presupuesto
+from ..costeo import resumen_materiales
+from ..modelos.presupuesto import Cliente, LineaCosto, Presupuesto, RubroLineaCosto
 from .dependencias import obtener_sesion
 from .esquemas_presupuesto import (
     ClienteActualizar,
     ClienteCrear,
     ClienteLeer,
+    LineaCostoLeer,
     PresupuestoActualizar,
     PresupuestoCrear,
     PresupuestoLeer,
@@ -175,3 +177,72 @@ def duplicar_presupuesto(
     sesion.add(copia)
     sesion.commit()
     return copia
+
+
+# --- Líneas de costo (paso 2: `CART-302`) -----------------------------
+
+
+def _descripcion_de_linea(linea) -> str:
+    base = linea.material_nombre or f"Grupo «{linea.grupo_nombre}» — sin material asignado"
+    return f"{base} — {linea.formato_descripcion}" if linea.formato_descripcion else base
+
+
+@router.post(
+    "/presupuestos/{presupuesto_id}/recalcular-materiales",
+    response_model=list[LineaCostoLeer],
+)
+def recalcular_materiales(
+    presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
+) -> list[LineaCosto]:
+    """Genera (o reemplaza) las líneas de rubro `MATERIAL` a partir de
+    `costeo.resumen_materiales` (`CART-302`). Estas líneas no se editan
+    a mano — volver a llamar este endpoint es la única forma de
+    actualizarlas; corregir un número puntual es un override
+    (`CART-303`, paso 3), no tocar `descripcion`/`cantidad` directo.
+    """
+    presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    if presupuesto.trabajo_id is None:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "El presupuesto no tiene un trabajo asociado; no hay nada que costear.",
+        )
+    resumen = resumen_materiales(sesion, presupuesto.trabajo_id)
+
+    existentes = sesion.execute(
+        select(LineaCosto).where(
+            LineaCosto.presupuesto_id == presupuesto_id,
+            LineaCosto.rubro == RubroLineaCosto.MATERIAL.value,
+        )
+    ).scalars().all()
+    for vieja in existentes:
+        sesion.delete(vieja)
+    sesion.flush()
+
+    nuevas = [
+        LineaCosto(
+            presupuesto_id=presupuesto_id,
+            rubro=RubroLineaCosto.MATERIAL.value,
+            grupo_id=linea.grupo_id,
+            descripcion=_descripcion_de_linea(linea),
+            cantidad=linea.area_total_m2,
+            unidad=linea.unidad_venta,
+            precio_unitario=linea.precio_unitario,
+            valor_calculado=linea.costo_estimado,
+            advertencia="; ".join(linea.advertencias) or None,
+        )
+        for linea in resumen.lineas
+    ]
+    sesion.add_all(nuevas)
+    sesion.commit()
+    return nuevas
+
+
+@router.get("/presupuestos/{presupuesto_id}/lineas-costo", response_model=list[LineaCostoLeer])
+def listar_lineas_costo(
+    presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
+) -> list[LineaCosto]:
+    _presupuesto_o_404(sesion, presupuesto_id)
+    consulta = (
+        select(LineaCosto).where(LineaCosto.presupuesto_id == presupuesto_id).order_by(LineaCosto.id)
+    )
+    return list(sesion.execute(consulta).scalars().all())

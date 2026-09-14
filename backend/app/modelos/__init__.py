@@ -6,7 +6,7 @@ reglas de `docs/PLAN-SLICE-VERTICAL.md`.
 """
 from .base import Base
 from .catalogo import CotizacionMoneda, Formato, Material, Moneda, ParametrosCorteMaterial
-from .presupuesto import Cliente, EstadoPresupuesto, Presupuesto
+from .presupuesto import Cliente, EstadoPresupuesto, LineaCosto, Presupuesto, RubroLineaCosto
 from .trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza, Trabajo
 
 __all__ = [
@@ -19,10 +19,12 @@ __all__ = [
     "EstadoPresupuesto",
     "Formato",
     "GrupoDeCorte",
+    "LineaCosto",
     "Material",
     "Moneda",
     "ParametrosCorteMaterial",
     "Pieza",
     "Presupuesto",
+    "RubroLineaCosto",
     "Trabajo",
 ]

@@ -217,7 +217,7 @@ Python en el backend es prácticamente obligatorio: el ecosistema de geometría 
 ```bash
 cd backend
 pip install -r requirements-dev.txt
-pytest                     # 188 tests: dominio del nesting + API
+pytest                     # 195 tests: dominio del nesting + API
 ```
 
 Ya hay una API real, siguiendo [`docs/PLAN-SLICE-VERTICAL.md`](docs/PLAN-SLICE-VERTICAL.md) — SQLite local sin instalar nada, FastAPI, Alembic:
@@ -228,7 +228,7 @@ alembic upgrade head        # crea backend/local/carteleria.db
 uvicorn app.api.app:app --reload
 ```
 
-Documentación interactiva en `http://localhost:8000/docs`. Los 5 pasos de `PLAN-SLICE-VERTICAL.md` ya están: ABM de catálogo (`CART-102`/`CART-105`), trabajos con subida y parseo de DXF (`CART-503`), grupos de corte (`CART-211`), anidado real en cola (`POST /grupos/{id}/anidar` con `rectpack` — Deepnest no está conectado a la API todavía) con costeo (`GET /trabajos/{id}/costeo`), y ajuste manual + exportación (`PATCH /colocaciones/{id}` para mover/rotar, `GET /ejecuciones/{id}/plano` y `.../dxf`) — sin autenticación (`CART-002` se difiere) y por eso **no se expone fuera de `localhost`**. Falta el paso 6 (el frontend) y, arrancando ahora, [`PLAN-SLICE-COTIZADOR.md`](docs/PLAN-SLICE-COTIZADOR.md): paso 1 (`CART-301` — clientes y presupuestos en `BORRADOR`) ya está.
+Documentación interactiva en `http://localhost:8000/docs`. Los 5 pasos de `PLAN-SLICE-VERTICAL.md` ya están: ABM de catálogo (`CART-102`/`CART-105`), trabajos con subida y parseo de DXF (`CART-503`), grupos de corte (`CART-211`), anidado real en cola (`POST /grupos/{id}/anidar` con `rectpack` — Deepnest no está conectado a la API todavía) con costeo (`GET /trabajos/{id}/costeo`), y ajuste manual + exportación (`PATCH /colocaciones/{id}` para mover/rotar, `GET /ejecuciones/{id}/plano` y `.../dxf`) — sin autenticación (`CART-002` se difiere) y por eso **no se expone fuera de `localhost`**. Falta el paso 6 (el frontend) y, arrancando ahora, [`PLAN-SLICE-COTIZADOR.md`](docs/PLAN-SLICE-COTIZADOR.md): pasos 1-2 ya están — clientes y presupuestos en `BORRADOR` (`CART-301`) y `POST /presupuestos/{id}/recalcular-materiales` (`CART-302`, sobre `costeo.py`).
 
 No hay Docker todavía — eso es la versión de producción de F0 (`CART-001`), que sigue sin empezar; el modo local de arriba corre sin instalar nada pesado y el cambio a PostgreSQL/Docker es de configuración, no de código.
 

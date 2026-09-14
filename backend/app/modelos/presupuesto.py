@@ -1,19 +1,18 @@
-"""Cliente y Presupuesto — paso 1 de `docs/PLAN-SLICE-COTIZADOR.md`.
-
-`LineaCosto` (`CART-302`/`303`) todavía no existe: es el paso 2 del
-plan. Este módulo solo tiene lo mínimo para que un presupuesto exista
-y se pueda asociar a un cliente y, opcionalmente, a un trabajo ya
-anidado.
+"""Cliente, Presupuesto y LineaCosto — pasos 1 y 2 de
+`docs/PLAN-SLICE-COTIZADOR.md`.
 """
 from __future__ import annotations
 
 import enum
+from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .catalogo import Moneda
+from .tipos import Milimetros
 
 
 class EstadoPresupuesto(str, enum.Enum):
@@ -22,6 +21,18 @@ class EstadoPresupuesto(str, enum.Enum):
     """
 
     BORRADOR = "BORRADOR"
+
+
+class RubroLineaCosto(str, enum.Enum):
+    """`CART-302` a `CART-306`. Solo `MATERIAL` es alcanzable por API
+    todavía (paso 2 del plan) — el resto son líneas libres, paso 4."""
+
+    MATERIAL = "MATERIAL"
+    INSUMO = "INSUMO"
+    MANO_DE_OBRA = "MANO_DE_OBRA"
+    FLETE = "FLETE"
+    INSTALACION = "INSTALACION"
+    OTRO = "OTRO"
 
 
 class Cliente(Base):
@@ -68,3 +79,55 @@ class Presupuesto(Base):
     moneda: Mapped[str] = mapped_column(String(3), default=Moneda.ARS.value)
 
     cliente: Mapped[Cliente] = relationship(back_populates="presupuestos")
+    lineas: Mapped[list[LineaCosto]] = relationship(
+        back_populates="presupuesto", cascade="all, delete-orphan"
+    )
+
+
+class LineaCosto(Base):
+    """Una fila del desglose (`CART-302` a `CART-308`).
+
+    `grupo_id` es un FK plano, no un `relationship()`: igual que
+    `GrupoDeCorte.formato_id` en `app/costeo.py`, evita un import
+    circular entre este módulo y `trabajo.py` — se resuelve por sesión
+    cuando hace falta, no por atributo.
+
+    `valor_calculado` y `precio_unitario` son nullable a propósito:
+    `app/costeo.py` ya tiene la regla de que un grupo sin material, sin
+    anidar o sin precio de referencia no calcula un costo — nunca un
+    cero que se confunda con "gratis". `advertencia` guarda el motivo
+    para no perderlo al persistir (`recalcular-materiales` lo copia
+    tal cual de `LineaMaterial.advertencias`).
+
+    `valor_calculado` nunca se pisa (`CART-303`, paso 3): el override
+    vive aparte, en `valor_override`. El valor efectivo de una línea es
+    `valor_override if valor_override is not None else valor_calculado`.
+    """
+
+    __tablename__ = "lineas_costo"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    presupuesto_id: Mapped[int] = mapped_column(
+        ForeignKey("presupuestos.id", ondelete="CASCADE")
+    )
+    rubro: Mapped[str] = mapped_column(String(20))
+    #: Solo se llena en rubro MATERIAL — de qué grupo de corte salió,
+    #: para la trazabilidad que pide CART-308 ("qué precio se usó, de
+    #: qué versión y con qué cantidad").
+    grupo_id: Mapped[int | None] = mapped_column(
+        ForeignKey("grupos_de_corte.id", ondelete="SET NULL"), default=None
+    )
+    descripcion: Mapped[str] = mapped_column(String(300))
+    cantidad: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    unidad: Mapped[str | None] = mapped_column(String(20), default=None)
+    precio_unitario: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    valor_calculado: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    advertencia: Mapped[str | None] = mapped_column(Text(), default=None)
+    #: A partir de acá, campos del paso 3 (`CART-303`) — ya en el
+    #: schema para no necesitar una segunda migración la semana que
+    #: viene, sin ruta todavía que los escriba.
+    valor_override: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    override_por: Mapped[str | None] = mapped_column(String(120), default=None)
+    override_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+    presupuesto: Mapped[Presupuesto] = relationship(back_populates="lineas")
