@@ -32,7 +32,7 @@ cartelería/
 │
 ├── docs/              ← documentación del proyecto (viva, se edita)
 │   ├── EPICA.md                      Documento maestro
-│   ├── BACKLOG.md                    68 historias con criterios de aceptación
+│   ├── BACKLOG.md                    70 historias con criterios de aceptación
 │   ├── REGISTRO.md                   Supuestos, parámetros, dudas, insumos
 │   ├── CONVENCIONES.md               Cómo trabajamos sin pisarnos
 │   ├── DECISIONES-Y-BLOQUEANTES.md   Correcciones a la spec técnica
@@ -106,7 +106,7 @@ Una hora, en este orden:
 |---|---|---|
 | [`EPICA.md`](docs/EPICA.md) | Contexto y origen, requisitos R1-R11, roles, alcance IN/OUT, features F0-F8, roadmap, **10 ADRs**, arquitectura, 12 NFRs, 13 riesgos, DoR/DoD, matriz de trazabilidad, glosario | Cuando cambia el alcance o una decisión |
 | [`PROPUESTA-CLIENTE.md`](docs/PROPUESTA-CLIENTE.md) | Prospecto para el cliente: problema, solución, cronograma de 2 meses, insumos necesarios e inversión — sin jerga interna, para la reunión de confirmación de inicio | Antes de la reunión de arranque, y cuando cambie el alcance o el cronograma ofrecido |
-| [`BACKLOG.md`](docs/BACKLOG.md) | 9 features, **68 historias**, 358 puntos. Cada una con narrativa, criterios Gherkin, estimación, dependencias y sprint | Al partir o agregar historias |
+| [`BACKLOG.md`](docs/BACKLOG.md) | 9 features, **70 historias**, 371 puntos. Cada una con narrativa, criterios Gherkin, estimación, dependencias y sprint | Al partir o agregar historias |
 | [`REGISTRO.md`](docs/REGISTRO.md) | **Fuente de verdad.** 16 supuestos (`SUP`), 37 parámetros (`PAR`), 23 insumos (`B`/`T`), 19 preguntas (`P`), 8 decisiones pendientes (`D`), guion de relevamiento, tablero de estado | **Cada sprint**, y cada vez que se cierra un ID |
 | [`GUION-ENTREVISTAS-RELEVAMIENTO.md`](docs/GUION-ENTREVISTAS-RELEVAMIENTO.md) | Las 19 preguntas de `REGISTRO.md §6` desarrolladas para llevar a los tres encuentros de relevamiento: en lenguaje llano, por qué importa cada una y qué insumos pedir | Cuando cambie el guion de `REGISTRO.md §6` |
 | [`RELEVAMIENTO-REUNION-ARRANQUE.md`](docs/RELEVAMIENTO-REUNION-ARRANQUE.md) | Hallazgos depurados de la reunión de arranque con Aníbal (Megacarteles): confirma/matiza `SUP-04`, `SUP-14`, `B-01`, `B-02`, `B-09` y suma hallazgos nuevos sin ID todavía | No se actualiza — es una nota puntual de esa reunión |
@@ -114,6 +114,14 @@ Una hora, en este orden:
 | [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | **13 correcciones** a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
 | [`DASHBOARD-VISTAS.md`](docs/DASHBOARD-VISTAS.md) | Las 9 vistas del dashboard actual, de qué tabla real sale cada una y cómo construirlas en F8 — avanza `CART-801` | Cuando se releve o confirme una vista nueva |
+| [`RELEVAMIENTO-EXPORT-APPSHEET.md`](docs/RELEVAMIENTO-EXPORT-APPSHEET.md) | Las 19 hojas del export del cliente, qué hay en cada una y qué implica para el modelo — resuelve `B-01` y `B-02` | Antes de modelar catálogo, precios o cotizador |
+| [`PLAN-SLICE-VERTICAL.md`](docs/PLAN-SLICE-VERTICAL.md) | Cómo sacar el nesting del script local a una app real (API, persistencia, cola) sin Docker, dejando el paso a producción como configuración | Mientras se construyan las fundaciones |
+| [`PLAN-GRUPOS-DE-CORTE.md`](docs/PLAN-GRUPOS-DE-CORTE.md) | Catálogo con precio real (moneda, conversión de unidad) + un trabajo repartido en varios materiales, cada uno con su propio anidado — resuelve `CART-211` | Al tocar el modelo de trabajos, grupos o costeo |
+| [`SPIKE-CDR.md`](docs/SPIKE-CDR.md) | ¿Se puede leer `.cdr` sin CorelDRAW? Sí, vía LibreOffice/`libcdr` — con dos límites conocidos. De paso corrigió la escala usada en las pruebas de nesting (era 10, es 1) | Antes de tocar `ADR-02` o construir ingesta de `.cdr` |
+| [`PLANILLA-PARAMETROS-TALLER.md`](docs/PLANILLA-PARAMETROS-TALLER.md) | Planilla para llenar con el operario: cierra `B-03` y `B-04` y las preguntas que surgieron de construir el motor | Antes de la próxima visita al taller |
+| [`MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) | **Dónde estamos parados**: diagramas Mermaid con el estado de las 9 features, dónde se corta el flujo del dato, qué bloquea qué y qué sigue | Para ubicarse rápido, o cuando cambie el estado de una feature |
+| [`COMO-FUNCIONA-CADA-MOTOR.md`](docs/COMO-FUNCIONA-CADA-MOTOR.md) | Cómo funciona `rectpack` y cómo funciona Deepnest, qué da cada uno y las mediciones reales sobre DXF del cliente | Al decidir `D-01`, o antes de cambiar de motor |
+| [`CONTRATO-NESTING-ENGINE.md`](docs/CONTRATO-NESTING-ENGINE.md) | El JSON que hablan Python y el motor irregular (`nesting-engine/`) | Al tocar cualquiera de los dos lados |
 | [`FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores de nesting en el navegador — insumo para F7, no cambia `ADR-05` | Rara vez — es una investigación puntual |
 | [`PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/PLAN-MOTOR-NESTING-DEEPNEST.md) | Plan técnico para reemplazar `rectpack`/`nest2D` por un motor único basado en Deepnest (`deepnest-next`) como microservicio Node — resuelve `D-01`. Plan, no ejecutado todavía | Cuando avance alguna de sus 5 fases |
 | [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) | Plan de contingencia: cómo aproximar huecos y corte de líneas compartidas sin servicios externos, construido encima de `shapely`/`rectpack`/`nest2D` en el mismo backend Python | Cuando se decida probarlo o se mida contra el plan de Deepnest |

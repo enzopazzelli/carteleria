@@ -378,7 +378,7 @@ Entonces puede ver exactamente qué versión de precio se usó
 # F2 — Motor de nesting rectangular
 
 > **Objetivo:** el corazón del proyecto. Que el sistema acomode las piezas solo, diga cuántas planchas hacen falta, cuánto se aprovecha y entregue el plano al taller.
-> **Sprint:** S2 · **Puntos:** 49 · **Depende de:** F1
+> **Sprint:** S2 · **Puntos:** 62 · **Depende de:** F1
 > **Requisitos cubiertos:** R2, R3, R4, R5, RD-04, RD-05, RD-06
 
 ---
@@ -626,6 +626,82 @@ Entonces el sistema permite ingresar la medida desarrollada manualmente y lo adv
 
 ---
 
+### CART-210 — Ajustar los parámetros de corte del trabajo y re-anidar
+
+**Como** operario del taller **quiero** cambiar kerf, margen de borde y separación sobre el trabajo que tengo delante y ver el anidado recalculado **para** poder adaptarme a cómo está cortando la máquina hoy, sin depender de que administración toque la configuración del material.
+
+```gherkin
+Dado un trabajo con su anidado ya calculado
+Cuando el operario modifica el kerf, el margen de borde o la separación entre piezas
+Entonces el anidado se recalcula completo con los valores nuevos, y se actualizan el aprovechamiento, la cantidad de planchas y el costo
+
+Dado un trabajo con parámetros ajustados por el operario
+Cuando se muestra el resultado
+Entonces se ve qué valor tiene cada parámetro y cuál es el configurado para ese material (`CART-105`), con el desvío marcado
+
+Dado un trabajo con parámetros ajustados
+Cuando el operario elige "volver a los valores del material"
+Entonces se restauran los de `CART-105` y el anidado se recalcula
+
+Dado un anidado con posiciones ajustadas a mano
+Cuando el operario cambia un parámetro de corte
+Entonces el sistema avisa que el recálculo descarta esos ajustes manuales, antes de aplicarlo
+
+Dado un trabajo guardado
+Cuando se lo reabre
+Entonces conserva los parámetros con los que se calculó, no los que tenga el material en ese momento
+```
+
+> Es el mismo principio que `CART-302`/`ADR-07` para el desglose de costos — *"si el dueño no puede corregir un número, no va a usar el sistema"*— aplicado a los parámetros físicos del corte. `CART-105` los configura por material, a nivel administración; esta historia los pone **a disposición del operario en cada trabajo**, que es quien sabe cómo está cortando la máquina hoy.
+>
+> El último criterio importa para la trazabilidad: un presupuesto viejo tiene que poder reproducirse tal cual se calculó, aunque después alguien haya cambiado el material (mismo criterio de determinismo que `CART-202`).
+>
+> El aviso antes de descartar los ajustes manuales sale de la experiencia del visor local (`GUIA-PRUEBAS-LOCALES.md §3 ter`): recalcular pierde las posiciones movidas a mano, y es correcto que las pierda —cambió una restricción física real— pero no puede pasar por sorpresa.
+
+**Puntos:** 5 · **Depende de:** CART-202, CART-105, CART-208 · **Sprint:** S2
+
+---
+
+### CART-211 — Grupos de corte: un trabajo repartido en varios materiales
+
+**Como** diseñador **quiero** separar las piezas de un mismo trabajo en distintos grupos, cada uno con su propio material, **para** poder anidar cada parte del diseño en la chapa/acrílico/MDF que realmente corresponde y saber cuánto va a costar cada uno.
+
+```gherkin
+Dado un trabajo recién importado
+Cuando se lo mira por primera vez
+Entonces todas sus piezas están sin asignar a ningún grupo de corte
+
+Dado un trabajo con piezas sin asignar
+Cuando el diseñador crea un grupo de corte y le elige un material
+Entonces el grupo queda listo para recibir piezas y anidarlas, con los parámetros de corte de ESE material (CART-105)
+
+Dado piezas ya asignadas a un grupo
+Cuando el diseñador selecciona algunas y las manda a otro grupo (u otro material)
+Entonces esas piezas salen del grupo de origen y quedan disponibles para anidar en el grupo de destino
+
+Dado un trabajo con varios grupos de corte, cada uno ya anidado
+Cuando se pide el resumen de materiales del trabajo
+Entonces se ve una línea por grupo: material, formato, planchas necesarias y costo — sin mezclar materiales distintos en un solo número
+
+Dado un grupo de corte sin material asignado, o sin anidar todavía
+Cuando se pide el resumen de materiales
+Entonces esa línea muestra el motivo (sin material / sin anidar / sin precio de referencia) y el costo queda vacío, nunca en cero
+
+Dado un grupo con varias ejecuciones de nesting (probó rectpack y deepnest)
+Cuando se calcula el resumen de materiales
+Entonces se usa la que el diseñador marcó como definitiva, y si no marcó ninguna se avisa cuál se usó por default
+```
+
+> Es el hueco entre F2 y F3 que `CART-302` ya daba por hecho ("un presupuesto que usa dos materiales distintos, cada material aparece como línea separada") sin que nada describiera de dónde salían esas líneas. Acá es de dónde: `GrupoDeCorte` reemplaza la idea fija de "Tanda 1 / Tanda 2" del visor local (siempre el mismo material) por N grupos, cada uno con su propio material — plan completo en [`PLAN-GRUPOS-DE-CORTE.md`](PLAN-GRUPOS-DE-CORTE.md).
+>
+> El resumen de materiales (`app/costeo.py`) es un cálculo sobre lo ya guardado, no una entidad nueva — **no reemplaza a `CART-301`** (el `Presupuesto` como tal, con cliente y estado), es lo que le da de comer sus líneas cuando esa historia se construya.
+>
+> El costo por línea se calcula solo cuando el formato se vende por m² y tiene precio cargado — con cualquier otra unidad de venta, o sin precio, se avisa en vez de inventar un número.
+
+**Puntos:** 8 · **Depende de:** CART-202, CART-105 · **Sprint:** S2
+
+---
+
 # F3 — Cotizador, desglose editable y PDF
 
 > **Objetivo:** convertir el resultado del anidado en un presupuesto completo, con desglose editable y PDF presentable. Cierra **H1**.
@@ -687,6 +763,8 @@ Entonces se factura la plancha entera consumida, no solo el área aprovechada
 > Cubre **R5** y **R6**. El último criterio hay que **confirmarlo con el cliente en Sprint 0**: si cobran por m² aprovechado en vez de por plancha entera, cambia el cálculo.
 
 **Puntos:** 5 · **Depende de:** CART-206, CART-103 · **Sprint:** S3
+
+> **Depende también de `CART-211`** (F2, ver más abajo): el "un presupuesto que usa dos materiales distintos" que este criterio pide como línea separada sale de recorrer los grupos de corte de cada trabajo — `CART-211` es lo que produce esas líneas, esta historia es lo que las convierte en presupuesto.
 
 ---
 

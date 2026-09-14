@@ -58,6 +58,122 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-09-07 — Commit del trabajo del día anterior + spike de Capa 2 (anidado en huecos)
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+**Se commiteó todo lo de la sesión anterior** (CART-503/505, CART-208, validación manual, scripts de prueba) en 5 commits sobre `feat/F2-motor-nesting-rectangular` — sin `Co-Authored-By`, según `CONVENCIONES.md` (quedó un conflicto puntual con la atribución default de la sesión, resuelto a favor de la convención del proyecto).
+
+**Arrancó el spike de la Capa 2** de [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) — anidado en huecos — a pedido explícito: "que las piezas puedan trabar entre sí y que piezas chicas entren en huecos de piezas un poco más grandes". Se aclaró el alcance real con el cliente interno (Enzo): esto cubre huecos reales (agujeros cerrados); interlocking orgánico general de formas curvas sigue siendo NFP completo (Deepnest, el plan alternativo) — el propio plan nativo ya lo dice para su Capa 3 (corte de líneas compartidas), y aplica más todavía acá.
+
+Nuevo módulo `app/services/nesting/anidado_huecos.py`: segunda pasada greedy sobre un `ResultadoAnidado` ya calculado por `MotorNestingRectangular` — para cada agujero real de una pieza colocada (`CART-505`), intenta reubicar ahí otra pieza colocada más chica (candidatas ordenadas de menor a mayor área, ángulo 0°/90° solamente — lo único que `PosicionPieza` puede representar, `ADR-01`). Si entra, esa pieza deja de necesitar su propio lugar — puede liberar una plancha entera si era la única razón de que existiera.
+
+Reutiliza toda la infraestructura de la sesión anterior: `poligono_colocado`/`validar_posicion_manual` (colisión por polígono real, no rectángulo) y los agujeros reales de `CART-505`. Se agregaron dos conversores compartidos (`posicion_manual_desde_pieza`/`pieza_desde_posicion_manual`) a `validacion_manual.py`, sacados de una copia que tenía `servidor_visor.py` — ahora hay una sola versión.
+
+**Conectado al visor interactivo**: `servidor_visor.py` corre la Capa 2 automáticamente después de cada anidado, y avisa cuántas piezas reubicó. Probado con datos reales: en `carrusel.dxf`, 9 piezas se reubicaron dentro de agujeros de otras — no bajó el conteo de planchas (ya entraba todo en 1), pero confirma que el mecanismo encuentra encajes reales, no solo en el test sintético.
+
+9 tests nuevos (`test_anidado_huecos.py`) + 6 de los conversores (`test_validacion_manual.py`) — 80 en total en la suite.
+
+### Qué se decidió
+
+**Bug real encontrado en la primera versión del algoritmo**: buscaba huecos solo en la MISMA plancha que el motor automático ya le había asignado a la pieza candidata — exactamente al revés de la idea (el punto es poder mudarla a la plancha de la contenedora, que puede ser otra, para liberar la plancha vieja). El primer test sintético lo detectó de inmediato (planchas_usadas no bajaba de 2 a 1 como se esperaba).
+
+**No se integró con `aprovechamiento.py`** — queda documentado como límite conocido en el docstring del módulo: ese cálculo suma bounding boxes sin chequear superposición, y una pieza reubicada en un hueco tiene su rectángulo *a propósito* adentro del rectángulo de su contenedora — daría un % inflado. El visor interactivo no tiene este problema porque ya calculaba aprovechamiento con área real de polígono (`shapely`), no con `aprovechamiento.py`. Integrar esto de verdad es la Fase 3 del plan, todavía pendiente.
+
+### Cambios en el registro
+
+Alta de `PAR-39` — área mínima de hueco aprovechable para anidado en huecos (100 mm², provisorio, Capa 2).
+
+### Pendiente
+
+- Fase 3 del plan (integración real con F2/F7): hacer que `aprovechamiento.py`/`comparador.py` sepan calcular área real cuando hay piezas reubicadas en huecos, en vez de solo el visor interactivo.
+- Capa 3 (corte de líneas compartidas) — todavía no arrancada, quedó explícitamente para después de validar la Capa 2.
+- Medir contra `PAR-33` en el punto de validación de H1, como pide el plan, cuando haya baseline real (`B-17`).
+
+### Addendum — mismo día: la primera versión solo colocaba una pieza por hueco, en el centro
+
+A partir de feedback visual directo ("se seleccionan al azar piezas que encajan... me gustaría que ocupe mejor los espacios, y que si entran más de uno los incluya"), se detectó que la V1 de `anidar_en_huecos` solo probaba el centroide de cada hueco y se quedaba con la primera candidata que entrara ahí — nunca intentaba una segunda pieza en el mismo hueco (siempre hubiera chocado contra la primera, mismo punto) ni comparaba candidatas entre sí para ver cuál aprovechaba mejor.
+
+**Rediseño**: por cada hueco (de más grande a más chico) se prueban las candidatas de más grande a más chica — la primera que entra es la que más aprovecha, no la primera de la lista — y se sigue intentando llenar el mismo hueco con lo que queda hasta que ya no entra nada más. Para cada intento se prueba una grilla de puntos dentro del hueco (no solo el centro), así una segunda pieza puede encontrar lugar al costado de la primera. En `carrusel.dxf`: pasó de 9 a 12 piezas reubicadas.
+
+**Bug real encontrado en el camino, más serio que el del algoritmo**: con kerf y separación ambos en 0 (un caso real, no inventado — es justo lo que se usa para "arrancar lo más anidado posible"), `validar_posicion_manual` dejaba de detectar superposiciones reales — dos piezas terminaban apiladas exactamente una arriba de la otra sin que el validador se diera cuenta. La causa: `Polygon.distance()` da 0 tanto para "se tocan" como para "se superponen", y con gap requerido 0 el chequeo `distancia < gap_requerido - epsilon` se volvía `distancia < -epsilon`, que nunca es cierto. Se corrigió agregando un chequeo de ÁREA de intersección específicamente para el caso `distancia == 0` — área cero es un simple contacto de borde (válido, corte de línea compartida), área positiva es superposición real (inválido). Un test viejo (`test_pieza_que_toca_el_borde_del_agujero...`) resultó estar escrito con la semántica vieja (antes de que "tocarse nunca es superponerse" se volviera la regla general) — se corrigió para reflejar la decisión ya tomada, en vez de revertir el fix.
+
+**Costo de rendimiento del rediseño**: el algoritmo más completo (grilla de puntos + múltiples piezas por hueco) tardaba ~20s sobre los datos reales de `carrusel.dxf` (47 piezas) — inaceptable para algo que corre en cada cambio de parámetro en el visor interactivo. Se agregó un filtro barato de bounding box antes de la geometría cara de `shapely` (si ni el bbox de la pieza entra en el bbox del hueco en ninguna rotación, ni vale la pena probar puntos/ángulos) más una grilla más gruesa (4x4 en vez de 6x6) — bajó a ~5,5s sin cambiar el resultado (mismas 12 piezas reubicadas). Sigue siendo notorio, no instantáneo; queda como límite conocido si hace falta más velocidad más adelante.
+
+12 tests nuevos/actualizados entre `test_validacion_manual.py` y `test_anidado_huecos.py` (82 en total en la suite).
+
+### Addendum 2 — mismo día: candidatas ordenadas por bounding box, no por área real; y un paso más de lookahead por hueco
+
+Feedback visual sobre `carrusel.dxf`: entraban piezas con forma de estrella en huecos donde, a simple vista, otras piezas más "macizas" aprovechaban mejor el espacio y quedaban afuera. Investigado: `anidar_en_huecos` ordenaba las candidatas por área del **bounding box** (`ancho_colocado_mm × alto_colocado_mm`), no por área real del polígono — una estrella tiene bbox grande (las puntas abren mucho) pero área real chica (puro hueco cóncavo entre puntas), así que se probaba antes que piezas con bbox más chico pero más superficie real aprovechable. Se corrigió precalculando el área real por `shapely` (`Polygon(contorno, agujeros).area`) y ordenando por eso.
+
+**El fix es correcto pero no explica del todo el síntoma reportado.** Se armó un experimento directo (sacar del diccionario de geometrías las 3 piezas de menor "% de relleno" — área real / área de bbox — y volver a correr `anidar_en_huecos` sobre los mismos datos) para ver si entraban piezas sistemáticamente mejores. Resultado: entraron 2 piezas nuevas, una genuinamente distinta (`carrusel-34`, más chica) y otra prácticamente idéntica a las sacadas (`carrusel-44`: misma área real ~698mm², mismo bbox 47×46mm — otra estrella). Conclusión: hay más candidatas "clase estrella" que lugares para todas, y cuál de ellas gana el hueco es en buena medida arbitrario entre casi-empatadas — el límite que el propio plan documenta como aceptado ("no es una optimización conjunta... suficientemente bueno, no óptimo"), no un bug de orden.
+
+**Un paso más, a pedido explícito ("probar varias combinaciones por hueco"):** se agregó un lookahead de un paso en `anidar_en_huecos`. Por cada hueco se arman y comparan dos planes — llenarlo tomando la primera candidata que entra (como hasta ahora), o saltear esa primera candidata y llenar el hueco con lo que sigue — y se aplica el que en total deje más área real colocada. Se extrajo el bucle de relleno de un hueco a una función nueva, `_llenar_hueco_greedy`, que no toca ningún estado global (para poder correrla dos veces por hueco sin comprometerse a ninguna hasta comparar).
+
+Costó bastante armar un caso de prueba realista para esto: con rectángulos sólidos, "bloquear" un hueco para que nada más entre está fuertemente correlacionado con tener área grande — así que una pieza que bloquea de verdad casi nunca pierde por área contra una combinación de piezas más chicas (si perdiera, probablemente no bloqueaba tanto como parecía). Se encontró el caso ensayando varias combinaciones de tamaños directamente contra el código (`test_prefiere_dos_piezas_juntas_si_aprovechan_mas_area_que_una_sola`, `test_anidado_huecos.py`): una pieza de 52×18mm (936mm²) que sola ocupa el hueco de punta a punta y no deja lugar para nada más, contra dos de 25×25mm (625mm² cada una, 1250mm² juntas) que si se saltea la primera sí entran ambas — el lookahead elige el combo.
+
+**Corrido contra `carrusel.dxf` real: el resultado no cambió** (mismas piezas reubicadas con o sin el lookahead) — para los huecos de este archivo en particular, la primera candidata que entra ya es, hueco por hueco, mejor o igual que cualquier combinación alternativa de lo que queda. Confirma la lectura del punto anterior: el residuo de "por qué esta estrella y no aquella otra" es un empate entre candidatas muy parecidas, no algo que un combo de piezas distintas fuera a resolver. Sin regresión de rendimiento (~4,8s sobre los mismos datos, contra ~5,45s antes).
+
+1 test nuevo (83 en total en la suite).
+
+### Addendum 3 — mismo día: reponer el anidado original del diseñador, no solo buscar uno nuevo
+
+Feedback puntual sobre `carrusel.dxf` señalando piezas concretas ("carrusel-75 y 96 entran dentro de la rueda", "carrusel-34 y 11 entre carrusel-133 y 135") llevó a una pregunta distinta de las anteriores: ¿por qué el motor tiene que *reencontrar* un encaje que el diseñador ya resolvió a mano en el DXF original?
+
+**Hallazgo clave**: `CART-505` ya calcula, al clasificar contornos, qué contorno está contenido en cuál (`padre_inmediato`) — esa información se usaba solo para decidir hueco-vs-pieza y se descartaba después. Verificado con datos reales: los centroides absolutos de `carrusel-75`/`carrusel-96` en el DXF original coinciden casi exactamente con dos de los huecos de `carrusel-131` (la rueda) — el diseñador ya las había anidado ahí. Más aún, apareció una jerarquía de TRES niveles no documentada hasta ahora: la rueda contiene 8 piezas tipo "caballito" (~98×67mm), y cada una de esas contiene a su vez su propia piecita decorativa — 20 piezas en total con relación de contención real.
+
+**Implementado**: `PiezaImportada.contenida_en_id` (`dxf.py`) — el id de la contenedora inmediata, si la hay. `_datos_reales.py` calcula además `offset_original_mm`: el desplazamiento (en el mismo sistema de coordenadas que `contorno_local_mm` de la contenedora) que reconstruye la posición exacta. Nueva función `_posicion_reconstruida` en `anidado_huecos.py`: dado el `offset` y la posición ACTUAL de la contenedora, calcula dónde va la pieza hija — es una traslación pura, hereda el mismo ángulo que la contenedora tenga en ese momento (0°/90°), así que sigue siendo 100% representable como `PosicionPieza` sin tocar `ADR-01`. `_llenar_hueco_greedy` prueba esta reconstrucción ANTES de caer a la búsqueda por grilla para cualquier candidata cuyo `contenida_en_id` coincida con la contenedora del hueco que se está llenando.
+
+**Tres bugs reales encontrados validando esto contra `carrusel.dxf`** (cada uno con su test de regresión):
+
+1. **Huecos con posición congelada.** `_huecos_usables` calculaba TODOS los polígonos de agujeros una sola vez al principio, usando la posición ORIGINAL de cada contenedora. Con esta funcionalidad nueva, una contenedora intermedia (un "caballito") puede reubicarse DURANTE la misma pasada — su agujero seguía anclado al lugar viejo, así que cualquier pieza que "entrara ahí" quedaba flotando en el vacío. Se separó en `_HuecoInfo` (referencia liviana, sin resolver) + `_hueco_resuelto` (recalcula el polígono con la posición actual, justo antes de procesarlo).
+
+2. **Un hueco ya ocupado seguía "disponible" para cualquier otra.** Cada agujero de una pieza es su PROPIA pasada de `_llenar_hueco_greedy` — un "caballito" colocado durante la pasada de un agujero de la rueda seguía teniendo su propio hueco "libre" en las pasadas de los OTROS agujeros de la rueda (que ya no lo tienen en su `plan` local). Una pieza sin ninguna relación se colaba ahí (encontrado con datos reales: `carrusel-32`/`carrusel-36` ocupando el lugar que le correspondía a `carrusel-68`/`carrusel-103`). Se agregó `_invade_hueco_de_otra_ya_colocada`: el agujero de cualquier pieza YA colocada (en este plan o en una pasada anterior) queda reservado para su propio `contenida_en_id`.
+
+3. **La reserva del punto 2 no reconocía a los abuelos.** Con la reserva recién agregada, una pieza nieta (`carrusel-68`, adentro de un "caballito" que a su vez está adentro de la rueda) se rechazaba a sí misma: su posición reconstruida "invadía" el hueco de la RUEDA (su abuela), porque el chequeo solo eximía al padre INMEDIATO. Se corrigió caminando toda la cadena `contenida_en_id` hacia arriba (`_es_ancestro_o_igual`) — un ancestro a cualquier nivel es un lugar legítimo, no una intrusión.
+
+**Resultado contra `carrusel.dxf` real**: pasó de 12 a 21 piezas reubicadas — los 8 "caballitos" completos más 7 de sus 8 piecitas decorativas (la octava, hija de `carrusel-119`, no tiene contorno propio bajo el umbral de promoción). Verificado que `carrusel-75`/`96`/`68`/`103`/`61`/`82`/`89` caen exactamente dentro de su contenedora reubicada, y que las piezas sin relación (`36`/`38`/`32`/`31`) ya no se cuelan en esos huecos.
+
+**No resuelto, y por qué no es lo mismo que esto**: dos pedidos más del mismo feedback quedan afuera de esta funcionalidad — "carrusel-3 en vez de carrusel-42" (ninguna de las dos estaba originalmente en la rueda: la rueda tiene sus 8 huecos radiales rotados ~31°, y el motor de Capa 2 solo prueba 0°/90° por `ADR-01`, así que esto necesitaría una excepción de ángulo libre para piezas reubicadas en huecos) y "carrusel-34/11 entre carrusel-133 y 135" más "los caballitos podrían trabarse" (esto no es un hueco de una pieza — es espacio entre DOS piezas ya colocadas por separado, algo que `anidar_en_huecos` no contempla; es más cercano a la Capa 3 del plan, corte de líneas compartidas). Quedan pendientes de decisión de alcance, no de implementación menor.
+
+**Bug de UX corregido de paso**: la manija de rotación (`servidor_visor.py`) tenía un halo de agarre de radio FIJO en píxeles de pantalla (14px ≈ 40mm reales, con `ESCALA_PX_POR_MM=0.35`), sin sumarlo como margen a la distancia a la que se dibuja — en una pieza chica, ese halo terminaba tapando la pieza entera e interceptando el arrastre que debía moverla. Se corrigió sumando el radio del halo (ya en píxeles) después de convertir el resto de la fórmula a píxeles, así el borde interno del halo siempre queda más allá del borde real de la pieza.
+
+**Investigado y descartado como bug real**: "al aumentar el kerf, salen piezas sin que otras las reemplacen" — se verificó directamente contra el código (kerf 0,1 → 12 reubicadas, kerf 2 → 11 con dos piezas distintas de las anteriores, kerf 5 → 6) que el mecanismo SÍ reintenta candidatas alternativas al crecer el kerf; el conteo total baja porque un hueco más chico (efectivamente, tras el buffer) admite menos piezas, no porque el algoritmo deje de buscar. Si en el visor se ve algo distinto, hace falta un caso concreto para reproducirlo.
+
+3 tests nuevos (`test_contenida_en_id_apunta_a_la_contenedora_inmediata`, `test_contenida_en_id_soporta_dos_niveles_de_anidamiento` en `test_dxf.py`; `test_reconstruye_dos_niveles_de_anidamiento_original_sin_que_una_intrusa_se_cuele` en `test_anidado_huecos.py`) — 86 en total en la suite.
+
+### Addendum 4 — mismo día: excepción puntual a ADR-01 para huecos rotados
+
+De los dos pedidos que quedaron afuera del Addendum 3 ("carrusel-3 en vez de carrusel-42" — huecos radiales rotados ~31° que Capa 2 no podía usar bien porque solo probaba 0°/90°), el usuario pidió avanzar con ángulo libre, acotado a piezas reubicadas en huecos (no toca el motor automático ni `ADR-01` en general).
+
+**Implementado** sin romper la firma de `ResultadoAnidado`: `PosicionPieza` (`models.py`) suma tres campos opcionales — `angulo_libre_grados`/`centro_libre_x_mm`/`centro_libre_y_mm`, `None` en el 99% de los casos (motor automático, piezas 0°/90°). Cuando están poblados, son la posición REAL; `x_mm`/`y_mm`/`ancho_colocado_mm`/`alto_colocado_mm` se completan igual con el bounding box axis-aligned de esa forma ya rotada — conservador (nunca más chico que el área real), para que `comparador.py`/`aprovechamiento.py` (que todavía no saben de ángulo libre) sigan andando sin romperse. `pieza_desde_posicion_manual`/`posicion_manual_desde_pieza` (`validacion_manual.py`) ya no rechazan un ángulo que no sea 0/90 — hacen la ida y vuelta completa.
+
+`anidado_huecos.py` prueba ahora, por cada hueco, 0°/90° MÁS el ángulo natural del rectángulo mínimo rotado que lo envuelve (y su perpendicular) — `_angulo_del_hueco`/`_angulos_candidatos_para_hueco`. El filtro barato de bounding box (`_bbox_no_puede_entrar`) se extendió para no descartar de entrada una candidata que solo entra rotada al ángulo del hueco. Verificado con un caso sintético (hueco 80x15 rotado 40°, candidata 70x12): con solo 0°/90° no encaja, con el ángulo del hueco sí — test de regresión (`test_encaja_en_un_hueco_rotado_con_angulo_libre`).
+
+**El visor interactivo no necesitó ningún cambio** — ya renderizaba con `PosicionManual` (ángulo libre) desde que existe la edición manual; con el backend emitiendo el ángulo real, el SVG lo dibuja bien sin tocar `servidor_visor.py`.
+
+**No se pudo demostrar contra el caso real que lo motivó**: con los fixes del Addendum 3 ya aplicados, ninguna de las dos piezas originales (`carrusel-3`, `carrusel-42`) sigue compitiendo por un hueco de la rueda — los 8 huecos radiales grandes ya los ocupan los "caballitos" correctos, y `carrusel-42` terminó reubicada en un hueco completamente distinto, sin relación con la rueda. El mecanismo de ángulo libre queda implementado y probado, pero el escenario puntual que lo motivó dejó de existir como tal al mejorar el resto del algoritmo en el mismo día.
+
+**Costo de rendimiento**: de ~7s a ~11,8s sobre `carrusel.dxf` (47 piezas) — el doble de ángulos a probar por punto de grilla. Se cachea el ángulo/rectángulo-mínimo-rotado del hueco una sola vez (`_Hueco.angulos_candidatos`/`mrr_lados_mm`), no por candidata — sin este cacheo el costo hubiera sido bastante mayor. Sigue siendo un límite conocido de rendimiento, no resuelto de fondo.
+
+1 test nuevo (88 en total en la suite).
+
+### Addendum 5 — mismo día: separación mínima puntual entre piezas seleccionadas
+
+La segunda mitad del pedido del Addendum 4 (Capa 3 aparte, ver pendiente): poder seleccionar un grupo de piezas en el visor y pedirles más separación SOLO entre ellas, sin subir `PAR-03` para toda la tanda.
+
+**Implementado**: `validar_posicion_manual` (`validacion_manual.py`) suma un parámetro opcional `separacion_extra_mm: dict[frozenset[str], Decimal] | None` — separación mínima PISO para pares puntuales de `pieza_id`, `max()` contra la separación global (nunca la baja). `servidor_visor.py`: cada `_Tanda` guarda `separaciones_extra` (sobrevive a `recalcular()`, indexado por par de ids, se pierde si una pieza cambia de tanda); dos endpoints nuevos, `/api/separacion-extra` (aplica un valor a todos los pares dentro de la selección actual) y `/api/separacion-extra-reset` (limpia todo). En el visor: un input de mm + dos botones junto al de "mandar a la otra tanda"; las piezas con separación puntual activa se marcan con un borde violeta (`.separacion-extra`) para que se note cuáles están afectadas.
+
+Probado de punta a punta contra el servidor real corriendo: aplicar 15mm entre dos piezas reales de `carrusel.dxf` las marca en conflicto (con la separación global en 0mm), y el reset las vuelve a dejar en 0 conflictos. 1 test nuevo (`test_separacion_extra_por_par_sube_el_piso_solo_entre_esas_dos`) — 89 en total en la suite.
+
+### Pendiente (de esta sesión)
+
+- **Capa 3 sigue sin arrancar en código**: "carrusel-34/11 entre carrusel-133 y 135" y "los caballitos podrían trabarse" no son huecos de una pieza — son espacio entre piezas ya colocadas por separado (interlocking orgánico / corte de líneas compartidas). Es la pieza más grande y menos acotada de todo lo pedido hoy — más cercana en tamaño a un NFP que a llenar un hueco. Recomendado escribir primero un plan (`docs/PLAN-...md`, mismo criterio que ya se usó para Capa 2) antes de empezar a programarla a ciegas, dado el tamaño.
+
+---
+
 ## 2026-09-06 — README al día + CART-503 (parseo DXF) adelantada para pruebas con datos reales
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —
