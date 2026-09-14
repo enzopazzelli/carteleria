@@ -50,6 +50,29 @@ class ColocacionLeer(BaseModel):
     movida_a_mano: bool
 
 
+class ColocacionActualizar(BaseModel):
+    """Mover y/o rotar (`CART-207`) — lo que no se manda queda como
+    estaba. Al menos un campo tiene que venir; si no cambia nada no
+    tiene sentido marcar `movida_a_mano`."""
+
+    centro_x_mm: Decimal | None = None
+    centro_y_mm: Decimal | None = None
+    angulo_grados: Decimal | None = None
+
+
+class ColocacionAjusteLeer(ColocacionLeer):
+    """La colocación resultante, más si la posición pedida es válida.
+
+    Se aplica SIEMPRE, sea válida o no — es la misma decisión que ya
+    tomó el visor interactivo (`GUIA-PRUEBAS-LOCALES.md`): bloquear
+    frustra el ajuste fino cerca de una posición válida y es
+    incompatible con el corte de línea compartida. El cliente decide
+    cómo mostrar el conflicto (ej. resaltarlo), no esta API."""
+
+    valida: bool
+    motivo: str | None
+
+
 # --- Costeo (envuelve `app/costeo.py`, no lo reemplaza) -------------------
 
 
