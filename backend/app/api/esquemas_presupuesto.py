@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from ..modelos.catalogo import Moneda
 
@@ -88,3 +88,18 @@ class LineaCostoLeer(BaseModel):
     valor_override: Decimal | None
     override_por: str | None
     override_en: datetime | None
+
+
+class LineaCostoOverride(BaseModel):
+    """`CART-303`. `valor_override: null` revierte al valor calculado y
+    limpia `override_por`/`override_en` — no hace falta un endpoint
+    aparte para "volver al calculado"."""
+
+    valor_override: Decimal | None
+    override_por: str | None = None
+
+    @model_validator(mode="after")
+    def _override_por_es_obligatorio_si_hay_override(self) -> LineaCostoOverride:
+        if self.valor_override is not None and not self.override_por:
+            raise ValueError("override_por es obligatorio para aplicar un override — hay que saber quién lo hizo.")
+        return self

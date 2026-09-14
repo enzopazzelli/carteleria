@@ -4,7 +4,7 @@
 >
 > Índice del proyecto: [`../README.md`](../README.md) · [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md)
 >
-> **Versión:** 1.3 · **Fecha:** 2026-09-14 · **Estado:** pasos 1 y 2 ejecutados (`CART-301`, `CART-302`), paso 3 (`CART-303`, override manual) en curso
+> **Versión:** 1.4 · **Fecha:** 2026-09-14 · **Estado:** pasos 1-3 ejecutados (`CART-301`, `CART-302`, `CART-303`), paso 4 (líneas libres) sigue
 
 ---
 

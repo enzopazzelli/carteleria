@@ -22,6 +22,7 @@ from .esquemas_presupuesto import (
     ClienteCrear,
     ClienteLeer,
     LineaCostoLeer,
+    LineaCostoOverride,
     PresupuestoActualizar,
     PresupuestoCrear,
     PresupuestoLeer,
@@ -194,11 +195,15 @@ def _descripcion_de_linea(linea) -> str:
 def recalcular_materiales(
     presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
 ) -> list[LineaCosto]:
-    """Genera (o reemplaza) las líneas de rubro `MATERIAL` a partir de
-    `costeo.resumen_materiales` (`CART-302`). Estas líneas no se editan
-    a mano — volver a llamar este endpoint es la única forma de
-    actualizarlas; corregir un número puntual es un override
-    (`CART-303`, paso 3), no tocar `descripcion`/`cantidad` directo.
+    """Genera o actualiza las líneas de rubro `MATERIAL` desde
+    `costeo.resumen_materiales` (`CART-302`).
+
+    A diferencia del DXF de un trabajo, esto NO borra y recrea:
+    actualiza por `grupo_id` para conservar un override activo
+    (`CART-303`) — si el valor calculado nuevo difiere del que había
+    cuando se overrideó, lo dice en la advertencia en vez de pisarlo en
+    silencio (4° criterio de `CART-303`). Un grupo que ya no existe
+    (se borró desde el último recálculo) se elimina.
     """
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
     if presupuesto.trabajo_id is None:
@@ -208,33 +213,59 @@ def recalcular_materiales(
         )
     resumen = resumen_materiales(sesion, presupuesto.trabajo_id)
 
-    existentes = sesion.execute(
-        select(LineaCosto).where(
-            LineaCosto.presupuesto_id == presupuesto_id,
-            LineaCosto.rubro == RubroLineaCosto.MATERIAL.value,
-        )
-    ).scalars().all()
-    for vieja in existentes:
-        sesion.delete(vieja)
-    sesion.flush()
+    existentes_por_grupo = {
+        linea.grupo_id: linea
+        for linea in sesion.execute(
+            select(LineaCosto).where(
+                LineaCosto.presupuesto_id == presupuesto_id,
+                LineaCosto.rubro == RubroLineaCosto.MATERIAL.value,
+            )
+        ).scalars().all()
+    }
 
-    nuevas = [
-        LineaCosto(
-            presupuesto_id=presupuesto_id,
-            rubro=RubroLineaCosto.MATERIAL.value,
-            grupo_id=linea.grupo_id,
-            descripcion=_descripcion_de_linea(linea),
-            cantidad=linea.area_total_m2,
-            unidad=linea.unidad_venta,
-            precio_unitario=linea.precio_unitario,
-            valor_calculado=linea.costo_estimado,
-            advertencia="; ".join(linea.advertencias) or None,
-        )
-        for linea in resumen.lineas
-    ]
-    sesion.add_all(nuevas)
+    grupos_actuales = {linea.grupo_id for linea in resumen.lineas}
+    for grupo_id, vieja in existentes_por_grupo.items():
+        if grupo_id not in grupos_actuales:
+            sesion.delete(vieja)
+
+    resultado: list[LineaCosto] = []
+    for linea in resumen.lineas:
+        advertencia = "; ".join(linea.advertencias) or None
+        existente = existentes_por_grupo.get(linea.grupo_id)
+
+        if existente is None:
+            nueva = LineaCosto(
+                presupuesto_id=presupuesto_id,
+                rubro=RubroLineaCosto.MATERIAL.value,
+                grupo_id=linea.grupo_id,
+                descripcion=_descripcion_de_linea(linea),
+                cantidad=linea.area_total_m2,
+                unidad=linea.unidad_venta,
+                precio_unitario=linea.precio_unitario,
+                valor_calculado=linea.costo_estimado,
+                advertencia=advertencia,
+            )
+            sesion.add(nueva)
+            resultado.append(nueva)
+            continue
+
+        if existente.valor_override is not None and existente.valor_calculado != linea.costo_estimado:
+            aviso = (
+                f"El valor calculado cambió de {existente.valor_calculado} a {linea.costo_estimado}; "
+                f"el override manual ({existente.valor_override}) puede estar desactualizado."
+            )
+            advertencia = f"{advertencia}; {aviso}" if advertencia else aviso
+
+        existente.descripcion = _descripcion_de_linea(linea)
+        existente.cantidad = linea.area_total_m2
+        existente.unidad = linea.unidad_venta
+        existente.precio_unitario = linea.precio_unitario
+        existente.valor_calculado = linea.costo_estimado
+        existente.advertencia = advertencia
+        resultado.append(existente)
+
     sesion.commit()
-    return nuevas
+    return resultado
 
 
 @router.get("/presupuestos/{presupuesto_id}/lineas-costo", response_model=list[LineaCostoLeer])
@@ -246,3 +277,34 @@ def listar_lineas_costo(
         select(LineaCosto).where(LineaCosto.presupuesto_id == presupuesto_id).order_by(LineaCosto.id)
     )
     return list(sesion.execute(consulta).scalars().all())
+
+
+# --- Override manual (paso 3: `CART-303`) ---------------------------------
+
+
+def _linea_costo_o_404(sesion: Session, linea_id: int) -> LineaCosto:
+    linea = sesion.get(LineaCosto, linea_id)
+    if linea is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe la línea de costo {linea_id}.")
+    return linea
+
+
+@router.patch("/lineas-costo/{linea_id}", response_model=LineaCostoLeer)
+def aplicar_override(
+    linea_id: int, datos: LineaCostoOverride, sesion: Session = Depends(obtener_sesion)
+) -> LineaCosto:
+    """Corregir a mano el valor de una línea, con quién y cuándo
+    (`ADR-07`). `valor_override: null` revierte al valor calculado y
+    limpia `override_por`/`override_en` — no hay un endpoint aparte
+    para "volver al calculado". `valor_calculado` nunca se toca acá:
+    sigue disponible entero si se revierte."""
+    linea = _linea_costo_o_404(sesion, linea_id)
+    linea.valor_override = datos.valor_override
+    if datos.valor_override is None:
+        linea.override_por = None
+        linea.override_en = None
+    else:
+        linea.override_por = datos.override_por
+        linea.override_en = datetime.now(timezone.utc)
+    sesion.commit()
+    return linea

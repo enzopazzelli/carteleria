@@ -339,3 +339,106 @@ def test_listar_lineas_costo_antes_de_recalcular_esta_vacio(cliente):
 
 def test_listar_lineas_costo_de_presupuesto_inexistente_da_404(cliente):
     assert cliente.get("/presupuestos/999/lineas-costo").status_code == 404
+
+
+# --- Override manual (paso 3, CART-303) -----------------------------------
+
+
+def test_override_guarda_quien_y_cuando(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+
+    respuesta = cliente.patch(
+        f"/lineas-costo/{linea['id']}", json={"valor_override": "4500", "override_por": "Aníbal"}
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert Decimal(cuerpo["valor_override"]) == Decimal("4500")
+    assert cuerpo["override_por"] == "Aníbal"
+    assert cuerpo["override_en"] is not None
+    # El valor calculado original no se toca.
+    assert Decimal(cuerpo["valor_calculado"]) == Decimal("5000")
+
+
+def test_override_sin_override_por_da_422(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+
+    respuesta = cliente.patch(f"/lineas-costo/{linea['id']}", json={"valor_override": "4500"})
+
+    assert respuesta.status_code == 422
+
+
+def test_revertir_override_limpia_todo(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+    cliente.patch(f"/lineas-costo/{linea['id']}", json={"valor_override": "4500", "override_por": "Aníbal"})
+
+    respuesta = cliente.patch(f"/lineas-costo/{linea['id']}", json={"valor_override": None})
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["valor_override"] is None
+    assert cuerpo["override_por"] is None
+    assert cuerpo["override_en"] is None
+    assert Decimal(cuerpo["valor_calculado"]) == Decimal("5000")
+
+
+def test_override_de_linea_inexistente_da_404(cliente):
+    respuesta = cliente.patch(
+        "/lineas-costo/999", json={"valor_override": "100", "override_por": "Aníbal"}
+    )
+
+    assert respuesta.status_code == 404
+
+
+# --- Interacción entre override y recalcular-materiales -------------------
+
+
+def test_recalcular_no_toca_un_override_si_el_costo_no_cambio(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+    cliente.patch(f"/lineas-costo/{linea['id']}", json={"valor_override": "4500", "override_por": "Aníbal"})
+
+    otra_vez = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()
+
+    assert len(otra_vez) == 1
+    assert otra_vez[0]["id"] == linea["id"], "misma fila, no una nueva"
+    assert Decimal(otra_vez[0]["valor_override"]) == Decimal("4500")
+    assert otra_vez[0]["advertencia"] is None
+
+
+def test_recalcular_avisa_si_el_costo_cambio_con_override_activo(cliente, tmp_path):
+    trabajo, grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+    cliente.patch(f"/lineas-costo/{linea['id']}", json={"valor_override": "4500", "override_por": "Aníbal"})
+
+    # Cambia el precio de referencia del formato -> el próximo recálculo
+    # da un costo distinto al que había cuando se overrideó.
+    formato_id = cliente.get(f"/trabajos/{trabajo['id']}/grupos").json()[0]["formato_id"]
+    cliente.patch(f"/formatos/{formato_id}", json={"costo_unidad_venta": "8000"})
+
+    recalculada = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+
+    assert Decimal(recalculada["valor_calculado"]) == Decimal("8000")
+    assert Decimal(recalculada["valor_override"]) == Decimal("4500"), "el override sigue ahí"
+    assert "desactualizado" in recalculada["advertencia"]
+
+
+def test_recalcular_elimina_linea_de_un_grupo_borrado(cliente, tmp_path):
+    trabajo, grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales")
+    assert len(cliente.get(f"/presupuestos/{presupuesto['id']}/lineas-costo").json()) == 1
+
+    cliente.delete(f"/grupos/{grupo['id']}")
+    otra_vez = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()
+
+    assert otra_vez == []
+    assert cliente.get(f"/presupuestos/{presupuesto['id']}/lineas-costo").json() == []
