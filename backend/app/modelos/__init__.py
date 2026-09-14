@@ -6,19 +6,23 @@ reglas de `docs/PLAN-SLICE-VERTICAL.md`.
 """
 from .base import Base
 from .catalogo import CotizacionMoneda, Formato, Material, Moneda, ParametrosCorteMaterial
+from .presupuesto import Cliente, EstadoPresupuesto, Presupuesto
 from .trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza, Trabajo
 
 __all__ = [
     "Base",
+    "Cliente",
     "Colocacion",
     "CotizacionMoneda",
     "EjecucionNesting",
     "EstadoEjecucion",
+    "EstadoPresupuesto",
     "Formato",
     "GrupoDeCorte",
     "Material",
     "Moneda",
     "ParametrosCorteMaterial",
     "Pieza",
+    "Presupuesto",
     "Trabajo",
 ]
