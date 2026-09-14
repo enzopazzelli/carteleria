@@ -18,6 +18,7 @@ from fastapi import FastAPI
 
 from ..modelos.base import inicializar
 from .rutas_catalogo import router as router_catalogo
+from .rutas_nesting import router as router_nesting
 from .rutas_trabajos import router as router_trabajos
 
 
@@ -35,3 +36,4 @@ app = FastAPI(
 )
 app.include_router(router_catalogo)
 app.include_router(router_trabajos)
+app.include_router(router_nesting)
