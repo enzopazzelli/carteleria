@@ -50,6 +50,10 @@ cartelería/
 │   │                                 rotación por veta, comparador de formatos,
 │   │                                 aprovechamiento real y listado de materiales
 │   │                                 (CART-202 a CART-206)
+│   ├── app/modelos/                  Tablas SQLAlchemy (catálogo, trabajos, grupos de
+│   │                                 corte) — docs/PLAN-SLICE-VERTICAL.md
+│   ├── app/api/                      FastAPI: ABM de catálogo (CART-102/105) por ahora
+│   ├── alembic/                      Migraciones — `alembic upgrade head`
 │   ├── tests/                        Espeja `app/`, corre con pytest
 │   ├── requirements.txt / requirements-dev.txt
 │   └── pytest.ini
@@ -204,15 +208,23 @@ Python en el backend es prácticamente obligatorio: el ecosistema de geometría 
 
 ### Correr lo que ya existe
 
-Todavía es solo la capa de dominio del nesting, sin API ni base de datos:
-
 ```bash
 cd backend
 pip install -r requirements-dev.txt
-pytest                     # 34 tests, motor de nesting + carga de piezas
+pytest                     # 127 tests: dominio del nesting + API
 ```
 
-No hay `.env`, Docker ni servidor que levantar todavía — eso es F0 (`CART-001`), que no se empezó.
+Ya hay una API real, siguiendo [`docs/PLAN-SLICE-VERTICAL.md`](docs/PLAN-SLICE-VERTICAL.md) — SQLite local sin instalar nada, FastAPI, Alembic:
+
+```bash
+cd backend
+alembic upgrade head        # crea backend/local/carteleria.db
+uvicorn app.api.app:app --reload
+```
+
+Documentación interactiva en `http://localhost:8000/docs`. Por ahora solo el ABM de catálogo (`CART-102`/`CART-105`: materiales, formatos, parámetros de corte) — sin autenticación (`CART-002` se difiere) y por eso **no se expone fuera de `localhost`**. Trabajos, cola de anidado y ajuste manual son los pasos que siguen del plan.
+
+No hay Docker todavía — eso es la versión de producción de F0 (`CART-001`), que sigue sin empezar; el modo local de arriba corre sin instalar nada pesado y el cambio a PostgreSQL/Docker es de configuración, no de código.
 
 ### Bloqueantes de negocio que siguen abiertos
 

@@ -102,6 +102,10 @@ class Formato(Base):
     ancho_mm: Mapped[Decimal] = mapped_column(Milimetros())
     alto_mm: Mapped[Decimal] = mapped_column(Milimetros())
     es_retazo: Mapped[bool] = mapped_column(Boolean, default=False)
+    #: `CART-102`: al bajarlo, deja de ofrecerse en presupuestos nuevos
+    #: pero el histórico que ya lo usó sigue viéndolo — por eso esto es un
+    #: flag y no un `DELETE`.
+    disponible: Mapped[bool] = mapped_column(Boolean, default=True)
 
     #: --- Precio, tal como lo trae COTIZADOR ---------------------------
     moneda: Mapped[str] = mapped_column(String(3), default=Moneda.ARS.value)
