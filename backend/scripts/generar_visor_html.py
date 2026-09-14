@@ -34,7 +34,7 @@ from _datos_reales import (  # noqa: E402
     piezas_desde_dxf,
 )
 from app.services.nesting.comparador import comparar_formatos, formato_recomendado  # noqa: E402
-from app.services.nesting.visualizacion import render_svg_plancha  # noqa: E402
+from app.services.nesting.visualizacion import CSS_SVG_PLANCHA, render_svg_plancha  # noqa: E402
 
 _CSS = """
 :root { color-scheme: light dark; }
@@ -48,14 +48,8 @@ h1 { font-size: 1.3rem; }
 .metricas b { color: #111; }
 .planchas { display: flex; gap: 1rem; flex-wrap: wrap; }
 .plancha-svg { border: 1px solid #999; background: #f0efe9; max-width: 420px; height: auto; }
-.plancha-svg .plancha { fill: #f0efe9; stroke: #666; stroke-width: 2; }
-.plancha-svg .pieza rect, .plancha-svg .pieza path { fill: #7aa6c2; stroke: #2c4a5e; stroke-width: 1; cursor: default; }
-.plancha-svg .pieza rect:hover, .plancha-svg .pieza path:hover { fill: #5a86a2; }
-.plancha-svg .pieza text { font-size: 10px; fill: #0b1f2a; text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
-.plancha-svg .grilla-referencia .grilla { stroke: #c9c4b8; stroke-width: 1; vector-effect: non-scaling-stroke; }
-.plancha-svg .grilla-referencia .grilla-etiqueta { font-size: 9px; fill: #a39d8c; pointer-events: none; }
 .etiqueta-recomendado { color: #2f8f4e; font-weight: 600; }
-"""
+""" + CSS_SVG_PLANCHA
 
 
 def _bloque_formato(item, es_recomendado: bool, geometrias) -> str:

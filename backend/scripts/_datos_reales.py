@@ -32,19 +32,37 @@ def _localizar(puntos_absolutos_mm: list[tuple[Decimal, Decimal]], min_x: Decima
     return [(x - min_x, y - min_y) for x, y in puntos_absolutos_mm]
 
 
-def _geometria_local(pieza) -> GeometriaPieza:
+def _geometria_local(pieza, piezas_por_id: dict[str, object]) -> GeometriaPieza:
     """Normaliza el contorno y los agujeros (`CART-505`) de una
     `PiezaImportada` — en coordenadas absolutas del DXF — a
     `[0, ancho] x [0, alto]` de la propia pieza. Los agujeros se
     desplazan con el MISMO offset que el exterior (no el propio): la
-    posición del agujero es relativa a la pieza que lo contiene."""
+    posición del agujero es relativa a la pieza que lo contiene.
+
+    Si `pieza.contenida_en_id` apunta a otra pieza del mismo archivo
+    (representación dual, `CART-505`), calcula además el desplazamiento
+    que reconstruye su posición original DENTRO del sistema de
+    coordenadas local de esa contenedora — mismo origen (su propio
+    mínimo absoluto), no el de esta pieza. Es lo que le permite a
+    `anidado_huecos` reponerla exactamente donde el diseñador ya la
+    había anidado a mano, en vez de tener que volver a encontrarla por
+    búsqueda geométrica."""
     min_x = min(x for x, _ in pieza.contorno_mm)
     min_y = min(y for _, y in pieza.contorno_mm)
+    offset_original_mm = None
+    if pieza.contenida_en_id is not None:
+        contenedora = piezas_por_id.get(pieza.contenida_en_id)
+        if contenedora is not None:
+            contenedora_min_x = min(x for x, _ in contenedora.contorno_mm)
+            contenedora_min_y = min(y for _, y in contenedora.contorno_mm)
+            offset_original_mm = (min_x - contenedora_min_x, min_y - contenedora_min_y)
     return GeometriaPieza(
         ancho_mm=pieza.ancho_mm,
         alto_mm=pieza.alto_mm,
         contorno_local_mm=_localizar(pieza.contorno_mm, min_x, min_y),
         agujeros_local_mm=[_localizar(agujero, min_x, min_y) for agujero in pieza.agujeros_mm],
+        contenida_en_id=pieza.contenida_en_id,
+        offset_original_mm=offset_original_mm,
     )
 
 
@@ -73,7 +91,8 @@ def piezas_desde_dxf(
         + (f", {con_agujeros} con agujero(s) (CART-505)." if con_agujeros else ".")
     )
     piezas = [Pieza(id=p.id, ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=1) for p in resultado.piezas]
-    geometrias = {p.id: _geometria_local(p) for p in resultado.piezas}
+    piezas_por_id = {p.id: p for p in resultado.piezas}
+    geometrias = {p.id: _geometria_local(p, piezas_por_id) for p in resultado.piezas}
     return piezas, mensajes, geometrias
 
 
