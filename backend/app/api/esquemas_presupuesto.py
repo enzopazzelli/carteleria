@@ -53,6 +53,10 @@ class PresupuestoActualizar(BaseModel):
     trabajo_id: int | None = None
     validez_dias: int | None = None
     moneda: Moneda | None = None
+    #: `PAR-12` sin confirmar — se fija a mano cuando se sabe cuánto
+    #: cobrar (`CART-307`, paso 5). `None` explícito lo vuelve a limpiar.
+    margen_pct: Decimal | None = None
+    iva_pct: Decimal | None = None
 
 
 class PresupuestoLeer(BaseModel):
@@ -65,6 +69,8 @@ class PresupuestoLeer(BaseModel):
     estado: str
     validez_dias: int
     moneda: str
+    margen_pct: Decimal | None
+    iva_pct: Decimal | None
     creado_en: datetime
     actualizado_en: datetime
 
@@ -85,6 +91,7 @@ class LineaCostoLeer(BaseModel):
     unidad: str | None
     precio_unitario: Decimal | None
     valor_calculado: Decimal | None
+    moneda: str
     advertencia: str | None
     valor_override: Decimal | None
     override_por: str | None
@@ -129,3 +136,25 @@ class LineaCostoActualizar(BaseModel):
     cantidad: Decimal | None = None
     unidad: str | None = None
     precio_unitario: Decimal | None = None
+
+
+# --- Totales (paso 5: `CART-307`) -----------------------------------------
+
+
+class TotalesLeer(BaseModel):
+    """Costo total, margen, IVA y precio final — o lo que se pueda
+    calcular con lo que hay: `margen_pct`/`iva_pct` en `None` dejan
+    `monto_margen`/`precio_venta`/`monto_iva`/`total` en `None` también,
+    nunca en un número inventado. `advertencias` dice por qué."""
+
+    presupuesto_id: int
+    moneda: str
+    subtotales_por_rubro: dict[str, Decimal]
+    costo_total: Decimal
+    margen_pct: Decimal | None
+    monto_margen: Decimal | None
+    precio_venta: Decimal | None
+    iva_pct: Decimal | None
+    monto_iva: Decimal | None
+    total: Decimal | None
+    advertencias: list[str]

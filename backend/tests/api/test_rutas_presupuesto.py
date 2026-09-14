@@ -551,3 +551,130 @@ def test_override_tambien_funciona_sobre_una_linea_libre(cliente):
 
     assert respuesta.status_code == 200
     assert Decimal(respuesta.json()["valor_override"]) == Decimal("800")
+
+
+# --- Duplicar copia las líneas de costo (corrección al paso 1) -----------
+
+
+def test_duplicar_presupuesto_copia_las_lineas_de_costo(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    original = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    material = cliente.post(f"/presupuestos/{original['id']}/recalcular-materiales").json()[0]
+    cliente.patch(
+        f"/lineas-costo/{material['id']}/override", json={"valor_override": "4500", "override_por": "Aníbal"}
+    )
+    cliente.post(
+        f"/presupuestos/{original['id']}/lineas-costo",
+        json={"rubro": "FLETE", "descripcion": "Traslado", "cantidad": "1", "precio_unitario": "3000"},
+    )
+
+    copia = cliente.post(f"/presupuestos/{original['id']}/duplicar").json()
+
+    lineas_copia = cliente.get(f"/presupuestos/{copia['id']}/lineas-costo").json()
+    assert len(lineas_copia) == 2
+    material_copiado = next(l for l in lineas_copia if l["rubro"] == "MATERIAL")
+    assert material_copiado["id"] != material["id"], "fila propia, no la misma"
+    assert Decimal(material_copiado["valor_override"]) == Decimal("4500"), "el override se copia también"
+    assert material_copiado["override_por"] == "Aníbal"
+    flete_copiado = next(l for l in lineas_copia if l["rubro"] == "FLETE")
+    assert Decimal(flete_copiado["valor_calculado"]) == Decimal("3000")
+    # Las líneas del original no se tocaron.
+    assert len(cliente.get(f"/presupuestos/{original['id']}/lineas-costo").json()) == 2
+
+
+# --- Margen, IVA y totales (paso 5, CART-307) -----------------------------
+
+
+def test_iva_tiene_default_confirmado_y_margen_no(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+
+    assert Decimal(presupuesto["iva_pct"]) == Decimal("21")
+    assert presupuesto["margen_pct"] is None
+
+
+def test_actualizar_margen_e_iva(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"margen_pct": "30"})
+
+    assert Decimal(respuesta.json()["margen_pct"]) == Decimal("30")
+    assert Decimal(respuesta.json()["iva_pct"]) == Decimal("21"), "no se tocó"
+
+
+def test_totales_sin_lineas_da_cero_y_avisa_falta_margen(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/totales")
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert Decimal(cuerpo["costo_total"]) == Decimal("0.00")
+    assert cuerpo["monto_margen"] is None
+    assert cuerpo["total"] is None
+    assert any("margen" in a for a in cuerpo["advertencias"])
+
+
+def test_totales_con_margen_e_iva_redondea_al_final(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+    cliente.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo",
+        json={"rubro": "MANO_DE_OBRA", "descripcion": "Corte", "cantidad": "3", "precio_unitario": "1000"},
+    )
+    cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"margen_pct": "30"})
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/totales")
+
+    cuerpo = respuesta.json()
+    assert Decimal(cuerpo["costo_total"]) == Decimal("3000.00")
+    assert Decimal(cuerpo["subtotales_por_rubro"]["MANO_DE_OBRA"]) == Decimal("3000.00")
+    assert Decimal(cuerpo["monto_margen"]) == Decimal("900.00")
+    assert Decimal(cuerpo["precio_venta"]) == Decimal("3900.00")
+    assert Decimal(cuerpo["monto_iva"]) == Decimal("819.00")  # 21% de 3900
+    assert Decimal(cuerpo["total"]) == Decimal("4719.00")
+    assert cuerpo["advertencias"] == []
+
+
+def test_totales_respeta_el_override(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+    cliente.patch(f"/lineas-costo/{linea['id']}/override", json={"valor_override": "1000", "override_por": "A"})
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/totales")
+
+    assert Decimal(respuesta.json()["costo_total"]) == Decimal("1000.00")
+
+
+def test_totales_excluye_linea_sin_costo_y_avisa(cliente):
+    material = cliente.post("/materiales", json={"nombre": "Acrílico"}).json()
+    formato = cliente.post(
+        f"/materiales/{material['id']}/formatos", json={"ancho_mm": "1000", "alto_mm": "1000"}
+    ).json()
+    trabajo = cliente.post("/trabajos", json={"nombre": "Sin anidar"}).json()
+    cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "G1", "formato_id": formato["id"]})
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales")
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/totales")
+
+    cuerpo = respuesta.json()
+    assert Decimal(cuerpo["costo_total"]) == Decimal("0.00")
+    assert any("no tiene costo calculado" in a for a in cuerpo["advertencias"])
+
+
+def test_totales_excluye_linea_en_otra_moneda_y_avisa(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    formato_id = cliente.get(f"/trabajos/{trabajo['id']}/grupos").json()[0]["formato_id"]
+    cliente.patch(f"/formatos/{formato_id}", json={"moneda": "USD"})
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])  # moneda default ARS
+
+    cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales")
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/totales")
+
+    cuerpo = respuesta.json()
+    assert Decimal(cuerpo["costo_total"]) == Decimal("0.00")
+    assert any("USD" in a and "ARS" in a for a in cuerpo["advertencias"])
+
+
+def test_totales_de_presupuesto_inexistente_da_404(cliente):
+    assert cliente.get("/presupuestos/999/totales").status_code == 404
