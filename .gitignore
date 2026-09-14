@@ -26,8 +26,10 @@ img_dashboard_real/
 # Carpeta de archivos de ejemplo/prueba (DXF, renders derivados, capturas) —
 # toda la carpeta, no solo *.dxf: un PNG renderizado de un DXF de cliente
 # es tan sensible como el original. Se coló uno (modelos/r1zk4l1l.png) antes
-# de esta regla — ver la nota de limpieza del commit que la agrega.
-modelos/
+# de esta regla. Anclada a la raíz (/modelos/, no modelos/): sin la barra
+# inicial también ignoraba backend/app/modelos/ y backend/tests/modelos/,
+# que es otra cosa (el paquete de modelos de SQLAlchemy).
+/modelos/
 
 # Salidas locales derivadas de datos reales del cliente (scripts/) —
 # mismo criterio que el xlsx/dxf de origen: nunca al repositorio
