@@ -40,6 +40,15 @@ class LineaMaterial:
     planchas_usadas: int | None
     area_total_m2: Decimal | None
     moneda: str | None
+    #: Lo que se multiplicó por `area_total_m2` para llegar a
+    #: `costo_estimado` — `Formato.costo_unidad_venta` tal cual, `None`
+    #: si el formato no tiene precio cargado. Expuesto para que quien
+    #: persista esta línea (`CART-302`, `docs/PLAN-SLICE-COTIZADOR.md`)
+    #: no tenga que volver a consultar `Formato` por su cuenta.
+    precio_unitario: Decimal | None
+    #: `Formato.unidad_venta` tal cual venga — puede no ser "M2" (el
+    #: caso en que `costo_estimado` queda en `None` con advertencia).
+    unidad_venta: str | None
     costo_estimado: Decimal | None
     advertencias: list[str] = field(default_factory=list)
 
@@ -133,6 +142,8 @@ def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:
         planchas_usadas=ejecucion.planchas_usadas if ejecucion else None,
         area_total_m2=area_total_m2,
         moneda=formato.moneda if formato else None,
+        precio_unitario=formato.costo_unidad_venta if formato else None,
+        unidad_venta=formato.unidad_venta if formato else None,
         costo_estimado=costo_estimado,
         advertencias=advertencias,
     )
