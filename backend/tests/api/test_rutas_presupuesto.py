@@ -350,7 +350,7 @@ def test_override_guarda_quien_y_cuando(cliente, tmp_path):
     linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
 
     respuesta = cliente.patch(
-        f"/lineas-costo/{linea['id']}", json={"valor_override": "4500", "override_por": "Aníbal"}
+        f"/lineas-costo/{linea['id']}/override", json={"valor_override": "4500", "override_por": "Aníbal"}
     )
 
     assert respuesta.status_code == 200, respuesta.text
@@ -367,7 +367,7 @@ def test_override_sin_override_por_da_422(cliente, tmp_path):
     presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
     linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
 
-    respuesta = cliente.patch(f"/lineas-costo/{linea['id']}", json={"valor_override": "4500"})
+    respuesta = cliente.patch(f"/lineas-costo/{linea['id']}/override", json={"valor_override": "4500"})
 
     assert respuesta.status_code == 422
 
@@ -376,9 +376,9 @@ def test_revertir_override_limpia_todo(cliente, tmp_path):
     trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
     presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
     linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
-    cliente.patch(f"/lineas-costo/{linea['id']}", json={"valor_override": "4500", "override_por": "Aníbal"})
+    cliente.patch(f"/lineas-costo/{linea['id']}/override", json={"valor_override": "4500", "override_por": "Aníbal"})
 
-    respuesta = cliente.patch(f"/lineas-costo/{linea['id']}", json={"valor_override": None})
+    respuesta = cliente.patch(f"/lineas-costo/{linea['id']}/override", json={"valor_override": None})
 
     assert respuesta.status_code == 200
     cuerpo = respuesta.json()
@@ -390,7 +390,7 @@ def test_revertir_override_limpia_todo(cliente, tmp_path):
 
 def test_override_de_linea_inexistente_da_404(cliente):
     respuesta = cliente.patch(
-        "/lineas-costo/999", json={"valor_override": "100", "override_por": "Aníbal"}
+        "/lineas-costo/999/override", json={"valor_override": "100", "override_por": "Aníbal"}
     )
 
     assert respuesta.status_code == 404
@@ -403,7 +403,7 @@ def test_recalcular_no_toca_un_override_si_el_costo_no_cambio(cliente, tmp_path)
     trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
     presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
     linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
-    cliente.patch(f"/lineas-costo/{linea['id']}", json={"valor_override": "4500", "override_por": "Aníbal"})
+    cliente.patch(f"/lineas-costo/{linea['id']}/override", json={"valor_override": "4500", "override_por": "Aníbal"})
 
     otra_vez = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()
 
@@ -417,7 +417,7 @@ def test_recalcular_avisa_si_el_costo_cambio_con_override_activo(cliente, tmp_pa
     trabajo, grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
     presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
     linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
-    cliente.patch(f"/lineas-costo/{linea['id']}", json={"valor_override": "4500", "override_por": "Aníbal"})
+    cliente.patch(f"/lineas-costo/{linea['id']}/override", json={"valor_override": "4500", "override_por": "Aníbal"})
 
     # Cambia el precio de referencia del formato -> el próximo recálculo
     # da un costo distinto al que había cuando se overrideó.
@@ -442,3 +442,112 @@ def test_recalcular_elimina_linea_de_un_grupo_borrado(cliente, tmp_path):
 
     assert otra_vez == []
     assert cliente.get(f"/presupuestos/{presupuesto['id']}/lineas-costo").json() == []
+
+
+# --- Líneas libres (paso 4, CART-304/305/306) -----------------------------
+
+
+def test_crear_linea_libre_calcula_el_valor(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo",
+        json={
+            "rubro": "MANO_DE_OBRA",
+            "descripcion": "Corte y armado",
+            "cantidad": "8",
+            "unidad": "hora",
+            "precio_unitario": "1500",
+        },
+    )
+
+    assert respuesta.status_code == 201, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["rubro"] == "MANO_DE_OBRA"
+    assert Decimal(cuerpo["valor_calculado"]) == Decimal("12000")
+    assert cuerpo["valor_override"] is None
+
+
+def test_crear_linea_libre_de_presupuesto_inexistente_da_404(cliente):
+    respuesta = cliente.post(
+        "/presupuestos/999/lineas-costo",
+        json={"rubro": "FLETE", "descripcion": "Traslado", "cantidad": "1", "precio_unitario": "5000"},
+    )
+
+    assert respuesta.status_code == 404
+
+
+def test_crear_linea_de_rubro_material_es_rechazado(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo",
+        json={"rubro": "MATERIAL", "descripcion": "Trampa", "cantidad": "1", "precio_unitario": "1"},
+    )
+
+    assert respuesta.status_code == 422
+
+
+def test_actualizar_linea_libre_recalcula_el_valor(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+    linea = cliente.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo",
+        json={"rubro": "INSUMO", "descripcion": "Vinilo", "cantidad": "2", "precio_unitario": "1000"},
+    ).json()
+
+    respuesta = cliente.patch(f"/lineas-costo/{linea['id']}", json={"cantidad": "3"})
+
+    assert respuesta.status_code == 200
+    assert Decimal(respuesta.json()["valor_calculado"]) == Decimal("3000")
+
+
+def test_actualizar_linea_inexistente_da_404(cliente):
+    assert cliente.patch("/lineas-costo/999", json={"cantidad": "1"}).status_code == 404
+
+
+def test_actualizar_linea_material_es_rechazada(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+
+    respuesta = cliente.patch(f"/lineas-costo/{linea['id']}", json={"cantidad": "1"})
+
+    assert respuesta.status_code == 409
+
+
+def test_eliminar_linea_libre(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+    linea = cliente.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo",
+        json={"rubro": "INSTALACION", "descripcion": "Montaje", "cantidad": "1", "precio_unitario": "20000"},
+    ).json()
+
+    assert cliente.delete(f"/lineas-costo/{linea['id']}").status_code == 204
+    assert cliente.get(f"/presupuestos/{presupuesto['id']}/lineas-costo").json() == []
+
+
+def test_eliminar_linea_inexistente_da_404(cliente):
+    assert cliente.delete("/lineas-costo/999").status_code == 404
+
+
+def test_eliminar_linea_material_es_rechazada(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+
+    assert cliente.delete(f"/lineas-costo/{linea['id']}").status_code == 409
+
+
+def test_override_tambien_funciona_sobre_una_linea_libre(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+    linea = cliente.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo",
+        json={"rubro": "OTRO", "descripcion": "Varios", "cantidad": "1", "precio_unitario": "1000"},
+    ).json()
+
+    respuesta = cliente.patch(
+        f"/lineas-costo/{linea['id']}/override", json={"valor_override": "800", "override_por": "Aníbal"}
+    )
+
+    assert respuesta.status_code == 200
+    assert Decimal(respuesta.json()["valor_override"]) == Decimal("800")

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -103,3 +104,28 @@ class LineaCostoOverride(BaseModel):
         if self.valor_override is not None and not self.override_por:
             raise ValueError("override_por es obligatorio para aplicar un override — hay que saber quién lo hizo.")
         return self
+
+
+# --- Líneas libres (paso 4: `CART-304`/`305`/`306`) -----------------------
+
+
+class LineaCostoCrear(BaseModel):
+    """Insumos, mano de obra, flete e instalación — sin catálogo
+    (`CART-106` no existe), siempre una línea libre. `MATERIAL` queda
+    afuera a propósito: esas solo las genera `recalcular-materiales`."""
+
+    rubro: Literal["INSUMO", "MANO_DE_OBRA", "FLETE", "INSTALACION", "OTRO"]
+    descripcion: str
+    cantidad: Decimal
+    unidad: str | None = None
+    precio_unitario: Decimal
+
+
+class LineaCostoActualizar(BaseModel):
+    """Editar una línea libre ya cargada. Rechazado sobre una línea de
+    rubro `MATERIAL` — ver `rutas_presupuesto.py`."""
+
+    descripcion: str | None = None
+    cantidad: Decimal | None = None
+    unidad: str | None = None
+    precio_unitario: Decimal | None = None
