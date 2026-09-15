@@ -284,6 +284,7 @@ Decisiones que hay que tomar y todavía no se pueden cerrar.
 | **D-08** | Política de retención y backup de archivos generados | Volumen estimado tras H1 | S4 | Backup diario completo |
 | **D-10** | ¿Cómo se arma `costo_unidad_venta` a partir de `%COSTO1`, `%COSTO2` y los 4 márgenes de venta de `COTIZADOR`? | Conversación con administración | Antes de recalcular precios en serio | Se importa tal cual el valor que la planilla ya trae calculado (`backend/app/modelos/catalogo.py`), no se recalcula |
 | **D-09** | ¿F8 se queda solo-lectura sobre agregados (`ADR-06`) o crece para absorber también las pantallas de escritura del dashboard actual (control de taller, movimientos de stock, aprobación de cotizaciones, edición de permisos)? | Revisión de alcance con el cliente y con Vale, ver `docs/DASHBOARD-VISTAS.md §3` | Antes de **S2** (arranca `CART-801`) | Prototipo de UI muestra las 9 vistas completas para validar diseño; `ADR-06` sigue vigente para lo que se construya en serio |
+| **D-11** | ¿La pantalla de Piezas del frontend del cotizador acepta `.cdr` directo (vía `libcdr`, ver `SPIKE-CDR.md`) o exige un `.dxf` ya exportado a mano desde Corel? | `SUP-05`/`B-15` (compromiso del equipo de diseño con una convención de capas) — `B-08`/`SPIKE-CDR.md` ya prueban que `libcdr` lee el archivo end-to-end, pero no resuelven si conserva capas, que es lo que de verdad falta | Encuentro 3 de relevamiento (diseño), después de `SUP-05` | El frontend exige `.dxf`; un `.cdr` se rechaza con mensaje explícito ("exportá el DXF desde Corel primero"), no se intenta parsear |
 
 ---
 
@@ -311,7 +312,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Parámetros (`PAR`) | 40 | 11 | 17 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 19 | 19 | 0 | 0 |
-| Decisiones (`D`) | 10 | 10 | 0 | 0 |
+| Decisiones (`D`) | 11 | 11 | 0 | 0 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).
 
