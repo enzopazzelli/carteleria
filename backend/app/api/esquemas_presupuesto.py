@@ -86,6 +86,7 @@ class LineaCostoLeer(BaseModel):
     presupuesto_id: int
     rubro: str
     grupo_id: int | None
+    ejecucion_id: int | None
     descripcion: str
     cantidad: Decimal | None
     unidad: str | None
@@ -158,3 +159,21 @@ class TotalesLeer(BaseModel):
     monto_iva: Decimal | None
     total: Decimal | None
     advertencias: list[str]
+
+
+# --- Desglose completo (paso 6: `CART-308`, el último del plan) ----------
+
+
+class DesgloseLeer(BaseModel):
+    """Todo lo que pide `CART-308` "en una sola pantalla" — la pantalla
+    en sí no existe todavía, pero los datos para armarla salen de una
+    sola llamada. Las piezas y el plano de cada grupo no viajan
+    inline (`GET /trabajos/{id}/piezas`, `GET /ejecuciones/{id}/plano`
+    ya existen para eso) — lo que hace falta para llegar a ellos "sin
+    salir de la pantalla" es el `grupo_id`/`ejecucion_id` de cada línea
+    de material, que sí viaja en `lineas_por_rubro`."""
+
+    presupuesto: PresupuestoLeer
+    cliente: ClienteLeer
+    lineas_por_rubro: dict[str, list[LineaCostoLeer]]
+    totales: TotalesLeer

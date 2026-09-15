@@ -49,6 +49,12 @@ class LineaMaterial:
     #: `Formato.unidad_venta` tal cual venga — puede no ser "M2" (el
     #: caso en que `costo_estimado` queda en `None` con advertencia).
     unidad_venta: str | None
+    #: Cuál `EjecucionNesting` se usó para este costo (`_ejecucion_para_
+    #: costear`) — `None` si el grupo todavía no tiene ninguna. Expuesto
+    #: para trazabilidad (`CART-308`: "qué precio se usó, de qué
+    #: versión") sin que quien persiste esta línea tenga que reimplementar
+    #: la misma búsqueda.
+    ejecucion_id: int | None
     costo_estimado: Decimal | None
     advertencias: list[str] = field(default_factory=list)
 
@@ -144,6 +150,7 @@ def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:
         moneda=formato.moneda if formato else None,
         precio_unitario=formato.costo_unidad_venta if formato else None,
         unidad_venta=formato.unidad_venta if formato else None,
+        ejecucion_id=ejecucion.id if ejecucion else None,
         costo_estimado=costo_estimado,
         advertencias=advertencias,
     )

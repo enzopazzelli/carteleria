@@ -678,3 +678,58 @@ def test_totales_excluye_linea_en_otra_moneda_y_avisa(cliente, tmp_path):
 
 def test_totales_de_presupuesto_inexistente_da_404(cliente):
     assert cliente.get("/presupuestos/999/totales").status_code == 404
+
+
+# --- Desglose completo (paso 6, CART-308) ---------------------------------
+
+
+def test_desglose_agrupa_por_rubro_e_incluye_cliente_y_totales(cliente, tmp_path):
+    trabajo, grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    material = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+    cliente.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo",
+        json={"rubro": "FLETE", "descripcion": "Traslado", "cantidad": "1", "precio_unitario": "2000"},
+    )
+    cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"margen_pct": "30"})
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/desglose")
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["presupuesto"]["id"] == presupuesto["id"]
+    assert cuerpo["cliente"]["nombre"] == "Megacarteles"
+    assert set(cuerpo["lineas_por_rubro"].keys()) == {"MATERIAL", "FLETE"}
+    assert len(cuerpo["lineas_por_rubro"]["MATERIAL"]) == 1
+    # La línea de material trae con qué grupo/ejecución se calculó
+    # (CART-308: "qué precio se usó, de qué versión y con qué cantidad").
+    linea_material = cuerpo["lineas_por_rubro"]["MATERIAL"][0]
+    assert linea_material["grupo_id"] == grupo["id"]
+    assert linea_material["ejecucion_id"] is not None
+    assert Decimal(cuerpo["totales"]["costo_total"]) == Decimal("7000.00")  # 5000 material + 2000 flete
+
+
+def test_desglose_muestra_las_lineas_con_override(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    material = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+    cliente.patch(f"/lineas-costo/{material['id']}/override", json={"valor_override": "4000", "override_por": "A"})
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/desglose")
+
+    linea = respuesta.json()["lineas_por_rubro"]["MATERIAL"][0]
+    assert Decimal(linea["valor_override"]) == Decimal("4000")
+    con_override = [l for lineas in respuesta.json()["lineas_por_rubro"].values() for l in lineas if l["valor_override"] is not None]
+    assert len(con_override) == 1
+
+
+def test_desglose_sin_lineas_tiene_diccionario_vacio(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/desglose")
+
+    assert respuesta.json()["lineas_por_rubro"] == {}
+
+
+def test_desglose_de_presupuesto_inexistente_da_404(cliente):
+    assert cliente.get("/presupuestos/999/desglose").status_code == 404
