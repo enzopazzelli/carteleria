@@ -22,6 +22,7 @@ from .esquemas_presupuesto import (
     ClienteActualizar,
     ClienteCrear,
     ClienteLeer,
+    DesgloseLeer,
     LineaCostoActualizar,
     LineaCostoCrear,
     LineaCostoLeer,
@@ -194,6 +195,7 @@ def duplicar_presupuesto(
                 presupuesto_id=copia.id,
                 rubro=linea.rubro,
                 grupo_id=linea.grupo_id,
+                ejecucion_id=linea.ejecucion_id,
                 descripcion=linea.descripcion,
                 cantidad=linea.cantidad,
                 unidad=linea.unidad,
@@ -273,6 +275,7 @@ def recalcular_materiales(
                 presupuesto_id=presupuesto_id,
                 rubro=RubroLineaCosto.MATERIAL.value,
                 grupo_id=linea.grupo_id,
+                ejecucion_id=linea.ejecucion_id,
                 descripcion=_descripcion_de_linea(linea),
                 cantidad=linea.area_total_m2,
                 unidad=linea.unidad_venta,
@@ -298,6 +301,7 @@ def recalcular_materiales(
         existente.precio_unitario = linea.precio_unitario
         existente.valor_calculado = linea.costo_estimado
         existente.moneda = moneda
+        existente.ejecucion_id = linea.ejecucion_id
         existente.advertencia = advertencia
         resultado.append(existente)
 
@@ -424,10 +428,7 @@ def _redondear(valor: Decimal | None) -> Decimal | None:
     return valor.quantize(_DOS_DECIMALES) if valor is not None else None
 
 
-@router.get("/presupuestos/{presupuesto_id}/totales", response_model=TotalesLeer)
-def obtener_totales(
-    presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
-) -> TotalesLeer:
+def _calcular_totales(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> TotalesLeer:
     """Suma por rubro, aplica margen (`PAR-12`) e IVA (`PAR-13`) sobre
     el costo total, y redondea una sola vez al final.
 
@@ -436,12 +437,9 @@ def obtener_totales(
     `costeo.ResumenMateriales.costo_total_por_moneda`): una línea en
     otra moneda que la del presupuesto queda afuera de la suma, con su
     propia advertencia — igual que una línea sin costo calculado ni
-    override."""
-    presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
-    lineas = sesion.execute(
-        select(LineaCosto).where(LineaCosto.presupuesto_id == presupuesto_id)
-    ).scalars().all()
-
+    override. Compartida entre `GET .../totales` y `GET .../desglose`
+    para no calcular el mismo número dos veces de dos formas distintas.
+    """
     advertencias: list[str] = []
     subtotales_por_rubro: dict[str, Decimal] = {}
     costo_total = Decimal(0)
@@ -472,7 +470,7 @@ def obtener_totales(
             total = precio_venta + monto_iva
 
     return TotalesLeer(
-        presupuesto_id=presupuesto_id,
+        presupuesto_id=presupuesto.id,
         moneda=presupuesto.moneda,
         subtotales_por_rubro={rubro: _redondear(valor) for rubro, valor in subtotales_por_rubro.items()},
         costo_total=_redondear(costo_total),
@@ -483,4 +481,39 @@ def obtener_totales(
         monto_iva=_redondear(monto_iva),
         total=_redondear(total),
         advertencias=advertencias,
+    )
+
+
+@router.get("/presupuestos/{presupuesto_id}/totales", response_model=TotalesLeer)
+def obtener_totales(
+    presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
+) -> TotalesLeer:
+    presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    lineas = sesion.execute(
+        select(LineaCosto).where(LineaCosto.presupuesto_id == presupuesto_id)
+    ).scalars().all()
+    return _calcular_totales(presupuesto, lineas)
+
+
+@router.get("/presupuestos/{presupuesto_id}/desglose", response_model=DesgloseLeer)
+def obtener_desglose(
+    presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
+) -> DesgloseLeer:
+    """`CART-308`: cliente, líneas agrupadas por rubro (con quiénes
+    tienen override — se ve directo en cada línea) y los totales, en
+    una sola respuesta."""
+    presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    lineas = sesion.execute(
+        select(LineaCosto).where(LineaCosto.presupuesto_id == presupuesto_id).order_by(LineaCosto.id)
+    ).scalars().all()
+
+    lineas_por_rubro: dict[str, list[LineaCosto]] = {}
+    for linea in lineas:
+        lineas_por_rubro.setdefault(linea.rubro, []).append(linea)
+
+    return DesgloseLeer(
+        presupuesto=presupuesto,
+        cliente=presupuesto.cliente,
+        lineas_por_rubro=lineas_por_rubro,
+        totales=_calcular_totales(presupuesto, lineas),
     )

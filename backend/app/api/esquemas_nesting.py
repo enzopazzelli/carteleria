@@ -87,6 +87,9 @@ class LineaMaterialLeer(BaseModel):
     planchas_usadas: int | None
     area_total_m2: Decimal | None
     moneda: str | None
+    precio_unitario: Decimal | None
+    unidad_venta: str | None
+    ejecucion_id: int | None
     costo_estimado: Decimal | None
     advertencias: list[str]
 

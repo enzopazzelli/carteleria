@@ -99,6 +99,7 @@ def test_calcula_el_costo_por_area_de_plancha_y_precio_de_m2(sesion):
     assert linea.moneda == "ARS"
     assert linea.precio_unitario == Decimal("50732.41")
     assert linea.unidad_venta == "M2"
+    assert linea.ejecucion_id is not None
     assert resumen.costo_total_por_moneda["ARS"] == esperado
     assert linea.advertencias == []
 

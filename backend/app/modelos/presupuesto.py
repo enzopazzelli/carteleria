@@ -132,6 +132,12 @@ class LineaCosto(Base):
     grupo_id: Mapped[int | None] = mapped_column(
         ForeignKey("grupos_de_corte.id", ondelete="SET NULL"), default=None
     )
+    #: Qué ejecución de nesting se usó para este costo — trazabilidad
+    #: que pide `CART-308` ("qué precio se usó, de qué versión"), sobre
+    #: todo relevante cuando un grupo tiene más de una ejecución.
+    ejecucion_id: Mapped[int | None] = mapped_column(
+        ForeignKey("ejecuciones_nesting.id", ondelete="SET NULL"), default=None
+    )
     descripcion: Mapped[str] = mapped_column(String(300))
     cantidad: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
     unidad: Mapped[str | None] = mapped_column(String(20), default=None)
