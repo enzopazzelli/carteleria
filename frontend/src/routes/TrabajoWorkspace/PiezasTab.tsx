@@ -38,6 +38,15 @@ export default function PiezasTab() {
     }
   }
 
+  async function alDescartarPieza(piezaId: number, descartada: boolean) {
+    setError(null);
+    try {
+      await descartarPieza.mutateAsync({ piezaId, descartada });
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "No se pudo actualizar la pieza.");
+    }
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-4">Piezas</h1>
@@ -87,9 +96,7 @@ export default function PiezasTab() {
                 <td>
                   <button
                     className="text-xs underline"
-                    onClick={() =>
-                      descartarPieza.mutate({ piezaId: pieza.id, descartada: !pieza.descartada })
-                    }
+                    onClick={() => alDescartarPieza(pieza.id, !pieza.descartada)}
                   >
                     {pieza.descartada ? "Restaurar" : "Descartar"}
                   </button>
