@@ -973,8 +973,11 @@ export interface Pieza {
   cantidad: number;
   ancho_mm: string;
   alto_mm: string;
-  contorno_mm: number[][];
-  agujeros_mm: number[][][];
+  // Cada coordenada viaja como string (backend/app/api/rutas_trabajos.py:
+  // `str(x - min_x)`) — mismo criterio que los campos Decimal, para no
+  // perder precisión. Convertir con Number() antes de cualquier aritmética.
+  contorno_mm: string[][];
+  agujeros_mm: string[][][];
   descartada: boolean;
   contorno_recto: boolean;
 }
@@ -1220,7 +1223,7 @@ export default function Banner({ variante, children }: BannerProps) {
 
 ```tsx
 interface PiezaMiniPreviewProps {
-  contornoMm: number[][];
+  contornoMm: string[][];
   anchoMm: string;
   altoMm: string;
 }
@@ -2239,7 +2242,9 @@ export default function PlanoEditor({
         const altoLocal = Number(pieza.alto_mm);
         const esquinaLocal = { x: centro.x - anchoLocal / 2, y: centro.y - altoLocal / 2 };
         const puntos = pieza.contorno_mm
-          .map(([lx, ly]) => rotarPunto({ x: esquinaLocal.x + lx, y: esquinaLocal.y + ly }, centro, angulo))
+          .map(([lx, ly]) =>
+            rotarPunto({ x: esquinaLocal.x + Number(lx), y: esquinaLocal.y + Number(ly) }, centro, angulo)
+          )
           .map((p) => `${mmAPx(p.x, ESCALA_PX_POR_MM)},${mmAPx(p.y, ESCALA_PX_POR_MM)}`)
           .join(" ");
         const invalida = colocacionesInvalidas.has(colocacion.id);
