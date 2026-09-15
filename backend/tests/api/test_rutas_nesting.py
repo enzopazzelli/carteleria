@@ -298,3 +298,24 @@ def test_costeo_de_trabajo_inexistente_da_404(cliente):
 def test_cors_permite_origen_del_frontend_local(cliente):
     respuesta = cliente.get("/trabajos", headers={"Origin": "http://localhost:5173"})
     assert respuesta.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+# --- Listar historial de ejecuciones ------
+
+
+def test_listar_ejecuciones_de_grupo_ordena_mas_reciente_primero(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    primera_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+    _esperar_estado(cliente, primera_id)
+    segunda_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+    _esperar_estado(cliente, segunda_id)
+
+    respuesta = cliente.get(f"/grupos/{grupo['id']}/ejecuciones")
+
+    assert respuesta.status_code == 200
+    ids = [e["id"] for e in respuesta.json()]
+    assert ids == [segunda_id, primera_id]
+
+
+def test_listar_ejecuciones_de_grupo_inexistente_da_404(cliente):
+    assert cliente.get("/grupos/999/ejecuciones").status_code == 404

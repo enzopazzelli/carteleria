@@ -204,6 +204,20 @@ def listar_colocaciones(
     return list(sesion.execute(consulta).scalars().all())
 
 
+@router.get("/grupos/{grupo_id}/ejecuciones", response_model=list[EjecucionLeer])
+def listar_ejecuciones(grupo_id: int, sesion: Session = Depends(obtener_sesion)) -> list[EjecucionNesting]:
+    """Historial de anidados de un grupo — comparar aprovechamiento y
+    planchas entre corridas (motor, parámetros) antes de marcar una
+    definitiva. La más reciente primero."""
+    _grupo_o_404(sesion, grupo_id)
+    consulta = (
+        select(EjecucionNesting)
+        .where(EjecucionNesting.grupo_id == grupo_id)
+        .order_by(EjecucionNesting.id.desc())
+    )
+    return list(sesion.execute(consulta).scalars().all())
+
+
 @router.post("/ejecuciones/{ejecucion_id}/cancelar", response_model=EjecucionLeer)
 def cancelar_ejecucion(
     ejecucion_id: int, sesion: Session = Depends(obtener_sesion)
