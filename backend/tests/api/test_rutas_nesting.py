@@ -293,3 +293,8 @@ def test_costeo_de_un_trabajo_recien_anidado(cliente, tmp_path):
 
 def test_costeo_de_trabajo_inexistente_da_404(cliente):
     assert cliente.get("/trabajos/999/costeo").status_code == 404
+
+
+def test_cors_permite_origen_del_frontend_local(cliente):
+    respuesta = cliente.get("/trabajos", headers={"Origin": "http://localhost:5173"})
+    assert respuesta.headers["access-control-allow-origin"] == "http://localhost:5173"
