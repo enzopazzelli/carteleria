@@ -1,5 +1,5 @@
 interface PiezaMiniPreviewProps {
-  contornoMm: number[][];
+  contornoMm: string[][];
   anchoMm: string;
   altoMm: string;
 }

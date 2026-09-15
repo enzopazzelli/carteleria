@@ -8,8 +8,11 @@ export interface Pieza {
   cantidad: number;
   ancho_mm: string;
   alto_mm: string;
-  contorno_mm: number[][];
-  agujeros_mm: number[][][];
+  // Cada coordenada viaja como string (backend/app/api/rutas_trabajos.py:
+  // `str(x - min_x)`) — mismo criterio que los campos Decimal, para no
+  // perder precisión. Convertir con Number() antes de cualquier aritmética.
+  contorno_mm: string[][];
+  agujeros_mm: string[][][];
   descartada: boolean;
   contorno_recto: boolean;
 }
