@@ -4,13 +4,13 @@
 >
 > Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`REGISTRO.md`](REGISTRO.md) · [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md) · [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md)
 >
-> **Versión:** 2.1 · **Fecha:** 2026-09-14 · Rama actual: `main`
+> **Versión:** 2.2 · **Fecha:** 2026-09-14 · Rama actual: `main`
 
 ---
 
 ## En una frase
 
-**El motor de nesting rectangular tiene una API real que lo persiste, y el cotizador (F3) ya tiene presupuesto, costo de material, override manual y líneas libres — falta el total con margen/IVA, el PDF y el frontend.** Los 5 pasos de [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md) están hechos; de [`PLAN-SLICE-COTIZADOR.md`](PLAN-SLICE-COTIZADOR.md) (F3) van 4 de 6. Las fundaciones (auth, precios con vigencia) siguen sin arrancar — nada de lo construido las necesitó todavía.
+**Los dos planes de slice vertical están completos: `PLAN-SLICE-VERTICAL.md` (motor de nesting persistido, F2) y `PLAN-SLICE-COTIZADOR.md` (presupuesto con costo real, override, líneas libres, margen/IVA/total y desglose, F3).** Lo que queda de esos dos planes es explícitamente lo que quedaron afuera a propósito: PDF (`CART-309`/`310`, sin `WeasyPrint`) y el frontend. Las fundaciones (auth, precios con vigencia) siguen sin arrancar — nada de lo construido las necesitó todavía.
 
 ---
 
@@ -21,9 +21,9 @@
 ```mermaid
 pie showData
     title Puntos por estado (371 totales)
-    "🟢 Hecho — 74 pts (20%)" : 74
-    "🟡 Parcial — 86 pts (23%)" : 86
-    "⬜ Sin empezar — 211 pts (57%)" : 211
+    "🟢 Hecho — 79 pts (21%)" : 79
+    "🟡 Parcial — 91 pts (25%)" : 91
+    "⬜ Sin empezar — 201 pts (54%)" : 201
 ```
 
 | Feature | Pts | 🟢 Hecho | 🟡 Parcial | ⬜ Sin empezar |
@@ -31,17 +31,17 @@ pie showData
 | F0 — Fundaciones | 24 | 0 | 5 | 19 |
 | F1 — Catálogo y precios | 26 | 3 | 8 | 15 |
 | F2 — Nesting rectangular | 62 | 29 | 28 | 5 |
-| F3 — Cotizador y PDF | 47 | 13 | 14 | 20 |
+| F3 — Cotizador y PDF | 47 | 18 | 19 | 10 |
 | F4 — Aprobación y envío | 37 | 0 | 0 | 37 |
 | F5 — Importación Corel | 50 | 16 | 5 | 29 |
 | F6 — Fotomontaje | 42 | 0 | 0 | 42 |
 | F7 — Nesting irregular | 39 | 13 | 26 | 0 |
 | F8 — Dashboard (carril B) | 44 | 0 | 0 | 44 |
-| **Total** | **371** | **74 (20%)** | **86 (23%)** | **211 (57%)** |
+| **Total** | **371** | **79 (21%)** | **91 (25%)** | **201 (54%)** |
 
-**Por historias en vez de puntos da un número parecido:** 13/70 hechas (19%), 17/70 parciales (24%), 40/70 sin empezar (57%).
+**Por historias en vez de puntos da un número parecido:** 14/70 hechas (20%), 18/70 parciales (26%), 38/70 sin empezar (54%).
 
-**El número que más importa es el de `H1`** (el punto de validación, no todo el roadmap): `F0+F1+F2+F3` suman 159 puntos, de los cuales **45 están hechos (28%)**, 55 parciales (35%) y 59 sin empezar (37%). Subió bastante desde la versión anterior (20/29/51) — los 4 primeros pasos de `PLAN-SLICE-COTIZADOR.md` (`CART-301` a `306`) ya están. Lo que queda de `F3` es el total (margen, IVA, redondeo — `CART-307`), el desglose unificado (`CART-308`) y el PDF (`CART-309`/`310`, sin `WeasyPrint` instalado).
+**El número que más importa es el de `H1`** (el punto de validación, no todo el roadmap): `F0+F1+F2+F3` suman 159 puntos, de los cuales **50 están hechos (31%)**, 60 parciales (38%) y 49 sin empezar (31%) — es la primera vez que "sin empezar" deja de ser la categoría más grande. `F3` completó los 6 pasos de `PLAN-SLICE-COTIZADOR.md`: lo único que le falta a `H1` ahora es el PDF (`CART-309`/`310`, sin `WeasyPrint` instalado) y `B-03`/`B-04` (conversación con el taller, no desarrollo).
 
 **F8 (dashboard, carril B) cuenta 0/44 con este criterio estricto** — el prototipo de 9 vistas (`prototipo-dashboard/`) es real y valida diseño con la matriz de permisos real, pero corre sobre datos de muestra, no contra `INVENTARIO`/`COTIZACIONES` reales (`CART-802`), así que ningún criterio de aceptación de `CART-801`-`808` se cumple todavía en sentido estricto.
 
@@ -105,6 +105,8 @@ flowchart LR
         COSTEO --> PRESUP["Presupuesto (CART-301)<br/>+ recalcular-materiales"]
         PRESUP --> LINEAS["LineaCosto: material,<br/>insumos, mano de obra,<br/>flete, instalación"]
         LINEAS --> OVERRIDE["PATCH .../override<br/>CART-303"]
+        OVERRIDE --> TOTAL["GET .../totales<br/>margen, IVA, CART-307"]
+        TOTAL --> DESGLOSE["GET .../desglose<br/>CART-308"]
     end
 
     subgraph spike ["SPIKE — mismo contrato, NO conectado a la API"]
@@ -114,24 +116,24 @@ flowchart LR
     subgraph falta ["NO EXISTE"]
         direction TB
         PRECIOS["Precios con vigencia<br/>F1 / CART-103"]
-        TOTAL["Margen, IVA, total<br/>F3 / CART-307"]
-        PDF["PDF del presupuesto"]
+        PDF["PDF del presupuesto<br/>CART-309/310"]
         APROB["Aprobación y envío<br/>F4"]
     end
 
     ANIDAR -.->|"motor alternativo<br/>posible sin reescribir esta capa"| DEEP
-    OVERRIDE -.->|"acá se corta"| TOTAL
-    PRECIOS --> TOTAL --> PDF --> APROB
+    DESGLOSE -.->|"acá se corta"| PDF
+    PRECIOS -.-> PRESUP
+    PDF --> APROB
 
     classDef ok fill:#cfe8d5,stroke:#3d7a52,color:#14351f
     classDef spikeCls fill:#d7e6f5,stroke:#3d6b96,color:#12314d
     classDef no fill:#eeeeee,stroke:#999,color:#555
-    class DXF,PIEZAS,GRUPO,ANIDAR,COLOC,AJUSTE,APROV,PLANO,DXFOUT,COSTEO,PRESUP,LINEAS,OVERRIDE ok
+    class DXF,PIEZAS,GRUPO,ANIDAR,COLOC,AJUSTE,APROV,PLANO,DXFOUT,COSTEO,PRESUP,LINEAS,OVERRIDE,TOTAL,DESGLOSE ok
     class DEEP spikeCls
-    class PRECIOS,TOTAL,PDF,APROB no
+    class PRECIOS,PDF,APROB no
 ```
 
-**El corte se movió otra vez.** En la versión anterior de este mapa el pipeline llegaba hasta el costo de material (`GET /trabajos/{id}/costeo`) y ahí se cortaba. Hoy sigue: ese costo se persiste como `Presupuesto` real, con líneas por rubro y override manual con trazabilidad. El corte ahora está en **el total** — margen, IVA y redondeo (`CART-307`) — y en el PDF, que es lo que hace falta para poder aprobar (`F4`) o fotomontar (`F6`).
+**El corte se movió otra vez.** `PLAN-SLICE-COTIZADOR.md` completó sus 6 pasos: el pipeline hoy llega hasta un desglose completo, con margen, IVA y total ya calculados y redondeados una sola vez. El corte quedó exactamente donde el plan decía que iba a quedar desde el principio: **el PDF** (depende de `WeasyPrint`, todavía no instalado) y la aprobación (`F4`, que necesita el estado `ENVIADO` que no existe).
 
 ---
 
@@ -214,9 +216,9 @@ flowchart TB
     classDef parcial fill:#fdf0c8,stroke:#a8862a,color:#3d3007
     classDef nada fill:#eeeeee,stroke:#999,color:#555
 
-    class C102,C202,C203,C204,C206,C211,C503,C505,C701,C704,C302,C303 hecho
-    class C001,C101,C105,C201,C205,C207,C208,C210,C507,C702,C703,C705,C301,C304,C305,C306 parcial
-    class C002,C003,C004,C005,C006,C103,C104,C106,C107,C209,C501,C502,C504,C506,C508,C307,C308,C309,C310 nada
+    class C102,C202,C203,C204,C206,C211,C503,C505,C701,C704,C302,C303,C307 hecho
+    class C001,C101,C105,C201,C205,C207,C208,C210,C507,C702,C703,C705,C301,C304,C305,C306,C308 parcial
+    class C002,C003,C004,C005,C006,C103,C104,C106,C107,C209,C501,C502,C504,C506,C508,C309,C310 nada
 ```
 
 **Parciales que importa entender, y por qué no son "hecho":**
@@ -231,8 +233,9 @@ flowchart TB
 - **`CART-210`** — se puede recalcular con nuevos parámetros creando una nueva ejecución (con su propio snapshot), pero no hay una ruta para "ajustar el kerf de este trabajo puntual sin tocar el material" ni el aviso de que un recálculo descarta ajustes manuales.
 - **`CART-507`** — asignar material a piezas importadas funciona (`PATCH /piezas/{id}`), de una por vez; falta la asignación masiva y el bloqueo explícito al anidar si quedan piezas sin asignar en el trabajo.
 - **`CART-702`/`703`/`705`** — el spike de Deepnest headless (`nesting-engine/`) funciona, está medido contra `rectpack` (`CART-704`, por eso ese sí está hecho) y tiene manejo de cancelación/timeout a nivel de dominio — pero nada de esto está conectado a `POST /grupos/{id}/anidar`. Es la brecha entre "anda" y "está en el producto".
-- **`CART-301`** — crear/listar/leer/actualizar/duplicar presupuesto están hechos, pero faltan dos criterios: no hay "diseñador" que mostrar ni que bloquear (depende de `CART-002`), y **`POST /presupuestos/{id}/duplicar` no copia las `LineaCosto`** — se escribió en el paso 1, antes de que `LineaCosto` existiera (paso 2), y no se volvió a tocar. Es deuda real, no una decisión de alcance.
-- **`CART-304`/`305`/`306`** — la "línea libre" de las tres historias está hecha (`POST /presupuestos/{id}/lineas-costo`). Lo que falta es lo que depende de catálogo (`CART-106`, no existe): elegir un insumo de una lista en vez de tipear todo a mano, y en `CART-305` específicamente, un campo `etapa` estructurado (diseño/corte/armado/pintura/instalación) — hoy la etapa, si se quiere registrar, va dentro de `descripcion` como texto libre.
+- **`CART-301`** — crear/listar/leer/actualizar/duplicar presupuesto están hechos (`duplicar` ya copia `LineaCosto` y overrides, corregido en el paso 5). Lo que falta es enteramente de `CART-002`: no hay "diseñador" que mostrar en el presupuesto ni que bloquear si otro lo edita.
+- **`CART-304`/`305`/`306`** — la "línea libre" de las tres historias está hecha (`POST /presupuestos/{id}/lineas-costo`), y el subtotal por rubro que pedían sus terceros criterios también (`GET /presupuestos/{id}/desglose`, paso 6). Lo que falta sigue siendo lo que depende de catálogo (`CART-106`, no existe): elegir un insumo de una lista en vez de tipear todo a mano, y en `CART-305` específicamente, un campo `etapa` estructurado (diseño/corte/armado/pintura/instalación) — hoy la etapa, si se quiere registrar, va dentro de `descripcion` como texto libre.
+- **`CART-308`** — `GET /presupuestos/{id}/desglose` ya da cliente, líneas agrupadas por rubro (con override visible en cada línea) y totales en una sola respuesta, con `grupo_id`/`ejecucion_id` en cada línea de material para llegar al plano sin otra búsqueda. Sigue parcial por lo que es inherente a no tener frontend: no hay "una sola pantalla" (es JSON), ni "filtrar" las líneas con override (posible del lado del cliente, no es una feature del servidor).
 
 ---
 
@@ -304,8 +307,8 @@ flowchart LR
     H1 --> H2 --> H3 --> H4 --> H5
     H6 -.->|"en paralelo, no bloquea"| H3
 
-    HOY(["HOY: nesting + cotizador<br/>persistidos, H1 al 28%"])
-    HOY ==>|"falta el total/PDF de F3 (y B-03/B-04)"| H1
+    HOY(["HOY: cotizador completo<br/>salvo PDF, H1 al 31%"])
+    HOY ==>|"falta el PDF de F3 (y B-03/B-04)"| H1
 
     classDef hito fill:#d7e6f5,stroke:#3d6b96,color:#12314d
     classDef hoy fill:#fdf0c8,stroke:#a8862a,color:#3d3007
@@ -319,11 +322,10 @@ flowchart LR
 
 ## 8. Lo que yo haría ahora, en orden
 
-1. **Cerrar `B-03` y `B-04` con el taller.** Sigue siendo lo que más valor desbloquea por hora invertida, y sigue sin hacerse — es una conversación, no un desarrollo.
-2. **Terminar `F3`:** paso 5 (margen, IVA, redondeo único — `CART-307`) y paso 6 (desglose completo por API — `CART-308`) de `PLAN-SLICE-COTIZADOR.md`. Con eso `H1` solo le falta el PDF, que es la parte que más depende de tener frontend cerca.
-3. **Arreglar la deuda chica antes de que se acumule:** `duplicar_presupuesto` no copia `LineaCosto` (bug real, no alcance) — es media hora, mejor ahora que cuando ya haya presupuestos reales duplicados a mano para compensarlo.
-4. **Cerrar `D-10`** con administración antes de que `F3` recalcule ningún precio en serio.
-5. **Recién ahí, `CART-002`/auth** — sigue teniendo sentido diferirla: nada de lo construido la necesita todavía.
-6. **El frontend** (paso 6 de `PLAN-SLICE-VERTICAL.md`) — recién cuando `F3` tenga el total, para que haya algo completo que mostrar.
+1. **Cerrar `B-03` y `B-04` con el taller.** Sigue siendo lo que más valor desbloquea por hora invertida, y sigue sin hacerse en ninguna de las versiones de este mapa — es una conversación, no un desarrollo.
+2. **Cerrar `D-10`** con administración antes de recalcular ningún precio en serio — hoy `costo_unidad_venta` se importa tal cual la planilla, y ese es el techo real de cuánto se puede confiar en un total.
+3. **El frontend** (paso 6 de `PLAN-SLICE-VERTICAL.md`). Con `F2` y `F3` completos salvo PDF, ya hay algo entero que mostrar en una pantalla en vez de en `/docs` — es el momento en que más valor da, no antes.
+4. **`CART-002`/auth** — recién si el frontend lo necesita para algo concreto (por ahora un solo usuario local no lo necesita). Seguir diferida es la decisión por defecto, no una excepción.
+5. **PDF** (`CART-309`/`310`) — instalar `WeasyPrint` y generar el documento tiene más sentido una vez que el frontend defina qué layout mostrar; hacerlo antes es diseñar un PDF sin saber cómo se ve la pantalla que lo pide.
 
-Lo que **no** haría todavía: conectar Deepnest a la API, ni el catálogo de insumos (`CART-106`) solo para completar `CART-304`/`305` del todo — ninguno de los dos tiene un trabajo real esperando.
+Lo que **no** haría todavía: conectar Deepnest a la API, ni el catálogo de insumos (`CART-106`) solo para completar `CART-304`/`305` del todo, ni la máquina de estados de `F4` — ninguno de los tres tiene un trabajo real esperando, y `F4` en particular no tiene sentido sin que primero exista el frontend que apruebe algo.
