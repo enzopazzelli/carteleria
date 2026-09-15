@@ -28,6 +28,7 @@ from ..modelos.base import Sesion
 from ..modelos.catalogo import Formato
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
+from ..services.nesting.comparador import OpcionFormato, comparar_formatos, formato_recomendado
 from ..services.nesting.engine import MotorNestingRectangular
 from ..services.nesting.models import ParametrosCorte, Plancha, RotacionPermitida
 from ..services.nesting.models import Pieza as PiezaDominio
@@ -35,7 +36,9 @@ from .dependencias import obtener_sesion
 from .esquemas_nesting import (
     AnidarCrear,
     ColocacionLeer,
+    ComparacionFormatosCrear,
     EjecucionLeer,
+    OpcionFormatoLeer,
     ResumenMaterialesLeer,
 )
 from .rutas_trabajos import _grupo_o_404, _trabajo_o_404
@@ -266,3 +269,73 @@ def obtener_costeo(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -
     cambia, esto solo lo expone por HTTP."""
     _trabajo_o_404(sesion, trabajo_id)
     return ResumenMaterialesLeer.model_validate(resumen_materiales(sesion, trabajo_id))
+
+
+@router.post("/grupos/{grupo_id}/comparar-formatos", response_model=list[OpcionFormatoLeer])
+def comparar_formatos_de_grupo(
+    grupo_id: int, datos: ComparacionFormatosCrear, sesion: Session = Depends(obtener_sesion)
+) -> list[OpcionFormatoLeer]:
+    """Compara las piezas de un grupo contra varios formatos candidatos
+    SIN persistir nada — ni tocar `grupo.formato_id` ni crear una
+    `EjecucionNesting`. Es el paso previo a elegir un material cuando
+    se quiere ofrecer una variante más económica o en otro material
+    (`docs/superpowers/specs/2026-09-15-frontend-cotizador-design.md §5.2`).
+    """
+    grupo = _grupo_o_404(sesion, grupo_id)
+    piezas = [p for p in grupo.piezas if not p.descartada]
+    if not piezas:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"El grupo «{grupo.nombre}» no tiene piezas para comparar.")
+    piezas_dominio = [
+        PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad) for p in piezas
+    ]
+
+    opciones: list[OpcionFormato] = []
+    formatos: list[Formato] = []
+    for formato_id in datos.formato_ids:
+        formato = sesion.get(Formato, formato_id)
+        if formato is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el formato {formato_id}.")
+        material = formato.material
+        if material.parametros is None:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105).",
+            )
+        if formato.costo_unidad_venta is None or formato.unidad_venta != "M2":
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"El formato «{formato.ancho_mm}×{formato.alto_mm}» no tiene un precio por plancha "
+                f"calculable (se vende por «{formato.unidad_venta}», no por m²).",
+            )
+        precio_por_plancha = (formato.ancho_mm / Decimal(1000)) * (formato.alto_mm / Decimal(1000)) * formato.costo_unidad_venta
+        params = ParametrosCorte(
+            kerf_mm=material.parametros.kerf_mm,
+            margen_borde_mm=material.parametros.margen_borde_mm,
+            separacion_piezas_mm=material.parametros.separacion_piezas_mm,
+            rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
+        )
+        opciones.append(
+            OpcionFormato(
+                plancha=Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm),
+                params=params,
+                precio_por_plancha=precio_por_plancha,
+            )
+        )
+        formatos.append(formato)
+
+    resultados = comparar_formatos(piezas_dominio, opciones, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA)
+    recomendado = formato_recomendado(resultados)
+
+    return [
+        OpcionFormatoLeer(
+            formato_id=formato.id,
+            formato_descripcion=f"{formato.ancho_mm}×{formato.alto_mm} mm",
+            material_nombre=formato.material.nombre,
+            planchas_usadas=resultado.resultado_anidado.planchas_usadas,
+            aprovechamiento_pct=resultado.reporte_aprovechamiento.porcentaje_aprovechamiento,
+            costo_total=resultado.costo_total,
+            moneda=formato.moneda,
+            recomendado=resultado is recomendado,
+        )
+        for formato, resultado in zip(formatos, resultados)
+    ]

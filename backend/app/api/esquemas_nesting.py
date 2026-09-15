@@ -101,3 +101,21 @@ class ResumenMaterialesLeer(BaseModel):
     lineas: list[LineaMaterialLeer]
     costo_total_por_moneda: dict[str, Decimal]
     advertencias_generales: list[str]
+
+
+# --- Comparar formatos, sin comprometer el grupo (`CART-205`) -------------
+
+
+class ComparacionFormatosCrear(BaseModel):
+    formato_ids: list[int]
+
+
+class OpcionFormatoLeer(BaseModel):
+    formato_id: int
+    formato_descripcion: str
+    material_nombre: str
+    planchas_usadas: int
+    aprovechamiento_pct: Decimal
+    costo_total: Decimal
+    moneda: str
+    recomendado: bool

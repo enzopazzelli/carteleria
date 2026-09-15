@@ -319,3 +319,83 @@ def test_listar_ejecuciones_de_grupo_ordena_mas_reciente_primero(cliente, tmp_pa
 
 def test_listar_ejecuciones_de_grupo_inexistente_da_404(cliente):
     assert cliente.get("/grupos/999/ejecuciones").status_code == 404
+
+
+# --- Comparar formatos (CART-205) -----------------------------------------
+
+
+def _grupo_con_piezas_sin_formato(cliente, tmp_path, *, ancho=100, alto=100) -> dict:
+    """Un grupo con piezas asignadas pero SIN formato — el estado en el
+    que corresponde comparar, antes de decidir un material."""
+    trabajo = cliente.post("/trabajos", json={"nombre": "Prueba"}).json()
+    documento = ezdxf.new()
+    documento.modelspace().add_lwpolyline(
+        [(0, 0), (ancho, 0), (ancho, alto), (0, alto)], close=True
+    )
+    ruta = tmp_path / "pieza.dxf"
+    documento.saveas(ruta)
+    cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("pieza.dxf", ruta.read_bytes(), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+    pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Sin material"}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    return grupo
+
+
+def test_comparar_formatos_devuelve_uno_por_formato_y_marca_el_mas_barato(cliente, tmp_path):
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    _material_caro, formato_caro = _material_con_formato_y_parametros(cliente)
+    material_barato = cliente.post("/materiales", json={"nombre": "MDF"}).json()
+    formato_barato = cliente.post(
+        f"/materiales/{material_barato['id']}/formatos",
+        json={"ancho_mm": "1000", "alto_mm": "1000", "unidad_venta": "M2", "costo_unidad_venta": "10"},
+    ).json()
+    cliente.put(
+        f"/materiales/{material_barato['id']}/parametros-corte",
+        json={
+            "kerf_mm": "2", "margen_borde_mm": "10", "separacion_piezas_mm": "5",
+            "rotaciones_permitidas": "LIBRE_0_90",
+        },
+    )
+
+    respuesta = cliente.post(
+        f"/grupos/{grupo['id']}/comparar-formatos",
+        json={"formato_ids": [formato_caro["id"], formato_barato["id"]]},
+    )
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert [op["formato_id"] for op in cuerpo] == [formato_caro["id"], formato_barato["id"]]
+    assert cuerpo[0]["recomendado"] is False
+    assert cuerpo[1]["recomendado"] is True
+    assert Decimal(cuerpo[1]["costo_total"]) < Decimal(cuerpo[0]["costo_total"])
+
+    # No persiste nada: el grupo sigue sin formato ni ejecuciones.
+    assert cliente.get(f"/trabajos/{grupo['trabajo_id']}/grupos").json()[0]["formato_id"] is None
+    assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json() == []
+
+
+def test_comparar_formatos_grupo_sin_piezas_da_400(cliente):
+    trabajo = cliente.post("/trabajos", json={"nombre": "Prueba"}).json()
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Vacío"}).json()
+    _material, formato = _material_con_formato_y_parametros(cliente)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": [formato["id"]]})
+
+    assert respuesta.status_code == 400
+    assert "piezas" in respuesta.json()["detail"]
+
+
+def test_comparar_formatos_con_formato_inexistente_da_404(cliente, tmp_path):
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": [999]})
+
+    assert respuesta.status_code == 404
+
+
+def test_comparar_formatos_grupo_inexistente_da_404(cliente):
+    assert cliente.post("/grupos/999/comparar-formatos", json={"formato_ids": [1]}).status_code == 404
