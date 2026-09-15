@@ -399,3 +399,41 @@ def test_comparar_formatos_con_formato_inexistente_da_404(cliente, tmp_path):
 
 def test_comparar_formatos_grupo_inexistente_da_404(cliente):
     assert cliente.post("/grupos/999/comparar-formatos", json={"formato_ids": [1]}).status_code == 404
+
+
+def test_comparar_formatos_lista_vacia_da_400(cliente, tmp_path):
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": []})
+
+    assert respuesta.status_code == 400
+    assert "formato" in respuesta.json()["detail"]
+
+
+def test_comparar_formatos_sin_precio_no_confunde_la_unidad_de_venta(cliente, tmp_path):
+    """Cuando `unidad_venta` YA es «M2» pero falta el precio, el 400
+    tiene que hablar de precio faltante — no decir "se vende por «M2»,
+    no por m²", que sería contradictorio (la unidad es la correcta)."""
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    material = cliente.post("/materiales", json={"nombre": "Acrílico"}).json()
+    formato_sin_precio = cliente.post(
+        f"/materiales/{material['id']}/formatos",
+        json={"ancho_mm": "1000", "alto_mm": "1000", "unidad_venta": "M2"},
+    ).json()
+    cliente.put(
+        f"/materiales/{material['id']}/parametros-corte",
+        json={
+            "kerf_mm": "2", "margen_borde_mm": "10", "separacion_piezas_mm": "5",
+            "rotaciones_permitidas": "LIBRE_0_90",
+        },
+    )
+
+    respuesta = cliente.post(
+        f"/grupos/{grupo['id']}/comparar-formatos",
+        json={"formato_ids": [formato_sin_precio["id"]]},
+    )
+
+    assert respuesta.status_code == 400
+    detalle = respuesta.json()["detail"]
+    assert "precio" in detalle
+    assert "se vende por" not in detalle

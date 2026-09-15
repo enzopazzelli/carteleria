@@ -285,6 +285,8 @@ def comparar_formatos_de_grupo(
     piezas = [p for p in grupo.piezas if not p.descartada]
     if not piezas:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"El grupo «{grupo.nombre}» no tiene piezas para comparar.")
+    if not datos.formato_ids:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Hace falta indicar al menos un formato para comparar.")
     piezas_dominio = [
         PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad) for p in piezas
     ]
@@ -301,11 +303,22 @@ def comparar_formatos_de_grupo(
                 status.HTTP_400_BAD_REQUEST,
                 f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105).",
             )
-        if formato.costo_unidad_venta is None or formato.unidad_venta != "M2":
+        # Dos causas distintas de "no se puede calcular un precio por
+        # plancha" (ver costeo.py::_linea_de_grupo, misma distinción):
+        # sin precio cargado, o vendido por una unidad que no es m².
+        # Fusionarlas en un solo mensaje es engañoso — cuando la unidad
+        # YA es «M2» pero falta el precio, decir "se vende por «M2», no
+        # por m²" es contradictorio.
+        if formato.costo_unidad_venta is None:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                f"El formato «{formato.ancho_mm}×{formato.alto_mm}» no tiene un precio por plancha "
-                f"calculable (se vende por «{formato.unidad_venta}», no por m²).",
+                f"El formato «{formato.ancho_mm}×{formato.alto_mm}» no tiene precio de referencia cargado.",
+            )
+        if formato.unidad_venta != "M2":
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"El formato «{formato.ancho_mm}×{formato.alto_mm}» se vende por «{formato.unidad_venta}», "
+                "no por m² — el costo no se calcula solo, hay que cargarlo a mano.",
             )
         precio_por_plancha = (formato.ancho_mm / Decimal(1000)) * (formato.alto_mm / Decimal(1000)) * formato.costo_unidad_venta
         params = ParametrosCorte(
