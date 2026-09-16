@@ -1,11 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  actualizarMargenEIva,
+  aplicarOverride,
   crearCliente,
+  crearLineaLibre,
   crearPresupuesto,
   duplicarPresupuesto,
   listarClientes,
+  listarLineasCosto,
   listarTodosLosPresupuestos,
   obtenerCosteo,
+  obtenerDesglose,
   recalcularMateriales,
 } from "../api/presupuestos";
 
@@ -57,5 +62,48 @@ export function useRecalcularMateriales(presupuestoId: number) {
   return useMutation({
     mutationFn: () => recalcularMateriales(presupuestoId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lineas-costo", presupuestoId] }),
+  });
+}
+
+export function useLineasCosto(presupuestoId: number) {
+  return useQuery({ queryKey: ["lineas-costo", presupuestoId], queryFn: () => listarLineasCosto(presupuestoId) });
+}
+
+export function useCrearLineaLibre(presupuestoId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (datos: Parameters<typeof crearLineaLibre>[1]) => crearLineaLibre(presupuestoId, datos),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lineas-costo", presupuestoId] });
+      queryClient.invalidateQueries({ queryKey: ["desglose", presupuestoId] });
+    },
+  });
+}
+
+export function useAplicarOverride(presupuestoId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ lineaId, valor, overridePor }: { lineaId: number; valor: string | null; overridePor: string }) =>
+      aplicarOverride(lineaId, valor, overridePor),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lineas-costo", presupuestoId] });
+      queryClient.invalidateQueries({ queryKey: ["desglose", presupuestoId] });
+    },
+  });
+}
+
+export function useActualizarMargenEIva(presupuestoId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (datos: { margen_pct?: string; iva_pct?: string }) => actualizarMargenEIva(presupuestoId, datos),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["desglose", presupuestoId] }),
+  });
+}
+
+export function useDesglose(presupuestoId: number | null) {
+  return useQuery({
+    queryKey: ["desglose", presupuestoId],
+    queryFn: () => obtenerDesglose(presupuestoId as number),
+    enabled: presupuestoId !== null,
   });
 }
