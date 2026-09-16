@@ -22,3 +22,7 @@ export function listarMateriales(): Promise<Material[]> {
 export function listarFormatos(materialId: number): Promise<Formato[]> {
   return apiGet<Formato[]>(`/materiales/${materialId}/formatos`);
 }
+
+export function obtenerFormato(formatoId: number): Promise<Formato> {
+  return apiGet<Formato>(`/formatos/${formatoId}`);
+}

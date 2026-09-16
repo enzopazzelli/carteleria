@@ -1,8 +1,16 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { listarFormatos, listarMateriales } from "../api/catalogo";
+import { listarFormatos, listarMateriales, obtenerFormato } from "../api/catalogo";
 
 export function useMateriales() {
   return useQuery({ queryKey: ["materiales"], queryFn: listarMateriales });
+}
+
+export function useFormato(formatoId: number | null) {
+  return useQuery({
+    queryKey: ["formato", formatoId],
+    queryFn: () => obtenerFormato(formatoId as number),
+    enabled: formatoId !== null,
+  });
 }
 
 /** Todos los formatos de todos los materiales, aplanados — el catálogo

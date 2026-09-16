@@ -1,5 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { anidar, listarEjecucionesDeGrupo, marcarDefinitiva, obtenerEjecucion, type Ejecucion } from "../api/nesting";
+import {
+  ajustarColocacion,
+  anidar,
+  listarColocaciones,
+  listarEjecucionesDeGrupo,
+  marcarDefinitiva,
+  obtenerEjecucion,
+  type Ejecucion,
+} from "../api/nesting";
 
 const ESTADOS_TERMINALES = new Set(["lista", "error", "cancelada"]);
 
@@ -35,5 +43,27 @@ export function useMarcarDefinitiva(grupoId: number) {
   return useMutation({
     mutationFn: (ejecucionId: number) => marcarDefinitiva(ejecucionId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ejecuciones", grupoId] }),
+  });
+}
+
+export function useColocaciones(ejecucionId: number | null) {
+  return useQuery({
+    queryKey: ["colocaciones", ejecucionId],
+    queryFn: () => listarColocaciones(ejecucionId as number),
+    enabled: ejecucionId !== null,
+  });
+}
+
+export function useAjustarColocacion(ejecucionId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      colocacionId,
+      datos,
+    }: {
+      colocacionId: number;
+      datos: { centro_x_mm?: number; centro_y_mm?: number; angulo_grados?: number };
+    }) => ajustarColocacion(colocacionId, datos),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["colocaciones", ejecucionId] }),
   });
 }
