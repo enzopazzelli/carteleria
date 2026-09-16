@@ -36,6 +36,30 @@ export default function GruposTab() {
     return materiales.find((m) => m.id === materialId)?.nombre ?? "?";
   }
 
+  function mensajeDeError(e: unknown, fallback: string): string {
+    return e instanceof ApiError ? e.message : fallback;
+  }
+
+  async function alCrearGrupo() {
+    if (!nombreNuevoGrupo.trim()) return;
+    setError(null);
+    try {
+      await crearGrupo.mutateAsync(nombreNuevoGrupo.trim());
+      setNombreNuevoGrupo("");
+    } catch (e) {
+      setError(mensajeDeError(e, "No se pudo crear el grupo."));
+    }
+  }
+
+  async function alAsignarPieza(piezaId: number, grupoId: number) {
+    setError(null);
+    try {
+      await asignarPieza.mutateAsync({ piezaId, grupoId });
+    } catch (e) {
+      setError(mensajeDeError(e, "No se pudo mover la pieza."));
+    }
+  }
+
   async function alComparar(grupoId: number) {
     setError(null);
     setResultado(null);
@@ -43,13 +67,29 @@ export default function GruposTab() {
       const opciones = await compararFormatos.mutateAsync({ grupoId, formatoIds: candidatos });
       setResultado(opciones);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo comparar.");
+      setError(mensajeDeError(e, "No se pudo comparar."));
+    }
+  }
+
+  async function alUsarFormato(grupoId: number, formatoId: number) {
+    setError(null);
+    try {
+      await asignarFormato.mutateAsync({ grupoId, formatoId });
+      setGrupoComparando(null);
+    } catch (e) {
+      setError(mensajeDeError(e, "No se pudo asignar el formato."));
     }
   }
 
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-4">Grupos de corte</h1>
+
+      {error && (
+        <div className="mb-4">
+          <Banner variante="error">{error}</Banner>
+        </div>
+      )}
 
       <div className="flex gap-2 mb-6">
         <input
@@ -58,10 +98,7 @@ export default function GruposTab() {
           value={nombreNuevoGrupo}
           onChange={(e) => setNombreNuevoGrupo(e.target.value)}
         />
-        <button
-          className="bg-cut text-paper rounded px-4 py-2"
-          onClick={() => nombreNuevoGrupo.trim() && crearGrupo.mutate(nombreNuevoGrupo.trim())}
-        >
+        <button className="bg-cut text-paper rounded px-4 py-2" onClick={alCrearGrupo}>
           Nuevo grupo
         </button>
       </div>
@@ -76,10 +113,7 @@ export default function GruposTab() {
                 <select
                   className="border border-line rounded px-2 py-1 bg-paper"
                   defaultValue=""
-                  onChange={(e) =>
-                    e.target.value &&
-                    asignarPieza.mutate({ piezaId: pieza.id, grupoId: Number(e.target.value) })
-                  }
+                  onChange={(e) => e.target.value && alAsignarPieza(pieza.id, Number(e.target.value))}
                 >
                   <option value="" disabled>
                     Mover a grupo...
@@ -145,8 +179,6 @@ export default function GruposTab() {
                 Comparar
               </button>
 
-              {error && <Banner variante="error">{error}</Banner>}
-
               {resultado && (
                 <table className="w-full text-sm mt-2">
                   <thead>
@@ -175,10 +207,7 @@ export default function GruposTab() {
                         <td>
                           <button
                             className="text-xs underline"
-                            onClick={() => {
-                              asignarFormato.mutate({ grupoId: grupo.id, formatoId: opcion.formato_id });
-                              setGrupoComparando(null);
-                            }}
+                            onClick={() => alUsarFormato(grupo.id, opcion.formato_id)}
                           >
                             Usar este
                           </button>
