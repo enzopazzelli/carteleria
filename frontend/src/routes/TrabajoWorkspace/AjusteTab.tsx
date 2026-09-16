@@ -19,6 +19,7 @@ export default function AjusteTab() {
   const { data: colocaciones } = useColocaciones(ejecucionDefinitiva?.id ?? null);
   const ajustar = useAjustarColocacion(ejecucionDefinitiva?.id ?? -1);
   const [plancha, setPlancha] = useState(0);
+  const [seleccionada, setSeleccionada] = useState<number | null>(null);
   // Guarda el resultado completo de cada ajuste (no solo el motivo) para
   // poder decidir "es inválida" por el booleano `valida` que ya manda el
   // backend con ese propósito, no por si el string de motivo vino vacío.
@@ -56,6 +57,14 @@ export default function AjusteTab() {
   );
 
   const colocacionesDePlancha = colocaciones?.filter((c) => c.plancha_indice === plancha) ?? [];
+  const colocacionSeleccionada = colocacionesDePlancha.find((c) => c.id === seleccionada) ?? null;
+
+  function alRotarSeleccionada(deltaGrados: number) {
+    if (!colocacionSeleccionada) return;
+    const anguloActual = Number(colocacionSeleccionada.angulo_grados);
+    const nuevoAngulo = ((anguloActual + deltaGrados) % 360 + 360) % 360;
+    alRotar(colocacionSeleccionada.id, nuevoAngulo);
+  }
 
   return (
     <div>
@@ -113,6 +122,36 @@ export default function AjusteTab() {
             </div>
           )}
 
+          {colocacionSeleccionada && (
+            <div className="flex items-center gap-2 mb-3 text-sm">
+              <span className="text-ink/60">Pieza seleccionada — rotar:</span>
+              <button
+                className="border border-line rounded px-2 py-1 hover:bg-line/40"
+                onClick={() => alRotarSeleccionada(-90)}
+              >
+                -90°
+              </button>
+              <button
+                className="border border-line rounded px-2 py-1 hover:bg-line/40"
+                onClick={() => alRotarSeleccionada(-15)}
+              >
+                -15°
+              </button>
+              <button
+                className="border border-line rounded px-2 py-1 hover:bg-line/40"
+                onClick={() => alRotarSeleccionada(15)}
+              >
+                +15°
+              </button>
+              <button
+                className="border border-line rounded px-2 py-1 hover:bg-line/40"
+                onClick={() => alRotarSeleccionada(90)}
+              >
+                +90°
+              </button>
+            </div>
+          )}
+
           {formato ? (
             <PlanoEditor
               anchoPlanchaMm={Number(formato.ancho_mm)}
@@ -122,6 +161,8 @@ export default function AjusteTab() {
               onMover={alMover}
               onRotar={alRotar}
               colocacionesInvalidas={invalidas}
+              seleccionada={seleccionada}
+              onSeleccionar={setSeleccionada}
             />
           ) : (
             <p className="text-sm text-ink/60">Cargando el formato del grupo...</p>
