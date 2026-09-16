@@ -61,7 +61,10 @@ export function useRecalcularMateriales(presupuestoId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => recalcularMateriales(presupuestoId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lineas-costo", presupuestoId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lineas-costo", presupuestoId] });
+      queryClient.invalidateQueries({ queryKey: ["desglose", presupuestoId] });
+    },
   });
 }
 
