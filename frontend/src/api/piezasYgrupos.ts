@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPostForm } from "./client";
+import { apiGet, apiPatch, apiPost, apiPostForm } from "./client";
 
 export interface Pieza {
   id: number;
@@ -49,4 +49,31 @@ export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string): P
 
 export function descartarPieza(piezaId: number, descartada: boolean): Promise<Pieza> {
   return apiPatch<Pieza>(`/piezas/${piezaId}`, { descartada });
+}
+
+export interface OpcionFormato {
+  formato_id: number;
+  formato_descripcion: string;
+  material_nombre: string;
+  planchas_usadas: number;
+  aprovechamiento_pct: string;
+  costo_total: string;
+  moneda: string;
+  recomendado: boolean;
+}
+
+export function crearGrupo(trabajoId: number, nombre: string): Promise<GrupoDeCorte> {
+  return apiPost<GrupoDeCorte>(`/trabajos/${trabajoId}/grupos`, { nombre });
+}
+
+export function asignarPiezaAGrupo(piezaId: number, grupoId: number | null): Promise<Pieza> {
+  return apiPatch<Pieza>(`/piezas/${piezaId}`, { grupo_id: grupoId });
+}
+
+export function asignarFormatoAGrupo(grupoId: number, formatoId: number): Promise<GrupoDeCorte> {
+  return apiPatch<GrupoDeCorte>(`/grupos/${grupoId}`, { formato_id: formatoId });
+}
+
+export function compararFormatos(grupoId: number, formatoIds: number[]): Promise<OpcionFormato[]> {
+  return apiPost<OpcionFormato[]>(`/grupos/${grupoId}/comparar-formatos`, { formato_ids: formatoIds });
 }
