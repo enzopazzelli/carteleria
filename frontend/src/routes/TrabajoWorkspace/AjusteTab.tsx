@@ -19,7 +19,12 @@ export default function AjusteTab() {
   const { data: colocaciones } = useColocaciones(ejecucionDefinitiva?.id ?? null);
   const ajustar = useAjustarColocacion(ejecucionDefinitiva?.id ?? -1);
   const [plancha, setPlancha] = useState(0);
-  const [motivos, setMotivos] = useState<Map<number, string>>(new Map());
+  // Guarda el resultado completo de cada ajuste (no solo el motivo) para
+  // poder decidir "es inválida" por el booleano `valida` que ya manda el
+  // backend con ese propósito, no por si el string de motivo vino vacío.
+  const [resultadosAjuste, setResultadosAjuste] = useState<Map<number, { valida: boolean; motivo: string | null }>>(
+    new Map()
+  );
 
   const grupoActivo = grupos?.find((g) => g.id === grupoId);
   // Las medidas reales de la plancha salen del catálogo (mapeado del
@@ -32,17 +37,21 @@ export default function AjusteTab() {
       colocacionId,
       datos: { centro_x_mm: centroXMm, centro_y_mm: centroYMm },
     });
-    setMotivos((prev) => new Map(prev).set(colocacionId, resultado.motivo ?? ""));
+    setResultadosAjuste((prev) =>
+      new Map(prev).set(colocacionId, { valida: resultado.valida, motivo: resultado.motivo })
+    );
   }
 
   async function alRotar(colocacionId: number, anguloGrados: number) {
     const resultado = await ajustar.mutateAsync({ colocacionId, datos: { angulo_grados: anguloGrados } });
-    setMotivos((prev) => new Map(prev).set(colocacionId, resultado.motivo ?? ""));
+    setResultadosAjuste((prev) =>
+      new Map(prev).set(colocacionId, { valida: resultado.valida, motivo: resultado.motivo })
+    );
   }
 
   const invalidas = new Set(
-    Array.from(motivos.entries())
-      .filter(([, motivo]) => motivo)
+    Array.from(resultadosAjuste.entries())
+      .filter(([, resultado]) => !resultado.valida)
       .map(([id]) => id)
   );
 
@@ -98,7 +107,7 @@ export default function AjusteTab() {
             </a>
           </div>
 
-          {[...motivos.values()].some((m) => m) && (
+          {[...resultadosAjuste.values()].some((r) => !r.valida) && (
             <div className="mb-3">
               <Banner variante="aviso">Hay colocaciones marcadas en rojo — pasá el cursor para ver el motivo.</Banner>
             </div>

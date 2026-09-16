@@ -1,10 +1,14 @@
 import { useState } from "react";
 import type { Pieza } from "../../api/piezasYgrupos";
 import type { Colocacion } from "../../api/nesting";
-import { mmAPx, rotarPunto } from "./geometria";
+import { mmAPx, pxAMm, rotarPunto } from "./geometria";
 
 const ESCALA_PX_POR_MM = 0.3;
 const PASO_ROTACION = 15;
+// Un pointerdown+pointerup casi en el mismo lugar es un click (seleccionar,
+// o el primer/segundo click de un doble-click para rotar), no un arrastre —
+// sin este umbral, cualquier click reubicaba la pieza en el punto del click.
+const UMBRAL_ARRASTRE_PX = 5;
 
 interface PlanoEditorProps {
   anchoPlanchaMm: number;
@@ -27,19 +31,37 @@ export default function PlanoEditor({
 }: PlanoEditorProps) {
   const [arrastrando, setArrastrando] = useState<number | null>(null);
   const [seleccionada, setSeleccionada] = useState<number | null>(null);
+  // Posición (en coordenadas de pantalla) del pointerdown que armó el
+  // arrastre — se compara contra el pointerup para distinguir un click
+  // (seleccionar, o cada mitad de un doble-click) de un arrastre real.
+  const [inicioArrastrePx, setInicioArrastrePx] = useState<{ x: number; y: number } | null>(null);
 
   const piezaPorId = new Map(piezas.map((p) => [p.id, p]));
 
   function alSoltarEnSvg(evento: React.PointerEvent<SVGSVGElement>) {
-    if (arrastrando === null) return;
-    const svg = evento.currentTarget;
-    const rect = svg.getBoundingClientRect();
-    const xPx = evento.clientX - rect.left;
-    const yPx = evento.clientY - rect.top;
-    const centroXMm = xPx / ESCALA_PX_POR_MM;
-    const centroYMm = yPx / ESCALA_PX_POR_MM;
-    onMover(arrastrando, centroXMm, centroYMm);
+    if (arrastrando !== null && inicioArrastrePx !== null) {
+      const distanciaPx = Math.hypot(
+        evento.clientX - inicioArrastrePx.x,
+        evento.clientY - inicioArrastrePx.y
+      );
+      if (distanciaPx > UMBRAL_ARRASTRE_PX) {
+        const svg = evento.currentTarget;
+        const rect = svg.getBoundingClientRect();
+        const xPx = evento.clientX - rect.left;
+        const yPx = evento.clientY - rect.top;
+        const centroXMm = pxAMm(xPx, ESCALA_PX_POR_MM);
+        const centroYMm = pxAMm(yPx, ESCALA_PX_POR_MM);
+        onMover(arrastrando, centroXMm, centroYMm);
+      }
+    }
+    // El elemento capturado (seteado en el onPointerDown de la pieza) sigue
+    // siendo evento.target aunque el puntero haya salido del <svg> — soltar
+    // la captura acá, no importa dónde termine el puntero en pantalla.
+    if (evento.target instanceof Element && evento.target.hasPointerCapture(evento.pointerId)) {
+      evento.target.releasePointerCapture(evento.pointerId);
+    }
     setArrastrando(null);
+    setInicioArrastrePx(null);
   }
 
   return (
@@ -87,9 +109,14 @@ export default function PlanoEditor({
             stroke={invalida ? "#C4432A" : "#2E8074"}
             strokeWidth={2}
             style={{ cursor: "grab" }}
-            onPointerDown={() => {
+            onPointerDown={(evento) => {
               setSeleccionada(colocacion.id);
               setArrastrando(colocacion.id);
+              setInicioArrastrePx({ x: evento.clientX, y: evento.clientY });
+              // Mantiene los eventos de este puntero dirigidos a esta pieza
+              // aunque el arrastre termine afuera del <svg> — sin esto,
+              // soltar fuera del área dibujada dejaba `arrastrando` trabado.
+              evento.currentTarget.setPointerCapture(evento.pointerId);
             }}
             onDoubleClick={() => {
               if (seleccionada === colocacion.id) {
