@@ -1,18 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGrupos } from "../../hooks/useGrupos";
 import { useAnidar, useEjecucion, useEjecucionesDeGrupo, useMarcarDefinitiva } from "../../hooks/useNesting";
 import EstadoBadge from "../../components/EstadoBadge";
 import Banner from "../../components/Banner";
 import { ApiError } from "../../api/client";
 
+const ESTADOS_TERMINALES = new Set(["lista", "error", "cancelada"]);
+
 function PanelDeGrupo({ grupoId, nombre }: { grupoId: number; nombre: string }) {
+  const queryClient = useQueryClient();
   const anidar = useAnidar(grupoId);
   const marcarDefinitiva = useMarcarDefinitiva(grupoId);
   const { data: historial } = useEjecucionesDeGrupo(grupoId);
   const [ejecucionEnCurso, setEjecucionEnCurso] = useState<number | null>(null);
   const { data: enCurso } = useEjecucion(ejecucionEnCurso);
   const [error, setError] = useState<string | null>(null);
+
+  // El polling de useEjecucion vive en una query aparte ("ejecucion", no
+  // "ejecuciones") — sin este efecto, la fila del historial se queda
+  // congelada en "encolada" aunque el estado real ya haya llegado a
+  // "lista", porque nada más invalida esa lista al terminar el polling.
+  useEffect(() => {
+    if (enCurso && ESTADOS_TERMINALES.has(enCurso.estado)) {
+      queryClient.invalidateQueries({ queryKey: ["ejecuciones", grupoId] });
+    }
+  }, [enCurso?.estado, grupoId, queryClient]);
 
   async function alAnidar() {
     setError(null);
@@ -21,6 +35,15 @@ function PanelDeGrupo({ grupoId, nombre }: { grupoId: number; nombre: string }) 
       setEjecucionEnCurso(ejecucion.id);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "No se pudo anidar.");
+    }
+  }
+
+  async function alMarcarDefinitiva(ejecucionId: number) {
+    setError(null);
+    try {
+      await marcarDefinitiva.mutateAsync(ejecucionId);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "No se pudo marcar como definitiva.");
     }
   }
 
@@ -64,7 +87,7 @@ function PanelDeGrupo({ grupoId, nombre }: { grupoId: number; nombre: string }) 
               </td>
               <td>
                 {ejecucion.estado === "lista" && !ejecucion.es_definitiva && (
-                  <button className="text-xs underline" onClick={() => marcarDefinitiva.mutate(ejecucion.id)}>
+                  <button className="text-xs underline" onClick={() => alMarcarDefinitiva(ejecucion.id)}>
                     Marcar definitiva
                   </button>
                 )}
