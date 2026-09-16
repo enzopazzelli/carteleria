@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from app.services.nesting.models import PosicionPieza, Plancha, ResultadoAnidado
 from app.services.nesting.validacion_manual import GeometriaPieza
-from app.services.nesting.visualizacion import render_svg_plancha
+from app.services.nesting.visualizacion import CSS_SVG_PLANCHA, render_svg_plancha
 
 
 def _resultado_una_pieza() -> ResultadoAnidado:
@@ -210,8 +210,24 @@ def test_la_grilla_de_referencia_esta_presente_por_default_y_se_puede_apagar():
     con_grilla = render_svg_plancha(resultado, plancha, plancha_indice=0)
     sin_grilla = render_svg_plancha(resultado, plancha, plancha_indice=0, mostrar_grilla=False)
 
-    assert "grilla-referencia" in con_grilla
-    assert "grilla-referencia" not in sin_grilla
+    # El elemento real, no la sola palabra: el <style> incrustado
+    # menciona "grilla-referencia" en su propio selector CSS, así que
+    # sin esta distinción el caso "apagada" daría falso negativo.
+    assert '<g class="grilla-referencia">' in con_grilla
+    assert '<g class="grilla-referencia">' not in sin_grilla
+
+
+def test_el_svg_es_autocontenido_con_el_estilo_incrustado():
+    """Se sirve como archivo suelto (`image/svg+xml`, sin página que lo
+    envuelva) — sin el <style> adentro, el <rect> de la plancha se
+    pinta negro por default de SVG y tapa todo."""
+    resultado = _resultado_una_pieza()
+    plancha = Plancha(ancho_mm=Decimal("1000"), alto_mm=Decimal("1000"))
+
+    svg = render_svg_plancha(resultado, plancha, plancha_indice=0)
+
+    assert f"<style>{CSS_SVG_PLANCHA}</style>" in svg
+    assert svg.index("<style>") < svg.index('class="plancha"')
 
 
 def test_usa_el_id_base_de_la_pieza_expandida_para_buscar_la_geometria():
