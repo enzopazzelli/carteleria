@@ -22,11 +22,16 @@ export default function CosteoTab() {
   const duplicar = useDuplicarPresupuesto();
   const [presupuestoActivoId, setPresupuestoActivoId] = useState<number | null>(null);
   const { data: costeo } = useCosteo(id);
-  const recalcular = useRecalcularMateriales(presupuestoActivoId ?? -1);
   const [nombreCliente, setNombreCliente] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Antes de un click explícito en un chip, `presupuestoActivoId` sigue en
+  // null y el activo "de hecho" es el primero de la lista (ver el chip
+  // resaltado más abajo) — por eso `recalcular` tiene que usar
+  // `presupuestoActivo?.id`, no el estado crudo, o el primer click sobre
+  // "Recalcular materiales" apunta al id -1 y devuelve 404.
   const presupuestoActivo = presupuestos?.find((p) => p.id === presupuestoActivoId) ?? presupuestos?.[0];
+  const recalcular = useRecalcularMateriales(presupuestoActivo?.id ?? -1);
 
   function mensajeDeError(e: unknown, fallback: string): string {
     return e instanceof ApiError ? e.message : fallback;
