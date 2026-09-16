@@ -23,6 +23,10 @@ export default function CosteoTab() {
   const [presupuestoActivoId, setPresupuestoActivoId] = useState<number | null>(null);
   const { data: costeo } = useCosteo(id);
   const [nombreCliente, setNombreCliente] = useState("");
+  // "" = nada elegido todavía, "nuevo" = alta de cliente, o el id (como
+  // string) de un cliente existente — nunca se asume el primero de la
+  // lista: un trabajo nuevo puede ser de cualquier cliente.
+  const [clienteSeleccion, setClienteSeleccion] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   // Antes de un click explícito en un chip, `presupuestoActivoId` sigue en
@@ -40,12 +44,13 @@ export default function CosteoTab() {
   async function alCrearOpcion() {
     setError(null);
     try {
-      let clienteId = clientes?.[0]?.id;
-      if (!clienteId && nombreCliente.trim()) {
+      let clienteId: number;
+      if (clienteSeleccion === "nuevo") {
         const cliente = await crearCliente.mutateAsync(nombreCliente.trim());
         clienteId = cliente.id;
+      } else {
+        clienteId = Number(clienteSeleccion);
       }
-      if (!clienteId) return;
       const presupuesto = await crearPresupuesto.mutateAsync({ clienteId, validezDias: 15 });
       setPresupuestoActivoId(presupuesto.id);
     } catch (e) {
@@ -85,7 +90,22 @@ export default function CosteoTab() {
 
       {(!presupuestos || presupuestos.length === 0) && (
         <div className="mb-4 flex gap-2 items-center">
-          {(!clientes || clientes.length === 0) && (
+          <select
+            className="border border-line rounded px-2 py-2 bg-paper"
+            value={clienteSeleccion}
+            onChange={(e) => setClienteSeleccion(e.target.value)}
+          >
+            <option value="" disabled>
+              Elegí el cliente...
+            </option>
+            {clientes?.map((cliente) => (
+              <option key={cliente.id} value={cliente.id}>
+                {cliente.nombre}
+              </option>
+            ))}
+            <option value="nuevo">+ Cliente nuevo...</option>
+          </select>
+          {clienteSeleccion === "nuevo" && (
             <input
               className="border border-line rounded px-3 py-2 bg-paper"
               placeholder="Nombre del cliente"
@@ -93,7 +113,11 @@ export default function CosteoTab() {
               onChange={(e) => setNombreCliente(e.target.value)}
             />
           )}
-          <button className="bg-cut text-paper rounded px-4 py-2" onClick={alCrearOpcion}>
+          <button
+            className="bg-cut text-paper rounded px-4 py-2 disabled:opacity-50"
+            disabled={!clienteSeleccion || (clienteSeleccion === "nuevo" && !nombreCliente.trim())}
+            onClick={alCrearOpcion}
+          >
             Crear primera opción de presupuesto
           </button>
         </div>
