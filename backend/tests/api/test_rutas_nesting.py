@@ -300,6 +300,103 @@ def test_cors_permite_origen_del_frontend_local(cliente):
     assert respuesta.headers["access-control-allow-origin"] == "http://localhost:5173"
 
 
+# --- Anidado en huecos (Capa 2, opcional por flag) -------------------------
+
+
+def _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path) -> tuple[dict, dict]:
+    """Un grupo listo para anidar con dos piezas: una grande con un
+    agujero real de 60×60 mm, y una chica de 30×30 que entra adentro de
+    ese agujero. Es el caso mínimo que ejercita `anidado_huecos.py`."""
+    _material, formato = _material_con_formato_y_parametros(cliente)
+    trabajo = cliente.post("/trabajos", json={"nombre": "Con hueco"}).json()
+
+    documento = ezdxf.new()
+    espacio = documento.modelspace()
+    # Pieza grande (200×200) con agujero central de 60×60.
+    espacio.add_lwpolyline([(0, 0), (200, 0), (200, 200), (0, 200)], close=True)
+    espacio.add_lwpolyline([(70, 70), (130, 70), (130, 130), (70, 130)], close=True)
+    # Pieza chica (30×30), separada, para que el parser no la lea como agujero.
+    espacio.add_lwpolyline([(400, 0), (430, 0), (430, 30), (400, 30)], close=True)
+    ruta = tmp_path / "hueca.dxf"
+    documento.saveas(ruta)
+    cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("hueca.dxf", ruta.read_bytes(), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+
+    grupo = cliente.post(
+        f"/trabajos/{trabajo['id']}/grupos",
+        json={"nombre": "Grupo con hueco", "formato_id": formato["id"]},
+    ).json()
+    for pieza in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json():
+        cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    return trabajo, grupo
+
+
+def test_anidar_sin_el_flag_no_usa_huecos_y_guarda_la_opcion_en_falso(cliente, tmp_path):
+    """El default es apagado: el resultado tiene que ser el del motor
+    crudo, sin la advertencia de reubicación de la Capa 2."""
+    _trabajo, grupo = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
+    final = _esperar_estado(cliente, encolada.json()["id"])
+
+    assert final["estado"] == "lista"
+    assert final["opciones"] == {"usar_anidado_en_huecos": False}
+    assert not any("reubicada" in mensaje for mensaje in (final["mensajes"] or []))
+
+
+def test_anidar_con_el_flag_reubica_la_pieza_chica_dentro_del_agujero(cliente, tmp_path):
+    trabajo, grupo = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json={"usar_anidado_en_huecos": True})
+    final = _esperar_estado(cliente, encolada.json()["id"])
+
+    assert final["estado"] == "lista"
+    assert final["opciones"] == {"usar_anidado_en_huecos": True}
+    assert any("reubicada" in mensaje for mensaje in (final["mensajes"] or []))
+
+    piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    chica = next(p for p in piezas if Decimal(p["ancho_mm"]) == Decimal("30"))
+    grande = next(p for p in piezas if Decimal(p["ancho_mm"]) == Decimal("200"))
+    por_pieza = {
+        c["pieza_id"]: c for c in cliente.get(f"/ejecuciones/{encolada.json()['id']}/colocaciones").json()
+    }
+
+    # El centro de la chica cae adentro del bounding box de la grande.
+    # Dos piezas nunca pueden superponerse en un anidado válido, así que
+    # esto solo puede pasar si la chica está en el AGUJERO de la grande
+    # — que es exactamente lo que tiene que lograr la Capa 2.
+    centro_chica_x = Decimal(por_pieza[chica["id"]]["centro_x_mm"])
+    centro_chica_y = Decimal(por_pieza[chica["id"]]["centro_y_mm"])
+    centro_grande_x = Decimal(por_pieza[grande["id"]]["centro_x_mm"])
+    centro_grande_y = Decimal(por_pieza[grande["id"]]["centro_y_mm"])
+    media_grande = Decimal(grande["ancho_mm"]) / 2
+
+    assert abs(centro_chica_x - centro_grande_x) < media_grande
+    assert abs(centro_chica_y - centro_grande_y) < media_grande
+
+
+def test_el_aprovechamiento_no_cuenta_dos_veces_la_pieza_metida_en_el_hueco(cliente, tmp_path):
+    """Una pieza reubicada vive adentro del rectángulo de su
+    contenedora, que ya se contó — sumar las dos daría un porcentaje
+    inflado. Con el flag prendido el aprovechamiento nunca puede ser
+    MAYOR que sin él: la pieza chica dejó de ocupar lugar propio, no
+    "agregó" área."""
+    _trabajo_a, grupo_a = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+    sin_flag = cliente.post(f"/grupos/{grupo_a['id']}/anidar", json={}).json()["id"]
+    final_sin = _esperar_estado(cliente, sin_flag)
+
+    _trabajo_b, grupo_b = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+    con_flag = cliente.post(
+        f"/grupos/{grupo_b['id']}/anidar", json={"usar_anidado_en_huecos": True}
+    ).json()["id"]
+    final_con = _esperar_estado(cliente, con_flag)
+
+    assert Decimal(final_con["aprovechamiento_pct"]) <= Decimal(final_sin["aprovechamiento_pct"])
+
+
 # --- Listar historial de ejecuciones ------
 
 

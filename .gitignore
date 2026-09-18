@@ -13,6 +13,8 @@ venv/
 node_modules/
 .next/
 dist/
+# Cache incremental de `tsc -b` — se regenera solo en cada build
+*.tsbuildinfo
 
 # Archivos generados por el sistema (PDFs, planos, fotomontajes)
 media/

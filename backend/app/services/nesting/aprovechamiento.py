@@ -52,11 +52,30 @@ class ReporteAprovechamiento:
         return self.desperdicio_mm2 / _MM2_POR_M2
 
 
-def calcular_aprovechamiento(resultado: ResultadoAnidado, plancha: Plancha) -> ReporteAprovechamiento:
+def calcular_aprovechamiento(
+    resultado: ResultadoAnidado,
+    plancha: Plancha,
+    piezas_en_huecos: set[str] | None = None,
+) -> ReporteAprovechamiento:
     """`resultado` es un anidado ya ejecutado sobre `plancha`
-    (`MotorNestingRectangular.anidar`, CART-202/CART-203)."""
+    (`MotorNestingRectangular.anidar`, CART-202/CART-203).
+
+    `piezas_en_huecos` son los `pieza_id` que `anidado_huecos.py`
+    reubicó ADENTRO del agujero de otra pieza ya colocada. Su área no
+    se suma: el rectángulo de una pieza reubicada cae, a propósito,
+    dentro del rectángulo de su contenedora, que ya se contó — sumar
+    las dos da un porcentaje inflado que puede superar el 100%. No es
+    que esas piezas no ocupen material: es que el material que ocupan
+    ya estaba contado como parte de la contenedora, y lo que las hace
+    valiosas es justamente que NO consumen plancha adicional.
+    """
+    ids_en_huecos = piezas_en_huecos or set()
     area_piezas_mm2 = sum(
-        (posicion.ancho_colocado_mm * posicion.alto_colocado_mm for posicion in resultado.posiciones),
+        (
+            posicion.ancho_colocado_mm * posicion.alto_colocado_mm
+            for posicion in resultado.posiciones
+            if posicion.pieza_id not in ids_en_huecos
+        ),
         start=Decimal("0"),
     )
     area_total_planchas_mm2 = resultado.planchas_usadas * plancha.ancho_mm * plancha.alto_mm

@@ -26,12 +26,20 @@ from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
 from ..modelos.base import Sesion
 from ..modelos.catalogo import Formato
-from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte
+from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
+from ..services.nesting.anidado_huecos import anidar_en_huecos
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.comparador import OpcionFormato, comparar_formatos, formato_recomendado
 from ..services.nesting.engine import MotorNestingRectangular
-from ..services.nesting.models import ParametrosCorte, Plancha, RotacionPermitida
+from ..services.nesting.models import (
+    ParametrosCorte,
+    Plancha,
+    PosicionPieza,
+    ResultadoAnidado,
+    RotacionPermitida,
+)
 from ..services.nesting.models import Pieza as PiezaDominio
+from ..services.nesting.validacion_manual import GeometriaPieza
 from .dependencias import obtener_sesion
 from .esquemas_nesting import (
     AnidarCrear,
@@ -50,6 +58,32 @@ router = APIRouter(tags=["nesting"])
 # app/services/ingesta/dxf.py (PAR-06, PAR-38 como constantes con
 # comentario, no un valor repetido a ciegas).
 _TOPE_PLANCHAS_ADVERTENCIA = 500
+
+# PAR-39, provisorio — ver docs/REGISTRO.md. Un agujero más chico que
+# esto no vale la pena intentar llenarlo: ninguna pieza real entra.
+_AREA_MINIMA_HUECO_MM2 = Decimal("100")
+
+
+def _puntos_decimal(puntos: list) -> list[tuple[Decimal, Decimal]]:
+    return [(Decimal(x), Decimal(y)) for x, y in puntos]
+
+
+def geometria_desde_pieza(pieza: Pieza) -> GeometriaPieza:
+    """La geometría real de una `Pieza` persistida, como la esperan
+    `anidado_huecos.py` y `validacion_manual.py`.
+
+    Vive acá y no en `rutas_ajuste.py` (donde nació) porque ahora la
+    necesitan los dos: el ajuste manual para validar una posición, y el
+    anidado para la segunda pasada en huecos. Es la misma conversión —
+    tenerla dos veces es cómo las dos capas terminan discrepando sobre
+    qué forma tiene una pieza.
+    """
+    return GeometriaPieza(
+        ancho_mm=pieza.ancho_mm,
+        alto_mm=pieza.alto_mm,
+        contorno_local_mm=_puntos_decimal(pieza.contorno_mm),
+        agujeros_local_mm=[_puntos_decimal(agujero) for agujero in pieza.agujeros_mm],
+    )
 
 
 def _ejecucion_o_404(sesion: Session, ejecucion_id: int) -> EjecucionNesting:
@@ -103,6 +137,81 @@ def _parametros_snapshot(params: ParametrosCorte) -> dict:
     }
 
 
+def _misma_ubicacion(a: PosicionPieza, b: PosicionPieza) -> bool:
+    """Si una pieza quedó exactamente donde estaba — deliberadamente SIN
+    mirar `plancha_indice`.
+
+    `anidar_en_huecos` reindexa las planchas cuando alguna queda vacía
+    (todas sus piezas terminaron adentro de huecos de otra), así que una
+    pieza que no se movió ni un milímetro puede igualmente cambiar de
+    índice de plancha. Comparar el objeto entero haría pasar por
+    "reubicada" a media plancha intacta, y su área quedaría fuera del
+    aprovechamiento.
+    """
+    return (
+        a.x_mm == b.x_mm
+        and a.y_mm == b.y_mm
+        and a.ancho_colocado_mm == b.ancho_colocado_mm
+        and a.alto_colocado_mm == b.alto_colocado_mm
+        and a.rotada_90 == b.rotada_90
+        and a.angulo_libre_grados == b.angulo_libre_grados
+    )
+
+
+def _con_anidado_en_huecos(
+    grupo: GrupoDeCorte,
+    resultado: ResultadoAnidado,
+    plancha: Plancha,
+    params: ParametrosCorte,
+) -> tuple[ResultadoAnidado, set[str]]:
+    """Segunda pasada opcional (Capa 2, `anidado_huecos.py`): reubica
+    piezas ya anidadas adentro de agujeros reales de otras piezas.
+
+    Devuelve `(resultado, ids_reubicadas)`. Los ids los necesita
+    `calcular_aprovechamiento` para no contar dos veces el área de una
+    pieza que ahora vive adentro del rectángulo de su contenedora.
+
+    Una pieza sin contorno real (cargada a mano, `CART-201`) no aporta
+    geometría: no puede ser contenedora (un rectángulo liso no tiene
+    agujeros). `anidar_en_huecos` igual la considera como candidata y
+    para detectar colisiones, usando su bounding box.
+    """
+    geometrias = {
+        str(pieza.id): geometria_desde_pieza(pieza)
+        for pieza in grupo.piezas
+        if not pieza.descartada and pieza.contorno_mm
+    }
+    if not geometrias:
+        return resultado, set()
+
+    antes = {p.pieza_id: p for p in resultado.posiciones}
+    nuevo = anidar_en_huecos(resultado, geometrias, plancha, params, _AREA_MINIMA_HUECO_MM2)
+    reubicadas = {
+        p.pieza_id
+        for p in nuevo.posiciones
+        if p.pieza_id in antes and not _misma_ubicacion(p, antes[p.pieza_id])
+    }
+    if not reubicadas:
+        return resultado, set()
+
+    # Lista nueva, no `insert` sobre la que viene: `anidar_en_huecos`
+    # reusa por referencia la lista de advertencias del resultado de
+    # entrada, así que mutarla escribiría también sobre el resultado
+    # original del motor.
+    aviso = (
+        f"{len(reubicadas)} pieza(s) reubicada(s) dentro de agujeros de otras piezas "
+        "— no consumen plancha adicional."
+    )
+    return (
+        ResultadoAnidado(
+            posiciones=nuevo.posiciones,
+            planchas_usadas=nuevo.planchas_usadas,
+            advertencias=[aviso, *nuevo.advertencias],
+        ),
+        reubicadas,
+    )
+
+
 def _ejecutar_anidado(ejecucion_id: int) -> None:
     """La tarea que corre en la cola (un hilo, hoy). Necesita su PROPIA
     sesión: la del request que encoló ya se cerró para cuando esto
@@ -116,11 +225,16 @@ def _ejecutar_anidado(ejecucion_id: int) -> None:
         sesion.commit()
 
         inicio = time.monotonic()
+        piezas_en_huecos: set[str] = set()
         try:
             plancha, params, piezas = _datos_para_anidar(sesion, ejecucion.grupo)
             resultado = MotorNestingRectangular(plancha, params).anidar(
                 piezas, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
             )
+            if (ejecucion.opciones or {}).get("usar_anidado_en_huecos"):
+                resultado, piezas_en_huecos = _con_anidado_en_huecos(
+                    ejecucion.grupo, resultado, plancha, params
+                )
         except Exception as error:  # noqa: BLE001 - cualquier falla del motor se reporta, no se pierde
             sesion.refresh(ejecucion)
             if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
@@ -135,7 +249,7 @@ def _ejecutar_anidado(ejecucion_id: int) -> None:
         if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
             return  # se canceló mientras corría: se descarta el resultado, no se persiste nada
 
-        aprovechamiento = calcular_aprovechamiento(resultado, plancha)
+        aprovechamiento = calcular_aprovechamiento(resultado, plancha, piezas_en_huecos)
         for posicion in resultado.posiciones:
             pieza_id_str, instancia_str = posicion.pieza_id.split("#")
             angulo = (
@@ -183,7 +297,14 @@ def anidar(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
 
     ejecucion = EjecucionNesting(
-        grupo_id=grupo_id, motor=datos.motor, estado=EstadoEjecucion.ENCOLADA.value
+        grupo_id=grupo_id,
+        motor=datos.motor,
+        estado=EstadoEjecucion.ENCOLADA.value,
+        # En `opciones` (no como argumento del hilo) para que quede
+        # persistido junto al resultado: mirando una ejecución vieja se
+        # puede saber con qué opciones se generó ese layout, que es lo
+        # mismo que ya hace `parametros` con los PAR-01..04.
+        opciones={"usar_anidado_en_huecos": datos.usar_anidado_en_huecos},
     )
     sesion.add(ejecucion)
     sesion.commit()
