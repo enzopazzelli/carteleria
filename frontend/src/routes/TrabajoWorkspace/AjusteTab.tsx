@@ -124,7 +124,9 @@ export default function AjusteTab() {
 
           {colocacionSeleccionada && (
             <div className="flex items-center gap-2 mb-3 text-sm">
-              <span className="text-ink/60">Pieza seleccionada — rotar:</span>
+              <span className="text-ink/60">
+                Rueda del mouse para rotar (Shift = más fino), o:
+              </span>
               <button
                 className="border border-line rounded px-2 py-1 hover:bg-line/40"
                 onClick={() => alRotarSeleccionada(-90)}

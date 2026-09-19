@@ -17,6 +17,7 @@ function PanelDeGrupo({ grupoId, nombre }: { grupoId: number; nombre: string }) 
   const [ejecucionEnCurso, setEjecucionEnCurso] = useState<number | null>(null);
   const { data: enCurso } = useEjecucion(ejecucionEnCurso);
   const [error, setError] = useState<string | null>(null);
+  const [usarHuecos, setUsarHuecos] = useState(false);
 
   // El polling de useEjecucion vive en una query aparte ("ejecucion", no
   // "ejecuciones") — sin este efecto, la fila del historial se queda
@@ -31,7 +32,7 @@ function PanelDeGrupo({ grupoId, nombre }: { grupoId: number; nombre: string }) 
   async function alAnidar() {
     setError(null);
     try {
-      const ejecucion = await anidar.mutateAsync();
+      const ejecucion = await anidar.mutateAsync(usarHuecos);
       setEjecucionEnCurso(ejecucion.id);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "No se pudo anidar.");
@@ -51,9 +52,22 @@ function PanelDeGrupo({ grupoId, nombre }: { grupoId: number; nombre: string }) 
     <div className="border border-line rounded p-4 mb-4">
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-medium">{nombre}</h3>
-        <button className="bg-cut text-paper rounded px-3 py-1 text-sm" onClick={alAnidar}>
-          Anidar
-        </button>
+        <div className="flex items-center gap-3">
+          <label
+            className="text-xs flex items-center gap-1 cursor-pointer"
+            title="Segunda pasada: mete piezas chicas adentro de los agujeros de otras piezas, así no ocupan plancha propia."
+          >
+            <input
+              type="checkbox"
+              checked={usarHuecos}
+              onChange={(e) => setUsarHuecos(e.target.checked)}
+            />
+            Aprovechar huecos
+          </label>
+          <button className="bg-cut text-paper rounded px-3 py-1 text-sm" onClick={alAnidar}>
+            Anidar
+          </button>
+        </div>
       </div>
 
       {error && <Banner variante="error">{error}</Banner>}

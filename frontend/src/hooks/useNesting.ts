@@ -33,7 +33,7 @@ export function useEjecucionesDeGrupo(grupoId: number) {
 export function useAnidar(grupoId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => anidar(grupoId),
+    mutationFn: (usarAnidadoEnHuecos: boolean = false) => anidar(grupoId, usarAnidadoEnHuecos),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ejecuciones", grupoId] }),
   });
 }

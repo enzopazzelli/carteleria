@@ -14,8 +14,11 @@ export interface Ejecucion {
   creado_en: string;
 }
 
-export function anidar(grupoId: number): Promise<Ejecucion> {
-  return apiPost<Ejecucion>(`/grupos/${grupoId}/anidar`, { motor: "rectpack" });
+export function anidar(grupoId: number, usarAnidadoEnHuecos = false): Promise<Ejecucion> {
+  return apiPost<Ejecucion>(`/grupos/${grupoId}/anidar`, {
+    motor: "rectpack",
+    usar_anidado_en_huecos: usarAnidadoEnHuecos,
+  });
 }
 
 export function obtenerEjecucion(ejecucionId: number): Promise<Ejecucion> {

@@ -29,6 +29,11 @@ export default function GruposTab() {
   const [candidatos, setCandidatos] = useState<number[]>([]);
   const [resultado, setResultado] = useState<OpcionFormato[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [seleccionadas, setSeleccionadas] = useState<Set<number>>(new Set());
+  // Última pieza tildada a mano: el ancla desde la que shift-click
+  // selecciona todo el rango intermedio.
+  const [anclaSeleccion, setAnclaSeleccion] = useState<number | null>(null);
+  const [grupoDestino, setGrupoDestino] = useState("");
 
   const sinAsignar = piezas?.filter((p) => p.grupo_id === null && !p.descartada) ?? [];
 
@@ -51,12 +56,53 @@ export default function GruposTab() {
     }
   }
 
-  async function alAsignarPieza(piezaId: number, grupoId: number) {
+  function alTildarPieza(piezaId: number, tildada: boolean, conShift: boolean) {
+    setSeleccionadas((previas) => {
+      const nuevas = new Set(previas);
+      // Shift-click: aplica el mismo estado (tildar o destildar) a todo
+      // el rango entre el ancla y esta pieza, en el orden en que están
+      // listadas — no en orden de id, que puede no coincidir.
+      if (conShift && anclaSeleccion !== null) {
+        const ids = sinAsignar.map((p) => p.id);
+        const desde = ids.indexOf(anclaSeleccion);
+        const hasta = ids.indexOf(piezaId);
+        if (desde !== -1 && hasta !== -1) {
+          const [inicio, fin] = desde <= hasta ? [desde, hasta] : [hasta, desde];
+          for (const id of ids.slice(inicio, fin + 1)) {
+            if (tildada) nuevas.add(id);
+            else nuevas.delete(id);
+          }
+          return nuevas;
+        }
+      }
+      if (tildada) nuevas.add(piezaId);
+      else nuevas.delete(piezaId);
+      return nuevas;
+    });
+    setAnclaSeleccion(piezaId);
+  }
+
+  function alTildarTodas(tildadas: boolean) {
+    setSeleccionadas(tildadas ? new Set(sinAsignar.map((p) => p.id)) : new Set());
+    setAnclaSeleccion(null);
+  }
+
+  async function alMoverSeleccionadas() {
+    if (!grupoDestino || seleccionadas.size === 0) return;
     setError(null);
+    const grupoId = Number(grupoDestino);
     try {
-      await asignarPieza.mutateAsync({ piezaId, grupoId });
+      // En serie y no en paralelo: son PATCH sobre la misma tabla y el
+      // backend corre sobre SQLite (un solo escritor). Con pocas piezas
+      // la diferencia no se nota, y así un fallo a mitad de camino deja
+      // un estado entendible en vez de varias escrituras compitiendo.
+      for (const piezaId of seleccionadas) {
+        await asignarPieza.mutateAsync({ piezaId, grupoId });
+      }
+      setSeleccionadas(new Set());
+      setAnclaSeleccion(null);
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo mover la pieza."));
+      setError(mensajeDeError(e, "No se pudieron mover todas las piezas."));
     }
   }
 
@@ -106,24 +152,70 @@ export default function GruposTab() {
       {sinAsignar.length > 0 && (
         <div className="mb-6">
           <h2 className="font-medium mb-2">Piezas sin asignar ({sinAsignar.length})</h2>
-          <ul className="text-sm">
+
+          <div className="flex items-center gap-2 mb-2 text-sm">
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={seleccionadas.size === sinAsignar.length && sinAsignar.length > 0}
+                // Marca el cuadrito a medio llenar cuando hay algunas
+                // tildadas pero no todas — si no, "todas" y "algunas"
+                // se ven igual de destildadas.
+                ref={(nodo) => {
+                  if (nodo) {
+                    nodo.indeterminate =
+                      seleccionadas.size > 0 && seleccionadas.size < sinAsignar.length;
+                  }
+                }}
+                onChange={(e) => alTildarTodas(e.target.checked)}
+              />
+              Seleccionar todas
+            </label>
+            <span className="text-ink/60">
+              {seleccionadas.size > 0 ? `${seleccionadas.size} seleccionada(s)` : "shift-click para un rango"}
+            </span>
+
+            <select
+              className="border border-line rounded px-2 py-1 bg-paper ml-auto"
+              value={grupoDestino}
+              onChange={(e) => setGrupoDestino(e.target.value)}
+            >
+              <option value="">Mover a grupo...</option>
+              {grupos?.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.nombre}
+                </option>
+              ))}
+            </select>
+            <button
+              className="bg-cut text-paper rounded px-3 py-1 disabled:opacity-50"
+              disabled={!grupoDestino || seleccionadas.size === 0 || asignarPieza.isPending}
+              onClick={alMoverSeleccionadas}
+            >
+              Mover {seleccionadas.size > 0 ? seleccionadas.size : ""}
+            </button>
+          </div>
+
+          <ul className="text-sm border border-line rounded divide-y divide-line">
             {sinAsignar.map((pieza) => (
-              <li key={pieza.id} className="flex items-center gap-2 py-1">
-                <span>{pieza.id_origen}</span>
-                <select
-                  className="border border-line rounded px-2 py-1 bg-paper"
-                  defaultValue=""
-                  onChange={(e) => e.target.value && alAsignarPieza(pieza.id, Number(e.target.value))}
-                >
-                  <option value="" disabled>
-                    Mover a grupo...
-                  </option>
-                  {grupos?.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.nombre}
-                    </option>
-                  ))}
-                </select>
+              <li key={pieza.id}>
+                <label className="flex items-center gap-2 py-1 px-2 cursor-pointer hover:bg-line/30">
+                  <input
+                    type="checkbox"
+                    checked={seleccionadas.has(pieza.id)}
+                    onChange={(e) =>
+                      alTildarPieza(
+                        pieza.id,
+                        e.target.checked,
+                        (e.nativeEvent as MouseEvent).shiftKey,
+                      )
+                    }
+                  />
+                  <span>{pieza.id_origen}</span>
+                  <span className="font-mono text-ink/60">
+                    {pieza.ancho_mm}×{pieza.alto_mm} mm
+                  </span>
+                </label>
               </li>
             ))}
           </ul>
