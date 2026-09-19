@@ -158,31 +158,37 @@ def _misma_ubicacion(a: PosicionPieza, b: PosicionPieza) -> bool:
     )
 
 
-def _con_anidado_en_huecos(
-    grupo: GrupoDeCorte,
-    resultado: ResultadoAnidado,
-    plancha: Plancha,
-    params: ParametrosCorte,
-) -> tuple[ResultadoAnidado, set[str]]:
-    """Segunda pasada opcional (Capa 2, `anidado_huecos.py`): reubica
-    piezas ya anidadas adentro de agujeros reales de otras piezas.
+def _geometrias_del_grupo(grupo: GrupoDeCorte) -> dict[str, GeometriaPieza]:
+    """Las formas reales de las piezas del grupo, por id base.
 
-    Devuelve `(resultado, ids_reubicadas)`. Los ids los necesita
-    `calcular_aprovechamiento` para no contar dos veces el área de una
-    pieza que ahora vive adentro del rectángulo de su contenedora.
-
-    Una pieza sin contorno real (cargada a mano, `CART-201`) no aporta
-    geometría: no puede ser contenedora (un rectángulo liso no tiene
-    agujeros). `anidar_en_huecos` igual la considera como candidata y
-    para detectar colisiones, usando su bounding box.
+    Una pieza cargada a mano (`CART-201`) no tiene contorno: queda
+    afuera, y quien la reciba la trata por su rectángulo — no puede ser
+    contenedora de nada (un rectángulo liso no tiene agujeros) ni se le
+    puede medir un área real distinta de su bbox.
     """
-    geometrias = {
+    return {
         str(pieza.id): geometria_desde_pieza(pieza)
         for pieza in grupo.piezas
         if not pieza.descartada and pieza.contorno_mm
     }
+
+
+def _con_anidado_en_huecos(
+    geometrias: dict[str, GeometriaPieza],
+    resultado: ResultadoAnidado,
+    plancha: Plancha,
+    params: ParametrosCorte,
+) -> ResultadoAnidado:
+    """Segunda pasada opcional (Capa 2, `anidado_huecos.py`): reubica
+    piezas ya anidadas adentro de agujeros reales de otras piezas.
+
+    No hace falta avisarle nada a `calcular_aprovechamiento` sobre qué
+    piezas se reubicaron: midiendo área real de polígono, la contenedora
+    no reclama su propio agujero como material, así que la pieza de
+    adentro suma lo suyo sin contarse dos veces.
+    """
     if not geometrias:
-        return resultado, set()
+        return resultado
 
     antes = {p.pieza_id: p for p in resultado.posiciones}
     nuevo = anidar_en_huecos(resultado, geometrias, plancha, params, _AREA_MINIMA_HUECO_MM2)
@@ -192,7 +198,7 @@ def _con_anidado_en_huecos(
         if p.pieza_id in antes and not _misma_ubicacion(p, antes[p.pieza_id])
     }
     if not reubicadas:
-        return resultado, set()
+        return resultado
 
     # Lista nueva, no `insert` sobre la que viene: `anidar_en_huecos`
     # reusa por referencia la lista de advertencias del resultado de
@@ -202,13 +208,10 @@ def _con_anidado_en_huecos(
         f"{len(reubicadas)} pieza(s) reubicada(s) dentro de agujeros de otras piezas "
         "— no consumen plancha adicional."
     )
-    return (
-        ResultadoAnidado(
-            posiciones=nuevo.posiciones,
-            planchas_usadas=nuevo.planchas_usadas,
-            advertencias=[aviso, *nuevo.advertencias],
-        ),
-        reubicadas,
+    return ResultadoAnidado(
+        posiciones=nuevo.posiciones,
+        planchas_usadas=nuevo.planchas_usadas,
+        advertencias=[aviso, *nuevo.advertencias],
     )
 
 
@@ -225,16 +228,17 @@ def _ejecutar_anidado(ejecucion_id: int) -> None:
         sesion.commit()
 
         inicio = time.monotonic()
-        piezas_en_huecos: set[str] = set()
+        geometrias: dict[str, GeometriaPieza] = {}
         try:
             plancha, params, piezas = _datos_para_anidar(sesion, ejecucion.grupo)
+            # Se arman una sola vez: las usan tanto la segunda pasada en
+            # huecos como la medición de aprovechamiento por área real.
+            geometrias = _geometrias_del_grupo(ejecucion.grupo)
             resultado = MotorNestingRectangular(plancha, params).anidar(
                 piezas, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
             )
             if (ejecucion.opciones or {}).get("usar_anidado_en_huecos"):
-                resultado, piezas_en_huecos = _con_anidado_en_huecos(
-                    ejecucion.grupo, resultado, plancha, params
-                )
+                resultado = _con_anidado_en_huecos(geometrias, resultado, plancha, params)
         except Exception as error:  # noqa: BLE001 - cualquier falla del motor se reporta, no se pierde
             sesion.refresh(ejecucion)
             if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
@@ -249,7 +253,7 @@ def _ejecutar_anidado(ejecucion_id: int) -> None:
         if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
             return  # se canceló mientras corría: se descarta el resultado, no se persiste nada
 
-        aprovechamiento = calcular_aprovechamiento(resultado, plancha, piezas_en_huecos)
+        aprovechamiento = calcular_aprovechamiento(resultado, plancha, geometrias)
         for posicion in resultado.posiciones:
             pieza_id_str, instancia_str = posicion.pieza_id.split("#")
             angulo = (

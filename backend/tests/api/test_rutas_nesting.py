@@ -378,12 +378,18 @@ def test_anidar_con_el_flag_reubica_la_pieza_chica_dentro_del_agujero(cliente, t
     assert abs(centro_chica_y - centro_grande_y) < media_grande
 
 
-def test_el_aprovechamiento_no_cuenta_dos_veces_la_pieza_metida_en_el_hueco(cliente, tmp_path):
-    """Una pieza reubicada vive adentro del rectángulo de su
-    contenedora, que ya se contó — sumar las dos daría un porcentaje
-    inflado. Con el flag prendido el aprovechamiento nunca puede ser
-    MAYOR que sin él: la pieza chica dejó de ocupar lugar propio, no
-    "agregó" área."""
+def test_meter_una_pieza_en_un_hueco_no_cambia_el_aprovechamiento_si_no_ahorra_plancha(
+    cliente, tmp_path
+):
+    """El aprovechamiento mide material cortado sobre plancha
+    consumida. Reubicar una pieza dentro de un agujero no cambia cuánto
+    material se corta — solo cuánta plancha hace falta. Si las dos
+    corridas usan la misma cantidad de planchas, el porcentaje tiene que
+    dar EXACTAMENTE igual.
+
+    Es la prueba de que la métrica mide área real de polígono: midiendo
+    por rectángulo, la contenedora reclamaba su propio agujero como
+    material suyo y el número se movía sin que cambiara nada físico."""
     _trabajo_a, grupo_a = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
     sin_flag = cliente.post(f"/grupos/{grupo_a['id']}/anidar", json={}).json()["id"]
     final_sin = _esperar_estado(cliente, sin_flag)
@@ -394,7 +400,8 @@ def test_el_aprovechamiento_no_cuenta_dos_veces_la_pieza_metida_en_el_hueco(clie
     ).json()["id"]
     final_con = _esperar_estado(cliente, con_flag)
 
-    assert Decimal(final_con["aprovechamiento_pct"]) <= Decimal(final_sin["aprovechamiento_pct"])
+    assert final_con["planchas_usadas"] == final_sin["planchas_usadas"]
+    assert Decimal(final_con["aprovechamiento_pct"]) == Decimal(final_sin["aprovechamiento_pct"])
 
 
 # --- Listar historial de ejecuciones ------
