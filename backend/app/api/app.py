@@ -15,6 +15,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from ..modelos.base import inicializar
 from .rutas_ajuste import router as router_ajuste
@@ -36,6 +37,18 @@ app = FastAPI(
     title="Cartelería — catálogo y nesting (en construcción)",
     lifespan=_ciclo_de_vida,
 )
+
+# Único origen permitido: el dev server de Vite del frontend interno
+# (docs/superpowers/specs/2026-09-15-frontend-cotizador-design.md). No se
+# amplía a "*" ni a una lista: esta API sigue sin autenticación y solo
+# corre en localhost (ver el docstring de este módulo).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(router_catalogo)
 app.include_router(router_trabajos)
 app.include_router(router_nesting)

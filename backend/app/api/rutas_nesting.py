@@ -26,16 +26,27 @@ from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
 from ..modelos.base import Sesion
 from ..modelos.catalogo import Formato
-from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte
+from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
+from ..services.nesting.anidado_huecos import anidar_en_huecos
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
+from ..services.nesting.comparador import OpcionFormato, comparar_formatos, formato_recomendado
 from ..services.nesting.engine import MotorNestingRectangular
-from ..services.nesting.models import ParametrosCorte, Plancha, RotacionPermitida
+from ..services.nesting.models import (
+    ParametrosCorte,
+    Plancha,
+    PosicionPieza,
+    ResultadoAnidado,
+    RotacionPermitida,
+)
 from ..services.nesting.models import Pieza as PiezaDominio
+from ..services.nesting.validacion_manual import GeometriaPieza
 from .dependencias import obtener_sesion
 from .esquemas_nesting import (
     AnidarCrear,
     ColocacionLeer,
+    ComparacionFormatosCrear,
     EjecucionLeer,
+    OpcionFormatoLeer,
     ResumenMaterialesLeer,
 )
 from .rutas_trabajos import _grupo_o_404, _trabajo_o_404
@@ -47,6 +58,32 @@ router = APIRouter(tags=["nesting"])
 # app/services/ingesta/dxf.py (PAR-06, PAR-38 como constantes con
 # comentario, no un valor repetido a ciegas).
 _TOPE_PLANCHAS_ADVERTENCIA = 500
+
+# PAR-39, provisorio — ver docs/REGISTRO.md. Un agujero más chico que
+# esto no vale la pena intentar llenarlo: ninguna pieza real entra.
+_AREA_MINIMA_HUECO_MM2 = Decimal("100")
+
+
+def _puntos_decimal(puntos: list) -> list[tuple[Decimal, Decimal]]:
+    return [(Decimal(x), Decimal(y)) for x, y in puntos]
+
+
+def geometria_desde_pieza(pieza: Pieza) -> GeometriaPieza:
+    """La geometría real de una `Pieza` persistida, como la esperan
+    `anidado_huecos.py` y `validacion_manual.py`.
+
+    Vive acá y no en `rutas_ajuste.py` (donde nació) porque ahora la
+    necesitan los dos: el ajuste manual para validar una posición, y el
+    anidado para la segunda pasada en huecos. Es la misma conversión —
+    tenerla dos veces es cómo las dos capas terminan discrepando sobre
+    qué forma tiene una pieza.
+    """
+    return GeometriaPieza(
+        ancho_mm=pieza.ancho_mm,
+        alto_mm=pieza.alto_mm,
+        contorno_local_mm=_puntos_decimal(pieza.contorno_mm),
+        agujeros_local_mm=[_puntos_decimal(agujero) for agujero in pieza.agujeros_mm],
+    )
 
 
 def _ejecucion_o_404(sesion: Session, ejecucion_id: int) -> EjecucionNesting:
@@ -100,6 +137,84 @@ def _parametros_snapshot(params: ParametrosCorte) -> dict:
     }
 
 
+def _misma_ubicacion(a: PosicionPieza, b: PosicionPieza) -> bool:
+    """Si una pieza quedó exactamente donde estaba — deliberadamente SIN
+    mirar `plancha_indice`.
+
+    `anidar_en_huecos` reindexa las planchas cuando alguna queda vacía
+    (todas sus piezas terminaron adentro de huecos de otra), así que una
+    pieza que no se movió ni un milímetro puede igualmente cambiar de
+    índice de plancha. Comparar el objeto entero haría pasar por
+    "reubicada" a media plancha intacta, y su área quedaría fuera del
+    aprovechamiento.
+    """
+    return (
+        a.x_mm == b.x_mm
+        and a.y_mm == b.y_mm
+        and a.ancho_colocado_mm == b.ancho_colocado_mm
+        and a.alto_colocado_mm == b.alto_colocado_mm
+        and a.rotada_90 == b.rotada_90
+        and a.angulo_libre_grados == b.angulo_libre_grados
+    )
+
+
+def _geometrias_del_grupo(grupo: GrupoDeCorte) -> dict[str, GeometriaPieza]:
+    """Las formas reales de las piezas del grupo, por id base.
+
+    Una pieza cargada a mano (`CART-201`) no tiene contorno: queda
+    afuera, y quien la reciba la trata por su rectángulo — no puede ser
+    contenedora de nada (un rectángulo liso no tiene agujeros) ni se le
+    puede medir un área real distinta de su bbox.
+    """
+    return {
+        str(pieza.id): geometria_desde_pieza(pieza)
+        for pieza in grupo.piezas
+        if not pieza.descartada and pieza.contorno_mm
+    }
+
+
+def _con_anidado_en_huecos(
+    geometrias: dict[str, GeometriaPieza],
+    resultado: ResultadoAnidado,
+    plancha: Plancha,
+    params: ParametrosCorte,
+) -> ResultadoAnidado:
+    """Segunda pasada opcional (Capa 2, `anidado_huecos.py`): reubica
+    piezas ya anidadas adentro de agujeros reales de otras piezas.
+
+    No hace falta avisarle nada a `calcular_aprovechamiento` sobre qué
+    piezas se reubicaron: midiendo área real de polígono, la contenedora
+    no reclama su propio agujero como material, así que la pieza de
+    adentro suma lo suyo sin contarse dos veces.
+    """
+    if not geometrias:
+        return resultado
+
+    antes = {p.pieza_id: p for p in resultado.posiciones}
+    nuevo = anidar_en_huecos(resultado, geometrias, plancha, params, _AREA_MINIMA_HUECO_MM2)
+    reubicadas = {
+        p.pieza_id
+        for p in nuevo.posiciones
+        if p.pieza_id in antes and not _misma_ubicacion(p, antes[p.pieza_id])
+    }
+    if not reubicadas:
+        return resultado
+
+    # Lista nueva, no `insert` sobre la que viene: `anidar_en_huecos`
+    # reusa por referencia la lista de advertencias del resultado de
+    # entrada, así que mutarla escribiría también sobre el resultado
+    # original del motor.
+    aviso = (
+        f"{len(reubicadas)} pieza(s) reubicada(s) dentro de agujeros de otras piezas "
+        "— no consumen plancha adicional."
+    )
+    return ResultadoAnidado(
+        posiciones=nuevo.posiciones,
+        planchas_usadas=nuevo.planchas_usadas,
+        advertencias=[aviso, *nuevo.advertencias],
+    )
+
+
 def _ejecutar_anidado(ejecucion_id: int) -> None:
     """La tarea que corre en la cola (un hilo, hoy). Necesita su PROPIA
     sesión: la del request que encoló ya se cerró para cuando esto
@@ -113,11 +228,17 @@ def _ejecutar_anidado(ejecucion_id: int) -> None:
         sesion.commit()
 
         inicio = time.monotonic()
+        geometrias: dict[str, GeometriaPieza] = {}
         try:
             plancha, params, piezas = _datos_para_anidar(sesion, ejecucion.grupo)
+            # Se arman una sola vez: las usan tanto la segunda pasada en
+            # huecos como la medición de aprovechamiento por área real.
+            geometrias = _geometrias_del_grupo(ejecucion.grupo)
             resultado = MotorNestingRectangular(plancha, params).anidar(
                 piezas, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
             )
+            if (ejecucion.opciones or {}).get("usar_anidado_en_huecos"):
+                resultado = _con_anidado_en_huecos(geometrias, resultado, plancha, params)
         except Exception as error:  # noqa: BLE001 - cualquier falla del motor se reporta, no se pierde
             sesion.refresh(ejecucion)
             if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
@@ -132,7 +253,7 @@ def _ejecutar_anidado(ejecucion_id: int) -> None:
         if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
             return  # se canceló mientras corría: se descarta el resultado, no se persiste nada
 
-        aprovechamiento = calcular_aprovechamiento(resultado, plancha)
+        aprovechamiento = calcular_aprovechamiento(resultado, plancha, geometrias)
         for posicion in resultado.posiciones:
             pieza_id_str, instancia_str = posicion.pieza_id.split("#")
             angulo = (
@@ -180,7 +301,14 @@ def anidar(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
 
     ejecucion = EjecucionNesting(
-        grupo_id=grupo_id, motor=datos.motor, estado=EstadoEjecucion.ENCOLADA.value
+        grupo_id=grupo_id,
+        motor=datos.motor,
+        estado=EstadoEjecucion.ENCOLADA.value,
+        # En `opciones` (no como argumento del hilo) para que quede
+        # persistido junto al resultado: mirando una ejecución vieja se
+        # puede saber con qué opciones se generó ese layout, que es lo
+        # mismo que ya hace `parametros` con los PAR-01..04.
+        opciones={"usar_anidado_en_huecos": datos.usar_anidado_en_huecos},
     )
     sesion.add(ejecucion)
     sesion.commit()
@@ -201,6 +329,20 @@ def listar_colocaciones(
 ) -> list[Colocacion]:
     _ejecucion_o_404(sesion, ejecucion_id)
     consulta = select(Colocacion).where(Colocacion.ejecucion_id == ejecucion_id)
+    return list(sesion.execute(consulta).scalars().all())
+
+
+@router.get("/grupos/{grupo_id}/ejecuciones", response_model=list[EjecucionLeer])
+def listar_ejecuciones(grupo_id: int, sesion: Session = Depends(obtener_sesion)) -> list[EjecucionNesting]:
+    """Historial de anidados de un grupo — comparar aprovechamiento y
+    planchas entre corridas (motor, parámetros) antes de marcar una
+    definitiva. La más reciente primero."""
+    _grupo_o_404(sesion, grupo_id)
+    consulta = (
+        select(EjecucionNesting)
+        .where(EjecucionNesting.grupo_id == grupo_id)
+        .order_by(EjecucionNesting.id.desc())
+    )
     return list(sesion.execute(consulta).scalars().all())
 
 
@@ -252,3 +394,86 @@ def obtener_costeo(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -
     cambia, esto solo lo expone por HTTP."""
     _trabajo_o_404(sesion, trabajo_id)
     return ResumenMaterialesLeer.model_validate(resumen_materiales(sesion, trabajo_id))
+
+
+@router.post("/grupos/{grupo_id}/comparar-formatos", response_model=list[OpcionFormatoLeer])
+def comparar_formatos_de_grupo(
+    grupo_id: int, datos: ComparacionFormatosCrear, sesion: Session = Depends(obtener_sesion)
+) -> list[OpcionFormatoLeer]:
+    """Compara las piezas de un grupo contra varios formatos candidatos
+    SIN persistir nada — ni tocar `grupo.formato_id` ni crear una
+    `EjecucionNesting`. Es el paso previo a elegir un material cuando
+    se quiere ofrecer una variante más económica o en otro material
+    (`docs/superpowers/specs/2026-09-15-frontend-cotizador-design.md §5.2`).
+    """
+    grupo = _grupo_o_404(sesion, grupo_id)
+    piezas = [p for p in grupo.piezas if not p.descartada]
+    if not piezas:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"El grupo «{grupo.nombre}» no tiene piezas para comparar.")
+    if not datos.formato_ids:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Hace falta indicar al menos un formato para comparar.")
+    piezas_dominio = [
+        PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad) for p in piezas
+    ]
+
+    opciones: list[OpcionFormato] = []
+    formatos: list[Formato] = []
+    for formato_id in datos.formato_ids:
+        formato = sesion.get(Formato, formato_id)
+        if formato is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el formato {formato_id}.")
+        material = formato.material
+        if material.parametros is None:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105).",
+            )
+        # Dos causas distintas de "no se puede calcular un precio por
+        # plancha" (ver costeo.py::_linea_de_grupo, misma distinción):
+        # sin precio cargado, o vendido por una unidad que no es m².
+        # Fusionarlas en un solo mensaje es engañoso — cuando la unidad
+        # YA es «M2» pero falta el precio, decir "se vende por «M2», no
+        # por m²" es contradictorio.
+        if formato.costo_unidad_venta is None:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"El formato «{formato.ancho_mm}×{formato.alto_mm}» no tiene precio de referencia cargado.",
+            )
+        if formato.unidad_venta != "M2":
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"El formato «{formato.ancho_mm}×{formato.alto_mm}» se vende por «{formato.unidad_venta}», "
+                "no por m² — el costo no se calcula solo, hay que cargarlo a mano.",
+            )
+        precio_por_plancha = (formato.ancho_mm / Decimal(1000)) * (formato.alto_mm / Decimal(1000)) * formato.costo_unidad_venta
+        params = ParametrosCorte(
+            kerf_mm=material.parametros.kerf_mm,
+            margen_borde_mm=material.parametros.margen_borde_mm,
+            separacion_piezas_mm=material.parametros.separacion_piezas_mm,
+            rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
+        )
+        opciones.append(
+            OpcionFormato(
+                plancha=Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm),
+                params=params,
+                precio_por_plancha=precio_por_plancha,
+            )
+        )
+        formatos.append(formato)
+
+    resultados = comparar_formatos(piezas_dominio, opciones, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA)
+    recomendado = formato_recomendado(resultados)
+
+    return [
+        OpcionFormatoLeer(
+            formato_id=formato.id,
+            formato_descripcion=f"{formato.ancho_mm}×{formato.alto_mm} mm",
+            material_nombre=formato.material.nombre,
+            planchas_usadas=resultado.resultado_anidado.planchas_usadas,
+            aprovechamiento_pct=resultado.reporte_aprovechamiento.porcentaje_aprovechamiento,
+            costo_total=resultado.costo_total,
+            moneda=formato.moneda,
+            recomendado=resultado is recomendado,
+        )
+        for formato, resultado in zip(formatos, resultados)
+    ]

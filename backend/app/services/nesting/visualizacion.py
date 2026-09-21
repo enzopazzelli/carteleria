@@ -238,6 +238,12 @@ def render_svg_plancha(
     return (
         f'<svg viewBox="0 0 {ancho_px:.2f} {alto_px:.2f}" xmlns="http://www.w3.org/2000/svg" '
         f'class="plancha-svg" role="img" aria-label="Plancha {plancha_indice + 1}">'
+        # El estilo va adentro del propio SVG (no en una página que lo
+        # envuelva): esta ruta se sirve como archivo suelto
+        # (`image/svg+xml`), y sin esto el <rect> de la plancha se pinta
+        # negro por default de SVG y tapa todo — ver el comentario de
+        # `CSS_SVG_PLANCHA` más arriba.
+        f"<style>{CSS_SVG_PLANCHA}</style>"
         f'<rect x="0" y="0" width="{ancho_px:.2f}" height="{alto_px:.2f}" class="plancha"/>'
         f"{grilla_svg}"
         f"{piezas_svg}"

@@ -293,3 +293,251 @@ def test_costeo_de_un_trabajo_recien_anidado(cliente, tmp_path):
 
 def test_costeo_de_trabajo_inexistente_da_404(cliente):
     assert cliente.get("/trabajos/999/costeo").status_code == 404
+
+
+def test_cors_permite_origen_del_frontend_local(cliente):
+    respuesta = cliente.get("/trabajos", headers={"Origin": "http://localhost:5173"})
+    assert respuesta.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+# --- Anidado en huecos (Capa 2, opcional por flag) -------------------------
+
+
+def _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path) -> tuple[dict, dict]:
+    """Un grupo listo para anidar con dos piezas: una grande con un
+    agujero real de 60×60 mm, y una chica de 30×30 que entra adentro de
+    ese agujero. Es el caso mínimo que ejercita `anidado_huecos.py`."""
+    _material, formato = _material_con_formato_y_parametros(cliente)
+    trabajo = cliente.post("/trabajos", json={"nombre": "Con hueco"}).json()
+
+    documento = ezdxf.new()
+    espacio = documento.modelspace()
+    # Pieza grande (200×200) con agujero central de 60×60.
+    espacio.add_lwpolyline([(0, 0), (200, 0), (200, 200), (0, 200)], close=True)
+    espacio.add_lwpolyline([(70, 70), (130, 70), (130, 130), (70, 130)], close=True)
+    # Pieza chica (30×30), separada, para que el parser no la lea como agujero.
+    espacio.add_lwpolyline([(400, 0), (430, 0), (430, 30), (400, 30)], close=True)
+    ruta = tmp_path / "hueca.dxf"
+    documento.saveas(ruta)
+    cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("hueca.dxf", ruta.read_bytes(), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+
+    grupo = cliente.post(
+        f"/trabajos/{trabajo['id']}/grupos",
+        json={"nombre": "Grupo con hueco", "formato_id": formato["id"]},
+    ).json()
+    for pieza in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json():
+        cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    return trabajo, grupo
+
+
+def test_anidar_sin_el_flag_no_usa_huecos_y_guarda_la_opcion_en_falso(cliente, tmp_path):
+    """El default es apagado: el resultado tiene que ser el del motor
+    crudo, sin la advertencia de reubicación de la Capa 2."""
+    _trabajo, grupo = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
+    final = _esperar_estado(cliente, encolada.json()["id"])
+
+    assert final["estado"] == "lista"
+    assert final["opciones"] == {"usar_anidado_en_huecos": False}
+    assert not any("reubicada" in mensaje for mensaje in (final["mensajes"] or []))
+
+
+def test_anidar_con_el_flag_reubica_la_pieza_chica_dentro_del_agujero(cliente, tmp_path):
+    trabajo, grupo = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json={"usar_anidado_en_huecos": True})
+    final = _esperar_estado(cliente, encolada.json()["id"])
+
+    assert final["estado"] == "lista"
+    assert final["opciones"] == {"usar_anidado_en_huecos": True}
+    assert any("reubicada" in mensaje for mensaje in (final["mensajes"] or []))
+
+    piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    chica = next(p for p in piezas if Decimal(p["ancho_mm"]) == Decimal("30"))
+    grande = next(p for p in piezas if Decimal(p["ancho_mm"]) == Decimal("200"))
+    por_pieza = {
+        c["pieza_id"]: c for c in cliente.get(f"/ejecuciones/{encolada.json()['id']}/colocaciones").json()
+    }
+
+    # El centro de la chica cae adentro del bounding box de la grande.
+    # Dos piezas nunca pueden superponerse en un anidado válido, así que
+    # esto solo puede pasar si la chica está en el AGUJERO de la grande
+    # — que es exactamente lo que tiene que lograr la Capa 2.
+    centro_chica_x = Decimal(por_pieza[chica["id"]]["centro_x_mm"])
+    centro_chica_y = Decimal(por_pieza[chica["id"]]["centro_y_mm"])
+    centro_grande_x = Decimal(por_pieza[grande["id"]]["centro_x_mm"])
+    centro_grande_y = Decimal(por_pieza[grande["id"]]["centro_y_mm"])
+    media_grande = Decimal(grande["ancho_mm"]) / 2
+
+    assert abs(centro_chica_x - centro_grande_x) < media_grande
+    assert abs(centro_chica_y - centro_grande_y) < media_grande
+
+
+def test_meter_una_pieza_en_un_hueco_no_cambia_el_aprovechamiento_si_no_ahorra_plancha(
+    cliente, tmp_path
+):
+    """El aprovechamiento mide material cortado sobre plancha
+    consumida. Reubicar una pieza dentro de un agujero no cambia cuánto
+    material se corta — solo cuánta plancha hace falta. Si las dos
+    corridas usan la misma cantidad de planchas, el porcentaje tiene que
+    dar EXACTAMENTE igual.
+
+    Es la prueba de que la métrica mide área real de polígono: midiendo
+    por rectángulo, la contenedora reclamaba su propio agujero como
+    material suyo y el número se movía sin que cambiara nada físico."""
+    _trabajo_a, grupo_a = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+    sin_flag = cliente.post(f"/grupos/{grupo_a['id']}/anidar", json={}).json()["id"]
+    final_sin = _esperar_estado(cliente, sin_flag)
+
+    _trabajo_b, grupo_b = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+    con_flag = cliente.post(
+        f"/grupos/{grupo_b['id']}/anidar", json={"usar_anidado_en_huecos": True}
+    ).json()["id"]
+    final_con = _esperar_estado(cliente, con_flag)
+
+    assert final_con["planchas_usadas"] == final_sin["planchas_usadas"]
+    assert Decimal(final_con["aprovechamiento_pct"]) == Decimal(final_sin["aprovechamiento_pct"])
+
+
+# --- Listar historial de ejecuciones ------
+
+
+def test_listar_ejecuciones_de_grupo_ordena_mas_reciente_primero(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    primera_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+    _esperar_estado(cliente, primera_id)
+    segunda_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+    _esperar_estado(cliente, segunda_id)
+
+    respuesta = cliente.get(f"/grupos/{grupo['id']}/ejecuciones")
+
+    assert respuesta.status_code == 200
+    ids = [e["id"] for e in respuesta.json()]
+    assert ids == [segunda_id, primera_id]
+
+
+def test_listar_ejecuciones_de_grupo_inexistente_da_404(cliente):
+    assert cliente.get("/grupos/999/ejecuciones").status_code == 404
+
+
+# --- Comparar formatos (CART-205) -----------------------------------------
+
+
+def _grupo_con_piezas_sin_formato(cliente, tmp_path, *, ancho=100, alto=100) -> dict:
+    """Un grupo con piezas asignadas pero SIN formato — el estado en el
+    que corresponde comparar, antes de decidir un material."""
+    trabajo = cliente.post("/trabajos", json={"nombre": "Prueba"}).json()
+    documento = ezdxf.new()
+    documento.modelspace().add_lwpolyline(
+        [(0, 0), (ancho, 0), (ancho, alto), (0, alto)], close=True
+    )
+    ruta = tmp_path / "pieza.dxf"
+    documento.saveas(ruta)
+    cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("pieza.dxf", ruta.read_bytes(), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+    pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Sin material"}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    return grupo
+
+
+def test_comparar_formatos_devuelve_uno_por_formato_y_marca_el_mas_barato(cliente, tmp_path):
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    _material_caro, formato_caro = _material_con_formato_y_parametros(cliente)
+    material_barato = cliente.post("/materiales", json={"nombre": "MDF"}).json()
+    formato_barato = cliente.post(
+        f"/materiales/{material_barato['id']}/formatos",
+        json={"ancho_mm": "1000", "alto_mm": "1000", "unidad_venta": "M2", "costo_unidad_venta": "10"},
+    ).json()
+    cliente.put(
+        f"/materiales/{material_barato['id']}/parametros-corte",
+        json={
+            "kerf_mm": "2", "margen_borde_mm": "10", "separacion_piezas_mm": "5",
+            "rotaciones_permitidas": "LIBRE_0_90",
+        },
+    )
+
+    respuesta = cliente.post(
+        f"/grupos/{grupo['id']}/comparar-formatos",
+        json={"formato_ids": [formato_caro["id"], formato_barato["id"]]},
+    )
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert [op["formato_id"] for op in cuerpo] == [formato_caro["id"], formato_barato["id"]]
+    assert cuerpo[0]["recomendado"] is False
+    assert cuerpo[1]["recomendado"] is True
+    assert Decimal(cuerpo[1]["costo_total"]) < Decimal(cuerpo[0]["costo_total"])
+
+    # No persiste nada: el grupo sigue sin formato ni ejecuciones.
+    assert cliente.get(f"/trabajos/{grupo['trabajo_id']}/grupos").json()[0]["formato_id"] is None
+    assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json() == []
+
+
+def test_comparar_formatos_grupo_sin_piezas_da_400(cliente):
+    trabajo = cliente.post("/trabajos", json={"nombre": "Prueba"}).json()
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Vacío"}).json()
+    _material, formato = _material_con_formato_y_parametros(cliente)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": [formato["id"]]})
+
+    assert respuesta.status_code == 400
+    assert "piezas" in respuesta.json()["detail"]
+
+
+def test_comparar_formatos_con_formato_inexistente_da_404(cliente, tmp_path):
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": [999]})
+
+    assert respuesta.status_code == 404
+
+
+def test_comparar_formatos_grupo_inexistente_da_404(cliente):
+    assert cliente.post("/grupos/999/comparar-formatos", json={"formato_ids": [1]}).status_code == 404
+
+
+def test_comparar_formatos_lista_vacia_da_400(cliente, tmp_path):
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": []})
+
+    assert respuesta.status_code == 400
+    assert "formato" in respuesta.json()["detail"]
+
+
+def test_comparar_formatos_sin_precio_no_confunde_la_unidad_de_venta(cliente, tmp_path):
+    """Cuando `unidad_venta` YA es «M2» pero falta el precio, el 400
+    tiene que hablar de precio faltante — no decir "se vende por «M2»,
+    no por m²", que sería contradictorio (la unidad es la correcta)."""
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    material = cliente.post("/materiales", json={"nombre": "Acrílico"}).json()
+    formato_sin_precio = cliente.post(
+        f"/materiales/{material['id']}/formatos",
+        json={"ancho_mm": "1000", "alto_mm": "1000", "unidad_venta": "M2"},
+    ).json()
+    cliente.put(
+        f"/materiales/{material['id']}/parametros-corte",
+        json={
+            "kerf_mm": "2", "margen_borde_mm": "10", "separacion_piezas_mm": "5",
+            "rotaciones_permitidas": "LIBRE_0_90",
+        },
+    )
+
+    respuesta = cliente.post(
+        f"/grupos/{grupo['id']}/comparar-formatos",
+        json={"formato_ids": [formato_sin_precio["id"]]},
+    )
+
+    assert respuesta.status_code == 400
+    detalle = respuesta.json()["detail"]
+    assert "precio" in detalle
+    assert "se vende por" not in detalle

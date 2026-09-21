@@ -21,7 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato
-from ..modelos.trabajo import Colocacion, EstadoEjecucion, Pieza
+from ..modelos.trabajo import Colocacion, EstadoEjecucion
 from ..services.nesting.exportacion_dxf import exportar_plancha_a_dxf, nombre_de_archivo
 from ..services.nesting.models import ParametrosCorte, Plancha, PosicionPieza, ResultadoAnidado, RotacionPermitida
 from ..services.nesting.validacion_manual import (
@@ -33,22 +33,9 @@ from ..services.nesting.validacion_manual import (
 from ..services.nesting.visualizacion import render_svg_plancha
 from .dependencias import obtener_sesion
 from .esquemas_nesting import ColocacionActualizar, ColocacionAjusteLeer
-from .rutas_nesting import _ejecucion_o_404
+from .rutas_nesting import _ejecucion_o_404, geometria_desde_pieza
 
 router = APIRouter(tags=["ajuste"])
-
-
-def _puntos_decimal(puntos: list) -> list[tuple[Decimal, Decimal]]:
-    return [(Decimal(x), Decimal(y)) for x, y in puntos]
-
-
-def _geometria_desde_pieza(pieza: Pieza) -> GeometriaPieza:
-    return GeometriaPieza(
-        ancho_mm=pieza.ancho_mm,
-        alto_mm=pieza.alto_mm,
-        contorno_local_mm=_puntos_decimal(pieza.contorno_mm),
-        agujeros_local_mm=[_puntos_decimal(agujero) for agujero in pieza.agujeros_mm],
-    )
 
 
 def _posicion_manual_de(colocacion: Colocacion) -> PosicionManual:
@@ -94,7 +81,7 @@ def _resultado_y_geometrias(ejecucion) -> tuple[ResultadoAnidado, dict[str, Geom
         pieza = colocacion.pieza
         if pieza.descartada:
             continue
-        geometria = geometrias.setdefault(str(pieza.id), _geometria_desde_pieza(pieza))
+        geometria = geometrias.setdefault(str(pieza.id), geometria_desde_pieza(pieza))
         posiciones.append(pieza_desde_posicion_manual(_posicion_manual_de(colocacion), geometria))
 
     resultado = ResultadoAnidado(posiciones=posiciones, planchas_usadas=ejecucion.planchas_usadas or 0)
@@ -138,10 +125,10 @@ def ajustar_colocacion(
         centro_y_mm=datos.centro_y_mm if datos.centro_y_mm is not None else colocacion.centro_y_mm,
         angulo_grados=datos.angulo_grados if datos.angulo_grados is not None else colocacion.angulo_grados,
     )
-    geometria_propuesta = _geometria_desde_pieza(colocacion.pieza)
+    geometria_propuesta = geometria_desde_pieza(colocacion.pieza)
 
     otras = [
-        (_posicion_manual_de(otra), _geometria_desde_pieza(otra.pieza))
+        (_posicion_manual_de(otra), geometria_desde_pieza(otra.pieza))
         for otra in ejecucion.colocaciones
         if otra.id != colocacion.id
         and otra.plancha_indice == colocacion.plancha_indice

@@ -15,6 +15,7 @@ from app.services.nesting.aprovechamiento import (
 )
 from app.services.nesting.engine import MotorNestingRectangular
 from app.services.nesting.models import ParametrosCorte, Pieza, Plancha, RotacionPermitida
+from app.services.nesting.validacion_manual import GeometriaPieza
 
 _SIN_KERF_NI_MARGEN = ParametrosCorte(
     kerf_mm=Decimal("0"),
@@ -107,6 +108,74 @@ def test_margen_y_kerf_bajan_el_aprovechamiento_reportado():
 
     assert resultado_con_margen.planchas_usadas > resultado_sin_margen.planchas_usadas
     assert reporte_con_margen.porcentaje_aprovechamiento < reporte_sin_margen.porcentaje_aprovechamiento
+
+
+def _geometria_cuadrada(lado: Decimal, agujero: Decimal | None = None) -> GeometriaPieza:
+    """Un cuadrado de `lado`, opcionalmente con un agujero cuadrado
+    centrado de lado `agujero`."""
+    contorno = [
+        (Decimal("0"), Decimal("0")),
+        (lado, Decimal("0")),
+        (lado, lado),
+        (Decimal("0"), lado),
+    ]
+    agujeros = []
+    if agujero is not None:
+        desde = (lado - agujero) / 2
+        hasta = desde + agujero
+        agujeros = [[(desde, desde), (hasta, desde), (hasta, hasta), (desde, hasta)]]
+    return GeometriaPieza(ancho_mm=lado, alto_mm=lado, contorno_local_mm=contorno, agujeros_local_mm=agujeros)
+
+
+def test_con_geometria_el_area_real_descuenta_los_agujeros():
+    """Una pieza con un agujero real no es material en esa zona — el
+    rectángulo la cuenta como si lo fuera. Es la diferencia que hace que
+    el % deje de estar inflado para piezas huecas (`CART-505`)."""
+    plancha = Plancha(ancho_mm=Decimal("1000"), alto_mm=Decimal("1000"))
+    piezas = [Pieza(id="p1", ancho_mm=Decimal("200"), alto_mm=Decimal("200"))]
+    resultado = MotorNestingRectangular(plancha, _SIN_KERF_NI_MARGEN).anidar(
+        piezas, tope_planchas_advertencia=500
+    )
+
+    geometrias = {"p1": _geometria_cuadrada(Decimal("200"), agujero=Decimal("100"))}
+    reporte = calcular_aprovechamiento(resultado, plancha, geometrias)
+
+    # 200x200 = 40000 de bbox, menos el agujero de 100x100 = 10000.
+    assert reporte.area_bounding_boxes_mm2 == Decimal("40000")
+    assert reporte.area_real_piezas_mm2 == Decimal("30000")
+    assert reporte.porcentaje_aprovechamiento == Decimal("3")
+
+
+def test_sin_geometria_el_area_real_cae_al_rectangulo():
+    """Una pieza cargada a mano (`CART-201`) no tiene contorno: el
+    rectángulo es lo único que se sabe de ella, y para una pieza
+    rectangular lisa es además el número correcto."""
+    plancha = Plancha(ancho_mm=Decimal("1000"), alto_mm=Decimal("1000"))
+    piezas = [Pieza(id="p1", ancho_mm=Decimal("200"), alto_mm=Decimal("200"))]
+    resultado = MotorNestingRectangular(plancha, _SIN_KERF_NI_MARGEN).anidar(
+        piezas, tope_planchas_advertencia=500
+    )
+
+    reporte = calcular_aprovechamiento(resultado, plancha)  # sin geometrías
+
+    assert reporte.area_real_piezas_mm2 == reporte.area_bounding_boxes_mm2 == Decimal("40000")
+
+
+def test_las_copias_de_una_pieza_comparten_la_geometria_del_id_base():
+    """El motor expande `cantidad > 1` en `p1#0`, `p1#1`... pero las
+    geometrías se guardan por id base: todas las copias tienen la misma
+    forma. Si no se resolviera el id base, las copias caerían al
+    rectángulo y el área real quedaría mal."""
+    plancha = Plancha(ancho_mm=Decimal("1000"), alto_mm=Decimal("1000"))
+    piezas = [Pieza(id="p1", ancho_mm=Decimal("200"), alto_mm=Decimal("200"), cantidad=3)]
+    resultado = MotorNestingRectangular(plancha, _SIN_KERF_NI_MARGEN).anidar(
+        piezas, tope_planchas_advertencia=500
+    )
+
+    geometrias = {"p1": _geometria_cuadrada(Decimal("200"), agujero=Decimal("100"))}
+    reporte = calcular_aprovechamiento(resultado, plancha, geometrias)
+
+    assert reporte.area_real_piezas_mm2 == Decimal("90000")  # 3 x 30000, no 3 x 40000
 
 
 def test_listado_de_materiales_agrupa_por_material_y_formato():
