@@ -3,11 +3,13 @@ import { apiGet, ApiError } from "./client";
 export interface Material {
   id: number;
   nombre: string;
+  espesor: string | null;
 }
 
 export interface Formato {
   id: number;
   material_id: number;
+  codigo: string | null;
   ancho_mm: string;
   alto_mm: string;
   moneda: string | null;

@@ -11,6 +11,7 @@ import {
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import Banner from "../../components/Banner";
 import type { OpcionFormato } from "../../api/piezasYgrupos";
+import type { Formato } from "../../api/catalogo";
 import { ApiError } from "../../api/client";
 
 export default function GruposTab() {
@@ -37,8 +38,14 @@ export default function GruposTab() {
 
   const sinAsignar = piezas?.filter((p) => p.grupo_id === null && !p.descartada) ?? [];
 
-  function nombreMaterial(materialId: number) {
-    return materiales.find((m) => m.id === materialId)?.nombre ?? "?";
+  // Material + medida solos no alcanzan para distinguir formatos: dos
+  // calibres del mismo material comparten esas dos cosas. Sin espesor
+  // ni código, la lista de candidatos muestra checkboxes idénticos.
+  function etiquetaFormato(formato: Formato) {
+    const material = materiales.find((m) => m.id === formato.material_id);
+    const espesor = material?.espesor ? ` ${material.espesor}` : "";
+    const codigo = formato.codigo ? `${formato.codigo} — ` : "";
+    return `${codigo}${material?.nombre ?? "?"}${espesor} ${formato.ancho_mm}×${formato.alto_mm}`;
   }
 
   function mensajeDeError(e: unknown, fallback: string): string {
@@ -259,7 +266,7 @@ export default function GruposTab() {
                         )
                       }
                     />
-                    {nombreMaterial(formato.material_id)} {formato.ancho_mm}×{formato.alto_mm}
+                    {etiquetaFormato(formato)}
                   </label>
                 ))}
               </div>
