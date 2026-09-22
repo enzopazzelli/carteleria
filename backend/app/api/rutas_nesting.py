@@ -103,21 +103,32 @@ def _datos_para_anidar(
         raise ValueError(f"El grupo «{grupo.nombre}» no tiene un formato asignado.")
     formato = sesion.get(Formato, grupo.formato_id)
     material = formato.material
-    if material.parametros is None:
+
+    plancha = Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm)
+    if grupo.parametros_usados is not None:
+        # Override de `CART-210`: gana por sobre `material.parametros`,
+        # aunque el material no tenga nada configurado.
+        usados = grupo.parametros_usados
+        params = ParametrosCorte(
+            kerf_mm=Decimal(usados["kerf_mm"]),
+            margen_borde_mm=Decimal(usados["margen_borde_mm"]),
+            separacion_piezas_mm=Decimal(usados["separacion_piezas_mm"]),
+            rotaciones_permitidas=RotacionPermitida(usados["rotaciones_permitidas"]),
+        )
+    elif material.parametros is not None:
+        params = ParametrosCorte(
+            kerf_mm=material.parametros.kerf_mm,
+            margen_borde_mm=material.parametros.margen_borde_mm,
+            separacion_piezas_mm=material.parametros.separacion_piezas_mm,
+            rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
+        )
+    else:
         raise ValueError(
             f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105)."
         )
     piezas = [p for p in grupo.piezas if not p.descartada]
     if not piezas:
         raise ValueError(f"El grupo «{grupo.nombre}» no tiene piezas para anidar.")
-
-    plancha = Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm)
-    params = ParametrosCorte(
-        kerf_mm=material.parametros.kerf_mm,
-        margen_borde_mm=material.parametros.margen_borde_mm,
-        separacion_piezas_mm=material.parametros.separacion_piezas_mm,
-        rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
-    )
     piezas_dominio = [
         PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad)
         for p in piezas

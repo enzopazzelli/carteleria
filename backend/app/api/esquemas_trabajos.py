@@ -8,6 +8,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
+from ..services.nesting.models import RotacionPermitida
+
 # --- Trabajos ------------------------------------------------------------
 
 
@@ -75,10 +77,25 @@ class GrupoDeCorteCrear(BaseModel):
     orden: int = 0
 
 
+class ParametrosCorteGrupo(BaseModel):
+    """Override de `CART-210`: kerf/margen/separación para ESTE grupo,
+    sin tocar la configuración del material (`CART-105`). Sin
+    `confirmado_con_taller` a propósito — ese campo es sobre el
+    material, no sobre un ajuste puntual de un trabajo."""
+
+    model_config = ConfigDict(use_enum_values=True)
+
+    kerf_mm: Decimal
+    margen_borde_mm: Decimal
+    separacion_piezas_mm: Decimal
+    rotaciones_permitidas: RotacionPermitida = RotacionPermitida.SOLO_0_180
+
+
 class GrupoDeCorteActualizar(BaseModel):
     nombre: str | None = None
     formato_id: int | None = None
     orden: int | None = None
+    parametros_usados: ParametrosCorteGrupo | None = None
 
 
 class GrupoDeCorteLeer(BaseModel):
