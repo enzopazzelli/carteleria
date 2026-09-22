@@ -23,7 +23,7 @@ export interface GrupoDeCorte {
   nombre: string;
   formato_id: number | null;
   orden: number;
-  parametros_usados: Record<string, string> | null;
+  parametros_usados: ParametrosCorteOverride | null;
 }
 
 export function listarPiezas(trabajoId: number): Promise<Pieza[]> {
@@ -72,6 +72,23 @@ export function asignarPiezaAGrupo(piezaId: number, grupoId: number | null): Pro
 
 export function asignarFormatoAGrupo(grupoId: number, formatoId: number): Promise<GrupoDeCorte> {
   return apiPatch<GrupoDeCorte>(`/grupos/${grupoId}`, { formato_id: formatoId });
+}
+
+export interface ParametrosCorteOverride {
+  kerf_mm: string;
+  margen_borde_mm: string;
+  separacion_piezas_mm: string;
+  rotaciones_permitidas: "SOLO_0_180" | "LIBRE_0_90";
+}
+
+// `null` borra el override y vuelve a usar los parámetros del material
+// (CART-210) — mismo criterio de "PATCH con null limpia el campo" que
+// ya usan otras rutas de esta API.
+export function actualizarParametrosGrupo(
+  grupoId: number,
+  parametros: ParametrosCorteOverride | null
+): Promise<GrupoDeCorte> {
+  return apiPatch<GrupoDeCorte>(`/grupos/${grupoId}`, { parametros_usados: parametros });
 }
 
 export function compararFormatos(grupoId: number, formatoIds: number[]): Promise<OpcionFormato[]> {
