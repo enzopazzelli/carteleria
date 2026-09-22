@@ -461,7 +461,12 @@ def comparar_formatos_de_grupo(
         )
         formatos.append(formato)
 
-    resultados = comparar_formatos(piezas_dominio, opciones, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA)
+    try:
+        resultados = comparar_formatos(
+            piezas_dominio, opciones, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
+        )
+    except ValueError as error:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
     recomendado = formato_recomendado(resultados)
 
     return [
