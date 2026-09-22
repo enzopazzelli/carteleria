@@ -51,6 +51,13 @@ _PATRON_FORMATO = re.compile(
     r"(?P<material>.+?)\s*-\s*(?P<ancho>\d+[.,]\d+)\s*x\s*(?P<alto>\d+[.,]\d+)\s*-\s*cal\.?\s*(?P<calibre>\d+)",
     re.IGNORECASE,
 )
+# Variante real que no trae "cal. N": el espesor va en mm antes de la
+# medida, con la medida en metros repetida ("... x 1,25 m x 2,5 m") —
+# encontrada en CHA0013 (chapa de acero esmerilado, sin calibre nominal).
+_PATRON_FORMATO_ESPESOR_MM = re.compile(
+    r"(?P<material>.+?)\s*-\s*(?P<espesor>\d+(?:[.,]\d+)?)\s*x\s*(?P<ancho>\d+[.,]\d+)\s*m\s*x\s*(?P<alto>\d+[.,]\d+)\s*m",
+    re.IGNORECASE,
+)
 _M_A_MM = Decimal(1000)
 
 
@@ -67,20 +74,36 @@ def _leer_formatos_chapa(ws) -> tuple[list[dict], list[dict]]:
             continue
         descripcion = registro.get("DESCRIPCION") or ""
         match = _PATRON_FORMATO.search(descripcion)
-        if not match:
-            sin_parsear.append({"codigo": registro.get("CODIGO"), "descripcion": descripcion})
+        if match:
+            formatos.append(
+                {
+                    "codigo": registro.get("CODIGO"),
+                    "material": match.group("material").strip(),
+                    "calibre": int(match.group("calibre")),
+                    "espesor_mm": None,
+                    "ancho_mm": str(_decimal_es(match.group("ancho")) * _M_A_MM),
+                    "alto_mm": str(_decimal_es(match.group("alto")) * _M_A_MM),
+                    "precio_referencia_m2": None,
+                    "precio_referencia_fecha": None,
+                }
+            )
             continue
-        formatos.append(
-            {
-                "codigo": registro.get("CODIGO"),
-                "material": match.group("material").strip(),
-                "calibre": int(match.group("calibre")),
-                "ancho_mm": str(_decimal_es(match.group("ancho")) * _M_A_MM),
-                "alto_mm": str(_decimal_es(match.group("alto")) * _M_A_MM),
-                "precio_referencia_m2": None,
-                "precio_referencia_fecha": None,
-            }
-        )
+        match = _PATRON_FORMATO_ESPESOR_MM.search(descripcion)
+        if match:
+            formatos.append(
+                {
+                    "codigo": registro.get("CODIGO"),
+                    "material": match.group("material").strip(),
+                    "calibre": None,
+                    "espesor_mm": str(_decimal_es(match.group("espesor"))),
+                    "ancho_mm": str(_decimal_es(match.group("ancho")) * _M_A_MM),
+                    "alto_mm": str(_decimal_es(match.group("alto")) * _M_A_MM),
+                    "precio_referencia_m2": None,
+                    "precio_referencia_fecha": None,
+                }
+            )
+            continue
+        sin_parsear.append({"codigo": registro.get("CODIGO"), "descripcion": descripcion})
     return formatos, sin_parsear
 
 
