@@ -75,28 +75,40 @@ def cargar(catalogo: dict, api: str, espesor_de: Callable[[dict], str]) -> None:
             materiales_por_clave[clave] = material_id
         material_id = materiales_por_clave[clave]
 
+        cuerpo_precio = {}
+        if formato["costo_unidad_venta"] is not None:
+            # Vienen tal cual los trae COTIZADOR (`_precios_cotizador.py`):
+            # ya usa el literal "M2" que exige costeo.py::_UNIDAD_VENTA_CALCULABLE.
+            cuerpo_precio["unidad_venta"] = formato["unidad_venta"]
+            cuerpo_precio["costo_unidad_venta"] = formato["costo_unidad_venta"]
+            if formato["moneda"]:
+                cuerpo_precio["moneda"] = formato["moneda"]
+
         # `Formato.codigo` no es `unique` en el modelo (no hace falta
-        # para el producto), así que sin este chequeo correr el script
-        # dos veces duplica cada formato en vez de no hacer nada.
+        # para el producto): si ya existe, se actualiza el precio en vez
+        # de crear un duplicado — así una re-extracción con mejor fuente
+        # de precio (como esta) corrige lo ya cargado.
         existentes = requests.get(f"{api}/materiales/{material_id}/formatos", timeout=10).json()
-        if any(f["codigo"] == formato["codigo"] for f in existentes):
+        existente = next((f for f in existentes if f["codigo"] == formato["codigo"]), None)
+        if existente is not None:
+            if cuerpo_precio:
+                requests.patch(
+                    f"{api}/formatos/{existente['id']}", json=cuerpo_precio, timeout=10
+                ).raise_for_status()
             continue
 
         cuerpo = {
             "codigo": formato["codigo"],
             "ancho_mm": formato["ancho_mm"],
             "alto_mm": formato["alto_mm"],
+            **cuerpo_precio,
         }
-        if formato["precio_referencia_m2"] is not None:
-            cuerpo["unidad_venta"] = "M2"  # literal exacto que exige costeo.py::_UNIDAD_VENTA_CALCULABLE
-            cuerpo["costo_unidad_venta"] = str(formato["precio_referencia_m2"])
-
         respuesta = requests.post(
             f"{api}/materiales/{material_id}/formatos", json=cuerpo, timeout=10
         )
         respuesta.raise_for_status()
         formatos_creados += 1
 
-    print(f"{len(materiales_por_clave)} material(es), {formatos_creados} formato(s) cargados.")
+    print(f"{len(materiales_por_clave)} material(es), {formatos_creados} formato(s) nuevo(s) cargados.")
     for advertencia in catalogo.get("advertencias", []):
         print(f"Aviso: {advertencia}")
