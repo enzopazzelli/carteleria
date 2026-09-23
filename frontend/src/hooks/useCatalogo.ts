@@ -1,8 +1,21 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { listarFormatos, listarMateriales, obtenerFormato } from "../api/catalogo";
+import {
+  listarFormatos,
+  listarMateriales,
+  obtenerFormato,
+  obtenerParametrosCorteMaterial,
+} from "../api/catalogo";
 
 export function useMateriales() {
   return useQuery({ queryKey: ["materiales"], queryFn: listarMateriales });
+}
+
+export function useParametrosCorteMaterial(materialId: number | null) {
+  return useQuery({
+    queryKey: ["parametros-corte-material", materialId],
+    queryFn: () => obtenerParametrosCorteMaterial(materialId as number),
+    enabled: materialId !== null,
+  });
 }
 
 export function useFormato(formatoId: number | null) {

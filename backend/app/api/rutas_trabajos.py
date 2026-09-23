@@ -225,7 +225,11 @@ def actualizar_grupo(
     grupo_id: int, datos: GrupoDeCorteActualizar, sesion: Session = Depends(obtener_sesion)
 ) -> GrupoDeCorte:
     grupo = _grupo_o_404(sesion, grupo_id)
-    valores = datos.model_dump(exclude_unset=True)
+    # `mode="json"`: `parametros_usados` tiene campos `Decimal` — sin
+    # esto, `setattr` guardaría objetos `Decimal` en la columna JSON,
+    # que no son serializables (mismo criterio que `_parametros_snapshot`
+    # en rutas_nesting.py).
+    valores = datos.model_dump(exclude_unset=True, mode="json")
     if "formato_id" in valores and valores["formato_id"] is not None:
         _formato_o_404(sesion, valores["formato_id"])
     for campo, valor in valores.items():

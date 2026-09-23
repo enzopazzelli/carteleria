@@ -187,6 +187,29 @@ def test_anidar_termina_lista_con_una_plancha_y_colocaciones(cliente, tmp_path):
     assert colocaciones[0]["plancha_indice"] == 0
 
 
+def test_anidar_usa_el_override_del_grupo_en_vez_del_material(cliente, tmp_path):
+    """CART-210: un override en `grupo.parametros_usados` gana por
+    sobre los parámetros configurados en el material (`CART-105`)."""
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    cliente.patch(
+        f"/grupos/{grupo['id']}",
+        json={
+            "parametros_usados": {
+                "kerf_mm": "5",
+                "margen_borde_mm": "10",
+                "separacion_piezas_mm": "5",
+                "rotaciones_permitidas": "LIBRE_0_90",
+            }
+        },
+    )
+
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
+    final = _esperar_estado(cliente, encolada.json()["id"])
+
+    assert final["estado"] == "lista"
+    assert final["parametros"]["kerf_mm"] == "5"
+
+
 def test_anidar_con_pieza_mas_grande_que_la_plancha_termina_en_error(cliente, tmp_path):
     _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path, ancho=5000, alto=5000)
 

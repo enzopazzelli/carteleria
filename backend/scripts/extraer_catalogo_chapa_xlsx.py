@@ -27,25 +27,24 @@ Qué hace y qué NO hace:
   "CHAPA ACERO (A_240) ESMERILADO 430 - 0.7 x 1,25 m x 2,5 m", con tres
   medidas en vez de dos) se listan aparte en `sin_parsear`, no se
   inventan — mismo criterio que pide CART-104 para la importación real.
-- Busca el precio más reciente de cada código de chapa dentro de
-  `COTIZACIONES.ITEMS_JSON.materiales[]`, que es historial de
-  cotizaciones ya hechas, **no una tabla de precios vigente** (eso es
-  `B-01`, todavía sin resolver del todo — ver REGISTRO.md). En los
-  datos reales del cliente, de 16 formatos de chapa solo 2 aparecen
-  alguna vez en una cotización histórica — los otros 14 quedan sin
-  precio de referencia y el catálogo lo marca explícitamente en vez de
-  inventar un valor.
+- Completa el costo de cada código con la hoja `COTIZADOR` (ver
+  `_precios_cotizador.py`) — el precio ya calculado por la planilla del
+  cliente para cada ítem del catálogo, no una tabla de precios vigente
+  con historial (`B-01` sigue sin resolver del todo). Los códigos que
+  ni siquiera están en `COTIZADOR` quedan sin costo, marcados en vez de
+  inventados.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import re
-from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
 import openpyxl
+
+from _precios_cotizador import leer_precios_cotizador
 
 _PATRON_FORMATO = re.compile(
     r"(?P<material>.+?)\s*-\s*(?P<ancho>\d+[.,]\d+)\s*x\s*(?P<alto>\d+[.,]\d+)\s*-\s*cal\.?\s*(?P<calibre>\d+)",
@@ -83,8 +82,9 @@ def _leer_formatos_chapa(ws) -> tuple[list[dict], list[dict]]:
                     "espesor_mm": None,
                     "ancho_mm": str(_decimal_es(match.group("ancho")) * _M_A_MM),
                     "alto_mm": str(_decimal_es(match.group("alto")) * _M_A_MM),
-                    "precio_referencia_m2": None,
-                    "precio_referencia_fecha": None,
+                    "costo_unidad_venta": None,
+                    "unidad_venta": None,
+                    "moneda": None,
                 }
             )
             continue
@@ -98,8 +98,9 @@ def _leer_formatos_chapa(ws) -> tuple[list[dict], list[dict]]:
                     "espesor_mm": str(_decimal_es(match.group("espesor"))),
                     "ancho_mm": str(_decimal_es(match.group("ancho")) * _M_A_MM),
                     "alto_mm": str(_decimal_es(match.group("alto")) * _M_A_MM),
-                    "precio_referencia_m2": None,
-                    "precio_referencia_fecha": None,
+                    "costo_unidad_venta": None,
+                    "unidad_venta": None,
+                    "moneda": None,
                 }
             )
             continue
@@ -107,46 +108,27 @@ def _leer_formatos_chapa(ws) -> tuple[list[dict], list[dict]]:
     return formatos, sin_parsear
 
 
-def _completar_precios_de_referencia(formatos: list[dict], ws_cotizaciones) -> None:
-    """Último precio visto por código en el historial de cotizaciones —
-    no una tabla de precios vigente (`B-01`). Se avisa, no se inventa."""
-    por_codigo = {f["codigo"]: f for f in formatos}
-    encabezado = [c.value for c in next(ws_cotizaciones.iter_rows(min_row=1, max_row=1))]
-    mas_reciente: dict[str, datetime] = {}
-
-    for fila in ws_cotizaciones.iter_rows(min_row=2, values_only=True):
-        registro = dict(zip(encabezado, fila))
-        items_json = registro.get("ITEMS_JSON")
-        fecha = registro.get("FECHA")
-        if not items_json:
+def _completar_costos(formatos: list[dict], ws_cotizador) -> None:
+    precios = leer_precios_cotizador(ws_cotizador)
+    for formato in formatos:
+        precio = precios.get(formato["codigo"])
+        if precio is None:
             continue
-        try:
-            items = json.loads(items_json)
-        except (TypeError, ValueError):
-            continue
-        for item in items:
-            for material in item.get("materiales", []):
-                codigo = material.get("codigo")
-                formato = por_codigo.get(codigo)
-                if formato is None:
-                    continue
-                si_es_mas_nuevo = fecha and (codigo not in mas_reciente or fecha > mas_reciente[codigo])
-                if si_es_mas_nuevo:
-                    mas_reciente[codigo] = fecha
-                    formato["precio_referencia_m2"] = material.get("precioVenta")
-                    formato["precio_referencia_fecha"] = fecha.isoformat() if hasattr(fecha, "isoformat") else str(fecha)
+        formato["costo_unidad_venta"] = precio["costo_unidad_venta"]
+        formato["unidad_venta"] = precio["unidad_venta"]
+        formato["moneda"] = precio["moneda"]
 
 
 def extraer_catalogo(ruta_xlsx: Path) -> dict:
     libro = openpyxl.load_workbook(ruta_xlsx, read_only=True, data_only=True)
     formatos, sin_parsear = _leer_formatos_chapa(libro["INVENTARIO"])
-    _completar_precios_de_referencia(formatos, libro["COTIZACIONES"])
+    _completar_costos(formatos, libro["COTIZADOR"])
 
-    sin_precio = [f["codigo"] for f in formatos if f["precio_referencia_m2"] is None]
+    sin_precio = [f["codigo"] for f in formatos if f["costo_unidad_venta"] is None]
     advertencias = [
         f"{len(sin_parsear)} formato(s) de chapa no se pudieron parsear desde DESCRIPCION.",
-        f"{len(sin_precio)} de {len(formatos)} formato(s) no tienen precio de referencia "
-        "en el historial de cotizaciones (nunca se cotizaron): "
+        f"{len(sin_precio)} de {len(formatos)} formato(s) no tienen costo real en COTIZADOR "
+        "(ausentes en la planilla, o con costo en 0 sin margen configurado): "
         + ", ".join(sin_precio),
     ]
     return {"formatos": formatos, "sin_parsear": sin_parsear, "advertencias": advertencias}

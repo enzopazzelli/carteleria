@@ -308,3 +308,42 @@ def test_eliminar_grupo(cliente):
 
     assert cliente.delete(f"/grupos/{grupo['id']}").status_code == 204
     assert cliente.get(f"/trabajos/{trabajo['id']}/grupos").json() == []
+
+
+def test_actualizar_grupo_setea_parametros_usados(cliente):
+    """CART-210: override de kerf/margen/separación por grupo, sin
+    tocar la configuración del material."""
+    trabajo = _crear_trabajo(cliente)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    assert grupo["parametros_usados"] is None
+    parametros = {
+        "kerf_mm": "3",
+        "margen_borde_mm": "12",
+        "separacion_piezas_mm": "6",
+        "rotaciones_permitidas": "SOLO_0_180",
+    }
+
+    respuesta = cliente.patch(f"/grupos/{grupo['id']}", json={"parametros_usados": parametros})
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["parametros_usados"] == parametros
+
+
+def test_actualizar_grupo_borra_parametros_usados_con_null(cliente):
+    trabajo = _crear_trabajo(cliente)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    cliente.patch(
+        f"/grupos/{grupo['id']}",
+        json={
+            "parametros_usados": {
+                "kerf_mm": "3",
+                "margen_borde_mm": "12",
+                "separacion_piezas_mm": "6",
+            }
+        },
+    )
+
+    respuesta = cliente.patch(f"/grupos/{grupo['id']}", json={"parametros_usados": None})
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["parametros_usados"] is None

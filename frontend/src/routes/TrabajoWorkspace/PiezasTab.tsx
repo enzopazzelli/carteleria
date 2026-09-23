@@ -18,12 +18,31 @@ export default function PiezasTab() {
   // Sin esto, un dibujo que "no se ve" no tiene ninguna explicación.
   const [avisos, setAvisos] = useState<string[]>([]);
   const inputArchivo = useRef<HTMLInputElement>(null);
+  // Se guarda el File elegido (no solo lo que trae el input nativo, que
+  // se limpia después de cada subida) para poder reimportar con otra
+  // escala sin volver a abrir el explorador — probar la escala correcta
+  // a los tumbos, reabriendo el diálogo del SO en cada intento, era la
+  // fricción real.
+  const [archivoActual, setArchivoActual] = useState<File | null>(null);
+
+  async function subir(archivo: File) {
+    setError(null);
+    setAvisos([]);
+    try {
+      const resultado = await subirDxf.mutateAsync({ archivo, escalaAMm });
+      setArchivoActual(archivo);
+      setAvisos([
+        `${resultado.piezas_creadas} pieza(s) importada(s).`,
+        ...resultado.advertencias,
+      ]);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "No se pudo subir el archivo.");
+    }
+  }
 
   async function alElegirArchivo() {
     const archivo = inputArchivo.current?.files?.[0];
     if (!archivo) return;
-    setError(null);
-    setAvisos([]);
 
     if (!archivo.name.toLowerCase().endsWith(".dxf")) {
       setError(
@@ -34,17 +53,12 @@ export default function PiezasTab() {
       return;
     }
 
-    try {
-      const resultado = await subirDxf.mutateAsync({ archivo, escalaAMm });
-      setAvisos([
-        `${resultado.piezas_creadas} pieza(s) importada(s).`,
-        ...resultado.advertencias,
-      ]);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo subir el archivo.");
-    } finally {
-      if (inputArchivo.current) inputArchivo.current.value = "";
-    }
+    await subir(archivo);
+    if (inputArchivo.current) inputArchivo.current.value = "";
+  }
+
+  function alReimportar() {
+    if (archivoActual) subir(archivoActual);
   }
 
   async function alDescartarPieza(piezaId: number, descartada: boolean) {
@@ -70,6 +84,16 @@ export default function PiezasTab() {
           />
         </label>
         <input ref={inputArchivo} type="file" accept=".dxf" onChange={alElegirArchivo} />
+        {archivoActual && (
+          <button
+            className="text-sm underline disabled:opacity-50"
+            disabled={subirDxf.isPending}
+            onClick={alReimportar}
+            title={`Vuelve a parsear «${archivoActual.name}» con la escala actual, sin reabrir el explorador`}
+          >
+            Reimportar «{archivoActual.name}» con esta escala
+          </button>
+        )}
       </div>
 
       {error && (

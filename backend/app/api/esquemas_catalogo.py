@@ -89,6 +89,9 @@ class FormatoActualizar(BaseModel):
     unidad_venta: str | None = None
     factor_conversion: Decimal | None = None
     costo_unidad_venta: Decimal | None = None
+    #: Ver `Formato.precio_simulado` en el modelo — nunca se setea solo
+    #: al cargar `costo_unidad_venta`, hay que decirlo explícito.
+    precio_simulado: bool | None = None
 
 
 class FormatoLeer(BaseModel):
@@ -108,6 +111,7 @@ class FormatoLeer(BaseModel):
     unidad_venta: str | None
     factor_conversion: Decimal | None
     costo_unidad_venta: Decimal | None
+    precio_simulado: bool
 
 
 # --- Parámetros de corte (`CART-105`) -----------------------------------
