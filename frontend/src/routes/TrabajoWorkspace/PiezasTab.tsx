@@ -13,6 +13,10 @@ export default function PiezasTab() {
   const descartarPieza = useDescartarPieza(id);
   const [escalaAMm, setEscalaAMm] = useState("1");
   const [error, setError] = useState<string | null>(null);
+  // Lo que el importador avisó del último archivo: entidades que no son
+  // contornos cortables (texto, imágenes...) o contornos que no cerraron.
+  // Sin esto, un dibujo que "no se ve" no tiene ninguna explicación.
+  const [avisos, setAvisos] = useState<string[]>([]);
   const inputArchivo = useRef<HTMLInputElement>(null);
   // Se guarda el File elegido (no solo lo que trae el input nativo, que
   // se limpia después de cada subida) para poder reimportar con otra
@@ -23,9 +27,14 @@ export default function PiezasTab() {
 
   async function subir(archivo: File) {
     setError(null);
+    setAvisos([]);
     try {
-      await subirDxf.mutateAsync({ archivo, escalaAMm });
+      const resultado = await subirDxf.mutateAsync({ archivo, escalaAMm });
       setArchivoActual(archivo);
+      setAvisos([
+        `${resultado.piezas_creadas} pieza(s) importada(s).`,
+        ...resultado.advertencias,
+      ]);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "No se pudo subir el archivo.");
     }
@@ -90,6 +99,18 @@ export default function PiezasTab() {
       {error && (
         <div className="mb-4">
           <Banner variante="error">{error}</Banner>
+        </div>
+      )}
+
+      {avisos.length > 0 && (
+        <div className="mb-4">
+          <Banner variante="aviso">
+            <ul className="list-disc pl-4">
+              {avisos.map((aviso) => (
+                <li key={aviso}>{aviso}</li>
+              ))}
+            </ul>
+          </Banner>
         </div>
       )}
 

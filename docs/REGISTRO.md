@@ -76,7 +76,7 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-04** | Rotaciones permitidas | `0/180` si hay veta, `0/90` si no | — | Por material | `materiales_parametros` | `CART-105`, `CART-204` | 🔴 a confirmar (`P-04`) |
 | **PAR-05** | Tope de planchas por trabajo (advertencia, no truncado) | 500 | planchas | Sistema | Config | `CART-202` | 🟡 provisorio |
 | **PAR-06** | Tolerancia de cierre de contornos abiertos | 0,1 | mm | Sistema | Config | `CART-503` | 🟡 provisorio |
-| **PAR-07** | Tolerancia de aproximación de curvas Bézier | 0,1 | mm | Sistema | Config | `CART-504` | 🟡 provisorio |
+| **PAR-07** | Tolerancia de aproximación de curvas (Bézier en SVG; splines, arcos, círculos y elipses en DXF) | 0,1 | mm | Sistema | Config | `CART-504`, `CART-503` | 🟡 provisorio |
 | **PAR-08** | Tolerancia de simplificación de polígonos | 0,2 | mm | Sistema | Config | `CART-701` | 🟡 provisorio |
 | **PAR-09** | Timeout del nesting irregular | 120 | s | Por ejecución, con default de sistema | Config | `CART-703` | 🟡 provisorio |
 | **PAR-10** | Fórmula de desarrollo de plegado | *sin definir* | — | Por material y espesor | `materiales_parametros` | `CART-209` | 🔴 **bloqueante** (`P-05`) |
