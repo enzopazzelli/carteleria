@@ -490,6 +490,7 @@ def comparar_formatos_de_grupo(
             costo_total=resultado.costo_total,
             moneda=formato.moneda,
             recomendado=resultado is recomendado,
+            precio_simulado=formato.precio_simulado,
         )
         for formato, resultado in zip(formatos, resultados)
     ]

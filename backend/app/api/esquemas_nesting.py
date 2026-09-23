@@ -126,3 +126,6 @@ class OpcionFormatoLeer(BaseModel):
     costo_total: Decimal
     moneda: str
     recomendado: bool
+    #: `Formato.precio_simulado` — si esto es `True`, `costo_total` no
+    #: es un número real, es de prueba (ver docstring del modelo).
+    precio_simulado: bool

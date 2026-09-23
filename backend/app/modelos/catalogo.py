@@ -128,6 +128,11 @@ class Formato(Base):
     #: número adivinado disfrazado de cálculo; se guarda el que la
     #: planilla ya trae calculado, hasta que se confirme cómo se arma.
     costo_unidad_venta: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    #: `True` cuando `costo_unidad_venta` es un valor de prueba puesto a
+    #: mano para poder ejercitar comparador/costeo mientras no hay dato
+    #: real (`B-01`) — nunca se confunde con un precio de la planilla.
+    #: Todo lo que lo calcule debería mostrarlo marcado, no como firme.
+    precio_simulado: Mapped[bool] = mapped_column(Boolean, default=False)
 
     material: Mapped[Material] = relationship(back_populates="formatos")
 

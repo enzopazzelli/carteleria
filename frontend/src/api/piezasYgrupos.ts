@@ -60,6 +60,7 @@ export interface OpcionFormato {
   costo_total: string;
   moneda: string;
   recomendado: boolean;
+  precio_simulado: boolean;
 }
 
 export function crearGrupo(trabajoId: number, nombre: string): Promise<GrupoDeCorte> {

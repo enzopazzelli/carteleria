@@ -45,7 +45,8 @@ export default function GruposTab() {
     const material = materiales.find((m) => m.id === formato.material_id);
     const espesor = material?.espesor ? ` ${material.espesor}` : "";
     const codigo = formato.codigo ? `${formato.codigo} — ` : "";
-    return `${codigo}${material?.nombre ?? "?"}${espesor} ${formato.ancho_mm}×${formato.alto_mm}`;
+    const base = `${codigo}${material?.nombre ?? "?"}${espesor} ${formato.ancho_mm}×${formato.alto_mm}`;
+    return formato.precio_simulado ? `${base} (precio simulado)` : base;
   }
 
   function mensajeDeError(e: unknown, fallback: string): string {
@@ -302,6 +303,11 @@ export default function GruposTab() {
                         <td className="font-mono">{Number(opcion.aprovechamiento_pct).toFixed(1)}%</td>
                         <td className="font-mono">
                           {opcion.moneda} {Number(opcion.costo_total).toFixed(2)}
+                          {opcion.precio_simulado && (
+                            <span className="text-conflict ml-1" title="Precio de prueba, no es un dato real de la planilla">
+                              (simulado)
+                            </span>
+                          )}
                         </td>
                         <td>
                           <button

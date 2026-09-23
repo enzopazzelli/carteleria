@@ -15,6 +15,10 @@ export interface Formato {
   moneda: string | null;
   costo_unidad_venta: string | null;
   unidad_venta: string | null;
+  // Precio de prueba puesto a mano (scripts/simular_precios_faltantes.py)
+  // mientras no hay dato real de la planilla (B-01) — nunca confundir
+  // con un precio firme.
+  precio_simulado: boolean;
 }
 
 export function listarMateriales(): Promise<Material[]> {
