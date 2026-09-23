@@ -96,6 +96,39 @@ def test_eliminar_trabajo_borra_el_dxf_guardado(cliente, tmp_path):
 # --- Importación de DXF ------------------------------------------------
 
 
+def test_subir_dxf_con_curvas_crea_piezas_y_devuelve_lo_que_ignoro(cliente, tmp_path):
+    """Un círculo y una spline no son polilíneas de vértices: antes del
+    soporte de curvas esto devolvía 0 piezas y ninguna explicación."""
+
+    def agregar(msp):
+        msp.add_circle((0, 0), 50)
+        msp.add_text("CARTEL", dxfattribs={"height": 10})
+
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "curvas.dxf", agregar)
+
+    respuesta = _subir(cliente, trabajo["id"], contenido)
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["piezas_creadas"] == 1
+    assert any("TEXT" in aviso and "curvas" in aviso for aviso in cuerpo["advertencias"])
+    pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+    assert float(pieza["ancho_mm"]) == pytest.approx(100, abs=0.2)
+    assert len(pieza["contorno_mm"]) > 16, "el contorno persistido tiene que ser la curva, no un cuadrado"
+
+
+@pytest.mark.parametrize("escala", ["0", "-5"])
+def test_subir_dxf_con_escala_no_positiva_da_400(cliente, tmp_path, escala):
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "a.dxf", lambda msp: msp.add_circle((0, 0), 5))
+
+    respuesta = _subir(cliente, trabajo["id"], contenido, escala_a_mm=escala)
+
+    assert respuesta.status_code == 400
+    assert "escala" in respuesta.json()["detail"]
+
+
 def test_subir_dxf_a_trabajo_inexistente_da_404(cliente, tmp_path):
     contenido = _dxf_bytes(
         tmp_path, "a.dxf", lambda msp: msp.add_lwpolyline([(0, 0), (10, 0), (10, 10), (0, 10)], close=True)

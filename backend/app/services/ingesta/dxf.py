@@ -27,6 +27,24 @@ Implementa los criterios de aceptación de las dos historias:
    dentro de agujero (una pieza "isla" adentro de un hueco), no solo un
    nivel.
 
+**Qué dibujos se leen.** Un mismo contorno llega distinto según quién
+exportó el DXF, y el parser no puede exigir una forma:
+
+- Una sola entidad: `POLYLINE`/`LWPOLYLINE` (con sus arcos `bulge`),
+  `CIRCLE`, `ELLIPSE`, `SPLINE`. Las curvas se aplanan a una polilínea
+  con un error máximo de `PAR-07` — el polígono que sale es el que
+  después se anida y se corta, así que la tolerancia es de mm reales,
+  no de unidades del dibujo.
+- Trazos sueltos (`LINE`, `ARC`, polilíneas o splines abiertas): se unen
+  punta con punta dentro de `PAR-06` hasta cerrar una figura. Lo que no
+  cierra se lista en `contornos_no_cerrados`, no se pierde en silencio.
+- Bloques `INSERT`: se expanden con su posición, escala y rotación.
+
+Todo lo demás (`TEXT`, `HATCH`, `IMAGE`, cotas...) no es un contorno
+cortable y se **reporta** en `advertencias` en vez de ignorarse sin
+avisar — un dibujo que "no se ve" sin explicación es lo que motivó esto
+(2.371 splines leídas como 188 cuadrados).
+
 **La escala nunca se asume del header del archivo.** Los tres DXF de
 prueba usados para validar este parser no traen `$INSUNITS` — mismo
 problema que anticipa CART-504 para SVG en mm vs. px. Se resuelve
@@ -36,20 +54,31 @@ confiar en una suposición silenciosa del sistema.
 """
 from __future__ import annotations
 
+import math
+from collections import Counter
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 
 import ezdxf
 from ezdxf import DXFError
+from ezdxf.path import make_path
 from shapely.geometry import Polygon
 
 from .models import ContornoAbierto, PiezaImportada, ResultadoImportacionDXF
 
 _TOLERANCIA_CIERRE_MM = Decimal("0.1")  # PAR-06
 _TOLERANCIA_DUPLICADO_MM = Decimal("0.1")  # PAR-38
+_TOLERANCIA_APLANADO_MM = Decimal("0.1")  # PAR-07
 _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT = Decimal("25")  # heurístico, no un PAR-xx — ver _clasificar_piezas_y_agujeros
-_TIPOS_CONTORNO = ("POLYLINE", "LWPOLYLINE")
+# Lista explícita, no "todo lo que `make_path` sepa convertir": también
+# convierte `IMAGE` (devuelve el marco de la imagen como un rectángulo
+# cerrado) y eso terminaría como una pieza más de chapa.
+_TIPOS_GEOMETRIA = frozenset({"POLYLINE", "LWPOLYLINE", "LINE", "ARC", "CIRCLE", "ELLIPSE", "SPLINE"})
+_PROFUNDIDAD_MAXIMA_DE_BLOQUES = 8
+# Una entidad mal formada no tiene que tirar abajo un DXF de miles de
+# entidades: se cuenta y se reporta (`advertencias`).
+_ERRORES_DE_CONVERSION = (DXFError, ValueError, TypeError, ArithmeticError, IndexError)
 
 
 class ArchivoDXFInvalido(Exception):
@@ -72,21 +101,141 @@ def _distancia(a: tuple[Decimal, Decimal], b: tuple[Decimal, Decimal]) -> Decima
     return (dx * dx + dy * dy).sqrt()
 
 
-def _puntos_xy(entidad) -> list[tuple[float, float]]:
-    """`LWPolyline.points()` es un context manager de edición, no un
-    iterador de lectura — hay que usar `get_points`. El `POLYLINE`
-    legado (DXF R12, como los archivos reales usados para validar este
-    parser) no tiene ese método: se lee de sus vértices hijos."""
-    if entidad.dxftype() == "LWPOLYLINE":
-        return [(x, y) for x, y in entidad.get_points("xy")]
-    return [(v.dxf.location.x, v.dxf.location.y) for v in entidad.vertices]
+@dataclass
+class _Trazo:
+    """Una curva ya recorrida en mm, todavía sin decidir si por sí sola
+    es un contorno cerrado o solo un pedazo de uno."""
+
+    puntos: list[tuple[Decimal, Decimal]]
+    capa: str
+    indice: int
 
 
-def _puntos_mm(entidad, escala_a_mm: Decimal) -> list[tuple[Decimal, Decimal]]:
+def _entidades_geometricas(entidades, ignoradas: Counter, profundidad: int = 0):
+    """Las entidades con geometría de corte, con los bloques `INSERT` ya
+    expandidos (posición, escala y rotación incluidas). Lo que no es
+    geometría de corte se cuenta en `ignoradas`: nunca se descarta sin
+    que quede rastro."""
+    for entidad in entidades:
+        tipo = entidad.dxftype()
+        if tipo == "INSERT":
+            if profundidad >= _PROFUNDIDAD_MAXIMA_DE_BLOQUES:
+                ignoradas["INSERT"] += 1
+                continue
+            try:
+                contenido = list(entidad.virtual_entities())
+            except _ERRORES_DE_CONVERSION:
+                ignoradas["INSERT"] += 1
+                continue
+            yield from _entidades_geometricas(contenido, ignoradas, profundidad + 1)
+        elif tipo in _TIPOS_GEOMETRIA:
+            yield entidad
+        else:
+            ignoradas[tipo] += 1
+
+
+def _puntos_en_mm(
+    entidad, escala_a_mm: Decimal, distancia_aplanado: float
+) -> list[list[tuple[Decimal, Decimal]]]:
+    """Cada sub-trazado de la entidad, aplanado a puntos y pasado a mm.
+
+    `make_path` unifica `LINE`, `ARC`, `CIRCLE`, `ELLIPSE`, `SPLINE`,
+    `POLYLINE` (el R12 de los archivos reales de `modelos/`) y
+    `LWPOLYLINE`, con sus arcos `bulge`, en una sola representación: no
+    hace falta un `if` por tipo de entidad, ni un `bulge` ignorado que
+    deje un arco convertido en una recta."""
     return [
-        (Decimal(str(x)) * escala_a_mm, Decimal(str(y)) * escala_a_mm)
-        for x, y in _puntos_xy(entidad)
+        [
+            (Decimal(str(float(v.x))) * escala_a_mm, Decimal(str(float(v.y))) * escala_a_mm)
+            for v in trazado.flattening(distancia_aplanado)
+        ]
+        for trazado in make_path(entidad).sub_paths()
     ]
+
+
+class _IndiceDeExtremos:
+    """Grilla de celdas de lado `tolerancia` para hallar el extremo libre
+    más cercano a un punto sin comparar todos contra todos — un DXF de
+    CAD puede tener miles de segmentos sueltos."""
+
+    def __init__(self, trazos: list[_Trazo], tolerancia: float):
+        self._tolerancia = tolerancia
+        self._celdas: dict[tuple[int, int], list[tuple[int, bool, float, float]]] = {}
+        for numero, trazo in enumerate(trazos):
+            for es_final, punto in ((False, trazo.puntos[0]), (True, trazo.puntos[-1])):
+                x, y = float(punto[0]), float(punto[1])
+                self._celdas.setdefault(self._celda(x, y), []).append((numero, es_final, x, y))
+
+    def _celda(self, x: float, y: float) -> tuple[int, int]:
+        return math.floor(x / self._tolerancia), math.floor(y / self._tolerancia)
+
+    def mas_cercano(self, punto: tuple[Decimal, Decimal], usados: list[bool]) -> tuple[int, bool] | None:
+        """`(número de trazo, si es su extremo final)` del extremo sin
+        usar más cercano a `punto` dentro de la tolerancia, o `None`."""
+        x, y = float(punto[0]), float(punto[1])
+        celda_x, celda_y = self._celda(x, y)
+        mejor: tuple[int, bool] | None = None
+        mejor_distancia = self._tolerancia
+        for delta_x in (-1, 0, 1):
+            for delta_y in (-1, 0, 1):
+                for numero, es_final, otro_x, otro_y in self._celdas.get((celda_x + delta_x, celda_y + delta_y), ()):
+                    if usados[numero]:
+                        continue
+                    distancia = math.hypot(otro_x - x, otro_y - y)
+                    if distancia <= mejor_distancia:
+                        mejor, mejor_distancia = (numero, es_final), distancia
+        return mejor
+
+
+def _cierra(puntos: list[tuple[Decimal, Decimal]], tolerancia: float) -> bool:
+    if len(puntos) < 3:
+        return False
+    return math.hypot(float(puntos[0][0] - puntos[-1][0]), float(puntos[0][1] - puntos[-1][1])) <= tolerancia
+
+
+def _encadenar(abiertos: list[_Trazo]) -> tuple[list[_Trazo], list[_Trazo]]:
+    """Une trazos abiertos punta con punta (dentro de `PAR-06`) hasta que
+    la cadena vuelve a su origen. Devuelve `(cerradas, abiertas)`: una
+    cadena queda en una sola de las dos, nunca en ambas.
+
+    Es codiciosa — en cada empalme toma el extremo libre más cercano —
+    así que un nudo donde se juntan tres o más trazos (una "T") puede
+    resolverse de una manera que no es la que el diseñador pensaba. Lo
+    que no cierra se reporta como contorno abierto, no se inventa."""
+    tolerancia = float(_TOLERANCIA_CIERRE_MM)
+    extremos = _IndiceDeExtremos(abiertos, tolerancia)
+    usados = [False] * len(abiertos)
+    cerradas: list[_Trazo] = []
+    restantes: list[_Trazo] = []
+
+    for numero, semilla in enumerate(abiertos):
+        if usados[numero]:
+            continue
+        usados[numero] = True
+        puntos = list(semilla.puntos)
+
+        while not _cierra(puntos, tolerancia):
+            hallado = extremos.mas_cercano(puntos[-1], usados)
+            if hallado is not None:
+                otro, es_final = hallado
+                usados[otro] = True
+                nuevos = abiertos[otro].puntos
+                # El extremo que empalma tiene que quedar primero; se
+                # descarta porque ya es (casi) el último punto de `puntos`.
+                puntos.extend((list(reversed(nuevos)) if es_final else nuevos)[1:])
+                continue
+            hallado = extremos.mas_cercano(puntos[0], usados)
+            if hallado is None:
+                break
+            otro, es_final = hallado
+            usados[otro] = True
+            nuevos = abiertos[otro].puntos
+            # Acá el extremo que empalma tiene que quedar último.
+            puntos[0:0] = (nuevos if es_final else list(reversed(nuevos)))[:-1]
+
+        destino = cerradas if _cierra(puntos, tolerancia) else restantes
+        destino.append(_Trazo(puntos, semilla.capa, semilla.indice))
+    return cerradas, restantes
 
 
 def _firma_normalizada(puntos: list[tuple[Decimal, Decimal]]) -> tuple:
@@ -99,26 +248,27 @@ def _firma_normalizada(puntos: list[tuple[Decimal, Decimal]]) -> tuple:
         return pasos * _TOLERANCIA_DUPLICADO_MM
 
     redondeados = tuple((_redondear(x), _redondear(y)) for x, y in puntos)
-    invertidos = tuple(reversed(redondeados))
-    return min(redondeados, invertidos)
+
+    if len(redondeados) > 3 and redondeados[0] == redondeados[-1]:
+        # Un lazo cerrado retrazado puede arrancar en OTRO vértice además
+        # de ir al revés: se compara el anillo empezando siempre por su
+        # punto mínimo, en el sentido que dé la secuencia menor.
+        anillo = redondeados[:-1]
+        return ("cerrado", min(_desde_el_minimo(anillo), _desde_el_minimo(anillo[::-1])))
+
+    return ("abierto", min(redondeados, redondeados[::-1]))
 
 
-def _cerrar_contorno(puntos: list[tuple[Decimal, Decimal]], entidad, indice: int) -> tuple:
-    """Devuelve `(puntos_cerrados, None)` si el contorno cierra dentro de
-    `PAR-06`, o `(None, ContornoAbierto)` si no — nunca los dos a la vez."""
-    if bool(getattr(entidad, "is_closed", False)):
-        if puntos[0] != puntos[-1]:
-            puntos = [*puntos, puntos[0]]
-        return puntos, None
+def _desde_el_minimo(anillo: tuple) -> tuple:
+    inicio = anillo.index(min(anillo))
+    return anillo[inicio:] + anillo[:inicio]
 
-    distancia_extremos = _distancia(puntos[0], puntos[-1])
-    if distancia_extremos <= _TOLERANCIA_CIERRE_MM:
-        return [*puntos, puntos[0]], None
 
-    contorno_abierto = ContornoAbierto(
-        capa=entidad.dxf.layer, indice=indice, distancia_apertura_mm=distancia_extremos
-    )
-    return None, contorno_abierto
+def _con_cierre_explicito(puntos: list[tuple[Decimal, Decimal]]) -> list[tuple[Decimal, Decimal]]:
+    """El último punto repite al primero: un contorno cerrado "dentro de
+    `PAR-06`" pero no exactamente se cierra con un tramo de a lo sumo esa
+    longitud."""
+    return puntos if puntos[0] == puntos[-1] else [*puntos, puntos[0]]
 
 
 def _construir_poligono(puntos: list[tuple[Decimal, Decimal]]) -> Polygon | None:
@@ -253,61 +403,104 @@ def parsear_dxf(
     chicas que eso, hay que ajustarlo caso por caso — ver el docstring
     de `_clasificar_piezas_y_agujeros`.
     """
+    # La escala es un divisor desde que las curvas se aplanan con una
+    # tolerancia en mm: con 0 el aplanado fallaría con un error confuso, y
+    # una escala negativa espejaría el dibujo sin avisar.
+    if escala_a_mm <= 0:
+        raise ArchivoDXFInvalido("La escala a mm tiene que ser mayor que cero.")
+
     try:
         documento = ezdxf.readfile(str(ruta))
     except (DXFError, OSError) as error:
         raise ArchivoDXFInvalido(f"No se pudo leer '{ruta}' como DXF: {error}") from error
 
-    contornos_validos: list[_ContornoValido] = []
-    contornos_no_cerrados: list[ContornoAbierto] = []
+    # `PAR-07` está en mm; `flattening` la quiere en unidades del dibujo.
+    distancia_aplanado = float(_TOLERANCIA_APLANADO_MM / escala_a_mm)
+    ignoradas: Counter[str] = Counter()
+    ilegibles: Counter[str] = Counter()
     firmas_vistas: set[tuple] = set()
     duplicados_descartados = 0
     indice = 0
+    cerrados: list[_Trazo] = []
+    abiertos: list[_Trazo] = []
 
-    for entidad in documento.modelspace():
-        if entidad.dxftype() not in _TIPOS_CONTORNO:
+    for entidad in _entidades_geometricas(documento.modelspace(), ignoradas):
+        try:
+            recorridos = _puntos_en_mm(entidad, escala_a_mm, distancia_aplanado)
+        except _ERRORES_DE_CONVERSION:
+            ilegibles[entidad.dxftype()] += 1
             continue
 
-        puntos = _puntos_mm(entidad, escala_a_mm)
-        if len(puntos) < 3:
-            continue
+        for puntos in recorridos:
+            if len(puntos) < 2:
+                continue
 
-        firma = _firma_normalizada(puntos)
-        if firma in firmas_vistas:
-            duplicados_descartados += 1
-            continue
-        firmas_vistas.add(firma)
+            firma = _firma_normalizada(puntos)
+            if firma in firmas_vistas:
+                duplicados_descartados += 1
+                continue
+            firmas_vistas.add(firma)
 
-        puntos_cerrados, contorno_abierto = _cerrar_contorno(puntos, entidad, indice)
-        if contorno_abierto is not None:
-            contornos_no_cerrados.append(contorno_abierto)
+            trazo = _Trazo(puntos, entidad.dxf.layer, indice)
             indice += 1
-            continue
+            cierra_sola = len(puntos) >= 3 and _distancia(puntos[0], puntos[-1]) <= _TOLERANCIA_CIERRE_MM
+            (cerrados if cierra_sola else abiertos).append(trazo)
 
-        poligono = _construir_poligono(puntos_cerrados)
+    encadenados, sin_cerrar = _encadenar(abiertos)
+
+    contornos_no_cerrados = [
+        ContornoAbierto(
+            capa=trazo.capa,
+            indice=trazo.indice,
+            distancia_apertura_mm=_distancia(trazo.puntos[0], trazo.puntos[-1]),
+        )
+        for trazo in sin_cerrar
+    ]
+    contornos_validos: list[_ContornoValido] = []
+    for trazo in sorted([*cerrados, *encadenados], key=lambda t: t.indice):
+        puntos = _con_cierre_explicito(trazo.puntos)
+        poligono = _construir_poligono(puntos)
         if poligono is None:
             contornos_no_cerrados.append(
-                ContornoAbierto(capa=entidad.dxf.layer, indice=indice, distancia_apertura_mm=Decimal("0"))
+                ContornoAbierto(capa=trazo.capa, indice=trazo.indice, distancia_apertura_mm=Decimal("0"))
             )
         else:
-            contornos_validos.append(_ContornoValido(poligono, puntos_cerrados, entidad.dxf.layer, indice))
-        indice += 1
+            contornos_validos.append(_ContornoValido(poligono, puntos, trazo.capa, trazo.indice))
 
     piezas = [
         _pieza_desde_clasificacion(ruta, pieza, agujeros, contenedora)
         for pieza, agujeros, contenedora in _clasificar_piezas_y_agujeros(contornos_validos, tamano_maximo_agujero_mm)
     ]
 
-    advertencias = []
-    if contornos_no_cerrados:
-        advertencias.append(
-            f"{len(contornos_no_cerrados)} contorno(s) no se pudieron cerrar dentro de "
-            f"PAR-06 ({_TOLERANCIA_CIERRE_MM} mm) y se excluyeron."
-        )
-
     return ResultadoImportacionDXF(
         piezas=piezas,
         contornos_no_cerrados=contornos_no_cerrados,
         lineas_duplicadas_descartadas=duplicados_descartados,
-        advertencias=advertencias,
+        advertencias=_advertencias(len(contornos_no_cerrados), ignoradas, ilegibles),
     )
+
+
+def _detalle(cuentas: Counter) -> str:
+    return ", ".join(f"{cantidad} {tipo}" for tipo, cantidad in cuentas.most_common())
+
+
+def _advertencias(no_cerrados: int, ignoradas: Counter, ilegibles: Counter) -> list[str]:
+    advertencias = []
+    if no_cerrados:
+        advertencias.append(
+            f"{no_cerrados} contorno(s) no se pudieron cerrar dentro de "
+            f"PAR-06 ({_TOLERANCIA_CIERRE_MM} mm) y se excluyeron."
+        )
+    if ilegibles:
+        advertencias.append(
+            f"{sum(ilegibles.values())} entidad(es) no se pudieron leer y se excluyeron ({_detalle(ilegibles)})."
+        )
+    if ignoradas:
+        mensaje = (
+            f"Se ignoraron {sum(ignoradas.values())} entidad(es) que no son contornos "
+            f"cortables ({_detalle(ignoradas)})."
+        )
+        if ignoradas.keys() & {"TEXT", "MTEXT"}:
+            mensaje += " El texto no se corta como contorno: convertilo a curvas antes de exportar el DXF."
+        advertencias.append(mensaje)
+    return advertencias
