@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useActualizarParametrosGrupo, useGrupos } from "../../hooks/useGrupos";
@@ -16,7 +16,6 @@ import { ApiError } from "../../api/client";
 import type { GrupoDeCorte, ParametrosCorteOverride } from "../../api/piezasYgrupos";
 
 const ESTADOS_TERMINALES = new Set(["lista", "error", "cancelada"]);
-const DEBOUNCE_MS = 500;
 
 function ParametrosCorteForm({
   grupo,
@@ -30,7 +29,6 @@ function ParametrosCorteForm({
     formato?.material_id ?? null
   );
   const [valores, setValores] = useState<ParametrosCorteOverride | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const base = grupo.parametros_usados ?? parametrosMaterial;
 
@@ -49,17 +47,21 @@ function ParametrosCorteForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupo.parametros_usados, parametrosMaterial]);
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
-
   function alCambiarCampo(campo: keyof ParametrosCorteOverride, valor: string) {
     if (!valores) return;
-    const nuevos = { ...valores, [campo]: valor };
-    setValores(nuevos);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => onCambio(nuevos), DEBOUNCE_MS);
+    setValores({ ...valores, [campo]: valor });
   }
+
+  // Nunca dispara solo: un cambio de parámetro no vale lo mismo que un
+  // click accidental en el número (rueda del mouse, flechita del input),
+  // y recalcular reanida de verdad — hace falta un click explícito.
+  const hayCambiosSinAplicar =
+    valores !== null && base !== undefined && base !== null
+      ? valores.kerf_mm !== base.kerf_mm ||
+        valores.margen_borde_mm !== base.margen_borde_mm ||
+        valores.separacion_piezas_mm !== base.separacion_piezas_mm ||
+        valores.rotaciones_permitidas !== base.rotaciones_permitidas
+      : false;
 
   if (grupo.formato_id === null) {
     return <p className="text-xs text-ink/60 mb-3">Asigná un material para configurar kerf/margen/separación.</p>;
@@ -120,6 +122,13 @@ function ParametrosCorteForm({
           <option value="SOLO_0_180">Solo 0°/180° (con veta)</option>
         </select>
       </label>
+      <button
+        className="bg-cut text-paper rounded px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={!hayCambiosSinAplicar}
+        onClick={() => onCambio(valores)}
+      >
+        Aplicar y recalcular
+      </button>
       {tieneOverride && (
         <>
           <span className="text-bronze">override de este grupo — el material tiene otros valores</span>
