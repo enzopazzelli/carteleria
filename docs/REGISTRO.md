@@ -82,6 +82,7 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-10** | Fórmula de desarrollo de plegado | *sin definir* | — | Por material y espesor | `materiales_parametros` | `CART-209` | 🔴 **bloqueante** (`P-05`) |
 | **PAR-38** | Tolerancia de deduplicación de líneas superpuestas | 0,1 | mm | Sistema | Config | `CART-503` | 🟡 provisorio |
 | **PAR-39** | Área mínima de hueco aprovechable para anidado en huecos | 100 | mm² | Sistema | Config | Capa 2, `PLAN-MOTOR-NESTING-PYTHON-NATIVO.md` | 🟡 provisorio |
+| **PAR-41** | Distancia máxima entre cajas de piezas raíz para considerarlas del mismo diseño | 50 | mm | Sistema | Config | `CART-509` | 🟡 provisorio — medido sobre `Muestra Vectores.dxf`: con 50 mm cada marco de la grilla de paneles queda como diseño propio; con 200 mm se funden en un grupo de 1.487 piezas. Los diseños con marco no dependen de este valor |
 
 ### 2.2 Parámetros comerciales
 
@@ -323,7 +324,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
 | Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
-| Parámetros (`PAR`) | 40 | 11 | 17 | 12 |
+| Parámetros (`PAR`) | 41 | 11 | 18 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 26 | 26 | 0 | 0 |
 | Decisiones (`D`) | 11 | 11 | 0 | 0 |
