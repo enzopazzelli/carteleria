@@ -87,6 +87,8 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-43** | Rectangularidad mínima de una hoja (área del contorno / área de su caja) | 0,99 | — | Sistema | Config | `CART-510` | 🟡 provisorio |
 | **PAR-44** | Tolerancia relativa de área y perímetro para que dos formas sean "gemelas" (la misma pieza en el ensamblado y en una hoja) | 1 | % | Sistema | Config | `CART-511` | 🟡 provisorio — con este valor, en Belgrano quedan 36 formas de las hojas emparejadas con el ensamblado |
 | **PAR-45** | Área mínima de una forma para entrar a la comparación de gemelas | 5.000 | mm² | Sistema | Config | `CART-511` | 🟡 provisorio — evita emparejar ojales o puntos iguales por casualidad |
+| **PAR-46** | Fracción mínima del área de una pieza dentro de una hoja para considerarla anidada ahí | 99 | % | Sistema | Config | `CART-511` | 🟡 provisorio — la cuña roja de Belgrano está 99,98 % adentro, apoyada en el borde; con contención estricta se la excluía como duplicado |
+| **PAR-47** | Colores ACI que identifican cotas y rótulos (fuera de las hojas) | 1 (rojo) | — | Diseño | Config | `CART-511` | 🟡 provisorio — `P-27`. En la muestra, 767 de 769 formas rojas son texto de cotas; las otras 2 están en una hoja |
 
 ### 2.2 Parámetros comerciales
 
@@ -225,7 +227,7 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 
 ## 4. Preguntas abiertas — `P-xx`
 
-Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-26`). **26 únicas.**
+Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-27`). **27 únicas.**
 
 ### 🔴 Bloqueantes de Sprint 0
 
@@ -269,6 +271,7 @@ Surgen de la muestra real de Megacarteles (ver [`ANALISIS-MUESTRA-MEGACARTELES.m
 | **P-24** | Las versiones "Pinturas" y los logos a color, ¿se pintan o también se cortan? | Rol `referencia` — sub-proyecto 1 |
 | **P-25** | Los distintos diseños de un mismo DXF (Belgrano, Awaduct, Vulcano...), ¿son trabajos de clientes distintos? | Si un Diseño equivale a un Trabajo — sub-proyecto 1 |
 | **P-26** | Además de 1,22×2,44, la muestra usa chapa calibre 20 de 1,00×1,20 y calibre 22 de 0,30×1,20: ¿son formatos que compran y están en el catálogo? *Medido (2026-09-25): las hojas de cal. 20 tienen un lado de ~1,20 m y el otro variable (0,43 / 0,73 / 0,87 / 1,00 m según el trabajo), y el dibujo difiere del rótulo 14–36 mm. ¿El cal. 20 viene en rollo o tira de 1,20 m de ancho que se corta a largo? Si es así, `CART-510` tiene que reconocer hojas por un solo lado, no por formato completo.* | `P-02`, `B-02`, `CART-510`, `PAR-42` |
+| **P-27** | ¿Usan siempre un color fijo para cotas y rótulos (en la muestra, rojo)? ¿Alguna vez una pieza a cortar va en ese color fuera de una hoja? | `PAR-47`, `CART-511` |
 
 ### 🟡 Aprobación y envío
 
@@ -315,7 +318,7 @@ Una sola reunión no alcanza. Tres encuentros, cada uno con sus IDs a cerrar.
 |---|---|---|---|---|
 | **1 — Negocio y proceso** | Dueño + administración | 90 min | `P-07`, `P-08`, `P-09`, `P-10`, `P-11`, `P-15`, `P-16`, `P-17`, `P-18` | `B-01`, `B-09`, `B-10`, `B-11`, `B-13`, `B-17` |
 | **2 — Taller y materiales** | Encargado de taller / operario de corte | 60 min | `P-01`, `P-02`, `P-03`, `P-04`, `P-05`, `P-23`, `P-26` | `B-02`, `B-03`, `B-04`, `B-05`, `B-06` |
-| **3 — Diseño y sistemas** | Diseñadores + autor del dashboard | 60 min | `P-12`, `P-13`, `P-14`, `P-19`, `P-20`, `P-21`, `P-22`, `P-24`, `P-25` | `B-07`, `B-08`, `B-14`, `B-15` |
+| **3 — Diseño y sistemas** | Diseñadores + autor del dashboard | 60 min | `P-12`, `P-13`, `P-14`, `P-19`, `P-20`, `P-21`, `P-22`, `P-24`, `P-25`, `P-27` | `B-07`, `B-08`, `B-14`, `B-15` |
 
 > **Lo más valioso del encuentro 2 no son las respuestas: es ver cómo anidan hoy.** Media hora mirando a alguien acomodar piezas sobre la chapa va a revelar restricciones que nadie menciona en una reunión — cómo agrupan por espesor, qué recortes guardan para después, qué no se puede rotar y por qué. Eso puede generar `SUP-xx` nuevos que ninguna de las preguntas cubre.
 
@@ -328,9 +331,9 @@ Resumen para revisar de un vistazo en cada daily.
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
 | Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
-| Parámetros (`PAR`) | 45 | 11 | 22 | 12 |
+| Parámetros (`PAR`) | 47 | 11 | 24 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
-| Preguntas (`P`) | 26 | 26 | 0 | 0 |
+| Preguntas (`P`) | 27 | 27 | 0 | 0 |
 | Decisiones (`D`) | 11 | 11 | 0 | 0 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).

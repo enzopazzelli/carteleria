@@ -1409,6 +1409,14 @@ Dado el rectángulo de una hoja detectada (CART-510)
 Cuando se sugiere su rol
 Entonces se sugiere "marco de chapa", nunca "cortar"
 
+Dado una forma fuera de toda hoja con el color de rótulo configurado (PAR-47)
+Cuando se sugiere su rol
+Entonces se sugiere "rótulo" — son cotas convertidas a curvas, no letras a cortar
+
+Dado una forma dentro de una hoja con el color de rótulo
+Cuando se sugiere su rol
+Entonces no se la considera rótulo: el color solo no alcanza
+
 Dado una forma sin ninguna de las señales anteriores
 Cuando se sugiere su rol
 Entonces se sugiere "cortar" por default — ninguna forma se excluye en silencio

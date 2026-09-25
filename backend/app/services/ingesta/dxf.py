@@ -94,6 +94,7 @@ class _ContornoValido:
     puntos: list[tuple[Decimal, Decimal]]
     capa: str
     indice: int
+    color: int | None = None
 
 
 def _distancia(a: tuple[Decimal, Decimal], b: tuple[Decimal, Decimal]) -> Decimal:
@@ -109,6 +110,24 @@ class _Trazo:
     puntos: list[tuple[Decimal, Decimal]]
     capa: str
     indice: int
+    color: int | None = None
+
+
+_COLOR_POR_CAPA = 256
+_COLOR_POR_BLOQUE = 0
+
+
+def _color_aci(entidad, documento) -> int | None:
+    """El color ACI con que se ve la entidad: el suyo, o el de su capa
+    si es "por capa". "Por bloque" no se resuelve (queda `None`)."""
+    color = entidad.dxf.get("color", _COLOR_POR_CAPA)
+    if color == _COLOR_POR_BLOQUE:
+        return None
+    if color != _COLOR_POR_CAPA:
+        return color
+    capa = documento.layers.get(entidad.dxf.layer) if documento.layers.has_entry(entidad.dxf.layer) else None
+    # Una capa apagada guarda su color en negativo.
+    return abs(capa.dxf.color) if capa is not None else None
 
 
 def _entidades_geometricas(entidades, ignoradas: Counter, profundidad: int = 0):
@@ -234,7 +253,7 @@ def _encadenar(abiertos: list[_Trazo]) -> tuple[list[_Trazo], list[_Trazo]]:
             puntos[0:0] = (nuevos if es_final else list(reversed(nuevos)))[:-1]
 
         destino = cerradas if _cierra(puntos, tolerancia) else restantes
-        destino.append(_Trazo(puntos, semilla.capa, semilla.indice))
+        destino.append(_Trazo(puntos, semilla.capa, semilla.indice, semilla.color))
     return cerradas, restantes
 
 
@@ -381,6 +400,7 @@ def _pieza_desde_clasificacion(
         contorno_mm=pieza.puntos,
         agujeros_mm=[a.puntos for a in agujeros],
         contenida_en_id=f"{Path(ruta).stem}-{contenedora.indice}" if contenedora is not None else None,
+        color_aci=pieza.color,
     )
 
 
@@ -441,7 +461,7 @@ def parsear_dxf(
                 continue
             firmas_vistas.add(firma)
 
-            trazo = _Trazo(puntos, entidad.dxf.layer, indice)
+            trazo = _Trazo(puntos, entidad.dxf.layer, indice, _color_aci(entidad, documento))
             indice += 1
             cierra_sola = len(puntos) >= 3 and _distancia(puntos[0], puntos[-1]) <= _TOLERANCIA_CIERRE_MM
             (cerrados if cierra_sola else abiertos).append(trazo)
@@ -465,7 +485,7 @@ def parsear_dxf(
                 ContornoAbierto(capa=trazo.capa, indice=trazo.indice, distancia_apertura_mm=Decimal("0"))
             )
         else:
-            contornos_validos.append(_ContornoValido(poligono, puntos, trazo.capa, trazo.indice))
+            contornos_validos.append(_ContornoValido(poligono, puntos, trazo.capa, trazo.indice, trazo.color))
 
     piezas = [
         _pieza_desde_clasificacion(ruta, pieza, agujeros, contenedora)

@@ -31,6 +31,16 @@ DISTANCIA_MAXIMA_ENTRE_PIEZAS_DE_UN_DISENIO_MM = Decimal("50")
 #: dibujos menos prolijos.
 TOLERANCIA_MEDIDA_DE_HOJA_MM = Decimal("5")
 _RECTANGULARIDAD_MINIMA = Decimal("0.99")  # PAR-43
+#: `PAR-44` y `PAR-45`: cuándo dos formas son la misma pieza (una en el
+#: ensamblado, otra en una hoja).
+TOLERANCIA_RELATIVA_GEMELA = Decimal("0.01")
+AREA_MINIMA_GEMELA_MM2 = Decimal("5000")
+#: `PAR-46`. Fracción del área de una pieza que tiene que caer en una
+#: hoja para contar como anidada ahí (una cuña apoyada en el borde).
+FRACCION_MINIMA_EN_HOJA = Decimal("0.99")
+#: `PAR-47`. Colores ACI de cotas y rótulos. Rojo (1) en la muestra;
+#: sin confirmar que sea una convención del equipo de diseño (`P-27`).
+COLORES_DE_ROTULO = frozenset({1})
 
 
 @dataclass(frozen=True)
@@ -207,6 +217,9 @@ class Rol(str, enum.Enum):
     CORTAR = "cortar"
     REFERENCIA = "referencia"
     MARCO_DE_CHAPA = "marco_de_chapa"
+    #: Cotas y rótulos convertidos a curvas ("Chapa 1.22x2.44 mts"): se
+    #: ven como letras a cortar, pero son anotaciones del plano.
+    ROTULO = "rotulo"
 
 
 @dataclass(frozen=True)
@@ -240,6 +253,38 @@ def _hoja_que_la_contiene(pieza: PiezaImportada, por_id: dict[str, PiezaImportad
     return None
 
 
+def _hoja_de_cada_pieza(
+    piezas: list[PiezaImportada], ids_de_hojas: set[str], fraccion_minima: float
+) -> dict[str, str | None]:
+    """En qué hoja está cada pieza, o `None`. Primero por la relación del
+    parser (`contenida_en_id`); si no, por geometría: una pieza con al
+    menos `fraccion_minima` de su área dentro del rectángulo de una hoja
+    también cuenta. El parser exige contención estricta — la pregunta
+    correcta para decidir un agujero —, pero una cuña que el diseñador
+    apoyó sobre el borde de la chapa está en esa hoja aunque sobresalga
+    una franja de milímetros."""
+    por_id = {p.id: p for p in piezas}
+    contornos = {p.id: Polygon([(float(x), float(y)) for x, y in p.contorno_mm]) for p in piezas}
+    resultado: dict[str, str | None] = {}
+    for pieza in piezas:
+        if pieza.id in ids_de_hojas:
+            resultado[pieza.id] = None
+            continue
+        hoja = _hoja_que_la_contiene(pieza, por_id, ids_de_hojas)
+        if hoja is None:
+            propio = contornos[pieza.id]
+            hoja = next(
+                (
+                    h
+                    for h in ids_de_hojas
+                    if propio.area > 0 and propio.intersection(contornos[h]).area >= fraccion_minima * propio.area
+                ),
+                None,
+            )
+        resultado[pieza.id] = hoja
+    return resultado
+
+
 def _gemela(
     pieza: PiezaImportada, candidatas: list[PiezaImportada], firmas: dict[str, tuple[float, float]], tolerancia: float
 ) -> str | None:
@@ -257,10 +302,12 @@ def sugerir_roles(
     formatos: list[Plancha],
     tolerancia_relativa_gemela: Decimal,
     area_minima_gemela_mm2: Decimal,
+    fraccion_minima_en_hoja: Decimal,
+    colores_de_rotulo: frozenset[int],
 ) -> list[PiezaConRol]:
     """Un rol sugerido por pieza, con las reglas de `CART-511` en orden
-    de prioridad: hoja → gemela entre hoja y ensamblado → no entra en
-    ninguna chapa → cortar. Nunca se excluye nada en silencio: sin
+    de prioridad: hoja → rótulo (color de rótulo fuera de las hojas) →
+    gemela entre hoja y ensamblado → no entra en ninguna chapa → cortar. Nunca se excluye nada en silencio: sin
     señal, el default es cortar."""
     por_id = {p.id: p for p in disenio.piezas}
     ids_de_hojas = {h.pieza_id for h in hojas}
@@ -271,14 +318,18 @@ def sugerir_roles(
     def _comparable(pieza: PiezaImportada) -> bool:
         return pieza.id not in ids_de_hojas and firmas[pieza.id][0] >= area_minima
 
-    en_hojas = [p for p in disenio.piezas if _comparable(p) and _hoja_que_la_contiene(p, por_id, ids_de_hojas)]
-    afuera = [p for p in disenio.piezas if _comparable(p) and not _hoja_que_la_contiene(p, por_id, ids_de_hojas)]
+    hoja_de = _hoja_de_cada_pieza(disenio.piezas, ids_de_hojas, float(fraccion_minima_en_hoja))
+    en_hojas = [p for p in disenio.piezas if _comparable(p) and hoja_de[p.id] is not None]
+    afuera = [p for p in disenio.piezas if _comparable(p) and hoja_de[p.id] is None]
     ids_en_hojas = {p.id for p in en_hojas}
 
     roles = []
     for pieza in disenio.piezas:
         if pieza.id in ids_de_hojas:
             roles.append(PiezaConRol(pieza.id, Rol.MARCO_DE_CHAPA, "hoja de chapa ya armada"))
+            continue
+        if hoja_de[pieza.id] is None and pieza.color_aci in colores_de_rotulo:
+            roles.append(PiezaConRol(pieza.id, Rol.ROTULO, "color de rótulo, fuera de las hojas"))
             continue
         if _comparable(pieza):
             dentro = pieza.id in ids_en_hojas
@@ -289,7 +340,7 @@ def sugerir_roles(
                 else:
                     roles.append(PiezaConRol(pieza.id, Rol.REFERENCIA, "ya está en una hoja", gemela))
                 continue
-        dentro_de_hoja = _hoja_que_la_contiene(pieza, por_id, ids_de_hojas) is not None
+        dentro_de_hoja = hoja_de[pieza.id] is not None
         if not dentro_de_hoja and not any(_entra_en_formato(pieza.ancho_mm, pieza.alto_mm, f) for f in formatos):
             roles.append(PiezaConRol(pieza.id, Rol.REFERENCIA, "no entra en ningún formato: no se corta tal cual"))
             continue

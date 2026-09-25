@@ -47,6 +47,11 @@ class PiezaImportada:
     contorno_mm: list[tuple[Decimal, Decimal]]
     agujeros_mm: list[list[tuple[Decimal, Decimal]]] = field(default_factory=list)
     contenida_en_id: str | None = None
+    #: Color ACI del trazo, ya resuelto si venía "por capa". Es una
+    #: señal, no geometría: los rótulos y cotas convertidos a curvas son
+    #: formas iguales a una letra a cortar, y el color es lo que los
+    #: distingue (`CART-511`). `None` si no se pudo resolver.
+    color_aci: int | None = None
 
 
 @dataclass(frozen=True)

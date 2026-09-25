@@ -248,6 +248,9 @@ def test_si_la_escala_actual_ya_encuentra_hojas_no_sugiere_otra():
 
 _TOLERANCIA_GEMELA = Decimal("0.01")
 _AREA_MINIMA_GEMELA_MM2 = Decimal("5000")
+_FRACCION_MINIMA_EN_HOJA = Decimal("0.99")
+_ROJO = 1
+_COLORES_DE_ROTULO = frozenset({_ROJO})
 
 
 def _roles(piezas: list[PiezaImportada]) -> dict[str, tuple]:
@@ -256,7 +259,9 @@ def _roles(piezas: list[PiezaImportada]) -> dict[str, tuple]:
     hojas = detectar_hojas(disenio, [_CHAPA], _TOLERANCIA_HOJA_MM)
     return {
         r.pieza_id: (r.rol, r.gemela_id)
-        for r in sugerir_roles(disenio, hojas, [_CHAPA], _TOLERANCIA_GEMELA, _AREA_MINIMA_GEMELA_MM2)
+        for r in sugerir_roles(
+            disenio, hojas, [_CHAPA], _TOLERANCIA_GEMELA, _AREA_MINIMA_GEMELA_MM2, _FRACCION_MINIMA_EN_HOJA, _COLORES_DE_ROTULO
+        )
     }
 
 
@@ -353,3 +358,57 @@ def test_lo_que_esta_en_una_hoja_se_corta_aunque_exceda_el_formato_por_la_tolera
     ]
 
     assert _roles(piezas)["faja"][0] is Rol.CORTAR
+
+
+def test_una_pieza_apoyada_en_el_borde_de_la_hoja_cuenta_como_adentro():
+    # La cuña roja de Belgrano: 99,98 % adentro, apoyada sobre el borde.
+    # El parser no la contiene (contención estricta) pero el diseñador sí
+    # la anidó en esa hoja. Sobresale 2 mm: 0,4 % de su área.
+    piezas = [
+        _rectangulo("hoja", 0, 0, 2440, 1220),
+        _rectangulo("letra", 1000, 100, 50, 50, contenida_en_id="hoja"),
+        _rectangulo("cuña", -2, 100, 500, 400),
+        _rectangulo("ensamblada", 3000, 0, 500, 400),
+    ]
+    roles = _roles(piezas)
+
+    assert roles["cuña"] == (Rol.CORTAR, "ensamblada")
+    assert roles["ensamblada"] == (Rol.REFERENCIA, "cuña")
+
+
+def test_una_pieza_con_la_mitad_afuera_de_la_hoja_no_cuenta_como_adentro():
+    piezas = [
+        _rectangulo("hoja", 0, 0, 2440, 1220),
+        _rectangulo("letra", 1000, 100, 50, 50, contenida_en_id="hoja"),
+        _rectangulo("cuña", -250, 100, 500, 400),
+        _rectangulo("ensamblada", 3000, 0, 500, 400),
+    ]
+
+    assert _roles(piezas)["cuña"] == (Rol.CORTAR, None)
+
+
+def _con_color(pieza: PiezaImportada, color: int) -> PiezaImportada:
+    return replace(pieza, color_aci=color)
+
+
+def test_una_forma_roja_fuera_de_las_hojas_es_rotulo():
+    # Las letras de "Chapa 1.22x2.44 mts", convertidas a curvas.
+    roles = _roles([_con_color(_rectangulo("C", 0, 0, 200, 300), _ROJO)])
+
+    assert roles["C"][0] is Rol.ROTULO
+
+
+def test_una_forma_roja_dentro_de_una_hoja_se_corta():
+    # El rojo solo no alcanza: en la muestra hay cuñas rojas anidadas.
+    piezas = [
+        _rectangulo("hoja", 0, 0, 2440, 1220),
+        _con_color(_rectangulo("cuña", 100, 100, 500, 400, contenida_en_id="hoja"), _ROJO),
+    ]
+
+    assert _roles(piezas)["cuña"][0] is Rol.CORTAR
+
+
+def test_una_forma_de_otro_color_fuera_de_las_hojas_no_es_rotulo():
+    roles = _roles([_con_color(_rectangulo("letra", 0, 0, 200, 300), 7)])
+
+    assert roles["letra"][0] is Rol.CORTAR

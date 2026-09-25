@@ -319,3 +319,36 @@ def test_una_escala_no_positiva_levanta_un_error_claro(tmp_path, escala):
 
     with pytest.raises(ArchivoDXFInvalido, match="escala"):
         parsear_dxf(ruta, Decimal(escala))
+
+
+# --- Color de cada pieza (señal de rótulos, CART-511) ----------------------
+
+
+def test_guarda_el_color_propio_de_la_entidad(tmp_path):
+    ruta = _guardar_dxf(
+        tmp_path,
+        "rojo.dxf",
+        lambda doc, msp: msp.add_lwpolyline([(0, 0), (10, 0), (10, 10), (0, 10)], close=True, dxfattribs={"color": 1}),
+    )
+
+    assert parsear_dxf(ruta, _ESCALA_IDENTIDAD).piezas[0].color_aci == 1
+
+
+def test_un_color_por_capa_toma_el_color_de_la_capa(tmp_path):
+    def armar(doc, msp):
+        doc.layers.add("COTAS", color=5)
+        msp.add_lwpolyline([(0, 0), (10, 0), (10, 10), (0, 10)], close=True, dxfattribs={"layer": "COTAS"})
+
+    ruta = _guardar_dxf(tmp_path, "por_capa.dxf", armar)
+
+    assert parsear_dxf(ruta, _ESCALA_IDENTIDAD).piezas[0].color_aci == 5
+
+
+def test_una_figura_armada_con_trazos_sueltos_toma_el_color_del_primero(tmp_path):
+    def armar(doc, msp):
+        for inicio, fin in [((0, 0), (10, 0)), ((10, 0), (10, 10)), ((10, 10), (0, 10)), ((0, 10), (0, 0))]:
+            msp.add_line(inicio, fin, dxfattribs={"color": 3})
+
+    ruta = _guardar_dxf(tmp_path, "trazos.dxf", armar)
+
+    assert parsear_dxf(ruta, _ESCALA_IDENTIDAD).piezas[0].color_aci == 3
