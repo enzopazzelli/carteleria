@@ -20,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ..modelos.base import inicializar
 from .rutas_ajuste import router as router_ajuste
 from .rutas_catalogo import router as router_catalogo
+from .rutas_importacion import router as router_importacion
 from .rutas_nesting import router as router_nesting
 from .rutas_presupuesto import router as router_presupuesto
 from .rutas_trabajos import router as router_trabajos
@@ -51,6 +52,7 @@ app.add_middleware(
 
 app.include_router(router_catalogo)
 app.include_router(router_trabajos)
+app.include_router(router_importacion)
 app.include_router(router_nesting)
 app.include_router(router_ajuste)
 app.include_router(router_presupuesto)
