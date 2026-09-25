@@ -83,6 +83,8 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-38** | Tolerancia de deduplicación de líneas superpuestas | 0,1 | mm | Sistema | Config | `CART-503` | 🟡 provisorio |
 | **PAR-39** | Área mínima de hueco aprovechable para anidado en huecos | 100 | mm² | Sistema | Config | Capa 2, `PLAN-MOTOR-NESTING-PYTHON-NATIVO.md` | 🟡 provisorio |
 | **PAR-41** | Distancia máxima entre cajas de piezas raíz para considerarlas del mismo diseño | 50 | mm | Sistema | Config | `CART-509` | 🟡 provisorio — medido sobre `Muestra Vectores.dxf`: con 50 mm cada marco de la grilla de paneles queda como diseño propio; con 200 mm se funden en un grupo de 1.487 piezas. Los diseños con marco no dependen de este valor |
+| **PAR-42** | Tolerancia de medida para que un rectángulo coincida con un formato del catálogo (hoja ya dibujada) | 5 | mm | Sistema | Config | `CART-510` | 🟡 provisorio — las 8 hojas de Belgrano miden exacto; las hojas "a medida" de cal. 20 difieren de su rótulo 14–36 mm (ver `P-26`) |
+| **PAR-43** | Rectangularidad mínima de una hoja (área del contorno / área de su caja) | 0,99 | — | Sistema | Config | `CART-510` | 🟡 provisorio |
 
 ### 2.2 Parámetros comerciales
 
@@ -261,10 +263,10 @@ Surgen de la muestra real de Megacarteles (ver [`ANALISIS-MUESTRA-MEGACARTELES.m
 | **P-20** | Cuando llega un DXF, ¿el diseñador ya armó las hojas a mano (trabajo terminado) o solo entrega el diseño ensamblado y las hojas las tiene que producir el sistema? | Si las hojas dibujadas son una entrada o el resultado esperado — sub-proyectos 1 y 3 |
 | **P-21** | ¿Cómo decide el diseñador por dónde partir lo que no entra en una chapa (líneas ya dibujadas, simetría, evitar cortar letras, largo máximo de corte)? | Criterio del seccionado — sub-proyecto 2 |
 | **P-22** | Las secciones de una pieza partida, ¿llevan uniones (solapes, pestañas, tornillos, soldadura) que cambien la geometría del corte? | Geometría del seccionado — sub-proyecto 2 |
-| **P-23** | Las tiras "chapa cal. 22 0,30×1,20" que se dibujan como peines de rectángulos finos, ¿qué son (fajas laterales, refuerzos, otra cosa) y cómo se costean? | Rol de esas formas — sub-proyecto 1 |
+| **P-23** | Las tiras "chapa cal. 22 0,30×1,20" que se dibujan como peines de rectángulos finos, ¿qué son (fajas laterales, refuerzos, otra cosa) y cómo se costean? *Medido (2026-09-25): cada tira es una pieza suelta de 20 × 1.200–1.214 mm, no una hoja.* | Rol de esas formas — sub-proyecto 1 |
 | **P-24** | Las versiones "Pinturas" y los logos a color, ¿se pintan o también se cortan? | Rol `referencia` — sub-proyecto 1 |
 | **P-25** | Los distintos diseños de un mismo DXF (Belgrano, Awaduct, Vulcano...), ¿son trabajos de clientes distintos? | Si un Diseño equivale a un Trabajo — sub-proyecto 1 |
-| **P-26** | Además de 1,22×2,44, la muestra usa chapa calibre 20 de 1,00×1,20 y calibre 22 de 0,30×1,20: ¿son formatos que compran y están en el catálogo? | `P-02`, `B-02` |
+| **P-26** | Además de 1,22×2,44, la muestra usa chapa calibre 20 de 1,00×1,20 y calibre 22 de 0,30×1,20: ¿son formatos que compran y están en el catálogo? *Medido (2026-09-25): las hojas de cal. 20 tienen un lado de ~1,20 m y el otro variable (0,43 / 0,73 / 0,87 / 1,00 m según el trabajo), y el dibujo difiere del rótulo 14–36 mm. ¿El cal. 20 viene en rollo o tira de 1,20 m de ancho que se corta a largo? Si es así, `CART-510` tiene que reconocer hojas por un solo lado, no por formato completo.* | `P-02`, `B-02`, `CART-510`, `PAR-42` |
 
 ### 🟡 Aprobación y envío
 
@@ -324,7 +326,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
 | Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
-| Parámetros (`PAR`) | 41 | 11 | 18 | 12 |
+| Parámetros (`PAR`) | 43 | 11 | 20 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 26 | 26 | 0 | 0 |
 | Decisiones (`D`) | 11 | 11 | 0 | 0 |

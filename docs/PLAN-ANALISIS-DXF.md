@@ -133,7 +133,10 @@ Reglas en el orden del Gherkin de `BACKLOG.md`:
 ## Altas en `REGISTRO.md` (a dar de alta cuando arranque la implementación)
 
 - ~~`PAR-xx`~~ **`PAR-41`** (dado de alta 2026-09-25) — distancia máxima entre bounding boxes de piezas raíz para considerarlas del mismo diseño (`CART-509`)
-- `PAR-xx` — tolerancia de medida para que un rectángulo coincida con un `Formato` del catálogo (`CART-510`)
+- ~~`PAR-xx`~~ **`PAR-42`** (dado de alta 2026-09-25) — tolerancia de medida para que un rectángulo coincida con un `Formato` del catálogo (`CART-510`)
+- **`PAR-43`** (dado de alta 2026-09-25, no estaba previsto) — rectangularidad mínima de una hoja (`CART-510`)
+
+> **Límite conocido de `CART-510` (2026-09-25).** Detecta las hojas con formato de catálogo (las 8 de Belgrano, 3 en "Complejo") pero ninguna de las hojas "a medida" de cal. 20 de la grilla de paneles: miden ~1,20 m por un lado y lo consumido por el otro. Queda así hasta que el taller responda `P-26`.
 - `PAR-xx` — tolerancia relativa de área/perímetro para considerar dos formas "gemelas" (`CART-511`); el análisis de la muestra usó 1% como referencia, no confirmado como parámetro de negocio
 - `PAR-xx` — área mínima de una forma para entrar a la comparación de gemelas (evita comparar residuos de splines); la muestra usó 5.000 mm² como referencia
 

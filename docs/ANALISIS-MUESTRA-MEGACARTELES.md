@@ -46,6 +46,7 @@ Marco "Belgrano" (medido: 12.027 × 9.443 mm, 117 formas adentro, contadas las 8
 
 - **Medido:** el marco de Belgrano tiene 8 hojas de 2440 × 1220 mm; hay un segundo marco de 10.007 × 6.366 mm y otros marcos grandes (3.588 × 3.207, 3.588 × 2.765 y 1.835 × 3.207 mm, entre otros).
 - **Leído de las imágenes:** además de Belgrano aparecen otros trabajos con la misma lógica (Awaduct, Vulcano, Roca, Rotoplas, Honda, Elements), con hojas de "chapa cal. 20 1.00 × 1.20" y tiras de "chapa cal. 22 0.30 × 1.20". Algunos traen una versión pintada rotulada "Pinturas" (`P-24`).
+- **Medido (2026-09-25):** las hojas de cal. 20 de la grilla no tienen medida de catálogo: un lado es ~1,20 m y el otro lo consumido por el trabajo (1036, 791, 635, 580, 566, 489 mm), y difieren de su rótulo 14–36 mm (`P-26`).
 - **Medido:** de las 188 `LWPOLYLINE`, 128 son tiras finas (91 de 0,2 × 12,0, 32 de 0,2 × 12,14 y 5 de 0,4 × 12,0). En las imágenes se ven como peines junto a las hojas de calibre 22 (`P-23`).
 
 ---
