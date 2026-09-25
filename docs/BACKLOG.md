@@ -33,11 +33,11 @@ Cada historia tiene: ID, narrativa, criterios de aceptación en Gherkin, estimac
 | F2 — Nesting rectangular | 11 | 62 | S2 | A |
 | F3 — Cotizador y PDF | 10 | 47 | S3 | A |
 | F4 — Aprobación y envío | 8 | 37 | S4 | A |
-| F5 — Importación Corel | 8 | 50 | S5-S6 | A |
+| F5 — Importación Corel | 11 | 76 | S5-S6 | A |
 | F6 — Fotomontaje | 7 | 42 | S7-S8 | A |
 | F7 — Nesting irregular | 5 | 39 | S9-S10 | A |
 | F8 — Dashboard | 8 | 44 | S2-S5 | B |
-| **Total** | **70** | **371** | | |
+| **Total** | **73** | **397** | | |
 
 ---
 
@@ -1209,7 +1209,9 @@ Entonces se ve la tasa de aceptación por período, por cliente y por diseñador
 # F5 — Importación desde CorelDRAW
 
 > **Objetivo:** que el diseño salga de Corel y entre al sistema sin recargar medidas. Cierra **H3**.
-> **Sprint:** S5-S6 · **Puntos:** 50 · **Depende de:** F2 validada en uso real
+> **Sprint:** S5-S6 · **Puntos:** 76 · **Depende de:** F2 validada en uso real
+>
+> **Alta 2026-09-25:** `CART-509`, `CART-510` y `CART-511` se agregan tras analizar una muestra real de diseño con varios trabajos y hojas de corte ya armadas en un mismo DXF (`ANALISIS-MUESTRA-MEGACARTELES.md`). `CART-506` se extiende con el criterio de rol. F5 pasa de 8 a 11 historias, de 50 a 76 puntos.
 > **Requisitos cubiertos:** R1, RD-06
 
 ---
@@ -1342,6 +1344,82 @@ Entonces cada una reporta su bounding box y su área real de polígono
 
 ---
 
+### CART-509 — Detección de diseños múltiples en un mismo DXF
+
+**Como** diseñador **quiero** que un DXF con varios trabajos se separe solo en diseños independientes **para** no tener que subirlos uno por uno ni que se mezclen entre sí.
+
+```gherkin
+Dado un DXF con más de una agrupación de formas disjunta (sin contornos que se toquen ni se contengan entre grupos)
+Cuando se analiza
+Entonces el sistema propone tantos diseños como agrupaciones disjuntas encuentra, cada uno con sus formas
+
+Dado un DXF con una sola agrupación
+Cuando se analiza
+Entonces se propone un único diseño con todas las formas
+
+Dado varios diseños propuestos
+Cuando el diseñador confirma la importación
+Entonces cada diseño confirmado crea un Trabajo separado
+```
+
+> Default mientras `P-25` no se responde: un diseño confirmado siempre crea un Trabajo, nunca se combinan dos en uno. Ver `ANALISIS-MUESTRA-MEGACARTELES.md §6`.
+
+**Puntos:** 5 · **Depende de:** CART-503 · **Sprint:** S6
+
+---
+
+### CART-510 — Detección de hojas de chapa ya dibujadas
+
+**Como** diseñador **quiero** que el sistema reconozca las hojas de corte que ya armé a mano en el DXF **para** no perder ese trabajo ni que se cuente como una pieza más.
+
+```gherkin
+Dado un contorno rectangular cerrado cuya medida coincide con un formato del catálogo (CART-102) y que contiene otras formas
+Cuando se analiza el diseño
+Entonces se marca como candidato a "marco de chapa" y las formas que contiene quedan asociadas a esa hoja
+
+Dado un diseño sin ningún rectángulo que coincida con un formato del catálogo
+Cuando se analiza
+Entonces no se proponen hojas, y ninguna forma se descarta por este criterio
+
+Dado un diseño con un rectángulo candidato cuya medida es un múltiplo simple de un formato del catálogo bajo otra escala
+Cuando no hay una escala confirmada todavía
+Entonces el sistema sugiere esa escala en vez de la que declara el encabezado del DXF
+```
+
+> El tercer criterio es la corrección directa al caso medido en `ANALISIS-MUESTRA-MEGACARTELES.md §1`: el encabezado declaraba una escala 10 veces menor a la real, y los rectángulos de las hojas fueron la señal que permitió detectarlo.
+
+**Puntos:** 8 · **Depende de:** CART-503, CART-102 · **Sprint:** S6
+
+---
+
+### CART-511 — Sugerencia de rol por forma
+
+**Como** diseñador **quiero** que el sistema proponga qué formas cortar y cuáles no **para** no tener que separar a mano el diseño ensamblado de las hojas ya armadas.
+
+```gherkin
+Dado una forma dentro de una hoja detectada (CART-510) que tiene una gemela de área y perímetro equivalentes fuera de esa hoja
+Cuando se sugiere su rol
+Entonces la copia dentro de la hoja se sugiere "cortar" y la de fuera se sugiere "referencia"
+
+Dado una forma que no entra en ningún formato del catálogo (CART-102) y queda fuera de toda hoja detectada
+Cuando se sugiere su rol
+Entonces se sugiere "referencia" y se advierte que no puede cortarse tal cual en ningún formato disponible
+
+Dado el rectángulo de una hoja detectada (CART-510)
+Cuando se sugiere su rol
+Entonces se sugiere "marco de chapa", nunca "cortar"
+
+Dado una forma sin ninguna de las señales anteriores
+Cuando se sugiere su rol
+Entonces se sugiere "cortar" por default — ninguna forma se excluye en silencio
+```
+
+> El rol es siempre una sugerencia editable, nunca una decisión automática — es la decisión de producto de esta sesión (`ANALISIS-MUESTRA-MEGACARTELES.md §6`), y evita que un archivo distinto de la muestra analizada se clasifique mal sin forma de corregirlo.
+
+**Puntos:** 8 · **Depende de:** CART-509, CART-510 · **Sprint:** S6
+
+---
+
 ### CART-506 — Pantalla de revisión y corrección manual
 
 **Como** diseñador **quiero** revisar y corregir lo que el sistema detectó **para** arreglar los casos que el parser no resolvió bien.
@@ -1362,11 +1440,19 @@ Entonces se consolidan en una sola con la cantidad sumada
 Dado una revisión confirmada
 Cuando el diseñador la acepta
 Entonces las piezas quedan cargadas en el presupuesto igual que si las hubiera ingresado a mano
+
+Dado formas agrupadas en diseños (CART-509) y con rol sugerido (CART-511)
+Cuando el diseñador abre la revisión
+Entonces cada forma muestra su rol sugerido (cortar, referencia, marco de chapa) y puede cambiarlo antes de confirmar
+
+Dado una revisión confirmada
+Cuando se crean las piezas del trabajo
+Entonces solo las formas confirmadas como "cortar" se persisten como Pieza — las demás quedan visibles en el reporte de importación, no se pierden ni se cuentan como pieza
 ```
 
-> **El parser nunca va a ser perfecto.** Esta pantalla es la que hace que F5 sea usable en la realidad y no una fuente de frustración. Mitigación central de **RI-01**.
+> **El parser nunca va a ser perfecto.** Esta pantalla es la que hace que F5 sea usable en la realidad y no una fuente de frustración. Mitigación central de **RI-01**. Los dos últimos criterios se agregaron el 2026-09-25 al analizar una muestra real con varios diseños y hojas de corte ya armadas por el diseñador (`ANALISIS-MUESTRA-MEGACARTELES.md §6`): sin esto, el diseño ensamblado y sus hojas se cargaban los dos como piezas, duplicados.
 
-**Puntos:** 8 · **Depende de:** CART-505 · **Sprint:** S6
+**Puntos:** 13 · **Depende de:** CART-505, CART-509, CART-510, CART-511 · **Sprint:** S6
 
 ---
 
@@ -1959,7 +2045,7 @@ Entonces la instrumentación sigue midiendo y alerta si el p95 supera PAR-24
 | **S3** | 6-7 | A | CART-301 → CART-310 · 🏁 **H1** | 47 |
 | **S4** | 8-9 | A | CART-401 → CART-408 · 🏁 **H2** | 37 |
 | **S4-S5** | 8-12 | B | CART-805 → CART-808 · 🏁 **H6** | 21 |
-| **S5-S6** | 10-13 | A | CART-501 → CART-508 · 🏁 **H3** | 50 |
+| **S5-S6** | 10-13 | A | CART-501 → CART-511 · 🏁 **H3** | 76 |
 | **S7-S8** | 14-17 | A | CART-601 → CART-607 · 🏁 **H4** | 42 |
 | **S9-S10** | 18-21 | A | CART-701 → CART-705 · 🏁 **H5** | 39 |
 
