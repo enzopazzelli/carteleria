@@ -11,6 +11,7 @@ se conectan si sus cajas quedan a no más de `distancia_maxima_mm`.
 """
 from __future__ import annotations
 
+import enum
 import math
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
@@ -18,6 +19,7 @@ from decimal import Decimal
 from shapely.geometry import Polygon
 
 from ..nesting.models import Plancha
+from ..piezas.servicio import _entra_en_formato
 from .models import PiezaImportada
 
 #: `PAR-41`. Los diseños con marco no dependen de este valor (el marco
@@ -193,3 +195,124 @@ def sugerir_factor_de_escala(
         if cantidad > mejor_cantidad:
             mejor, mejor_cantidad = factor, cantidad
     return mejor
+
+
+# --- Rol sugerido por forma (CART-511) -------------------------------------
+
+
+class Rol(str, enum.Enum):
+    """Qué hacer con una forma. Siempre es una sugerencia: el
+    diseñador lo confirma o lo cambia en la revisión (`CART-506`)."""
+
+    CORTAR = "cortar"
+    REFERENCIA = "referencia"
+    MARCO_DE_CHAPA = "marco_de_chapa"
+
+
+@dataclass(frozen=True)
+class PiezaConRol:
+    pieza_id: str
+    rol: Rol
+    #: Por qué se sugirió: se muestra en la revisión, para que el
+    #: diseñador pueda juzgar la sugerencia y no solo aceptarla.
+    motivo: str
+    gemela_id: str | None = None
+
+
+def _firma(pieza: PiezaImportada) -> tuple[float, float]:
+    """Área y perímetro del contorno exterior: no cambian al trasladar ni
+    al rotar, que es lo que hace el diseñador al pasar una letra del
+    ensamblado a la hoja."""
+    poligono = Polygon([(float(x), float(y)) for x, y in pieza.contorno_mm])
+    return poligono.area, poligono.length
+
+
+def _son_gemelas(a: tuple[float, float], b: tuple[float, float], tolerancia: float) -> bool:
+    return all(abs(x - y) <= tolerancia * max(x, y) for x, y in zip(a, b))
+
+
+def _hoja_que_la_contiene(pieza: PiezaImportada, por_id: dict[str, PiezaImportada], hojas: set[str]) -> str | None:
+    actual = pieza
+    while actual.contenida_en_id is not None and actual.contenida_en_id in por_id:
+        if actual.contenida_en_id in hojas:
+            return actual.contenida_en_id
+        actual = por_id[actual.contenida_en_id]
+    return None
+
+
+def _gemela(
+    pieza: PiezaImportada, candidatas: list[PiezaImportada], firmas: dict[str, tuple[float, float]], tolerancia: float
+) -> str | None:
+    """La candidata más parecida entre las que son gemelas, o `None`."""
+    propias = firmas[pieza.id]
+    gemelas = [c for c in candidatas if _son_gemelas(propias, firmas[c.id], tolerancia)]
+    if not gemelas:
+        return None
+    return min(gemelas, key=lambda c: abs(firmas[c.id][0] - propias[0])).id
+
+
+def sugerir_roles(
+    disenio: DisenioDetectado,
+    hojas: list[HojaDetectada],
+    formatos: list[Plancha],
+    tolerancia_relativa_gemela: Decimal,
+    area_minima_gemela_mm2: Decimal,
+) -> list[PiezaConRol]:
+    """Un rol sugerido por pieza, con las reglas de `CART-511` en orden
+    de prioridad: hoja → gemela entre hoja y ensamblado → no entra en
+    ninguna chapa → cortar. Nunca se excluye nada en silencio: sin
+    señal, el default es cortar."""
+    por_id = {p.id: p for p in disenio.piezas}
+    ids_de_hojas = {h.pieza_id for h in hojas}
+    firmas = {p.id: _firma(p) for p in disenio.piezas}
+    tolerancia = float(tolerancia_relativa_gemela)
+    area_minima = float(area_minima_gemela_mm2)
+
+    def _comparable(pieza: PiezaImportada) -> bool:
+        return pieza.id not in ids_de_hojas and firmas[pieza.id][0] >= area_minima
+
+    en_hojas = [p for p in disenio.piezas if _comparable(p) and _hoja_que_la_contiene(p, por_id, ids_de_hojas)]
+    afuera = [p for p in disenio.piezas if _comparable(p) and not _hoja_que_la_contiene(p, por_id, ids_de_hojas)]
+    ids_en_hojas = {p.id for p in en_hojas}
+
+    roles = []
+    for pieza in disenio.piezas:
+        if pieza.id in ids_de_hojas:
+            roles.append(PiezaConRol(pieza.id, Rol.MARCO_DE_CHAPA, "hoja de chapa ya armada"))
+            continue
+        if _comparable(pieza):
+            dentro = pieza.id in ids_en_hojas
+            gemela = _gemela(pieza, afuera if dentro else en_hojas, firmas, tolerancia)
+            if gemela is not None:
+                if dentro:
+                    roles.append(PiezaConRol(pieza.id, Rol.CORTAR, "copia en hoja del diseño ensamblado", gemela))
+                else:
+                    roles.append(PiezaConRol(pieza.id, Rol.REFERENCIA, "ya está en una hoja", gemela))
+                continue
+        dentro_de_hoja = _hoja_que_la_contiene(pieza, por_id, ids_de_hojas) is not None
+        if not dentro_de_hoja and not any(_entra_en_formato(pieza.ancho_mm, pieza.alto_mm, f) for f in formatos):
+            roles.append(PiezaConRol(pieza.id, Rol.REFERENCIA, "no entra en ningún formato: no se corta tal cual"))
+            continue
+        roles.append(PiezaConRol(pieza.id, Rol.CORTAR, "sin otra señal"))
+    return _heredar_referencia_de_gemelas(roles, por_id)
+
+
+def _heredar_referencia_de_gemelas(roles: list[PiezaConRol], por_id: dict[str, PiezaImportada]) -> list[PiezaConRol]:
+    """Lo que está adentro de una forma que ya es referencia POR TENER
+    GEMELA en una hoja (el ojal de una "O" ensamblada) tampoco se corta.
+    No se hereda de una referencia por "no entra en ningún formato": un
+    tablero de presentación gigante tiene adentro piezas que sí se cortan."""
+    por_gemela = {r.pieza_id for r in roles if r.rol is Rol.REFERENCIA and r.gemela_id is not None}
+    resultado = []
+    for rol in roles:
+        if rol.rol is Rol.CORTAR and rol.gemela_id is None:
+            actual = por_id[rol.pieza_id]
+            while actual.contenida_en_id is not None and actual.contenida_en_id in por_id:
+                if actual.contenida_en_id in por_gemela:
+                    rol = PiezaConRol(
+                        rol.pieza_id, Rol.REFERENCIA, f"adentro de {actual.contenida_en_id}, que ya está en una hoja"
+                    )
+                    break
+                actual = por_id[actual.contenida_en_id]
+        resultado.append(rol)
+    return resultado

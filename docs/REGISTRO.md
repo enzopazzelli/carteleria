@@ -85,6 +85,8 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-41** | Distancia máxima entre cajas de piezas raíz para considerarlas del mismo diseño | 50 | mm | Sistema | Config | `CART-509` | 🟡 provisorio — medido sobre `Muestra Vectores.dxf`: con 50 mm cada marco de la grilla de paneles queda como diseño propio; con 200 mm se funden en un grupo de 1.487 piezas. Los diseños con marco no dependen de este valor |
 | **PAR-42** | Tolerancia de medida para que un rectángulo coincida con un formato del catálogo (hoja ya dibujada) | 5 | mm | Sistema | Config | `CART-510` | 🟡 provisorio — las 8 hojas de Belgrano miden exacto; las hojas "a medida" de cal. 20 difieren de su rótulo 14–36 mm (ver `P-26`) |
 | **PAR-43** | Rectangularidad mínima de una hoja (área del contorno / área de su caja) | 0,99 | — | Sistema | Config | `CART-510` | 🟡 provisorio |
+| **PAR-44** | Tolerancia relativa de área y perímetro para que dos formas sean "gemelas" (la misma pieza en el ensamblado y en una hoja) | 1 | % | Sistema | Config | `CART-511` | 🟡 provisorio — con este valor, en Belgrano quedan 36 formas de las hojas emparejadas con el ensamblado |
+| **PAR-45** | Área mínima de una forma para entrar a la comparación de gemelas | 5.000 | mm² | Sistema | Config | `CART-511` | 🟡 provisorio — evita emparejar ojales o puntos iguales por casualidad |
 
 ### 2.2 Parámetros comerciales
 
@@ -326,7 +328,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
 | Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
-| Parámetros (`PAR`) | 43 | 11 | 20 | 12 |
+| Parámetros (`PAR`) | 45 | 11 | 22 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 26 | 26 | 0 | 0 |
 | Decisiones (`D`) | 11 | 11 | 0 | 0 |

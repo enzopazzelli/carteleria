@@ -139,8 +139,12 @@ Reglas en el orden del Gherkin de `BACKLOG.md`:
 > **Límite conocido de `CART-510` (2026-09-25).** Detecta las hojas con formato de catálogo (las 8 de Belgrano, 3 en "Complejo") pero ninguna de las hojas "a medida" de cal. 20 de la grilla de paneles: miden ~1,20 m por un lado y lo consumido por el otro. Queda así hasta que el taller responda `P-26`.
 >
 > **Límite conocido de la sugerencia de escala (2026-09-25).** Sobre la muestra parseada con la escala del encabezado (10) sugiere ×10 correctamente; con escala 1 no sugiere nada, porque las hojas (24,4 × 12,2 mm a esa escala) caen bajo el umbral de agujero de `parsear_dxf` y nunca llegan a ser piezas. Se resuelve en el paso `analizar` de la API (volver a parsear sin ese umbral si no aparece ninguna hoja), no en la función de análisis.
-- `PAR-xx` — tolerancia relativa de área/perímetro para considerar dos formas "gemelas" (`CART-511`); el análisis de la muestra usó 1% como referencia, no confirmado como parámetro de negocio
-- `PAR-xx` — área mínima de una forma para entrar a la comparación de gemelas (evita comparar residuos de splines); la muestra usó 5.000 mm² como referencia
+>
+> **Límite conocido de `CART-511` (2026-09-25).** En Belgrano, las 46 formas de las hojas salen `cortar` y 42 del ensamblado salen `referencia`, pero las 22 letras del rótulo rojo "Chapa 1.22x2.44 mts" (convertido a curvas) salen `cortar`: por geometría son indistinguibles de letras a cortar. La señal es el color, que `parsear_dxf` hoy descarta — paso siguiente: guardar el color por pieza y sugerir un rol `rótulo`.
+>
+> **Decisión de diseño no prevista en el backlog.** Lo que está adentro de una forma que es `referencia` *por tener gemela* hereda `referencia` (el ojal de una "O" ensamblada). No hereda de una `referencia` por "no entra en ningún formato": un tablero de presentación gigante tiene adentro piezas que sí se cortan.
+- ~~`PAR-xx`~~ **`PAR-44`** (dado de alta 2026-09-25) — tolerancia relativa de área/perímetro para considerar dos formas "gemelas" (`CART-511`)
+- ~~`PAR-xx`~~ **`PAR-45`** (dado de alta 2026-09-25) — área mínima de una forma para entrar a la comparación de gemelas
 
 ---
 

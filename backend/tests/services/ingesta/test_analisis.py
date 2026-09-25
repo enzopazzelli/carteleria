@@ -15,8 +15,10 @@ from decimal import Decimal
 from app.services.ingesta.analisis import (
     DisenioDetectado,
     agrupar_en_disenios,
+    Rol,
     detectar_hojas,
     sugerir_factor_de_escala,
+    sugerir_roles,
 )
 from app.services.ingesta.models import PiezaImportada
 from app.services.nesting.models import Plancha
@@ -240,3 +242,114 @@ def test_si_la_escala_actual_ya_encuentra_hojas_no_sugiere_otra():
     dos_a_cien = _copias(_hoja_con_letra("24.4", "12.2"), ["b", "c"])
 
     assert _factor(una_bien + dos_a_cien) is None
+
+
+# --- Rol sugerido por forma (CART-511) -------------------------------------
+
+_TOLERANCIA_GEMELA = Decimal("0.01")
+_AREA_MINIMA_GEMELA_MM2 = Decimal("5000")
+
+
+def _roles(piezas: list[PiezaImportada]) -> dict[str, tuple]:
+    """`{id: (rol, gemela_id)}` de cada pieza del diseño."""
+    disenio = DisenioDetectado(piezas=piezas)
+    hojas = detectar_hojas(disenio, [_CHAPA], _TOLERANCIA_HOJA_MM)
+    return {
+        r.pieza_id: (r.rol, r.gemela_id)
+        for r in sugerir_roles(disenio, hojas, [_CHAPA], _TOLERANCIA_GEMELA, _AREA_MINIMA_GEMELA_MM2)
+    }
+
+
+def test_el_rectangulo_de_una_hoja_es_marco_de_chapa():
+    piezas = [
+        _rectangulo("hoja", 0, 0, 2440, 1220),
+        _rectangulo("letra", 100, 100, 300, 400, contenida_en_id="hoja"),
+    ]
+
+    assert _roles(piezas)["hoja"][0] is Rol.MARCO_DE_CHAPA
+
+
+def _hoja_y_ensamblado(letra_ancho=300, letra_alto=400, afuera_ancho=None, afuera_alto=None):
+    """Una hoja con una letra adentro, y otra letra fuera de la hoja
+    (el diseño ensamblado). Por default son gemelas."""
+    return [
+        _rectangulo("hoja", 0, 0, 2440, 1220),
+        _rectangulo("en-hoja", 100, 100, letra_ancho, letra_alto, contenida_en_id="hoja"),
+        _rectangulo("ensamblada", 3000, 0, afuera_ancho or letra_ancho, afuera_alto or letra_alto),
+    ]
+
+
+def test_una_letra_de_la_hoja_con_gemela_afuera_se_corta_y_la_de_afuera_es_referencia():
+    roles = _roles(_hoja_y_ensamblado())
+
+    assert roles["en-hoja"] == (Rol.CORTAR, "ensamblada")
+    assert roles["ensamblada"] == (Rol.REFERENCIA, "en-hoja")
+
+
+def test_una_forma_que_no_entra_en_ninguna_chapa_fuera_de_hojas_es_referencia():
+    # El círculo de Belgrano ensamblado: 4.6 m, no se corta tal cual.
+    roles = _roles([_rectangulo("anillo", 0, 0, 4600, 4600)])
+
+    assert roles["anillo"][0] is Rol.REFERENCIA
+
+
+def test_una_forma_sin_ninguna_senal_se_corta():
+    assert _roles([_rectangulo("panel", 0, 0, 500, 500)])["panel"] == (Rol.CORTAR, None)
+
+
+def test_las_formas_chicas_no_se_emparejan_como_gemelas():
+    # 50 x 50 = 2.500 mm², bajo el mínimo: podrían ser ojales o puntos
+    # iguales por casualidad, no copias de la misma pieza.
+    roles = _roles(_hoja_y_ensamblado(letra_ancho=50, letra_alto=50))
+
+    assert roles["en-hoja"] == (Rol.CORTAR, None)
+    assert roles["ensamblada"] == (Rol.CORTAR, None)
+
+
+def test_lo_que_esta_adentro_de_una_referencia_por_gemela_tambien_es_referencia():
+    # El ojal de la "O" ensamblada: chico para compararse, pero no se
+    # corta aparte si la "O" entera ya está en una hoja.
+    piezas = [*_hoja_y_ensamblado(), _rectangulo("ojal", 3100, 100, 20, 20, contenida_en_id="ensamblada")]
+
+    assert _roles(piezas)["ojal"][0] is Rol.REFERENCIA
+
+
+def test_lo_que_esta_adentro_de_un_tablero_que_no_entra_no_hereda_referencia():
+    # Los tableros de presentación de la grilla (1,8 x 3,2 m) no entran
+    # en ninguna chapa, pero lo que tienen adentro sí puede cortarse.
+    piezas = [
+        _rectangulo("tablero", 0, 0, 1835, 3207),
+        _rectangulo("letra", 100, 100, 300, 400, contenida_en_id="tablero"),
+    ]
+    roles = _roles(piezas)
+
+    assert roles["tablero"][0] is Rol.REFERENCIA
+    assert roles["letra"][0] is Rol.CORTAR
+
+
+def test_la_gemela_admite_la_tolerancia_y_no_mas():
+    # 300x400 contra 302x400: área 0,66 % distinta, dentro de 1 %.
+    dentro = _roles(_hoja_y_ensamblado(afuera_ancho=302))
+    # 300x400 contra 306x400: área 2 % distinta, fuera.
+    fuera = _roles(_hoja_y_ensamblado(afuera_ancho=306))
+
+    assert dentro["ensamblada"][0] is Rol.REFERENCIA
+    assert fuera["ensamblada"][0] is Rol.CORTAR
+
+
+def test_misma_area_con_otra_forma_no_es_gemela():
+    # 300x400 y 200x600: 120.000 mm² las dos, perímetro 1.400 vs 1.600.
+    roles = _roles(_hoja_y_ensamblado(afuera_ancho=200, afuera_alto=600))
+
+    assert roles["ensamblada"] == (Rol.CORTAR, None)
+
+
+def test_lo_que_esta_en_una_hoja_se_corta_aunque_exceda_el_formato_por_la_tolerancia():
+    # Hoja dibujada 4 mm más larga (dentro de PAR-42) con una pieza que
+    # la llena: 2.442 mm no entra en 2.440, pero el diseñador ya la anidó.
+    piezas = [
+        _rectangulo("hoja", 0, 0, 2444, 1220),
+        _rectangulo("faja", 1, 10, 2442, 1000, contenida_en_id="hoja"),
+    ]
+
+    assert _roles(piezas)["faja"][0] is Rol.CORTAR
