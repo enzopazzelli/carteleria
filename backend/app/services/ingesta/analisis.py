@@ -12,7 +12,7 @@ se conectan si sus cajas quedan a no más de `distancia_maxima_mm`.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
 from shapely.geometry import Polygon
@@ -151,3 +151,45 @@ def detectar_hojas(
         if formato is not None:
             hojas.append(HojaDetectada(pieza_id=pieza.id, formato=formato))
     return hojas
+
+
+# Conversiones de unidad, no parámetros de negocio: mm↔cm↔dm↔m y
+# mm↔pulgada, en los dos sentidos. Es lo que se equivoca un export.
+_FACTORES_DE_UNIDAD = tuple(
+    factor
+    for base in (Decimal("10"), Decimal("100"), Decimal("1000"), Decimal("25.4"))
+    for factor in (base, 1 / base)
+)
+
+
+def _escalada(pieza: PiezaImportada, factor: Decimal) -> PiezaImportada:
+    """La misma pieza con caja y contorno multiplicados por `factor` —
+    los dos, porque `_es_rectangular` los compara entre sí. Los agujeros
+    y `contenida_en_id` no cambian qué es hoja, así que no se tocan."""
+    return replace(
+        pieza,
+        ancho_mm=pieza.ancho_mm * factor,
+        alto_mm=pieza.alto_mm * factor,
+        contorno_mm=[(x * factor, y * factor) for x, y in pieza.contorno_mm],
+    )
+
+
+def sugerir_factor_de_escala(
+    piezas: list[PiezaImportada], formatos: list[Plancha], tolerancia_mm: Decimal
+) -> Decimal | None:
+    """Por cuánto habría que multiplicar la escala usada para que
+    aparezcan hojas con medida de catálogo — el encabezado del DXF no es
+    confiable (`docs/ANALISIS-MUESTRA-MEGACARTELES.md §1`). `None` si con
+    la escala actual ya hay hojas, o si ningún factor hace aparecer
+    alguna. Si varios factores funcionan, gana el que encuentra más.
+
+    Es una sugerencia: nunca se aplica sola, la confirma el usuario."""
+    if detectar_hojas(DisenioDetectado(piezas=piezas), formatos, tolerancia_mm):
+        return None
+    mejor, mejor_cantidad = None, 0
+    for factor in _FACTORES_DE_UNIDAD:
+        escaladas = [_escalada(p, factor) for p in piezas]
+        cantidad = len(detectar_hojas(DisenioDetectado(piezas=escaladas), formatos, tolerancia_mm))
+        if cantidad > mejor_cantidad:
+            mejor, mejor_cantidad = factor, cantidad
+    return mejor

@@ -137,6 +137,8 @@ Reglas en el orden del Gherkin de `BACKLOG.md`:
 - **`PAR-43`** (dado de alta 2026-09-25, no estaba previsto) — rectangularidad mínima de una hoja (`CART-510`)
 
 > **Límite conocido de `CART-510` (2026-09-25).** Detecta las hojas con formato de catálogo (las 8 de Belgrano, 3 en "Complejo") pero ninguna de las hojas "a medida" de cal. 20 de la grilla de paneles: miden ~1,20 m por un lado y lo consumido por el otro. Queda así hasta que el taller responda `P-26`.
+>
+> **Límite conocido de la sugerencia de escala (2026-09-25).** Sobre la muestra parseada con la escala del encabezado (10) sugiere ×10 correctamente; con escala 1 no sugiere nada, porque las hojas (24,4 × 12,2 mm a esa escala) caen bajo el umbral de agujero de `parsear_dxf` y nunca llegan a ser piezas. Se resuelve en el paso `analizar` de la API (volver a parsear sin ese umbral si no aparece ninguna hoja), no en la función de análisis.
 - `PAR-xx` — tolerancia relativa de área/perímetro para considerar dos formas "gemelas" (`CART-511`); el análisis de la muestra usó 1% como referencia, no confirmado como parámetro de negocio
 - `PAR-xx` — área mínima de una forma para entrar a la comparación de gemelas (evita comparar residuos de splines); la muestra usó 5.000 mm² como referencia
 

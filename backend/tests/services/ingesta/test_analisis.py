@@ -9,9 +9,15 @@ sobre lo que `parsear_dxf` ya devolvió.
 """
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal
 
-from app.services.ingesta.analisis import DisenioDetectado, agrupar_en_disenios, detectar_hojas
+from app.services.ingesta.analisis import (
+    DisenioDetectado,
+    agrupar_en_disenios,
+    detectar_hojas,
+    sugerir_factor_de_escala,
+)
 from app.services.ingesta.models import PiezaImportada
 from app.services.nesting.models import Plancha
 
@@ -165,3 +171,72 @@ def test_la_medida_de_la_hoja_admite_la_tolerancia_y_no_mas():
 
     assert _ids_de_hojas(dentro) == {"hoja"}
     assert _ids_de_hojas(fuera) == set()
+
+
+# --- Sugerencia de escala (CART-510, tercer criterio) ------------------------
+
+
+def _hoja_con_letra(ancho, alto) -> list[PiezaImportada]:
+    """Una hoja con una letra adentro, dibujada con las medidas dadas —
+    como quedaría parseada con una escala equivocada."""
+    hoja = PiezaImportada(
+        id="hoja",
+        capa="0",
+        ancho_mm=Decimal(ancho),
+        alto_mm=Decimal(alto),
+        area_real_mm2=Decimal(ancho) * Decimal(alto),
+        contorno_mm=[
+            (Decimal(0), Decimal(0)),
+            (Decimal(ancho), Decimal(0)),
+            (Decimal(ancho), Decimal(alto)),
+            (Decimal(0), Decimal(alto)),
+            (Decimal(0), Decimal(0)),
+        ],
+    )
+    return [hoja, _rectangulo("letra", 1, 1, 1, 1, contenida_en_id="hoja")]
+
+
+def _factor(piezas):
+    return sugerir_factor_de_escala(piezas, [_CHAPA], _TOLERANCIA_HOJA_MM)
+
+
+def test_con_la_escala_correcta_no_sugiere_nada():
+    assert _factor(_hoja_con_letra("2440", "1220")) is None
+
+
+def test_una_hoja_dibujada_cien_veces_mas_chica_sugiere_multiplicar_por_cien():
+    # El caso de Muestra Vectores.dxf: declara cm, pero 1 unidad = 100 mm.
+    assert _factor(_hoja_con_letra("24.4", "12.2")) == Decimal("100")
+
+
+def test_si_ningun_factor_hace_aparecer_hojas_no_sugiere_nada():
+    # 3000 x 1700: no es chapa del catálogo a ninguna escala de unidad.
+    assert _factor(_hoja_con_letra("30", "17")) is None
+
+
+def test_reconoce_un_dibujo_en_pulgadas():
+    assert _factor(_hoja_con_letra("96.0630", "48.0315")) == Decimal("25.4")
+
+
+def _copias(piezas, sufijos):
+    return [
+        replace(p, id=f"{p.id}-{n}", contenida_en_id=f"{p.contenida_en_id}-{n}" if p.contenida_en_id else None)
+        for n in sufijos
+        for p in piezas
+    ]
+
+
+def test_si_dos_factores_encuentran_hojas_gana_el_que_encuentra_mas():
+    # x10 se prueba antes que x100: el orden no tiene que decidir.
+    una_a_diez = _copias(_hoja_con_letra("244", "122"), ["a"])
+    dos_a_cien = _copias(_hoja_con_letra("24.4", "12.2"), ["b", "c"])
+
+    assert _factor(una_a_diez + dos_a_cien) == Decimal("100")
+
+
+def test_si_la_escala_actual_ya_encuentra_hojas_no_sugiere_otra():
+    # Aunque a x100 aparecerían más, lo que ya coincide no se discute.
+    una_bien = _copias(_hoja_con_letra("2440", "1220"), ["a"])
+    dos_a_cien = _copias(_hoja_con_letra("24.4", "12.2"), ["b", "c"])
+
+    assert _factor(una_bien + dos_a_cien) is None
