@@ -220,7 +220,7 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 
 ## 4. Preguntas abiertas — `P-xx`
 
-Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica. **19 únicas.**
+Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-26`). **26 únicas.**
 
 ### 🔴 Bloqueantes de Sprint 0
 
@@ -250,6 +250,20 @@ Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proy
 | **P-12** | ¿Qué versión de CorelDRAW usan? | `SUP-10`, `B-08` |
 | **P-13** | ¿Los `.cdr` ya siguen alguna convención de capas o hay que construirla? | `CART-501` |
 | **P-14** | ¿Cuántas personas diseñan en Corel y adoptarían una convención nueva? | `SUP-05`, `B-15` |
+
+### 🟡 Diseños con hojas y piezas que no entran en chapa
+
+Surgen de la muestra real de Megacarteles (ver [`ANALISIS-MUESTRA-MEGACARTELES.md`](ANALISIS-MUESTRA-MEGACARTELES.md)). "Sub-proyecto" refiere a la división de su §6.
+
+| ID | Pregunta | Alimenta |
+|---|---|---|
+| **P-20** | Cuando llega un DXF, ¿el diseñador ya armó las hojas a mano (trabajo terminado) o solo entrega el diseño ensamblado y las hojas las tiene que producir el sistema? | Si las hojas dibujadas son una entrada o el resultado esperado — sub-proyectos 1 y 3 |
+| **P-21** | ¿Cómo decide el diseñador por dónde partir lo que no entra en una chapa (líneas ya dibujadas, simetría, evitar cortar letras, largo máximo de corte)? | Criterio del seccionado — sub-proyecto 2 |
+| **P-22** | Las secciones de una pieza partida, ¿llevan uniones (solapes, pestañas, tornillos, soldadura) que cambien la geometría del corte? | Geometría del seccionado — sub-proyecto 2 |
+| **P-23** | Las tiras "chapa cal. 22 0,30×1,20" que se dibujan como peines de rectángulos finos, ¿qué son (fajas laterales, refuerzos, otra cosa) y cómo se costean? | Rol de esas formas — sub-proyecto 1 |
+| **P-24** | Las versiones "Pinturas" y los logos a color, ¿se pintan o también se cortan? | Rol `referencia` — sub-proyecto 1 |
+| **P-25** | Los distintos diseños de un mismo DXF (Belgrano, Awaduct, Vulcano...), ¿son trabajos de clientes distintos? | Si un Diseño equivale a un Trabajo — sub-proyecto 1 |
+| **P-26** | Además de 1,22×2,44, la muestra usa chapa calibre 20 de 1,00×1,20 y calibre 22 de 0,30×1,20: ¿son formatos que compran y están en el catálogo? | `P-02`, `B-02` |
 
 ### 🟡 Aprobación y envío
 
@@ -295,10 +309,10 @@ Una sola reunión no alcanza. Tres encuentros, cada uno con sus IDs a cerrar.
 | Encuentro | Con quién | Duración | Preguntas | Insumos a llevarse |
 |---|---|---|---|---|
 | **1 — Negocio y proceso** | Dueño + administración | 90 min | `P-07`, `P-08`, `P-09`, `P-10`, `P-11`, `P-15`, `P-16`, `P-17`, `P-18` | `B-01`, `B-09`, `B-10`, `B-11`, `B-13`, `B-17` |
-| **2 — Taller y materiales** | Encargado de taller / operario de corte | 60 min | `P-01`, `P-02`, `P-03`, `P-04`, `P-05` | `B-02`, `B-03`, `B-04`, `B-05`, `B-06` |
-| **3 — Diseño y sistemas** | Diseñadores + autor del dashboard | 60 min | `P-12`, `P-13`, `P-14`, `P-19` | `B-07`, `B-08`, `B-14`, `B-15` |
+| **2 — Taller y materiales** | Encargado de taller / operario de corte | 60 min | `P-01`, `P-02`, `P-03`, `P-04`, `P-05`, `P-23`, `P-26` | `B-02`, `B-03`, `B-04`, `B-05`, `B-06` |
+| **3 — Diseño y sistemas** | Diseñadores + autor del dashboard | 60 min | `P-12`, `P-13`, `P-14`, `P-19`, `P-20`, `P-21`, `P-22`, `P-24`, `P-25` | `B-07`, `B-08`, `B-14`, `B-15` |
 
-> **Lo más valioso del encuentro 2 no son las respuestas: es ver cómo anidan hoy.** Media hora mirando a alguien acomodar piezas sobre la chapa va a revelar restricciones que nadie menciona en una reunión — cómo agrupan por espesor, qué recortes guardan para después, qué no se puede rotar y por qué. Eso puede generar `SUP-xx` nuevos que ninguna de las 19 preguntas cubre.
+> **Lo más valioso del encuentro 2 no son las respuestas: es ver cómo anidan hoy.** Media hora mirando a alguien acomodar piezas sobre la chapa va a revelar restricciones que nadie menciona en una reunión — cómo agrupan por espesor, qué recortes guardan para después, qué no se puede rotar y por qué. Eso puede generar `SUP-xx` nuevos que ninguna de las preguntas cubre.
 
 ---
 
@@ -311,7 +325,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
 | Parámetros (`PAR`) | 40 | 11 | 17 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
-| Preguntas (`P`) | 19 | 19 | 0 | 0 |
+| Preguntas (`P`) | 26 | 26 | 0 | 0 |
 | Decisiones (`D`) | 11 | 11 | 0 | 0 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).
