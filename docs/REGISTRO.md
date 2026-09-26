@@ -89,6 +89,7 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-45** | Área mínima de una forma para entrar a la comparación de gemelas | 5.000 | mm² | Sistema | Config | `CART-511` | 🟡 provisorio — evita emparejar ojales o puntos iguales por casualidad |
 | **PAR-46** | Fracción mínima del área de una pieza dentro de una hoja para considerarla anidada ahí | 99 | % | Sistema | Config | `CART-511` | 🟡 provisorio — la cuña roja de Belgrano está 99,98 % adentro, apoyada en el borde; con contención estricta se la excluía como duplicado |
 | **PAR-47** | Colores ACI que identifican cotas y rótulos (fuera de las hojas) | 1 (rojo) | — | Diseño | Config | `CART-511` | 🟡 provisorio — `P-27`. En la muestra, 767 de 769 formas rojas son texto de cotas; las otras 2 están en una hoja |
+| **PAR-48** | Criterio para que una pieza sea «grande»: va sola a su hoja y no entra al anidado con las demás | *sin definir* | — | Sistema | Config | `PLAN-RUMBO-ANIDADO-Y-REVISION.md` A3 | 🔴 sin valor hasta A3 — medido sobre Belgrano: ni el área (un tramo del aro de 1941 × 1085 ocupa 10 % de la hoja; una letra de 874 × 860, 11 %) ni la extensión sola (una tira de 20 × 1200 abarca todo el lado corto) los separan. Decisión de diseño de Enzo |
 
 ### 2.2 Parámetros comerciales
 
@@ -98,7 +99,7 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-12** | Margen por defecto | *sin definir* | % | Por presupuesto, con default de sistema | Config | `CART-307` | 🔴 a confirmar (`P-11`) |
 | **PAR-13** | Alícuota de IVA | 21 | % | Sistema | Config | `CART-307` | 🟢 |
 | **PAR-14** | Moneda | ARS | — | Sistema | Config | `CART-307` | 🟢 |
-| **PAR-15** | Criterio de facturación de plancha | plancha entera | — | Sistema | Config | `CART-302` | 🔴 **bloqueante** (`P-10`, `D-02`) |
+| **PAR-15** | Criterio de facturación de plancha | plancha entera | — | Sistema | Config | `CART-302` | 🔴 **bloqueante** (`P-10`, `D-02`) — evidencia 2026-09-26 (`P-26`): el criterio parece variar por material o formato, lo que probablemente lo vuelve un dato del formato y no del sistema |
 | **PAR-16** | Precisión de redondeo del total | 2 | decimales | Sistema | Config | `CART-307` | 🟡 provisorio |
 | **PAR-40** | Moneda de referencia para conversión (`CotizacionMoneda`) | ARS | — | Sistema | Config + `CotizacionMoneda` | `CART-211` | 🟡 provisorio |
 
@@ -187,6 +188,8 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 >
 > **B-17 — dato nuevo del proceso manual (2026-09-08).** Enzo confirmó que **armar hoy el anidado de un trabajo lleva unas 2 horas** de trabajo manual, y que el nesting sí corre con alguien esperando. Es el primer número duro de baseline para `PAR-32` (M1, −70% de tiempo de armado) y **cambia cómo hay que leer `PAR-25`**: ese umbral (3 s) se fijó de nuestro lado para el motor rectangular, no salió de una necesidad del cliente. Contra un baseline de 2 horas, los ~150 s que tarda el motor irregular (`PLAN-MOTOR-NESTING-DEEPNEST.md`) son una reducción de ~98%, no un incumplimiento. `PAR-25` sigue valiendo como objetivo de calidad para F2 (respuesta interactiva), pero **no es criterio de rechazo para F7**. Falta confirmar con el taller si esas 2 horas son por trabajo típico o por trabajo complejo, y si incluyen o no el armado del presupuesto posterior.
 >
+> **B-17 — rango de la empresa (2026-09-26).** Según la empresa (dato de Enzo), el anidado en chapas que el sistema quiere lograr le lleva hoy **entre 1,5 y 3 horas** al diseñador. El «unas 2 horas» de arriba queda dentro del rango, que pasa a ser la referencia. Es la vara del criterio de producto «si el anidado automático tarda más que hacerlo a mano, no aporta» (`D-12`). Falta saber si el rango incluye partir el aro grande en tramos (seccionado) o solo acomodar las piezas en las chapas. --> Confirmo que el rango incluye partir el aro grande y acomodar en las chapas
+>
 > **B-01 — resuelto por otra vía (2026-09-10).** La hoja `COTIZADOR` del export de AppSheet **es** la tabla de precios vigente, y estaba ahí desde el principio: **289 insumos**, 273 con precio de compra, con la cadena de costeo completa (unidad de compra, factor de conversión, unidad de venta, IVA, dos porcentajes de costo, cuatro márgenes de venta). El relevamiento anterior no la había mirado porque se concentró en `INVENTARIO` y `COTIZACIONES`. Detalle completo en [`RELEVAMIENTO-EXPORT-APPSHEET.md`](RELEVAMIENTO-EXPORT-APPSHEET.md). **Queda pendiente confirmarlo con administración**: si es la lista vigente, cada cuánto se actualiza, y qué representa cada escalón de costo y margen.
 >
 > **B-02 — completado (2026-09-10).** El mismo export trae 364 ítems en 22 categorías, con unidad, proveedor y ubicación. Dato que reordena prioridades: **solo 62 ítems (17%) son nesteables por área** (chapa, MDF, acrílico, ACM, polyfan, PVC, metalex); los otros 302 son pintura, iluminación, vinilos, bulonería y herrería, que se cotizan por unidad. `CART-106` (insumos no dimensionales) no es un complemento del catálogo: es el 83% de él.
@@ -194,6 +197,8 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 > **Alta nueva pendiente — moneda (2026-09-10).** 48 de los 289 insumos están cotizados en **USD**, y la cotización del dólar vive en la cabecera de la hoja `COTIZADOR`. `ADR-04` versiona precios por vigencia pero no dice nada de moneda: un precio en dólares sin la cotización con la que se convirtió no es reproducible. Hace falta dar de alta moneda + cotización como parámetros del sistema, y una tabla de cotizaciones con fecha.
 >
 > **`D-02` — evidencia nueva, sin resolver (2026-09-10).** En `COTIZADOR`, las planchas tienen **unidad de venta `M2`** y un factor de conversión que es el área de la plancha (2,97 para una de 1,22 × 2,44). Sugiere que cobran por metro cuadrado, pero no lo prueba: podrían estar cobrando los m² de la plancha entera. Sigue siendo `P-10`, pregunta para el dueño.
+>
+> **`D-02` — más evidencia, sin resolver (2026-09-26).** Enzo: la chapa cal. 20 «a medida» se cotiza por lo que se usa de la chapa, no por la plancha entera «como sucede con algunas» (`P-26`). Es el primer indicio de que el criterio de facturación no es uno solo para todo el sistema sino que depende del material o formato. `PAR-15` hoy es de ámbito «Sistema»; si `D-02` se resuelve en esa dirección, pasa a vivir con el formato. Se anota como evidencia, no se decide. Sigue siendo `P-10`, pregunta para el dueño.
 >
 > **B-01 / B-09 — parcial (2026-09-01).** En la reunión de arranque con Aníbal (ver `RELEVAMIENTO-REUNION-ARRANQUE.md`) se confirmó acceso a un Drive compartido con parte de su información de costeo real (mostró en vivo los presupuestos de Prolum, Farmacia Güemes, Terminal de Termas y "Activar"). Falta confirmar qué tan completo es ese Drive contra lo que pide `B-01`, y todavía no llegaron los dos archivos de ejemplo (uno complejo, uno simple) que Aníbal se comprometió a mandar por mail para `B-09`.
 >
@@ -227,7 +232,7 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 
 ## 4. Preguntas abiertas — `P-xx`
 
-Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-27`). **27 únicas.**
+Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-28`). **28 únicas.**
 
 ### 🔴 Bloqueantes de Sprint 0
 
@@ -235,7 +240,7 @@ Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proy
 |---|---|---|---|
 | **P-01** | ¿Las piezas son mayormente paneles rectos o hay mucha letra corpórea? | Define si F7 es un nice-to-have al final o algo a adelantar. **La que más puede reordenar el plan.** | `SUP-04`, `B-06` |
 | **P-02** | ¿Qué formatos de chapa compran? Medidas exactas y espesores | Sin esto el nesting no se prueba contra nada real | `SUP-02`, `B-02` |
-| **P-03** | ¿Cuánto es el kerf y qué margen de borde dejan? *Medido (2026-09-25): en Belgrano, 4 piezas de 2.292 × 1.220 mm están anidadas a mano en chapas de 1.220 de alto, sin margen en ese borde; con `PAR-01`/`PAR-02` provisorios no entran en ningún motor (`PLAN-VALIDACION-CORTE-MANUAL.md`).* | Si no se descuenta bien, las piezas salen mal cortadas | `PAR-01`, `PAR-02`, `PAR-03` |
+| **P-03** | ¿Cuánto es el kerf y qué margen de borde dejan? *Medido (2026-09-25): en Belgrano, 4 piezas de 2.292 × 1.220 mm están anidadas a mano en chapas de 1.220 de alto, sin margen en ese borde; con `PAR-01`/`PAR-02` provisorios no entran en ningún motor (`PLAN-VALIDACION-CORTE-MANUAL.md`).* *Estimación de Enzo (2026-09-26), sin confirmar: entre piezas vecinas (kerf + separación) ~1 cm en total, configurable y quizá menos. Del margen de borde no hay estimación: es la mitad que falta y la que decide el caso (`P-28`).* | Si no se descuenta bien, las piezas salen mal cortadas | `PAR-01`, `PAR-02`, `PAR-03` |
 | **P-04** | ¿La chapa tiene veta? ¿En todos los materiales o algunos? | Define si se pueden rotar las piezas | `PAR-04`, `B-04` |
 | **P-05** | ¿Cómo calculan el desarrollo de una pieza con pliegue? ¿Fórmula, tabla, o criterio del operario? | Si no se modela, **todo el nesting está sobre medidas equivocadas** | `PAR-10`, `SUP-08` |
 | **P-06** | ¿Dónde viven las tablas del dashboard de AppSheet? | Bloquea todo el carril B | `SUP-09`, `B-07` |
@@ -270,8 +275,9 @@ Surgen de la muestra real de Megacarteles (ver [`ANALISIS-MUESTRA-MEGACARTELES.m
 | **P-23** | Las tiras "chapa cal. 22 0,30×1,20" que se dibujan como peines de rectángulos finos, ¿qué son (fajas laterales, refuerzos, otra cosa) y cómo se costean? *Medido (2026-09-25): cada tira es una pieza suelta de 20 × 1.200–1.214 mm, no una hoja.* | Rol de esas formas — sub-proyecto 1 |
 | **P-24** | Las versiones "Pinturas" y los logos a color, ¿se pintan o también se cortan? | Rol `referencia` — sub-proyecto 1 |
 | **P-25** | Los distintos diseños de un mismo DXF (Belgrano, Awaduct, Vulcano...), ¿son trabajos de clientes distintos? | Si un Diseño equivale a un Trabajo — sub-proyecto 1 |
-| **P-26** | Además de 1,22×2,44, la muestra usa chapa calibre 20 de 1,00×1,20 y calibre 22 de 0,30×1,20: ¿son formatos que compran y están en el catálogo? *Medido (2026-09-25): las hojas de cal. 20 tienen un lado de ~1,20 m y el otro variable (0,43 / 0,73 / 0,87 / 1,00 m según el trabajo), y el dibujo difiere del rótulo 14–36 mm. ¿El cal. 20 viene en rollo o tira de 1,20 m de ancho que se corta a largo? Si es así, `CART-510` tiene que reconocer hojas por un solo lado, no por formato completo.* | `P-02`, `B-02`, `CART-510`, `PAR-42` |
-| **P-27** | ¿Usan siempre un color fijo para cotas y rótulos (en la muestra, rojo)? ¿Alguna vez una pieza a cortar va en ese color fuera de una hoja? | `PAR-47`, `CART-511` |
+| **P-26** | Además de 1,22×2,44, la muestra usa chapa calibre 20 de 1,00×1,20 y calibre 22 de 0,30×1,20: ¿son formatos que compran y están en el catálogo? *Medido (2026-09-25): las hojas de cal. 20 tienen un lado de ~1,20 m y el otro variable (0,43 / 0,73 / 0,87 / 1,00 m según el trabajo), y el dibujo difiere del rótulo 14–36 mm. ¿El cal. 20 viene en rollo o tira de 1,20 m de ancho que se corta a largo? Si es así, `CART-510` tiene que reconocer hojas por un solo lado, no por formato completo.* *Respuesta de Enzo (2026-09-26): la chapa cal. 20 «a medida» se cotiza por lo que se usa de la chapa, no por la plancha entera como pasa con otras. Efecto: evidencia para `D-02`/`PAR-15` (el criterio parece variar por material o formato) y refuerza reconocer hojas a medida por un solo lado. Falta confirmar con taller o administración, y si viene en rollo o tira.* | `P-02`, `B-02`, `CART-510`, `PAR-42` |
+| **P-27** | ¿Usan siempre un color fijo para cotas y rótulos (en la muestra, rojo)? ¿Alguna vez una pieza a cortar va en ese color fuera de una hoja? *Respuesta de Enzo (2026-09-26): no. El rojo lleva textos de referencia para quien lee (rótulos de la chapa y cotas, incluidas las de espesor por parte en los diseños chicos). A confirmar con diseño.* | `PAR-47`, `CART-511` |
+| **P-28** | Un tramo del aro de 2292 × 1220 mm (mide exacto el alto de la chapa) sobre una chapa de 1220 de alto: ¿se corta tal cual, hasta el borde, o el diseñador lo ajusta? *Medido (2026-09-25): 4 tramos así en Belgrano, sin margen en ese borde.* | Si el anidado manual de la muestra se puede cortar como está dibujado: `P-03` (margen de borde), `PAR-02`, `PLAN-RUMBO-ANIDADO-Y-REVISION.md` |
 
 ### 🟡 Aprobación y envío
 
@@ -307,6 +313,8 @@ Decisiones que hay que tomar y todavía no se pueden cerrar.
 | **D-10** | ¿Cómo se arma `costo_unidad_venta` a partir de `%COSTO1`, `%COSTO2` y los 4 márgenes de venta de `COTIZADOR`? | Conversación con administración | Antes de recalcular precios en serio | Se importa tal cual el valor que la planilla ya trae calculado (`backend/app/modelos/catalogo.py`), no se recalcula |
 | **D-09** | ¿F8 se queda solo-lectura sobre agregados (`ADR-06`) o crece para absorber también las pantallas de escritura del dashboard actual (control de taller, movimientos de stock, aprobación de cotizaciones, edición de permisos)? | Revisión de alcance con el cliente y con Vale, ver `docs/DASHBOARD-VISTAS.md §3` | Antes de **S2** (arranca `CART-801`) | Prototipo de UI muestra las 9 vistas completas para validar diseño; `ADR-06` sigue vigente para lo que se construya en serio |
 | **D-11** | ¿La pantalla de Piezas del frontend del cotizador acepta `.cdr` directo (vía `libcdr`, ver `SPIKE-CDR.md`) o exige un `.dxf` ya exportado a mano desde Corel? | `SUP-05`/`B-15` (compromiso del equipo de diseño con una convención de capas) — `B-08`/`SPIKE-CDR.md` ya prueban que `libcdr` lee el archivo end-to-end, pero no resuelven si conserva capas, que es lo que de verdad falta | Encuentro 3 de relevamiento (diseño), después de `SUP-05` | El frontend exige `.dxf`; un `.cdr` se rechaza con mensaje explícito ("exportá el DXF desde Corel primero"), no se intenta parsear |
+| **D-12** | ¿El anidado irregular corre con alguien esperando frente a la pantalla (meta `PAR-09`) o en segundo plano con aviso, medido solo contra el trabajo manual (`B-17`)? | `B-17` (rango, y si incluye partir el aro) y el spike A2 de `PLAN-RUMBO-ANIDADO-Y-REVISION.md` | Después de A2 | Segundo plano con aviso, medido contra `B-17` |
+| **D-13** | ¿Qué hace el sistema con un diseño que «queda como está» (hojas de otra medida que la del catálogo, `PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.4`)? | `P-26`, `D-02` | Paso B4 del mismo plan | Se reconoce y se muestra en la revisión, sin anidar |
 
 ---
 
@@ -317,7 +325,7 @@ Una sola reunión no alcanza. Tres encuentros, cada uno con sus IDs a cerrar.
 | Encuentro | Con quién | Duración | Preguntas | Insumos a llevarse |
 |---|---|---|---|---|
 | **1 — Negocio y proceso** | Dueño + administración | 90 min | `P-07`, `P-08`, `P-09`, `P-10`, `P-11`, `P-15`, `P-16`, `P-17`, `P-18` | `B-01`, `B-09`, `B-10`, `B-11`, `B-13`, `B-17` |
-| **2 — Taller y materiales** | Encargado de taller / operario de corte | 60 min | `P-01`, `P-02`, `P-03`, `P-04`, `P-05`, `P-23`, `P-26` | `B-02`, `B-03`, `B-04`, `B-05`, `B-06` |
+| **2 — Taller y materiales** | Encargado de taller / operario de corte | 60 min | `P-01`, `P-02`, `P-03`, `P-04`, `P-05`, `P-23`, `P-26`, `P-28` | `B-02`, `B-03`, `B-04`, `B-05`, `B-06` |
 | **3 — Diseño y sistemas** | Diseñadores + autor del dashboard | 60 min | `P-12`, `P-13`, `P-14`, `P-19`, `P-20`, `P-21`, `P-22`, `P-24`, `P-25`, `P-27` | `B-07`, `B-08`, `B-14`, `B-15` |
 
 > **Lo más valioso del encuentro 2 no son las respuestas: es ver cómo anidan hoy.** Media hora mirando a alguien acomodar piezas sobre la chapa va a revelar restricciones que nadie menciona en una reunión — cómo agrupan por espesor, qué recortes guardan para después, qué no se puede rotar y por qué. Eso puede generar `SUP-xx` nuevos que ninguna de las preguntas cubre.
@@ -331,10 +339,10 @@ Resumen para revisar de un vistazo en cada daily.
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
 | Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
-| Parámetros (`PAR`) | 47 | 11 | 24 | 12 |
+| Parámetros (`PAR`) | 48 | 12 | 24 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
-| Preguntas (`P`) | 27 | 27 | 0 | 0 |
-| Decisiones (`D`) | 11 | 11 | 0 | 0 |
+| Preguntas (`P`) | 28 | 26 | 2 | 0 |
+| Decisiones (`D`) | 13 | 13 | 0 | 0 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).
 
