@@ -135,3 +135,32 @@ python -X utf8 scripts/comparar_motores.py --dxf "<ruta>/Muestra Vectores.dxf" -
 - Rumbo técnico para piezas grandes y curvas: las mismas 4 cuñas de 2.292 × 1.220 mm son las que no entran con el margen provisorio y las que hacen explotar el cálculo de Deepnest. Una alternativa a evaluar es tratarlas aparte del anidado genérico (letras y piezas chicas al motor; cuñas con reglas propias), que se conecta con el sub-proyecto 2 (seccionado). **Actualizado:** las «cuñas» son 8 tramos del aro grande de Belgrano, **uno por hoja** (4 de 2292 × 1220 y 4 de 1941 × 1085), y cada uno ocupa entre 10 % y 21 % del área de su hoja. El número de chapas del diseñador lo fija cómo se partió el aro, no cómo se acomodaron las letras: el 37,3 % de aprovechamiento es el costo de esas bandas finas. La recomendación es sacarlas del anidado genérico y anidar solo las letras en los huecos; detalle y tabla por hoja en `PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.1` y `§3`.
 
 **Sin tocar:** el spike no cambió `nesting-engine/` ni `D-01`. Los scripts de medición del diagnóstico (NFP por par, variantes simplificadas) fueron descartables y no están versionados.
+
+---
+
+## Resultados de A1: go para el anidado híbrido (2026-09-26)
+
+Las dos preguntas de sí o no del paso A1 de [`PLAN-RUMBO-ANIDADO-Y-REVISION.md`](PLAN-RUMBO-ANIDADO-Y-REVISION.md). Kerf, separación y margen en 0, igual que la comparación de Belgrano de arriba. Scripts descartables, sin versionar.
+
+### 1. ¿Dos tramos del aro pueden compartir hoja? No: 0 de 28 pares
+
+**Método.** Se fija un tramo y se mueve el otro (girado 0, 90, 180 y 270°) por todas las posiciones en que las dos cajas juntas entran en una hoja de 2440 × 1220, en las dos orientaciones, midiendo cuánto se superponen. Barrido a 5 mm y afinado a 1 y 0,25 mm en los pares más cercanos. No hace falta el NFP de Deepnest: la ventana de posiciones posibles es chica (296 × 0 mm entre dos tramos de 2292 × 1220), así que se barre entera en 124 s.
+
+- **Los 4 tramos de 2292 × 1220** no se acercan: la mínima superposición va de 9 % a 13 % del menor.
+- **Los 4 de 1941 × 1085** son los que más se acercan. Entre ellos la mínima superposición es **1,9 % del menor** (~5.700 mm²) y no baja con la grilla más fina: la fija el alto de la hoja (135 mm de holgura) contra el espesor de la banda. Son casi gemelos, así que con un corte algo distinto podrían compartir hoja: dato para el seccionado (A5).
+- **Media vuelta y espejo** (observación de Enzo: un tramo del aro se puede invertir para aprovechar concavidades). La prueba ya giraba el segundo tramo 0, 90, 180 y 270°, y los mejores casos usan justamente la media vuelta. Se probó además el **espejo** (darlo vuelta como una hoja) en las 8 orientaciones: tampoco hay ningún par que comparta hoja (0 de 28) y la mínima superposición baja de 1,90 % a 1,85 %. Entre los tramos de 2292 × 1220 el espejo ayuda algo (de ~13 % a ~9 %) sin acercarse a entrar.
+- **Lo que significa:** el piso de 8 chapas se sostiene con estos cortes. Y el cálculo de los 6 pares de tramos que se llevaba 71 de los primeros 101 s de Deepnest no hace falta.
+
+### 2. ¿El motor respeta una plancha con obstáculos? Sí
+
+El código lo contemplaba: `getInnerNfp` resta el NFP de cada `sheet.children` de la región válida (`nesting-engine/vendor/placement.js`, líneas 727-752). Se probó llamando a `anidar()` directo, porque el contrato `nest()` arma todas las planchas idénticas y sin obstáculos (`nesting-engine/src/index.js`). Dos escenarios, con 3 semillas cada uno, **todos verdes**:
+
+- **Obstáculo cuadrado de 900 × 900** en una plancha de 1000 × 1000: solo la pieza de 80 entró en la hoja con obstáculo, en la franja libre. Las de 200 y 500 fueron a la hoja limpia. Ninguna pisó el obstáculo.
+- **Obstáculo en «C»**, con una concavidad de 600 × 400 dentro de su propia caja: las dos piezas de 200 entraron en la concavidad y la de 500, que no cabe, fue a la hoja limpia. Es el caso real de un tramo curvo.
+
+**Dos cosas a mirar en A2**, ambas leídas del código y por confirmar con la corrida real:
+
+- La métrica de compacidad del motor cuenta solo las piezas colocadas, no el obstáculo. Las letras podrían agruparse hacia una esquina en vez de buscar el hueco del tramo. Siguen siendo válidas, pero conviene ver si el resultado es el que se quiere.
+- Cómo se cuentan las hojas que el motor no llega a abrir. Cada hoja tiene su tramo, así que cuenta igual aunque no lleve letras: la composición del resultado tiene que sumarlas.
+
+**Veredicto: go.** El anidado híbrido no tiene bloqueos técnicos hasta acá. Sigue A2 (las letras contra hojas ocupadas, con el tiempo medido). En el contrato solo cambia que `planchas` admita `obstaculos_mm` (A3, inciso d), y los dos escenarios de arriba sirven de tests cuando llegue ese paso.

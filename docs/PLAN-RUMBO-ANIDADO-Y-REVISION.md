@@ -92,7 +92,7 @@ Son dos partes, y hoy solo una está en marcha.
 **Anidar las letras en los espacios: lo que se construiría ahora.**
 
 1. **Separar las piezas.** Los tramos grandes por un lado, las letras y piezas chicas por otro (`PAR-48`).
-2. **Abrir una chapa por tramo.** El tramo se apoya en la chapa y queda fijo, como un obstáculo.
+2. **Abrir una chapa por tramo.** El tramo se apoya en la chapa y queda fijo, como un obstáculo. Se parte de la orientación que le dio el diseñador; probar otras (media vuelta, esquina de apoyo) es la variante de A2.
 3. **Meter las letras una a una.** El motor prueba posiciones y giros con la forma real de cada letra hasta encontrar dónde entra sin tocar el tramo (respetando kerf y separación) ni salirse de la chapa. Primero intenta en los huecos de las chapas ya abiertas, que es el espacio que deja la curva del aro; solo abre una chapa nueva y vacía cuando la letra no entra en ninguna abierta.
 4. **Validar antes de aceptar.** El resultado se comprueba con la geometría real, con el control de tolerancia del contrato.
 
@@ -128,7 +128,7 @@ flowchart LR
 
 **Qué se logra y qué no.** El híbrido apunta a **igualar las 8 chapas del diseñador en minutos en vez de horas** (`B-17`), no a superarlas: el techo lo fijan los tramos. Superarlas es trabajo del seccionado, porque cómo se parte el aro decide cuántas chapas hacen falta y qué huecos quedan para las letras. Por eso el orden es primero igualar al diseñador con sus cortes y recién después automatizar el corte, ya con una vara para medirlo.
 
-**Qué haría cambiar de opinión.** Si A1 muestra que dos tramos sí pueden compartir hoja (entrelazados), esos pares valen el cálculo y el híbrido se ajusta: se calculan solo esos.
+**Qué haría cambiar de opinión.** Que dos tramos pudieran compartir hoja. A1 lo descartó con estos cortes (0 de 28 pares), aunque los 4 tramos de 1941 × 1085 quedaron a solo un 1,9 % de superposición: es el dato que llevaría al seccionado (A5), porque un corte algo distinto podría hacerlos compartir.
 
 **Criterio de tiempo, para decidir (`D-12`, nueva).** La vara es `B-17`, no `PAR-25`. `PAR-09` sigue siendo la meta si alguien espera frente a la pantalla. Propuesta: el anidado irregular corre en segundo plano con aviso, y solo se lo mide contra `B-17`. Lo confirma Enzo.
 
@@ -150,7 +150,9 @@ Actualizar el «Estado al cierre» de `PLAN-VALIDACION-CORTE-MANUAL.md` con la t
 
 **Se verifica:** ningún valor queda escrito en dos lados; los conteos del tablero cuadran.
 
-### A1 · Spike: dos preguntas de sí o no
+### A1 · Spike: dos preguntas de sí o no — hecho 2026-09-26: go
+
+**Resultado:** ningún par de tramos comparte hoja (0 de 28) y el motor respeta una plancha con obstáculos, incluso con concavidades. Detalle, método y qué mirar en A2 en `PLAN-VALIDACION-CORTE-MANUAL.md`, «Resultados de A1». Lo de abajo es el planteo original.
 
 1. **¿Dos tramos pueden compartir hoja?** Calcular solo los NFP entre los 8 tramos (28 pares; los 6 ya medidos costaron 71 s en total, así que se espera del orden de minutos) y ver si alguno deja una posición válida dentro de la chapa.
 2. **¿El motor respeta una hoja con agujero?** El código lo contempla (`nesting-engine/vendor/placement.js`, `hasMaterialOutsideSheet` revisa `sheet.children`, y `motor.js` ya recibe un arreglo de planchas), pero hay que probarlo: test sintético con una hoja con un agujero y una pieza que solo entra ahí.
@@ -165,6 +167,8 @@ Dos corridas:
 
 1. Margen, kerf y separación en 0, igual que la comparación anterior, para que los números sean comparables.
 2. Kerf y separación en sus valores provisorios, con margen de borde 0: es lo más cercano a lo que se cortaría hasta que `P-28` se conteste.
+
+**Variante, después de las dos corridas:** la orientación de cada tramo sobre su hoja como opción (media vuelta y, si el material lo admite, espejo) y en qué esquina se apoya, quedándose con la que deje mejor lugar para las letras o el sobrante más útil. Sale de una observación de Enzo: un tramo se puede invertir para aprovechar sus concavidades. En Belgrano sobra espacio (§3.1), así que se espera poco efecto; en trabajos más justos puede pesar. El espejo puede servir en chapa y no en materiales con cara pintada (Enzo): si se usa, solo para chapa. No se le dedica más tiempo por ahora.
 
 **Se mide:** tiempo, chapas usadas, piezas colocadas, aprovechamiento.
 **Éxito:** las 40 chicas colocadas dentro de las 8 hojas de los tramos (paridad con el diseñador). El tiempo se decide con Enzo contra `PAR-09` y `B-17`, no antes. Se espera del orden de minutos y no de horas porque desaparecen los 6 pares patológicos, pero es una hipótesis: para eso es el spike. Si el tiempo queda cerca, la palanca de paralelizar los NFP sigue disponible.
@@ -259,7 +263,7 @@ Por impacto. Se responden en el encuentro que corresponda de `REGISTRO.md §6`.
 
 ## 8. Riesgos
 
-- **El motor no respeta obstáculos en la hoja.** A1 lo dice en media hora; el plan B en Python está descrito y no se construye hasta que haga falta.
+- ~~El motor no respeta obstáculos en la hoja.~~ **Resuelto en A1:** los respeta, incluso con concavidades. El plan B en Python queda descrito por si A2 encuentra un problema de tiempo, y no se construye hasta que haga falta.
 - **Muestra chica.** Solo 2 diseños de la muestra están en alcance, y uno es Belgrano. El criterio de «grande» puede quedar ajustado a él; A4 lo dice y `B-14` lo resuelve cuando lleguen más archivos.
 - **Contornos simplificados hacia afuera.** Vuelven las letras un poco más grandes de lo real. El resultado se revalida contra los polígonos reales (`PAR-29`, según el contrato) antes de aceptarlo.
 - **`B-17` es un rango ancho** y puede incluir partir el aro. Hasta contestarlo, «igualar las 8 chapas en minutos» se compara contra la parte de acomodar, no contra el trabajo completo.
