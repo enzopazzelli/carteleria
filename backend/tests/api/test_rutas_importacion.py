@@ -146,3 +146,144 @@ def test_analizar_un_archivo_invalido_da_400(cliente, chapa):
 @pytest.mark.parametrize("escala", ["0", "-1"])
 def test_analizar_con_escala_no_positiva_da_400(cliente, chapa, tmp_path, escala):
     assert _analizar(cliente, _dxf_bytes(tmp_path, _muestra_chica), escala=escala).status_code == 400
+
+
+# --- Confirmar -------------------------------------------------------------
+
+
+def _analisis(cliente, tmp_path) -> dict:
+    respuesta = _analizar(cliente, _dxf_bytes(tmp_path, _muestra_chica))
+    assert respuesta.status_code == 200, respuesta.text
+    return respuesta.json()
+
+
+def _confirmar(cliente, token, disenios):
+    return cliente.post(f"/importaciones/dxf/{token}/confirmar", json={"disenios": disenios})
+
+
+def _con_hoja(analisis) -> dict:
+    return next(d for d in analisis["disenios"] if d["hojas"])
+
+
+def _medidas_de_piezas(cliente, trabajo_id) -> list[tuple[int, int]]:
+    piezas = cliente.get(f"/trabajos/{trabajo_id}/piezas").json()
+    return sorted(_medida(p["ancho_mm"], p["alto_mm"]) for p in piezas)
+
+
+def test_confirmar_crea_un_trabajo_con_solo_las_piezas_a_cortar(cliente, chapa, tmp_path):
+    analisis = _analisis(cliente, tmp_path)
+    disenio = _con_hoja(analisis)
+
+    respuesta = _confirmar(cliente, analisis["token"], [{"indice": disenio["indice"], "nombre": "Belgrano"}])
+
+    assert respuesta.status_code == 201, respuesta.text
+    [creado] = respuesta.json()
+    assert creado["trabajo"]["nombre"] == "Belgrano"
+    assert creado["trabajo"]["archivo_origen"] == "muestra.dxf"
+    assert creado["piezas_creadas"] == 1
+    # Ni la hoja, ni la letra del ensamblado, ni el rótulo: solo la letra de la hoja.
+    assert _medidas_de_piezas(cliente, creado["trabajo"]["id"]) == [(300, 400)]
+    # El otro diseño no se confirmó: no hay otro trabajo.
+    assert len(cliente.get("/trabajos").json()) == 1
+
+
+def test_confirmar_respeta_el_rol_que_cambio_el_usuario(cliente, chapa, tmp_path):
+    analisis = _analisis(cliente, tmp_path)
+    disenio = _con_hoja(analisis)
+    referencia = next(p for p in disenio["piezas"] if p["rol"] == "referencia")
+
+    [creado] = _confirmar(
+        cliente,
+        analisis["token"],
+        [{"indice": disenio["indice"], "nombre": "Belgrano", "roles": {referencia["id_origen"]: "cortar"}}],
+    ).json()
+
+    assert _medidas_de_piezas(cliente, creado["trabajo"]["id"]) == [(300, 400), (300, 400)]
+
+
+def test_confirmar_varios_disenios_crea_un_trabajo_por_disenio_con_su_propio_archivo(cliente, chapa, tmp_path):
+    analisis = _analisis(cliente, tmp_path)
+    pedido = [{"indice": d["indice"], "nombre": f"Diseño {d['indice']}"} for d in analisis["disenios"]]
+
+    creados = _confirmar(cliente, analisis["token"], pedido).json()
+
+    assert len(creados) == 2
+    # Borrar un trabajo borra su archivo: si lo compartieran, el otro
+    # quedaría sin DXF para re-parsear.
+    primero, segundo = (c["trabajo"]["id"] for c in creados)
+    cliente.delete(f"/trabajos/{primero}")
+    from app import config
+
+    assert (config.DIRECTORIO_ARCHIVOS / f"trabajo-{segundo}.dxf").exists()
+
+
+def test_confirmar_con_token_inexistente_da_404(cliente, chapa):
+    assert _confirmar(cliente, "no-existe", [{"indice": 0, "nombre": "X"}]).status_code == 404
+
+
+def test_confirmar_un_disenio_que_no_existe_da_400(cliente, chapa, tmp_path):
+    analisis = _analisis(cliente, tmp_path)
+
+    assert _confirmar(cliente, analisis["token"], [{"indice": 99, "nombre": "X"}]).status_code == 400
+
+
+def test_confirmar_el_mismo_disenio_dos_veces_da_400(cliente, chapa, tmp_path):
+    analisis = _analisis(cliente, tmp_path)
+    pedido = [{"indice": 0, "nombre": "A"}, {"indice": 0, "nombre": "B"}]
+
+    assert _confirmar(cliente, analisis["token"], pedido).status_code == 400
+
+
+def test_confirmar_un_rol_de_una_pieza_de_otro_disenio_da_400(cliente, chapa, tmp_path):
+    analisis = _analisis(cliente, tmp_path)
+    disenio = _con_hoja(analisis)
+    ajena = next(d for d in analisis["disenios"] if not d["hojas"])["piezas"][0]["id_origen"]
+
+    respuesta = _confirmar(
+        cliente, analisis["token"], [{"indice": disenio["indice"], "nombre": "X", "roles": {ajena: "cortar"}}]
+    )
+
+    assert respuesta.status_code == 400
+    assert cliente.get("/trabajos").json() == []
+
+
+def test_confirmar_un_rol_invalido_da_422(cliente, chapa, tmp_path):
+    analisis = _analisis(cliente, tmp_path)
+    disenio = _con_hoja(analisis)
+    pieza = disenio["piezas"][0]["id_origen"]
+
+    respuesta = _confirmar(
+        cliente, analisis["token"], [{"indice": disenio["indice"], "nombre": "X", "roles": {pieza: "fundir"}}]
+    )
+
+    assert respuesta.status_code == 422
+
+
+def test_un_error_en_un_disenio_no_deja_trabajos_creados_de_los_otros(cliente, chapa, tmp_path):
+    analisis = _analisis(cliente, tmp_path)
+    pedido = [{"indice": 0, "nombre": "Bien"}, {"indice": 99, "nombre": "Mal"}]
+
+    assert _confirmar(cliente, analisis["token"], pedido).status_code == 400
+    assert cliente.get("/trabajos").json() == []
+
+
+def test_los_ids_de_las_piezas_llevan_el_nombre_del_archivo_original(cliente, chapa, tmp_path):
+    # Es el id que el diseñador reconoce, no el token interno.
+    cuerpo = _analisis(cliente, tmp_path)
+
+    ids = [p["id_origen"] for d in cuerpo["disenios"] for p in d["piezas"]]
+    assert all(i.startswith("muestra-") for i in ids), ids
+
+
+def test_un_nombre_de_archivo_con_ruta_no_escribe_fuera_de_la_carpeta(cliente, chapa, tmp_path):
+    respuesta = cliente.post(
+        "/importaciones/dxf/analizar",
+        files={"archivo": ("../../afuera.dxf", _dxf_bytes(tmp_path, _muestra_chica), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    from app import config
+
+    assert not (config.DIRECTORIO_ARCHIVOS / "afuera.dxf").exists()
+    assert not (config.DIRECTORIO_ARCHIVOS.parent / "afuera.dxf").exists()

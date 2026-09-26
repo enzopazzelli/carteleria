@@ -5,7 +5,10 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from ..services.ingesta.analisis import Rol
+from .esquemas_trabajos import TrabajoLeer
 
 
 class PiezaAnalizada(BaseModel):
@@ -55,3 +58,23 @@ class AnalisisDXFLeer(BaseModel):
     lineas_duplicadas_descartadas: int
     advertencias: list[str]
     disenios: list[DisenioAnalizado]
+
+
+# --- Confirmar ---------------------------------------------------------------
+
+
+class DisenioAConfirmar(BaseModel):
+    indice: int
+    nombre: str
+    #: Solo los roles que el usuario cambió (`id_origen` → rol); el resto
+    #: usa la sugerencia del análisis.
+    roles: dict[str, Rol] = {}
+
+
+class ConfirmacionDXF(BaseModel):
+    disenios: list[DisenioAConfirmar] = Field(min_length=1)
+
+
+class TrabajoImportado(BaseModel):
+    trabajo: TrabajoLeer
+    piezas_creadas: int

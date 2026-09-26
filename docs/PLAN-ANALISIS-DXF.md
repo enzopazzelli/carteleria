@@ -51,13 +51,14 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    A["POST /trabajos/dxf/analizar<br/>(archivo + escala)"] --> T["archivo guardado<br/>+ token de análisis"]
-    T --> B["GET .../analizar/{token}<br/>diseños, hojas, roles sugeridos"]
-    B --> C["POST .../analizar/{token}/confirmar<br/>roles finales por forma, por diseño"]
-    C --> D["Trabajo(s) + Pieza(s)"]
+    A["POST /importaciones/dxf/analizar<br/>(archivo + escala)"] --> T["carpeta por token:<br/>DXF con su nombre + analisis.json"]
+    A --> B["respuesta: diseños, hojas,<br/>roles sugeridos, escala sugerida"]
+    B --> C["POST /importaciones/dxf/{token}/confirmar<br/>diseños elegidos + roles cambiados"]
+    T --> C
+    C --> D["Un Trabajo por diseño,<br/>con su propia copia del DXF"]
 ```
 
-El `token` referencia el archivo ya guardado en disco (mismo mecanismo que `Trabajo.archivo_guardado` hoy) más el resultado de `parsear_dxf` cacheado — no hace falta volver a parsear el DXF en cada paso, pero tampoco hace falta una tabla nueva: un archivo de resultado serializado junto al DXF alcanza, con el mismo `DIRECTORIO_ARCHIVOS` que ya existe.
+**Implementado (2026-09-25), `rutas_importacion.py`.** `analizar` devuelve todo en la misma respuesta (no hizo falta un `GET` aparte) y no escribe en la base. El archivo queda en `importaciones/{token}/` con su nombre original — el parser arma los `id_origen` con ese nombre, que es lo que el diseñador reconoce — junto a `analisis.json` con la escala usada. `confirmar` vuelve a parsear con esa escala (el pipeline es determinista, así que los índices de diseño coinciden), valida todo el pedido antes de crear nada, y crea un Trabajo por diseño con su propia copia del DXF: `eliminar_trabajo` borra el archivo del trabajo, y compartirlo rompería a los demás. El archivo del análisis no se borra al confirmar (el usuario puede volver por otros diseños); su limpieza queda para `D-08`. `POST /trabajos/{id}/dxf` sigue existiendo: el frontend todavía lo usa.
 
 ### Datos nuevos, en `app/services/ingesta/`
 
