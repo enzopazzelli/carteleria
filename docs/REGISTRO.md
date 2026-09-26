@@ -232,7 +232,7 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 
 ## 4. Preguntas abiertas — `P-xx`
 
-Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-28`). **28 únicas.**
+Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-29`). **29 únicas.**
 
 ### 🔴 Bloqueantes de Sprint 0
 
@@ -278,6 +278,7 @@ Surgen de la muestra real de Megacarteles (ver [`ANALISIS-MUESTRA-MEGACARTELES.m
 | **P-26** | Además de 1,22×2,44, la muestra usa chapa calibre 20 de 1,00×1,20 y calibre 22 de 0,30×1,20: ¿son formatos que compran y están en el catálogo? *Medido (2026-09-25): las hojas de cal. 20 tienen un lado de ~1,20 m y el otro variable (0,43 / 0,73 / 0,87 / 1,00 m según el trabajo), y el dibujo difiere del rótulo 14–36 mm. ¿El cal. 20 viene en rollo o tira de 1,20 m de ancho que se corta a largo? Si es así, `CART-510` tiene que reconocer hojas por un solo lado, no por formato completo.* *Respuesta de Enzo (2026-09-26): la chapa cal. 20 «a medida» se cotiza por lo que se usa de la chapa, no por la plancha entera como pasa con otras. Efecto: evidencia para `D-02`/`PAR-15` (el criterio parece variar por material o formato) y refuerza reconocer hojas a medida por un solo lado. Falta confirmar con taller o administración, y si viene en rollo o tira.* | `P-02`, `B-02`, `CART-510`, `PAR-42` |
 | **P-27** | ¿Usan siempre un color fijo para cotas y rótulos (en la muestra, rojo)? ¿Alguna vez una pieza a cortar va en ese color fuera de una hoja? *Respuesta de Enzo (2026-09-26): no. El rojo lleva textos de referencia para quien lee (rótulos de la chapa y cotas, incluidas las de espesor por parte en los diseños chicos). A confirmar con diseño.* | `PAR-47`, `CART-511` |
 | **P-28** | Un tramo del aro de 2292 × 1220 mm (mide exacto el alto de la chapa) sobre una chapa de 1220 de alto: ¿se corta tal cual, hasta el borde, o el diseñador lo ajusta? *Medido (2026-09-25): 4 tramos así en Belgrano, sin margen en ese borde.* | Si el anidado manual de la muestra se puede cortar como está dibujado: `P-03` (margen de borde), `PAR-02`, `PLAN-RUMBO-ANIDADO-Y-REVISION.md` |
+| **P-29** | Las «islas» (el centro de la O, la B, la P y la isla oscura dentro de la punta de cada tramo, dibujadas como forma aparte que llena el agujero de otra), ¿se usan como pieza o son descarte? *Medido (2026-09-26): 17 de las 48 formas `cortar` de Belgrano, 2,02 m² (22,8 % del área). Si son descarte, el aprovechamiento del diseñador pasa de 37,3 % a 28,8 %.* | Cuánto vale el aprovechamiento de referencia (`PAR-33`), y la regla de contra-piezas de `CART-511` (`PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.5`) |
 
 ### 🟡 Aprobación y envío
 
@@ -326,7 +327,7 @@ Una sola reunión no alcanza. Tres encuentros, cada uno con sus IDs a cerrar.
 |---|---|---|---|---|
 | **1 — Negocio y proceso** | Dueño + administración | 90 min | `P-07`, `P-08`, `P-09`, `P-10`, `P-11`, `P-15`, `P-16`, `P-17`, `P-18` | `B-01`, `B-09`, `B-10`, `B-11`, `B-13`, `B-17` |
 | **2 — Taller y materiales** | Encargado de taller / operario de corte | 60 min | `P-01`, `P-02`, `P-03`, `P-04`, `P-05`, `P-23`, `P-26`, `P-28` | `B-02`, `B-03`, `B-04`, `B-05`, `B-06` |
-| **3 — Diseño y sistemas** | Diseñadores + autor del dashboard | 60 min | `P-12`, `P-13`, `P-14`, `P-19`, `P-20`, `P-21`, `P-22`, `P-24`, `P-25`, `P-27` | `B-07`, `B-08`, `B-14`, `B-15` |
+| **3 — Diseño y sistemas** | Diseñadores + autor del dashboard | 60 min | `P-12`, `P-13`, `P-14`, `P-19`, `P-20`, `P-21`, `P-22`, `P-24`, `P-25`, `P-27`, `P-29` | `B-07`, `B-08`, `B-14`, `B-15` |
 
 > **Lo más valioso del encuentro 2 no son las respuestas: es ver cómo anidan hoy.** Media hora mirando a alguien acomodar piezas sobre la chapa va a revelar restricciones que nadie menciona en una reunión — cómo agrupan por espesor, qué recortes guardan para después, qué no se puede rotar y por qué. Eso puede generar `SUP-xx` nuevos que ninguna de las preguntas cubre.
 
@@ -341,7 +342,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
 | Parámetros (`PAR`) | 48 | 12 | 24 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
-| Preguntas (`P`) | 28 | 26 | 2 | 0 |
+| Preguntas (`P`) | 29 | 27 | 2 | 0 |
 | Decisiones (`D`) | 13 | 13 | 0 | 0 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).

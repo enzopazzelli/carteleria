@@ -82,7 +82,9 @@ Corrida con `--disenio-de "Muestra Vectores-267"` sobre `Muestra Vectores.dxf` (
 | rectpack (motor actual) | 12 | 24,9 % | 27,4 % | 740 × 760 mm (18,9 %) |
 | Deepnest (spike) | **sin resultado** | | | contornos crudos: > 24 h estimadas; simplificado a 2 mm: ~1 h estimada. Ambas corridas se cortaron (ver el diagnóstico) |
 
-**Lectura.** rectpack necesita 4 chapas más que el diseñador (+50 % de material). No es una sorpresa: anida la caja de cada pieza (`ADR-01`), y las cuñas del anillo son arcos cuya caja está mayormente vacía; el diseñador las encastró una contra otra.
+> **Corrección (2026-09-26): los números de rectpack y de Deepnest de esta sección contaban dos veces las «islas».** 17 de las 48 piezas llenan al 100 % el agujero de otra (el centro de la O, la B, la P y la isla de cada tramo) y se pasaron a los motores como cajas sueltas. Sin contarlas aparte, rectpack necesita **11 chapas, no 12** (27,1 % de aprovechamiento), o sea +37,5 % de material y no +50 %. Detalle y qué hacer con las islas en «Resultados de A2», al final.
+
+**Lectura.** rectpack necesita 4 chapas más que el diseñador (+50 % de material, corregido a +37,5 % arriba). No es una sorpresa: anida la caja de cada pieza (`ADR-01`), y las cuñas del anillo son arcos cuya caja está mayormente vacía; el diseñador las encastró una contra otra.
 
 **Margen y kerf (`P-03`).** Con los provisorios `PAR-01` (kerf 2 mm) y `PAR-02` (margen 10 mm), **ningún motor puede colocar las 4 cuñas grandes**: miden 2.292 × 1.220 mm, exactamente el alto de la chapa. El diseñador las anidó sin margen en ese borde. La tabla de arriba se corrió con kerf, margen y separación en 0 para comparar contra lo que muestra el dibujo. Hay que confirmar con el taller qué margen dejan de verdad; si es mayor que cero, el propio anidado manual de la muestra no se podría cortar tal cual.
 
@@ -125,7 +127,7 @@ python -X utf8 scripts/comparar_motores.py --dxf "<ruta>/Muestra Vectores.dxf" -
 
 ## Estado al cierre (2026-09-26)
 
-**Qué quedó respondido.** En Belgrano, con las 48 piezas `cortar` y una chapa de 2440 × 1220 mm, el diseñador usó **8 chapas** y el motor actual (rectpack) necesita **12**: +50 % de material. Es el primer número real contra el que medir cualquier motor nuevo.
+**Qué quedó respondido.** En Belgrano, con las 48 piezas `cortar` y una chapa de 2440 × 1220 mm, el diseñador usó **8 chapas** y el motor actual (rectpack) necesita **12** (corregido el 2026-09-26: **11**, sin contar las islas como cajas sueltas): +50 % de material (+37,5 % ya corregido). Es el primer número real contra el que medir cualquier motor nuevo.
 
 **Qué no quedó respondido.** Si Deepnest iguala o mejora las 8 chapas: en esta máquina y con este código no llega a devolver un resultado en un tiempo razonable, y el criterio de producto es que el anidado automático no tarde más que hacerlo a mano.
 
@@ -164,3 +166,48 @@ El código lo contemplaba: `getInnerNfp` resta el NFP de cada `sheet.children` d
 - Cómo se cuentan las hojas que el motor no llega a abrir. Cada hoja tiene su tramo, así que cuenta igual aunque no lleve letras: la composición del resultado tiene que sumarlas.
 
 **Veredicto: go.** El anidado híbrido no tiene bloqueos técnicos hasta acá. Sigue A2 (las letras contra hojas ocupadas, con el tiempo medido). En el contrato solo cambia que `planchas` admita `obstaculos_mm` (A3, inciso d), y los dos escenarios de arriba sirven de tests cuando llegue ese paso.
+
+---
+
+## Resultados de A2: las letras contra hojas ocupadas (2026-09-26)
+
+El paso A2 de [`PLAN-RUMBO-ANIDADO-Y-REVISION.md`](PLAN-RUMBO-ANIDADO-Y-REVISION.md). Ocho hojas de 2440 × 1220 mm, cada una con su tramo del aro como obstáculo, en la posición que le dio el diseñador; el motor coloca las piezas chicas con su búsqueda por defecto (3 generaciones, población 10, 28 evaluaciones), en un solo núcleo y con los NFP en serie. Los contornos que ve el motor van simplificados **hacia afuera** a 2 mm (los vértices bajan de 6.693 a ~1.480), y el resultado se **valida después contra los polígonos reales**, no contra los simplificados. Se llamó a `anidar()` del núcleo directo: el contrato `nest()` todavía no admite obstáculos. Scripts descartables, sin versionar.
+
+### Las islas: 17 de las 48 piezas no son piezas sueltas
+
+Las primeras corridas, con las 48 piezas, dieron resultados que hubo que descartar. Mirando por qué, se vio que **17 piezas llenan al 100 % el agujero de otra, con separación 0**: el centro de la O, la B y la P (9 casos) y la isla oscura dentro de la punta de cada tramo (8 casos, uno por tramo). El diseñador las deja en su lugar y no ocupan espacio propio. Sumadas valen 2,02 m² (22,8 % del área de las 48).
+
+- **Efecto sobre lo medido antes.** Colocarlas como piezas sueltas contaba dos veces su área. Con las 48 como cajas, rectpack usaba 12 chapas; con las islas dentro de su letra o su tramo, **11** (27,1 %). Las corridas de Deepnest con 40 piezas sueltas (de 36 a 57 minutos, y una de ellas con 9 hojas al pedir hueco entre piezas) no son comparables y no se usan como conclusión; solo sirven para el tiempo.
+- **Efecto sobre el sistema.** Hoy `CART-511` marca esas 17 como `cortar`, y cualquier motor las anida como piezas independientes. Hace falta una regla: una forma que llena el agujero de otra es una **contra-pieza** que viaja con su madre y no se anida sola (paso A3 del plan).
+- **Duda para diseño (`P-29`).** ¿Las islas se usan o son descarte? Sin ellas el aprovechamiento del diseñador no es 37,3 % sino 28,8 %.
+
+### Resultado, con las islas viajando con su letra o su tramo
+
+23 piezas a anidar, más las 17 islas que van dentro. Tres corridas: sin hueco entre piezas, y con el hueco provisorio de `PAR-01` más `PAR-03` con dos semillas distintas. Margen de borde 0.
+
+| | Diseñador | Híbrido, sin hueco | Híbrido, con hueco provisorio |
+|---|---|---|---|
+| Chapas | 8 | **8** | **8** y **8** (dos semillas) |
+| Piezas colocadas | 48 | 23 de 23 | 23 de 23, las dos |
+| Aprovechamiento real | 37,3 % | 37,3 % | 37,3 % |
+| Hueco mínimo real | — | 2,2 mm | 9,2 y 8,8 mm (exigido: `PAR-01` + `PAR-03`) |
+| Validación contra polígonos reales | — | OK | OK, las dos |
+| Tiempo | 1,5 a 3 h (`B-17`) | 961 s | 845 s y 815 s |
+| Mayor sobrante (hoja menos ocupada) | 740 × 820 mm (20,4 %) | 480 × 1220 mm (19,7 %) | 480 × 1220 mm (19,7 %) |
+
+**Lectura.**
+
+- **Paridad con el diseñador, robusta.** 8 chapas en las tres corridas, con y sin hueco entre piezas, con dos semillas: no es suerte de la búsqueda. El aprovechamiento coincide por construcción (mismo material en las mismas 8 hojas): la métrica solo distingue motores cuando cambia la cantidad de chapas (`COMO-FUNCIONA-CADA-MOTOR.md`, «la trampa de la métrica»).
+- **Tiempo: 13,6 a 16 minutos**, contra 1,5 a 3 horas a mano (`B-17`), en un solo núcleo y con los NFP en serie. Está lejos de la meta interactiva de `PAR-09`, y es coherente con la propuesta de `D-12`: anidado irregular en segundo plano con aviso. Quedan sin usar dos palancas: paralelizar los NFP (la máquina tiene 8 núcleos) y bajar la cantidad de evaluaciones.
+- **Forma del sobrante.** El motor junta las letras en 6 hojas y deja 2 con solo el tramo, así que el sobrante es una tira entera de 480 × 1220 mm, de área parecida al bloque del diseñador pero de otra forma. Qué forma conviene es una decisión de producto, no del motor (`COMO-FUNCIONA-CADA-MOTOR.md`, «el sobrante útil»).
+- **Tolerancia de simplificación.** A 1 mm en vez de 2 mm no mejora la cantidad de chapas y tarda más (57 minutos contra 36 en las corridas de 40 piezas). Con 2 mm alcanza.
+- **Con hueco provisorio, rectpack no puede colocar** las 4 piezas de 2292 × 1220 (miden el alto de la chapa, `P-28`). El híbrido sí, porque respeta la posición que el diseñador le dio al tramo: no es una ventaja del motor sino del planteo, y no reemplaza contestar `P-28`.
+
+**Lo que no prueba.**
+
+- **Un solo diseño.** Falta el otro diseño en alcance de la muestra (`PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.4`).
+- **Las letras se anidaron macizas**, con los agujeros rellenos: conservador. El anidado en huecos no hizo falta acá.
+- **La variante de orientación del tramo** (media vuelta, espejo) no se probó: en Belgrano todo entra sin ella.
+- **Contornos agrandados hasta 2 mm** hacia afuera: conservador, y por eso se valida contra la geometría real.
+
+**Veredicto de A2: cumple el criterio de éxito.** Las piezas chicas entran en las 8 hojas de los tramos, con paridad de chapas, en minutos y no en horas. Sigue A3, con un inciso previo para las islas.

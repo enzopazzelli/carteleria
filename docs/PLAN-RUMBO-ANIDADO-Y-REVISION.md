@@ -49,7 +49,7 @@ Se midió cómo repartió las 48 piezas `cortar` entre sus 8 hojas (mismo camino
 Lo que dice la tabla:
 
 - **8 tramos, 8 hojas, uno por hoja.** El número de chapas del diseñador lo fija cómo se partió el aro, no cómo se acomodaron las letras.
-- **Cada tramo ocupa entre 10 % y 21 % del área de su hoja.** Los 8 tramos suman 1,24 hojas de área; las otras 40 piezas, 1,74. El total es 2,98 hojas de área repartidas en 8: el 37,3 % del diseñador no es mala anidación, es el costo de partir un aro.
+- **Cada tramo ocupa entre 10 % y 21 % del área de su hoja.** Los 8 tramos suman 1,24 hojas de área; las otras 40 piezas, 1,74 (17 de ellas son islas dentro del agujero de otra pieza, §2.5). El total es 2,98 hojas de área repartidas en 8: el 37,3 % del diseñador no es mala anidación, es el costo de partir un aro.
 - **Dónde se va el tiempo de Deepnest** ya estaba medido: 71 de los primeros 101 segundos salen de los 6 pares de tramos de 2292 × 1220 entre sí. Ese cálculo responde una pregunta («¿dos tramos pueden compartir hoja?») cuya respuesta probable es no, y que se puede contestar sin pagar el cálculo general.
 
 ### 2.2 El rojo es texto para la persona, y por eso la pantalla importa
@@ -79,6 +79,12 @@ Consecuencias:
 - **Validar contra pocos casos.** Con 2 diseños en alcance, el criterio de «pieza grande» no se puede ajustar a una muestra amplia: A4 usa esos dos y lo dice.
 - **Qué hace el sistema con un diseño que «queda como está»** no está definido: es `D-13` (nueva), a decidir cuando se llegue a B4. Mientras tanto se reconocen y se muestran, sin anidar.
 
+### 2.5 Las islas: 17 de las 48 piezas no son piezas sueltas
+
+Al medir A2 apareció que **17 de las 48 formas `cortar` llenan al 100 % el agujero de otra**, con separación 0: el centro de la O, la B y la P (9 casos) y la isla oscura dentro de la punta de cada tramo (8 casos). El diseñador las deja en su lugar y no ocupan espacio propio; el análisis de `CART-511` hoy las marca `cortar` y cualquier motor las anida como piezas independientes, contando dos veces su área. Con las 48 como cajas, rectpack usaba 12 chapas; con las islas dentro de su letra o su tramo, 11. Detalle y números en `PLAN-VALIDACION-CORTE-MANUAL.md`.
+
+Se necesitan dos cosas: una **regla** en el análisis (una forma que llena el agujero de otra es una contra-pieza y viaja con su madre; paso A3) y una **respuesta de diseño**: ¿las islas se usan o son descarte? (`P-29`). De esa respuesta depende cuánto vale el aprovechamiento del diseñador, y por lo tanto la meta de `PAR-33`.
+
 ---
 
 ## 3. Cómo funciona y por qué este rumbo
@@ -96,7 +102,7 @@ Son dos partes, y hoy solo una está en marcha.
 3. **Meter las letras una a una.** El motor prueba posiciones y giros con la forma real de cada letra hasta encontrar dónde entra sin tocar el tramo (respetando kerf y separación) ni salirse de la chapa. Primero intenta en los huecos de las chapas ya abiertas, que es el espacio que deja la curva del aro; solo abre una chapa nueva y vacía cuando la letra no entra en ninguna abierta.
 4. **Validar antes de aceptar.** El resultado se comprueba con la geometría real, con el control de tolerancia del contrato.
 
-En Belgrano debería entrar todo sin abrir chapas extra: las letras suman 1,74 hojas de área y, con los 8 tramos apoyados, quedan unas 6,8 hojas de área libre, aunque repartida en huecos irregulares. Es lo que hizo el diseñador.
+En Belgrano entra todo sin abrir chapas extra, **confirmado en A2**: las letras suman 1,74 hojas de área y, con los 8 tramos apoyados, quedan unas 6,8 hojas de área libre, aunque repartida en huecos irregulares. Es lo que hizo el diseñador.
 
 ```mermaid
 flowchart LR
@@ -159,7 +165,9 @@ Actualizar el «Estado al cierre» de `PLAN-VALIDACION-CORTE-MANUAL.md` con la t
 
 **Entrega:** las dos respuestas y un go / no-go para el híbrido, en `PLAN-VALIDACION-CORTE-MANUAL.md`. Scripts descartables, sin versionar.
 
-### A2 · Spike: las letras contra hojas ocupadas
+### A2 · Spike: las letras contra hojas ocupadas — hecho 2026-09-26: cumple
+
+**Resultado:** las piezas chicas entran en las 8 hojas de los tramos, **con paridad de chapas (8) también con el hueco provisorio entre piezas**, con dos semillas distintas, validado contra los polígonos reales y en **13,6 a 16 minutos** con un solo núcleo (contra 1,5 a 3 horas a mano, `B-17`). Está lejos de `PAR-09`, y es lo que `D-12` propone medir en segundo plano. **Hallazgo aparte:** 17 de las 48 piezas son islas que llenan el agujero de otra (§2.5). Tabla y detalle en `PLAN-VALIDACION-CORTE-MANUAL.md`, «Resultados de A2». Lo de abajo es el planteo original; la variante de orientación no hizo falta en Belgrano y queda pendiente para trabajos más justos.
 
 Armar 8 hojas, cada una con su tramo como obstáculo, más hojas limpias de reserva; sumar las 40 piezas chicas con contornos simplificados **hacia afuera** (la técnica ya medida: el simplificado contiene al original, así que una posición válida para él lo es para la real).
 
@@ -178,6 +186,7 @@ Dos corridas:
 
 Cada inciso es un commit y espera el visto bueno:
 
+- **0.** Regla de las islas en el análisis (§2.5): una forma que llena el agujero de otra es una contra-pieza y viaja con su madre; no se anida sola. Hace falta antes que todo lo demás, porque sin ella el motor recibe 17 piezas de más en Belgrano. Con tests sobre los 17 casos medidos.
 - **a.** `clasificar_piezas_grandes` en `backend/app/services/nesting/`, con `PAR-48`. **Esta función es una decisión de diseño, y se la dejo a Enzo** (5 a 10 líneas): por área falla, porque un tramo de 1941 × 1085 ocupa 10 % de la hoja y una letra de 874 × 860 ocupa 11 %; por extensión sola también falla, porque una tira de 20 × 1200 abarca todo el lado corto y no es una pieza grande. Los cuatro casos de prueba salen de la muestra: tramo 2292 × 1220, tramo 1941 × 1085, letra 874 × 860, tira 20 × 1200.
 - **b.** «¿Está en alcance?» (§2.4): un diseño se re-anida solo si todas sus hojas reconocidas son de un mismo formato del catálogo. Con tests sobre los casos medidos.
 - **c.** Colocación directa de las grandes, una por hoja. Si una grande no entra en ningún formato, falla ruidoso (`DECISIONES-Y-BLOQUEANTES.md §1.2`), nunca se descarta en silencio.
@@ -238,7 +247,7 @@ Elegir diseños, ponerles nombre, confirmar y caer en el workspace del trabajo c
 | 3 | B2 | **Primera pantalla: los diseños del DXF, con su alcance** | B1 |
 | 4 | A1 | Go / no-go del híbrido | — |
 | 5 | B3 | **El visor con roles** | B1 |
-| 6 | A2 | Tiempo y chapas del híbrido, medidos | A1 |
+| 6 | A2 | Tiempo y chapas del híbrido, medidos (**hecho**) | A1 |
 | 7 | B4 | **Ciclo completo: subir, revisar, confirmar** | B2, B3 |
 | 8 | A3 → A4 | Híbrido construido y comparado | A1, A2 |
 | 9 | A5 | Plan del seccionado: repartir el diseño en las chapas que necesite | A2, `P-21`, `P-22` |
@@ -255,7 +264,8 @@ Por impacto. Se responden en el encuentro que corresponda de `REGISTRO.md §6`.
 2. **`P-03`, margen de borde.** Es la mitad que falta: entre piezas vecinas ya hay una estimación (§1); del borde no hay ninguna.
 3. **`B-17`.** El rango de la empresa, ¿incluye partir el aro en tramos o solo acomodarlos?
 4. **`P-21` y `P-22`.** Cómo decide el diseñador por dónde partir lo que no entra en una chapa, y si las secciones llevan uniones. Con la prioridad de la §1 pasan al camino crítico: son las que hay que llevar primero al diseñador.
-5. **`D-13` (nueva).** Qué hace el sistema con un diseño que «queda como está» (§2.4). Puede esperar a B4.
+5. **`P-29` (nueva).** ¿Las islas (el centro de la O, la B, la P y la isla de cada tramo) se usan o son descarte? (§2.5). Cambia el aprovechamiento del diseñador y no bloquea el motor: las islas viajan con su madre de todos modos.
+6. **`D-13` (nueva).** Qué hace el sistema con un diseño que «queda como está» (§2.4). Puede esperar a B4.
 
 **Respondidas por Enzo, a confirmar con quien corresponda:** `P-26` (se cotiza lo usado, taller / administración), `P-27` (rojo = texto de referencia, diseño), la distancia entre piezas vecinas de `P-03` (taller) y el alcance de la §2.4 (diseño).
 
