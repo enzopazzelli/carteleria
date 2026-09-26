@@ -33,20 +33,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from shapely.geometry import Polygon  # noqa: E402
 from shapely.ops import unary_union  # noqa: E402
 
+from shapely import affinity  # noqa: E402
+
 from _datos_reales import (  # noqa: E402
     TOPE_PLANCHAS_ADVERTENCIA,
+    _geometria_local,
     agregar_flags_parametros_corte,
     formatos_del_catalogo,
     parametros_corte_desde_cli,
     piezas_desde_dxf,
 )
+from app.services.ingesta import analisis  # noqa: E402
+from app.services.ingesta.dxf import parsear_dxf  # noqa: E402
 from app.services.nesting.deepnest_cliente import (  # noqa: E402
     ErrorMotorDeepnest,
     OpcionesMotorDeepnest,
     anidar_con_deepnest,
 )
 from app.services.nesting.engine import MotorNestingRectangular  # noqa: E402
-from app.services.nesting.models import Plancha, ResultadoAnidado  # noqa: E402
+from app.services.nesting.models import Pieza, Plancha, ResultadoAnidado  # noqa: E402
 from app.services.nesting.validacion_manual import GeometriaPieza  # noqa: E402
 from app.services.nesting.visualizacion import CSS_SVG_PLANCHA, render_svg_plancha  # noqa: E402
 
@@ -325,6 +330,80 @@ def _medir_deepnest(piezas, geometrias, plancha, params, opciones, piezas_rectas
     )
 
 
+def _piezas_a_cortar_de_un_disenio(ruta_dxf: Path, escala_a_mm: Decimal, plancha: Plancha, id_de_referencia: str):
+    """Sub-proyecto 3 (`docs/PLAN-VALIDACION-CORTE-MANUAL.md`): el
+    diseño que contiene `id_de_referencia`, sus hojas ya armadas y las
+    piezas con rol sugerido `cortar` — las que el diseñador anidó a mano
+    y las que el sistema tiene que volver a anidar para compararse."""
+    resultado = parsear_dxf(ruta_dxf, escala_a_mm)
+    disenios = analisis.agrupar_en_disenios(resultado.piezas, analisis.DISTANCIA_MAXIMA_ENTRE_PIEZAS_DE_UN_DISENIO_MM)
+    disenio = next((d for d in disenios if any(p.id == id_de_referencia for p in d.piezas)), None)
+    if disenio is None:
+        raise SystemExit(f"Ninguna pieza se llama {id_de_referencia!r}.")
+    formatos = [plancha]
+    hojas = analisis.detectar_hojas(disenio, formatos, analisis.TOLERANCIA_MEDIDA_DE_HOJA_MM)
+    roles = analisis.sugerir_roles(
+        disenio,
+        hojas,
+        formatos,
+        analisis.TOLERANCIA_RELATIVA_GEMELA,
+        analisis.AREA_MINIMA_GEMELA_MM2,
+        analisis.FRACCION_MINIMA_EN_HOJA,
+        analisis.COLORES_DE_ROTULO,
+    )
+    ids_de_hojas = {h.pieza_id for h in hojas}
+    hoja_de = analisis._hoja_de_cada_pieza(disenio.piezas, ids_de_hojas, float(analisis.FRACCION_MINIMA_EN_HOJA))
+    a_cortar = [p for p in disenio.piezas if next(r for r in roles if r.pieza_id == p.id).rol is analisis.Rol.CORTAR]
+    por_id = {p.id: p for p in resultado.piezas}
+    return disenio, hojas, hoja_de, a_cortar, por_id
+
+
+def _medir_disenador(hojas, hoja_de, a_cortar, por_id, plancha: Plancha, paso_mm: float) -> Medicion:
+    """Lo que ya hizo el diseñador, medido con la misma vara que los
+    motores: por hoja, la unión de las piezas a cortar (contorno menos
+    agujeros), sobre el área de las hojas. No se ejecuta ningún motor:
+    las posiciones ya están en el DXF."""
+    por_hoja: dict[str, list[Polygon]] = {}
+    for pieza in a_cortar:
+        if hoja_de.get(pieza.id) is None:
+            continue
+        poligono = Polygon(
+            [(float(x), float(y)) for x, y in pieza.contorno_mm],
+            [[(float(x), float(y)) for x, y in agujero] for agujero in pieza.agujeros_mm],
+        )
+        por_hoja.setdefault(hoja_de[pieza.id], []).append(poligono.buffer(0))
+
+    total = ocupada = 0.0
+    sobrantes = []
+    for hoja_id, poligonos in por_hoja.items():
+        union = unary_union(poligonos)
+        total += union.area
+        min_x, min_y, max_x, max_y = union.bounds
+        ocupada += (max_x - min_x) * (max_y - min_y)
+        hoja = por_id[hoja_id]
+        hx = min(float(x) for x, _ in hoja.contorno_mm)
+        hy = min(float(y) for _, y in hoja.contorno_mm)
+        local = affinity.translate(union, -hx, -hy)
+        if hoja.ancho_mm < hoja.alto_mm and plancha.ancho_mm > plancha.alto_mm:
+            local = affinity.translate(affinity.rotate(local, 90, origin=(0, 0)), float(hoja.alto_mm), 0)
+        sobrantes.append((union.area, local))
+
+    colocadas = sum(len(v) for v in por_hoja.values())
+    return Medicion(
+        motor="diseñador (manual)",
+        resultado=ResultadoAnidado(posiciones=[], planchas_usadas=len(hojas)),
+        geometrias={},
+        segundos=0.0,
+        area_real_mm2=Decimal(str(round(total, 4))),
+        piezas_colocadas=colocadas,
+        largo_corte_compartido_mm=Decimal(0),
+        detalle="hojas ya armadas en el DXF (CART-510), sin ejecutar motor",
+        area_ocupada_mm2=Decimal(str(round(ocupada, 4))),
+        # Misma vara que `_sobrante_util`: la hoja MENOS ocupada.
+        sobrante=_mayor_rectangulo_libre(min(sobrantes, key=lambda s: s[0])[1], plancha, paso_mm) if sobrantes else (0.0, 0.0, 0.0),
+    )
+
+
 def _tabla(mediciones: list[Medicion], plancha: Plancha, total_piezas: int) -> str:
     filas = [
         ("", *[m.motor for m in mediciones]),
@@ -412,6 +491,12 @@ def main() -> int:
     parser.add_argument("--sin-corte-compartido", action="store_true")
     parser.add_argument("--piezas-rectas", action="store_true", help="Declara TODAS las piezas como de tramos rectos (habilita el corte compartido)")
     parser.add_argument("--out", type=Path, help="HTML comparativo lado a lado")
+    parser.add_argument(
+        "--disenio-de",
+        metavar="ID_PIEZA",
+        help="Sub-proyecto 3: anidar solo las piezas 'cortar' del diseño que contiene esta pieza "
+        "(ej. 'Muestra Vectores-267') y comparar contra las hojas que el diseñador ya armó a mano",
+    )
     parser.add_argument("--no-abrir", action="store_true")
     agregar_flags_parametros_corte(parser)
     args = parser.parse_args()
@@ -431,9 +516,21 @@ def main() -> int:
         print("Hace falta --catalogo o --plancha-mm.", file=sys.stderr)
         return 1
 
-    piezas, mensajes, geometrias = piezas_desde_dxf(args.dxf, args.escala_a_mm, args.agujero_max_mm)
-    for mensaje in mensajes:
-        print(f"  · {mensaje}")
+    manual = None
+    if args.disenio_de:
+        disenio, hojas, hoja_de, a_cortar, por_id = _piezas_a_cortar_de_un_disenio(
+            args.dxf, args.escala_a_mm, plancha, args.disenio_de
+        )
+        piezas = [Pieza(id=p.id, ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=1) for p in a_cortar]
+        geometrias = {p.id: _geometria_local(p, por_id) for p in a_cortar}
+        fuera = sum(1 for p in a_cortar if hoja_de.get(p.id) is None)
+        print(f"  · diseño de {args.disenio_de}: {len(disenio.piezas)} formas, {len(hojas)} hoja(s), "
+              f"{len(a_cortar)} a cortar ({fuera} fuera de las hojas)")
+        manual = _medir_disenador(hojas, hoja_de, a_cortar, por_id, plancha, float(args.paso_sobrante_mm))
+    else:
+        piezas, mensajes, geometrias = piezas_desde_dxf(args.dxf, args.escala_a_mm, args.agujero_max_mm)
+        for mensaje in mensajes:
+            print(f"  · {mensaje}")
 
     if args.max_piezas is not None:
         # Por área de bounding box, de mayor a menor. Recortar por orden de
@@ -473,7 +570,7 @@ def main() -> int:
         _medir_deepnest(piezas, geometrias, plancha, params, opciones, piezas_rectas, float(args.paso_sobrante_mm)),
     ]
 
-    print(_tabla(mediciones, plancha, sum(p.cantidad for p in piezas)))
+    print(_tabla(([manual] if manual else []) + mediciones, plancha, sum(p.cantidad for p in piezas)))
 
     planchas = {m.resultado.planchas_usadas for m in mediciones if m.resultado}
     if len(planchas) > 1:

@@ -235,7 +235,7 @@ Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proy
 |---|---|---|---|
 | **P-01** | ¿Las piezas son mayormente paneles rectos o hay mucha letra corpórea? | Define si F7 es un nice-to-have al final o algo a adelantar. **La que más puede reordenar el plan.** | `SUP-04`, `B-06` |
 | **P-02** | ¿Qué formatos de chapa compran? Medidas exactas y espesores | Sin esto el nesting no se prueba contra nada real | `SUP-02`, `B-02` |
-| **P-03** | ¿Cuánto es el kerf y qué margen de borde dejan? | Si no se descuenta bien, las piezas salen mal cortadas | `PAR-01`, `PAR-02`, `PAR-03` |
+| **P-03** | ¿Cuánto es el kerf y qué margen de borde dejan? *Medido (2026-09-25): en Belgrano, 4 piezas de 2.292 × 1.220 mm están anidadas a mano en chapas de 1.220 de alto, sin margen en ese borde; con `PAR-01`/`PAR-02` provisorios no entran en ningún motor (`PLAN-VALIDACION-CORTE-MANUAL.md`).* | Si no se descuenta bien, las piezas salen mal cortadas | `PAR-01`, `PAR-02`, `PAR-03` |
 | **P-04** | ¿La chapa tiene veta? ¿En todos los materiales o algunos? | Define si se pueden rotar las piezas | `PAR-04`, `B-04` |
 | **P-05** | ¿Cómo calculan el desarrollo de una pieza con pliegue? ¿Fórmula, tabla, o criterio del operario? | Si no se modela, **todo el nesting está sobre medidas equivocadas** | `PAR-10`, `SUP-08` |
 | **P-06** | ¿Dónde viven las tablas del dashboard de AppSheet? | Bloquea todo el carril B | `SUP-09`, `B-07` |
