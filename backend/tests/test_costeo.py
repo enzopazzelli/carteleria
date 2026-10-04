@@ -104,6 +104,32 @@ def test_calcula_el_costo_por_area_de_plancha_y_precio_de_m2(sesion):
     assert linea.advertencias == []
 
 
+def test_no_costea_con_plano_de_otro_formato(sesion):
+    _, formato = _material_con_formato(sesion)
+    trabajo, grupo = _trabajo_con_grupo(sesion, formato)
+    grupo.ejecuciones[0].parametros = {"formato": {
+        "id": formato.id, "ancho_mm": "1000", "alto_mm": "2000",
+    }}
+    sesion.commit()
+    linea = resumen_materiales(sesion, trabajo.id).lineas[0]
+    assert linea.costo_estimado is None
+    assert linea.area_total_m2 is None
+    assert linea.ejecucion_id is None
+    assert any("cambió después" in aviso for aviso in linea.advertencias)
+
+
+def test_definitiva_fallida_no_desplaza_una_corrida_valida(sesion):
+    _, formato = _material_con_formato(sesion)
+    trabajo, grupo = _trabajo_con_grupo(sesion, formato, definitiva=False)
+    valida_id = grupo.ejecuciones[0].id
+    sesion.add(EjecucionNesting(grupo_id=grupo.id, motor="sparrow", estado="error", es_definitiva=True))
+    sesion.commit()
+    sesion.expire_all()
+    linea = resumen_materiales(sesion, trabajo.id).lineas[0]
+    assert linea.ejecucion_id == valida_id
+    assert linea.costo_estimado is not None
+
+
 def test_un_grupo_sin_material_no_tiene_costo_pero_avisa(sesion):
     trabajo = Trabajo(nombre="Prueba", escala_a_mm=Decimal("10"))
     sesion.add(trabajo)

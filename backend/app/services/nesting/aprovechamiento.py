@@ -40,6 +40,7 @@ from shapely.geometry import Polygon
 
 from .models import Plancha, ResultadoAnidado
 from .validacion_manual import GeometriaPieza
+from .geometria_material import poligono_material
 
 _MM2_POR_M2 = Decimal(1_000_000)  # constante física de conversión de unidades, no un PAR-xx
 
@@ -82,7 +83,7 @@ def _area_real_mm2(posicion, geometria: GeometriaPieza | None) -> Decimal:
     para una cargada a mano es lo único que se sabe de ella."""
     if geometria is None or not geometria.contorno_local_mm:
         return posicion.ancho_colocado_mm * posicion.alto_colocado_mm
-    poligono = Polygon(geometria.contorno_local_mm, geometria.agujeros_local_mm)
+    poligono = poligono_material(geometria.contorno_local_mm, geometria.agujeros_local_mm)
     return Decimal(str(poligono.area))
 
 

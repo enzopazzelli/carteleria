@@ -16,10 +16,13 @@ import {
 import Banner from "../../components/Banner";
 import { ApiError } from "../../api/client";
 import { urlPlano } from "../../api/nesting";
+import { useGrupos } from "../../hooks/useGrupos";
+import ResumenAnidado from "../../components/ResumenAnidado";
 
 export default function CosteoTab() {
   const { trabajoId } = useParams();
   const id = Number(trabajoId);
+  const { data: grupos } = useGrupos(id);
   const { data: presupuestos } = usePresupuestosDelTrabajo(id);
   const { data: clientes } = useClientes();
   const crearCliente = useCrearCliente();
@@ -86,6 +89,7 @@ export default function CosteoTab() {
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-4">Costeo</h1>
+      {grupos?.map((grupo) => <ResumenAnidado key={grupo.id} grupo={grupo} />)}
 
       {error && (
         <div className="mb-4">

@@ -12,8 +12,10 @@ import {
 import { useFormato, useParametrosCorteMaterial } from "../../hooks/useCatalogo";
 import EstadoBadge from "../../components/EstadoBadge";
 import Banner from "../../components/Banner";
+import { cancelarEjecucion } from "../../api/nesting";
 import { ApiError } from "../../api/client";
 import type { GrupoDeCorte, ParametrosCorteOverride } from "../../api/piezasYgrupos";
+import ResumenAnidado from "../../components/ResumenAnidado";
 
 const ESTADOS_TERMINALES = new Set(["lista", "error", "cancelada"]);
 
@@ -148,9 +150,18 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const marcarDefinitiva = useMarcarDefinitiva(grupo.id);
   const { data: historial } = useEjecucionesDeGrupo(grupo.id);
   const [ejecucionEnCurso, setEjecucionEnCurso] = useState<number | null>(null);
-  const { data: enCurso } = useEjecucion(ejecucionEnCurso);
+  const activa = historial?.find((e) => !ESTADOS_TERMINALES.has(e.estado));
+  const { data: enCurso } = useEjecucion(ejecucionEnCurso ?? activa?.id ?? null);
   const [error, setError] = useState<string | null>(null);
   const [usarHuecos, setUsarHuecos] = useState(false);
+  const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
+  const [verEjecucion, setVerEjecucion] = useState<number | undefined>();
+  const [semilla, setSemilla] = useState(42);
+  const [busqueda, setBusqueda] = useState(2);
+  const [limite, setLimite] = useState(120);
+  const [simplificacion, setSimplificacion] = useState(0.3);
+  const opciones = { motor, usar_anidado_en_huecos: usarHuecos, semilla,
+    segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion };
 
   const definitiva = historial?.find((e) => e.es_definitiva) ?? null;
   const { data: colocacionesDefinitiva } = useColocaciones(definitiva?.id ?? null);
@@ -163,13 +174,14 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   useEffect(() => {
     if (enCurso && ESTADOS_TERMINALES.has(enCurso.estado)) {
       queryClient.invalidateQueries({ queryKey: ["ejecuciones", grupo.id] });
+      if (enCurso.estado === "lista") setVerEjecucion(enCurso.id);
     }
   }, [enCurso?.estado, grupo.id, queryClient]);
 
   async function alAnidar() {
     setError(null);
     try {
-      const ejecucion = await anidar.mutateAsync(usarHuecos);
+      const ejecucion = await anidar.mutateAsync(opciones);
       setEjecucionEnCurso(ejecucion.id);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "No se pudo anidar.");
@@ -190,7 +202,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
     setError(null);
     try {
       await actualizarParametros.mutateAsync({ grupoId: grupo.id, parametros });
-      const ejecucion = await anidar.mutateAsync(usarHuecos);
+      const ejecucion = await anidar.mutateAsync(opciones);
       setEjecucionEnCurso(ejecucion.id);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "No se pudo recalcular.");
@@ -222,18 +234,34 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
             />
             Aprovechar huecos
           </label>
-          <button className="bg-cut text-paper rounded px-3 py-1 text-sm" onClick={alAnidar}>
+          <button className="bg-cut text-paper rounded px-3 py-1 text-sm" disabled={anidar.isPending || !!activa || (ejecucionEnCurso !== null && (!enCurso || !ESTADOS_TERMINALES.has(enCurso.estado)))} onClick={alAnidar}>
             Anidar
           </button>
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-3 text-xs mb-3">
+        <label>Motor <select value={motor} onChange={(e) => setMotor(e.target.value as "rectpack" | "sparrow")} className="border rounded p-1">
+          <option value="rectpack">Rectangular</option><option value="sparrow">Sparrow irregular (prueba)</option>
+        </select></label>
+        {motor === "sparrow" && <>
+          <label>Semilla <input type="number" min="0" max="2147483647" value={semilla} onChange={(e) => setSemilla(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
+          <label>Búsqueda por chapa (s) <input type="number" min="1" max="30" value={busqueda} onChange={(e) => setBusqueda(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
+          <label>Tiempo máximo total (s) <input type="number" min="5" max="300" value={limite} onChange={(e) => setLimite(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
+          <label>Simplificación (mm) <input type="number" min="0" max="2" step="0.1" value={simplificacion} onChange={(e) => setSimplificacion(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
+          <p>Prueba hasta 3 semillas y conserva el anidado validado con menos planchas; en empate, busca dejar retazos más grandes. El tiempo máximo limita la búsqueda. No se garantiza el óptimo global.</p>
+        </>}
+      </div>
       <ParametrosCorteForm grupo={grupo} onCambio={alCambiarParametros} />
 
       {error && <Banner variante="error">{error}</Banner>}
       {enCurso && (
         <p className="text-sm mb-2">
           Ejecución #{enCurso.id}: <EstadoBadge estado={enCurso.estado} />
+          {!ESTADOS_TERMINALES.has(enCurso.estado) && <button className="underline ml-3" onClick={async () => {
+            try { await cancelarEjecucion(enCurso.id); await queryClient.invalidateQueries({ queryKey: ["ejecucion", enCurso.id] }); }
+            catch (e) { setError(e instanceof ApiError ? e.message : "No se pudo cancelar."); }
+          }}>Cancelar</button>}
           {enCurso.error && <span className="ml-2 text-conflict">{enCurso.error}</span>}
         </p>
       )}
@@ -242,7 +270,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
         <thead>
           <tr className="text-left border-b border-line">
             <th>Ejecución</th>
-            <th>Estado</th>
+            <th>Motor</th><th>Tiempo</th><th>Estado</th>
             <th>Planchas</th>
             <th>Aprov.</th>
             <th></th>
@@ -252,7 +280,9 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
           {historial?.map((ejecucion) => (
             <tr key={ejecucion.id} className="border-b border-line">
               <td className="font-mono">#{ejecucion.id}</td>
+              <td>{ejecucion.motor}{ejecucion.semilla !== null && <span className="text-xs ml-1">(semilla {ejecucion.semilla})</span>}</td><td>{ejecucion.milisegundos !== null ? `${(ejecucion.milisegundos / 1000).toFixed(1)} s` : "—"}</td>
               <td>
+                {ejecucion.estado === "lista" && <button className="text-xs underline mr-3" onClick={() => setVerEjecucion(ejecucion.id)}>Ver anidado</button>}
                 <EstadoBadge estado={ejecucion.estado} />
               </td>
               <td className="font-mono">{ejecucion.planchas_usadas ?? "—"}</td>
@@ -271,6 +301,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
           ))}
         </tbody>
       </table>
+      <div className="mt-5"><ResumenAnidado grupo={grupo} ejecucionId={verEjecucion} /></div>
     </div>
   );
 }

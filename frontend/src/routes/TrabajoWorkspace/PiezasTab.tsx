@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { usePiezas, useSubirDxf, useDescartarPieza } from "../../hooks/usePiezas";
 import PiezaMiniPreview from "../../components/PiezaMiniPreview";
 import Banner from "../../components/Banner";
@@ -8,6 +8,8 @@ import { ApiError } from "../../api/client";
 export default function PiezasTab() {
   const { trabajoId } = useParams();
   const id = Number(trabajoId);
+  const [busqueda] = useSearchParams();
+  const revisar = new Set((busqueda.get("revisar") ?? "").split(",").filter(Boolean).map(Number));
   const { data: piezas, isLoading } = usePiezas(id);
   const subirDxf = useSubirDxf(id);
   const descartarPieza = useDescartarPieza(id);
@@ -73,6 +75,10 @@ export default function PiezasTab() {
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-4">Piezas</h1>
+      {revisar.size > 0 && <div className="mb-4">
+        <Banner variante="aviso">Estas {revisar.size} piezas impiden el cálculo con Sparrow. Revisá sus contornos y huecos en el DXF. Descartar una pieza la excluye de todo el trabajo; usalo solo si no corresponde cortarla.</Banner>
+        <Link className="underline text-sm" to={`/trabajos/${id}/piezas`}>Mostrar todas las piezas</Link>
+      </div>}
 
       <div className="flex items-center gap-2 mb-4">
         <label className="text-sm">
@@ -129,12 +135,12 @@ export default function PiezasTab() {
             </tr>
           </thead>
           <tbody>
-            {piezas?.map((pieza) => (
+            {piezas?.filter((pieza) => revisar.size === 0 || revisar.has(pieza.id)).map((pieza) => (
               <tr key={pieza.id} className={`border-b border-line ${pieza.descartada ? "opacity-40" : ""}`}>
                 <td className="py-2">
                   <PiezaMiniPreview contornoMm={pieza.contorno_mm} anchoMm={pieza.ancho_mm} altoMm={pieza.alto_mm} />
                 </td>
-                <td>{pieza.id_origen}</td>
+                <td>{pieza.id_origen}{revisar.has(pieza.id) && <span className="block text-conflict">ID {pieza.id}: revisar geometría</span>}</td>
                 <td className="font-mono">{pieza.ancho_mm} mm</td>
                 <td className="font-mono">{pieza.alto_mm} mm</td>
                 <td className="font-mono">{pieza.cantidad}</td>

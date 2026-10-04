@@ -52,6 +52,9 @@ export function descartarPieza(piezaId: number, descartada: boolean): Promise<Pi
 }
 
 export interface OpcionFormato {
+  area_total_m2: string;
+  motor: "rectpack" | "sparrow";
+  advertencias: string[];
   formato_id: number;
   formato_descripcion: string;
   material_nombre: string;
@@ -92,6 +95,6 @@ export function actualizarParametrosGrupo(
   return apiPatch<GrupoDeCorte>(`/grupos/${grupoId}`, { parametros_usados: parametros });
 }
 
-export function compararFormatos(grupoId: number, formatoIds: number[]): Promise<OpcionFormato[]> {
-  return apiPost<OpcionFormato[]>(`/grupos/${grupoId}/comparar-formatos`, { formato_ids: formatoIds });
+export function compararFormatos(grupoId: number, formatoIds: number[], opciones: import("./nesting").OpcionesAnidado = {}): Promise<OpcionFormato[]> {
+  return apiPost<OpcionFormato[]>(`/grupos/${grupoId}/comparar-formatos`, { formato_ids: formatoIds, ...opciones });
 }

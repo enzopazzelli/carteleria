@@ -1,3 +1,7 @@
+## Motor irregular de prueba — 01/10/2026
+
+La pantalla Anidado permite elegir **Sparrow irregular (prueba)**, configurar semilla, tiempo y simplificación, comparar historial y cancelar. Instalar las dependencias actualizadas. Ver [guía de Sparrow](docs/GUIA-SPARROW-PRUEBAS.md). Los parámetros de corte se respetan: piezas que no entran generan un error explícito.
+
 # Sistema de Cotización, Nesting y Aprobación para Cartelería
 
 Plataforma a medida para una empresa de cartelería de gran formato en chapa. Automatiza el armado de presupuestos, calcula cómo anidar las piezas sobre la plancha para desperdiciar lo menos posible, gestiona el circuito de autorización del dueño y envía el presupuesto al cliente con el fotomontaje del cartel sobre el frente del local.

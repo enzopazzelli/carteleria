@@ -161,7 +161,7 @@ def _etiqueta_pieza(posicion: PosicionPieza, escala: float) -> str:
     return f'<text x="{x_centro:.2f}" y="{y_centro:.2f}">{posicion.pieza_id}</text>'
 
 
-def _grupo_pieza(posicion: PosicionPieza, geometrias: GeometriasPorId | None, escala: float) -> str:
+def _grupo_pieza(posicion: PosicionPieza, geometrias: GeometriasPorId | None, escala: float, mostrar_etiquetas: bool = True) -> str:
     # Primero por id de instancia (`panel#2`), después por id base
     # (`panel`). Con `MotorNestingRectangular` todas las instancias de
     # una pieza comparten geometría y alcanza con la base; un motor que
@@ -172,7 +172,7 @@ def _grupo_pieza(posicion: PosicionPieza, geometrias: GeometriasPorId | None, es
     return (
         f'<g class="pieza">'
         f"{_forma_pieza(posicion, geometria, escala)}"
-        f"{_etiqueta_pieza(posicion, escala)}"
+        f"{_etiqueta_pieza(posicion, escala) if mostrar_etiquetas else ''}"
         f"</g>"
     )
 
@@ -207,6 +207,7 @@ def render_svg_plancha(
     escala_px_por_mm: Decimal = _ESCALA_PX_POR_MM_DEFAULT,
     geometrias: GeometriasPorId | None = None,
     mostrar_grilla: bool = True,
+    mostrar_etiquetas: bool = True,
 ) -> str:
     """SVG de una sola plancha (`plancha_indice`, 0-based) con las piezas
     que el motor le asignó. `escala_px_por_mm` es solo de renderizado —
@@ -230,7 +231,7 @@ def render_svg_plancha(
     escala = float(escala_px_por_mm)
     ancho_px, alto_px = float(plancha.ancho_mm) * escala, float(plancha.alto_mm) * escala
     piezas_svg = "".join(
-        _grupo_pieza(posicion, geometrias, escala)
+        _grupo_pieza(posicion, geometrias, escala, mostrar_etiquetas)
         for posicion in resultado.posiciones
         if posicion.plancha_indice == plancha_indice
     )

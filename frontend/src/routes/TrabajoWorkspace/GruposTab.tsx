@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { usePiezas } from "../../hooks/usePiezas";
 import {
   useAsignarFormatoAGrupo,
@@ -19,7 +19,7 @@ export default function GruposTab() {
   const id = Number(trabajoId);
   const { data: piezas } = usePiezas(id);
   const { data: grupos } = useGrupos(id);
-  const { formatos, materiales } = useTodosLosFormatos();
+  const { formatos, materiales, cargando, error: errorCatalogo, reintentar } = useTodosLosFormatos();
   const crearGrupo = useCrearGrupo(id);
   const asignarPieza = useAsignarPiezaAGrupo(id);
   const asignarFormato = useAsignarFormatoAGrupo(id);
@@ -29,7 +29,13 @@ export default function GruposTab() {
   const [grupoComparando, setGrupoComparando] = useState<number | null>(null);
   const [candidatos, setCandidatos] = useState<number[]>([]);
   const [resultado, setResultado] = useState<OpcionFormato[] | null>(null);
+  const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
+  const [semilla, setSemilla] = useState(42);
+  const [busqueda, setBusqueda] = useState(2);
+  const [limite, setLimite] = useState(120);
+  const [simplificacion, setSimplificacion] = useState(0.3);
   const [error, setError] = useState<string | null>(null);
+  const [piezasInvalidas, setPiezasInvalidas] = useState<number[]>([]);
   const [seleccionadas, setSeleccionadas] = useState<Set<number>>(new Set());
   // Última pieza tildada a mano: el ancla desde la que shift-click
   // selecciona todo el rango intermedio.
@@ -116,12 +122,15 @@ export default function GruposTab() {
 
   async function alComparar(grupoId: number) {
     setError(null);
+    setPiezasInvalidas([]);
     setResultado(null);
     try {
-      const opciones = await compararFormatos.mutateAsync({ grupoId, formatoIds: candidatos });
+      const opciones = await compararFormatos.mutateAsync({ grupoId, formatoIds: candidatos,
+        opciones: { motor, semilla, segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion, criterio: "material" } });
       setResultado(opciones);
     } catch (e) {
       setError(mensajeDeError(e, "No se pudo comparar."));
+      if (e instanceof ApiError) setPiezasInvalidas(e.piezasInvalidas);
     }
   }
 
@@ -138,6 +147,10 @@ export default function GruposTab() {
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-4">Grupos de corte</h1>
+      {errorCatalogo && <div role="alert" className="mb-4">
+        <Banner variante="error">No se pudo cargar el catálogo. Comprobá que el servidor esté activo.</Banner>
+        <button className="underline text-sm" onClick={() => void reintentar()}>Reintentar cargar materiales</button>
+      </div>}
 
       {error && (
         <div className="mb-4">
@@ -242,6 +255,7 @@ export default function GruposTab() {
           <div className="mt-3">
             <button
               className="text-sm underline"
+              disabled={compararFormatos.isPending}
               onClick={() => {
                 setGrupoComparando(grupo.id);
                 setResultado(null);
@@ -255,11 +269,34 @@ export default function GruposTab() {
           {grupoComparando === grupo.id && (
             <div className="mt-3 border-t border-line pt-3">
               <p className="text-sm mb-2">Elegí 2 o más formatos candidatos:</p>
+              <p className="text-sm mb-3">Recomendación: menor superficie total de material consumido (m²); después, menos planchas. El costo se muestra por separado.</p>
+              {error && <div className="mb-3" role="alert">
+                <Banner variante="error">{error}</Banner>
+                {piezasInvalidas.length > 0 && <Link className="underline text-sm" to={`/trabajos/${id}/piezas?revisar=${piezasInvalidas.join(",")}`}>
+                  Revisar las {piezasInvalidas.length} piezas con geometría inválida
+                </Link>}
+              </div>}
+              <fieldset disabled={compararFormatos.isPending} className="flex flex-wrap gap-3 text-xs mb-3" onChange={() => setResultado(null)}>
+                <label>Motor <select value={motor} onChange={(e) => setMotor(e.target.value as "rectpack" | "sparrow")} className="border rounded p-1">
+                  <option value="sparrow">Sparrow irregular (prueba)</option><option value="rectpack">Rectangular</option>
+                </select></label>
+                {motor === "sparrow" && <>
+                  <label>Semilla <input type="number" min="0" max="2147483647" value={semilla} onChange={(e) => setSemilla(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
+                  <label>Búsqueda por chapa (s) <input type="number" min="1" max="30" value={busqueda} onChange={(e) => setBusqueda(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
+                  <label>Máximo por formato (s) <input type="number" min="5" max="300" value={limite} onChange={(e) => setLimite(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
+                  <label>Simplificación (mm) <input type="number" min="0" max="2" step="0.1" value={simplificacion} onChange={(e) => setSimplificacion(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
+                </>}
+              </fieldset>
+              <p className="text-sm mb-3">Se usan los parámetros de corte de cada material. La comparación no guarda un plano; luego ejecutá el mismo motor en Anidado.</p>
+              {motor === "sparrow" && <p className="text-sm mb-3">Calcula siluetas reales, sin la pasada en huecos. Los formatos se procesan uno por uno; puede demorar hasta {candidatos.length * limite} segundos más la validación de geometría.</p>}
               <div className="flex flex-wrap gap-2 mb-3">
+                {cargando && <p>Cargando materiales y formatos…</p>}
+                {!cargando && !errorCatalogo && formatos.length === 0 && <p>No hay formatos en el catálogo.</p>}
                 {formatos.map((formato) => (
                   <label key={formato.id} className="text-xs flex items-center gap-1">
                     <input
                       type="checkbox"
+                      disabled={compararFormatos.isPending}
                       checked={candidatos.includes(formato.id)}
                       onChange={(e) =>
                         setCandidatos((prev) =>
@@ -273,19 +310,27 @@ export default function GruposTab() {
               </div>
               <button
                 className="bg-cut text-paper rounded px-3 py-1 text-sm mb-3"
-                disabled={candidatos.length < 2}
+                disabled={candidatos.length < 2 || compararFormatos.isPending || cargando || !!errorCatalogo}
                 onClick={() => alComparar(grupo.id)}
               >
-                Comparar
+                {compararFormatos.isPending ? "Comparando…" : "Comparar"}
               </button>
+              {candidatos.length < 2 && <p className="text-sm mb-3">Seleccioná al menos dos formatos para habilitar la comparación.</p>}
+              {motor === "rectpack" && (piezas?.filter((p) => p.grupo_id === grupo.id && !p.descartada).reduce((n, p) => n + p.cantidad, 0) ?? 0) > 500 && (
+                <p className="text-sm mb-3">Comparación rápida rectangular para más de 500 piezas. El resultado es estimativo; confirmá el anidado en la etapa Anidado.</p>
+              )}
 
               {resultado && (
+                <div>
+                {Array.from(new Set(resultado.flatMap((opcion) => opcion.advertencias ?? []))).map((aviso) => <p key={aviso} className="text-sm mb-2">{aviso}</p>)}
                 <table className="w-full text-sm mt-2">
                   <thead>
                     <tr className="text-left border-b border-line">
                       <th>Material</th>
+                      <th>Motor</th>
                       <th>Formato</th>
                       <th>Planchas</th>
+                      <th>Material consumido</th>
                       <th>Aprov.</th>
                       <th>Costo</th>
                       <th></th>
@@ -298,8 +343,10 @@ export default function GruposTab() {
                         className={`border-b border-line ${opcion.recomendado ? "bg-bronze/10" : ""}`}
                       >
                         <td>{opcion.material_nombre}</td>
+                        <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
                         <td>{opcion.formato_descripcion}</td>
                         <td className="font-mono">{opcion.planchas_usadas}</td>
+                        <td className="font-mono">{Number(opcion.area_total_m2).toFixed(3)} m²{opcion.recomendado && <span className="block text-bronze text-xs">Menor consumo</span>}</td>
                         <td className="font-mono">{Number(opcion.aprovechamiento_pct).toFixed(1)}%</td>
                         <td className="font-mono">
                           {opcion.moneda} {Number(opcion.costo_total).toFixed(2)}
@@ -321,6 +368,7 @@ export default function GruposTab() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           )}

@@ -30,7 +30,8 @@ export function useFormato(formatoId: number | null) {
  * es chico (~20 formatos, ver B-02 en REGISTRO.md), así que N+1
  * requests client-side es aceptable para esta herramienta interna. */
 export function useTodosLosFormatos() {
-  const { data: materiales } = useMateriales();
+  const catalogo = useMateriales();
+  const { data: materiales } = catalogo;
   const resultados = useQueries({
     queries: (materiales ?? []).map((material) => ({
       queryKey: ["formatos", material.id],
@@ -39,6 +40,11 @@ export function useTodosLosFormatos() {
     })),
   });
   const formatos = resultados.flatMap((r) => r.data ?? []);
-  const cargando = materiales === undefined || resultados.some((r) => r.isLoading);
-  return { formatos, materiales: materiales ?? [], cargando };
+  const error = catalogo.error ?? resultados.find((r) => r.error)?.error;
+  const cargando = catalogo.isLoading || resultados.some((r) => r.isLoading);
+  async function reintentar() {
+    await catalogo.refetch();
+    await Promise.all(resultados.map((r) => r.refetch()));
+  }
+  return { formatos, materiales: materiales ?? [], cargando, error, reintentar };
 }

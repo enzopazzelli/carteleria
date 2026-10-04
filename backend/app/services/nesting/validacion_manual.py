@@ -106,7 +106,8 @@ def _poligono_centrado(geometria: GeometriaPieza) -> Polygon:
     if geometria.contorno_local_mm:
         exterior = [(float(x), float(y)) for x, y in geometria.contorno_local_mm]
         agujeros = [[(float(x), float(y)) for x, y in agujero] for agujero in geometria.agujeros_local_mm]
-        base = Polygon(exterior, agujeros)
+        from .geometria_material import poligono_material
+        base = poligono_material(exterior, agujeros)
     else:
         ancho, alto = float(geometria.ancho_mm), float(geometria.alto_mm)
         base = Polygon([(0, 0), (ancho, 0), (ancho, alto), (0, alto)])

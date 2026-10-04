@@ -70,6 +70,7 @@ from shapely import affinity
 from shapely.geometry import Point, Polygon
 
 from .models import ParametrosCorte, Plancha, PosicionPieza, ResultadoAnidado
+from .geometria_material import poligono_material
 from .validacion_manual import (
     GeometriaPieza,
     PosicionManual,
@@ -192,7 +193,8 @@ def _huecos_usables(
         geometria = geometrias.get(_id_base(contenedora.pieza_id))
         if geometria is None or not geometria.agujeros_local_mm:
             continue
-        for indice, anillo in enumerate(geometria.agujeros_local_mm):
+        material = poligono_material(geometria.contorno_local_mm, geometria.agujeros_local_mm)
+        for indice, anillo in enumerate(material.interiors):
             area = Polygon(anillo).area
             if area < float(area_minima_hueco_mm2):
                 continue
@@ -554,7 +556,7 @@ def anidar_en_huecos(
     # de verdad importa acá: es la que se deja de necesitar en una
     # plancha nueva si la pieza entra en el hueco.
     area_real_por_id = {
-        pieza_id: Polygon(geometria.contorno_local_mm, geometria.agujeros_local_mm).area
+        pieza_id: poligono_material(geometria.contorno_local_mm, geometria.agujeros_local_mm).area
         for pieza_id, geometria in geometrias.items()
         if geometria.contorno_local_mm
     }

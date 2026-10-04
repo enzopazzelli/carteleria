@@ -15,7 +15,7 @@ export default function AjusteTab() {
   const { data: piezas } = usePiezas(id);
   const [grupoId, setGrupoId] = useState<number | null>(null);
   const { data: historial } = useEjecucionesDeGrupo(grupoId ?? -1);
-  const ejecucionDefinitiva = historial?.find((e) => e.es_definitiva) ?? historial?.[0];
+  const ejecucionDefinitiva = historial?.find((e) => e.es_definitiva && e.estado === "lista") ?? historial?.find((e) => e.estado === "lista");
   const { data: colocaciones } = useColocaciones(ejecucionDefinitiva?.id ?? null);
   const ajustar = useAjustarColocacion(ejecucionDefinitiva?.id ?? -1);
   const [plancha, setPlancha] = useState(0);
@@ -73,7 +73,10 @@ export default function AjusteTab() {
       <select
         className="border border-line rounded px-2 py-1 mb-4 bg-paper"
         value={grupoId ?? ""}
-        onChange={(e) => setGrupoId(e.target.value ? Number(e.target.value) : null)}
+        onChange={(e) => {
+          setGrupoId(e.target.value ? Number(e.target.value) : null);
+          setPlancha(0); setSeleccionada(null); setResultadosAjuste(new Map());
+        }}
       >
         <option value="">Elegí un grupo...</option>
         {grupos?.map((g) => (
@@ -156,8 +159,8 @@ export default function AjusteTab() {
 
           {formato ? (
             <PlanoEditor
-              anchoPlanchaMm={Number(formato.ancho_mm)}
-              altoPlanchaMm={Number(formato.alto_mm)}
+              anchoPlanchaMm={Number(ejecucionDefinitiva.parametros?.formato?.ancho_mm ?? formato.ancho_mm)}
+              altoPlanchaMm={Number(ejecucionDefinitiva.parametros?.formato?.alto_mm ?? formato.alto_mm)}
               piezas={piezas}
               colocaciones={colocacionesDePlancha}
               onMover={alMover}

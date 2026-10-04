@@ -7,13 +7,18 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AnidarCrear(BaseModel):
-    #: Único motor soportado por la API hoy — ver el docstring de
-    #: `rutas_nesting.py`. `deepnest` queda para cuando haga falta.
-    motor: Literal["rectpack"] = "rectpack"
+    #: Rectpack conserva el comportamiento actual; Sparrow es experimental.
+    motor: Literal["rectpack", "sparrow"] = "rectpack"
+    semilla: int = Field(default=42, ge=0, le=2147483647)
+    segundos_por_busqueda: int = Field(default=2, ge=1, le=30)
+    tiempo_maximo_s: int = Field(default=120, ge=5, le=300)
+    workers: int = Field(default=2, ge=1, le=2)
+    simplificacion_mm: float = Field(default=0.3, ge=0, le=2)
+    intentos: int = Field(default=3, ge=1, le=8)
     #: Segunda pasada opcional (`anidado_huecos.py`, Capa 2 de
     #: `docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`): reubica piezas ya
     #: anidadas adentro de agujeros reales de otras piezas. Apagada por
@@ -113,11 +118,15 @@ class ResumenMaterialesLeer(BaseModel):
 # --- Comparar formatos, sin comprometer el grupo (`CART-205`) -------------
 
 
-class ComparacionFormatosCrear(BaseModel):
+class ComparacionFormatosCrear(AnidarCrear):
     formato_ids: list[int]
+    criterio: Literal["costo", "material"] = "costo"
 
 
 class OpcionFormatoLeer(BaseModel):
+    motor: str = "rectpack"
+    advertencias: list[str] = Field(default_factory=list)
+    area_total_m2: Decimal = Decimal(0)
     formato_id: int
     formato_descripcion: str
     material_nombre: str

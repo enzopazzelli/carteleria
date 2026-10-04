@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from rectpack import MaxRectsBssf, GuillotineBssfSas
 
 from .aprovechamiento import ReporteAprovechamiento, calcular_aprovechamiento
 from .engine import MotorNestingRectangular
@@ -59,8 +60,12 @@ def comparar_formatos(
     """Anida el mismo conjunto de piezas contra cada formato candidato y
     devuelve, por cada uno, planchas necesarias, aprovechamiento y costo."""
     resultados = []
+    # MaxRects puede tardar minutos con miles de contornos pequeños en
+    # una sola plancha. Guillotine mantiene la comparación interactiva;
+    # sigue siendo una estimación rectangular, no un óptimo garantizado.
+    algoritmo = GuillotineBssfSas if sum(p.cantidad for p in piezas) > 500 else MaxRectsBssf
     for opcion in opciones:
-        resultado_anidado = MotorNestingRectangular(opcion.plancha, opcion.params).anidar(
+        resultado_anidado = MotorNestingRectangular(opcion.plancha, opcion.params, algoritmo=algoritmo).anidar(
             piezas, tope_planchas_advertencia
         )
         reporte = calcular_aprovechamiento(resultado_anidado, opcion.plancha)
@@ -75,7 +80,9 @@ def comparar_formatos(
     return resultados
 
 
-def formato_recomendado(comparacion: list[ResultadoComparacionFormato]) -> ResultadoComparacionFormato:
+def formato_recomendado(comparacion: list[ResultadoComparacionFormato], criterio: str = "costo") -> ResultadoComparacionFormato:
     """El formato a destacar es el de menor costo total — nunca el de
     mayor % de aprovechamiento, aunque coincidan casi siempre."""
+    if criterio == "material":
+        return min(comparacion, key=lambda r: (r.reporte_aprovechamiento.area_total_planchas_mm2, r.resultado_anidado.planchas_usadas, r.costo_total))
     return min(comparacion, key=lambda r: r.costo_total)
