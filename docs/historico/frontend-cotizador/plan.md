@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vite, React 18, TypeScript, React Router, TanStack Query, Tailwind CSS, Vitest. Backend: FastAPI/SQLAlchemy ya existentes.
 
-**Spec:** `docs/superpowers/specs/2026-09-15-frontend-cotizador-design.md`
+**Spec:** `docs/historico/frontend-cotizador/diseno.md`
 
 ## Global Constraints
 
@@ -101,7 +101,7 @@ Y después de crear `app = FastAPI(...)`:
 
 ```python
 # Único origen permitido: el dev server de Vite del frontend interno
-# (docs/superpowers/specs/2026-09-15-frontend-cotizador-design.md). No se
+# (docs/historico/frontend-cotizador/diseno.md). No se
 # amplía a "*" ni a una lista: esta API sigue sin autenticación y solo
 # corre en localhost (ver el docstring de este módulo).
 app.add_middleware(
@@ -352,7 +352,7 @@ def comparar_formatos_de_grupo(
     SIN persistir nada — ni tocar `grupo.formato_id` ni crear una
     `EjecucionNesting`. Es el paso previo a elegir un material cuando
     se quiere ofrecer una variante más económica o en otro material
-    (`docs/superpowers/specs/2026-09-15-frontend-cotizador-design.md §5.2`).
+    (`docs/historico/frontend-cotizador/diseno.md §5.2`).
     """
     grupo = _grupo_o_404(sesion, grupo_id)
     piezas = [p for p in grupo.piezas if not p.descartada]

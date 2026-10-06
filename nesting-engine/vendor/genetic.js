@@ -8,7 +8,7 @@
  * Solo la clase GeneticAlgorithm (el resto del archivo es importación SVG
  * acoplada al DOM). Único cambio funcional: los 6 usos de
  * `Math.random()` pasan a un PRNG inyectable, para que el motor sea
- * reproducible — ver docs/PLAN-MOTOR-NESTING-DEEPNEST.md §5.
+ * reproducible — ver docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md §5.
  *
  * Para actualizar: npm run vendorizar
  */

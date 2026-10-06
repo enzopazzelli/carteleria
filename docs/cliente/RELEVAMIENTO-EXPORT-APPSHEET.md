@@ -2,7 +2,7 @@
 
 > Qué hay realmente en `CARTELERIA 2026.xlsx`, hoja por hoja, y qué implica para el modelo de datos. Se relevó estructura y volúmenes, no contenido: la planilla tiene datos de clientes y **contraseñas en texto plano**, y no se commitea (`CONVENCIONES §4`).
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`REGISTRO.md`](REGISTRO.md) · [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md) · [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`REGISTRO.md`](../REGISTRO.md) · [`MAPA-DEL-PROYECTO.md`](../MAPA-DEL-PROYECTO.md) · [`PLAN-SLICE-VERTICAL.md`](../historico/PLAN-SLICE-VERTICAL.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-10
 

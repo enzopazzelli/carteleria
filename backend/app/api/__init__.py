@@ -1,1 +1,1 @@
-"""API HTTP — ver `docs/PLAN-SLICE-VERTICAL.md`."""
+"""API HTTP — ver `docs/historico/PLAN-SLICE-VERTICAL.md`."""

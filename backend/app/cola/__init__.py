@@ -1,4 +1,4 @@
-"""Cola de trabajos — paso 4 de `docs/PLAN-SLICE-VERTICAL.md`.
+"""Cola de trabajos — paso 4 de `docs/historico/PLAN-SLICE-VERTICAL.md`.
 
 Interfaz mínima: encolar una tarea sin bloquear a quien la pide. El
 código de negocio conoce "encolar", no si atrás hay un hilo (este

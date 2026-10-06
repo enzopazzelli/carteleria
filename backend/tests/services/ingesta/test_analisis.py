@@ -1,7 +1,7 @@
 """Tests del análisis de un DXF ya parseado — CART-509.
 
 Un mismo DXF puede traer varios trabajos dibujados uno al lado del otro
-(ver `docs/ANALISIS-MUESTRA-MEGACARTELES.md`). El análisis agrupa las
+(ver `docs/cliente/ANALISIS-MUESTRA-MEGACARTELES.md`). El análisis agrupa las
 piezas en diseños independientes antes de que nada se persista.
 
 Las piezas se construyen a mano: el análisis no lee archivos, trabaja

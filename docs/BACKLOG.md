@@ -692,7 +692,7 @@ Cuando se calcula el resumen de materiales
 Entonces se usa la que el diseñador marcó como definitiva, y si no marcó ninguna se avisa cuál se usó por default
 ```
 
-> Es el hueco entre F2 y F3 que `CART-302` ya daba por hecho ("un presupuesto que usa dos materiales distintos, cada material aparece como línea separada") sin que nada describiera de dónde salían esas líneas. Acá es de dónde: `GrupoDeCorte` reemplaza la idea fija de "Tanda 1 / Tanda 2" del visor local (siempre el mismo material) por N grupos, cada uno con su propio material — plan completo en [`PLAN-GRUPOS-DE-CORTE.md`](PLAN-GRUPOS-DE-CORTE.md).
+> Es el hueco entre F2 y F3 que `CART-302` ya daba por hecho ("un presupuesto que usa dos materiales distintos, cada material aparece como línea separada") sin que nada describiera de dónde salían esas líneas. Acá es de dónde: `GrupoDeCorte` reemplaza la idea fija de "Tanda 1 / Tanda 2" del visor local (siempre el mismo material) por N grupos, cada uno con su propio material — plan completo en [`PLAN-GRUPOS-DE-CORTE.md`](historico/PLAN-GRUPOS-DE-CORTE.md).
 >
 > El resumen de materiales (`app/costeo.py`) es un cálculo sobre lo ya guardado, no una entidad nueva — **no reemplaza a `CART-301`** (el `Presupuesto` como tal, con cliente y estado), es lo que le da de comer sus líneas cuando esa historia se construya.
 >
@@ -1866,7 +1866,7 @@ Entonces queda registrado el tiempo de carga de cada vista, como baseline de M5
 
 > **No es una historia de código.** Replicar un dashboard sin saber qué se usa produce trabajo desperdiciado. El baseline de performance sin esto no existe.
 
-> **Avance 2026-09-01:** las 9 vistas ya están relevadas y documentadas en [`DASHBOARD-VISTAS.md`](DASHBOARD-VISTAS.md), con un prototipo de UI en `prototipo-dashboard/`. Falta lo que esta historia todavía no puede resolver sin el cliente: priorizarlas (imprescindible/útil/descartable) y medir el tiempo de carga real como baseline de M5. También quedó abierta `D-09` (ver `REGISTRO.md §5`) sobre cuánto de esas 9 vistas es solo lectura.
+> **Avance 2026-09-01:** las 9 vistas ya están relevadas y documentadas en [`DASHBOARD-VISTAS.md`](cliente/DASHBOARD-VISTAS.md), con un prototipo de UI en `prototipo-dashboard/`. Falta lo que esta historia todavía no puede resolver sin el cliente: priorizarlas (imprescindible/útil/descartable) y medir el tiempo de carga real como baseline de M5. También quedó abierta `D-09` (ver `REGISTRO.md §5`) sobre cuánto de esas 9 vistas es solo lectura.
 
 **Puntos:** 5 · **Depende de:** acceso a AppSheet · **Sprint:** S2
 

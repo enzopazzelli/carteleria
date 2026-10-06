@@ -1,6 +1,6 @@
 """Rutas de anidado: encolar, consultar, cancelar, marcar la ejecución
 definitiva y ver el costeo resultante — paso 4 de
-`docs/PLAN-SLICE-VERTICAL.md`.
+`docs/historico/PLAN-SLICE-VERTICAL.md`.
 
 Motor soportado hoy: solo `rectpack` (`CART-202`/`CART-203`) —
 determinista, corre en milisegundos y solo necesita el bounding box de
@@ -10,7 +10,7 @@ distingue quién corre atrás, así que sumarlo no debería tocar el resto
 de esta capa cuando haga falta.
 
 **El nesting nunca corre dentro del request** — aunque `rectpack` sea
-rápido, es la arquitectura definitiva (`docs/PLAN-SLICE-VERTICAL.md`),
+rápido, es la arquitectura definitiva (`docs/historico/PLAN-SLICE-VERTICAL.md`),
 no una concesión al modo local.
 """
 from __future__ import annotations
@@ -415,7 +415,7 @@ def comparar_formatos_de_grupo(
     SIN persistir nada — ni tocar `grupo.formato_id` ni crear una
     `EjecucionNesting`. Es el paso previo a elegir un material cuando
     se quiere ofrecer una variante más económica o en otro material
-    (`docs/superpowers/specs/2026-09-15-frontend-cotizador-design.md §5.2`).
+    (`docs/historico/frontend-cotizador/diseno.md §5.2`).
     """
     grupo = _grupo_o_404(sesion, grupo_id)
     piezas = [p for p in grupo.piezas if not p.descartada]

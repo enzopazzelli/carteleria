@@ -1,6 +1,6 @@
 # DISEÑO: frontend del cotizador — herramienta interna, ciclo completo
 
-> Índice del proyecto: [`../../README.md`](../../README.md) · [`../MAPA-DEL-PROYECTO.md`](../MAPA-DEL-PROYECTO.md) · [`../PLAN-SLICE-VERTICAL.md`](../PLAN-SLICE-VERTICAL.md) · [`../PLAN-SLICE-COTIZADOR.md`](../PLAN-SLICE-COTIZADOR.md) · [`../REGISTRO.md`](../REGISTRO.md)
+> Índice del proyecto: [`../../README.md`](../../../README.md) · [`../MAPA-DEL-PROYECTO.md`](../../MAPA-DEL-PROYECTO.md) · [`../PLAN-SLICE-VERTICAL.md`](../PLAN-SLICE-VERTICAL.md) · [`../PLAN-SLICE-COTIZADOR.md`](../PLAN-SLICE-COTIZADOR.md) · [`../REGISTRO.md`](../../REGISTRO.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-15
 

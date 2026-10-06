@@ -1,8 +1,8 @@
 # DASHBOARD — Inventario de vistas y guía de construcción
 
-> Avanza `CART-801` (inventario de las vistas actuales) de [`BACKLOG.md`](BACKLOG.md). Documenta las 9 vistas del dashboard de AppSheet que usa hoy la empresa, de qué tabla real sale cada dato, y cómo construir cada una en el dashboard rápido (F8) sin repetir el trabajo dos veces.
+> Avanza `CART-801` (inventario de las vistas actuales) de [`BACKLOG.md`](../BACKLOG.md). Documenta las 9 vistas del dashboard de AppSheet que usa hoy la empresa, de qué tabla real sale cada dato, y cómo construir cada una en el dashboard rápido (F8) sin repetir el trabajo dos veces.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · Prototipo: [`../prototipo-dashboard/`](../prototipo-dashboard/) · Fuente de verdad de IDs: [`REGISTRO.md`](REGISTRO.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · Prototipo: [`../prototipo-dashboard/`](../../prototipo-dashboard/) · Fuente de verdad de IDs: [`REGISTRO.md`](../REGISTRO.md)
 >
 > **Fecha:** 2026-09-01 · **Fuentes:** 10 capturas de WhatsApp del dashboard real (mezcla de dos roles — ver §0) + `CARTELERIA 2026.xlsx` (export de las tablas de AppSheet, no versionado — ver `CONVENCIONES.md §4`)
 
@@ -17,13 +17,13 @@ Dos cosas quedan sin verificar y conviene confirmarlas antes de construir en ser
 - **`Compras` no tiene captura real.** Se diseñó a partir de la tabla `COMPRAS` del xlsx, sin ver la pantalla. Es el mayor riesgo de este documento.
 - **La matriz de permisos tiene dos versiones que no coinciden.** La hoja `PERMISOS_MODULOS` del xlsx solo tiene 7 columnas (`inicio, proyectos, stock, revision, cotizaciones, taller, config`) — le faltan `Lista de Precios` y `Compras`, que sí aparecen como columnas propias en la captura de la pantalla **Configuración**. Puede que esas dos vistas hayan sido siempre visibles para todos (no necesitaban su propia columna) o que el xlsx esté desactualizado respecto de la app real. Este documento usa la matriz de **9 columnas de la captura** por ser la fuente más reciente, pero falta que alguien lo confirme con el cliente.
 
-Ver también `SUP-09`/`B-07` en [`REGISTRO.md`](REGISTRO.md#1-supuestos---sup-xx), ya cerrados con este mismo material.
+Ver también `SUP-09`/`B-07` en [`REGISTRO.md`](../REGISTRO.md#1-supuestos---sup-xx), ya cerrados con este mismo material.
 
 ---
 
 ## 1. Los 9 módulos, tabla por tabla
 
-Formato por vista: **qué muestra** (según la captura) · **tabla(s) real(es)** en el xlsx · **cómo se construye rápido** (aplicando `ADR-06` de [`EPICA.md §9`](EPICA.md): separar lectura de escritura, agregados precalculados, refresco `PAR-23`).
+Formato por vista: **qué muestra** (según la captura) · **tabla(s) real(es)** en el xlsx · **cómo se construye rápido** (aplicando `ADR-06` de [`EPICA.md §9`](../EPICA.md): separar lectura de escritura, agregados precalculados, refresco `PAR-23`).
 
 ### 1.1 Inicio
 
@@ -59,7 +59,7 @@ Formato por vista: **qué muestra** (según la captura) · **tabla(s) real(es)**
 
 **Cómo construirla:** 100% agregable — `SUM(tiempo)`, `COUNT(DISTINCT n_nota)`, `MODE(proceso)`, `MAX(fecha)` por operario. Es la vista con mejor caso de uso para F8: no tiene ninguna escritura propia (la carga de horas pasa por "Proyectos", no por acá). **Candidata a construirse primero.**
 
-> Al calcular esto contra los datos reales de `PRODUCCION` (no la muestra del prototipo) aparece un problema de calidad de datos: los nombres de proceso no están normalizados (`"Corte Chapa"` / `"Corte de Chapa"` / `"CORTE DE CHAPA"` conviven). Cualquier agregado por proceso necesita una normalización previa — ver la nota de `B-17` en [`REGISTRO.md §3`](REGISTRO.md).
+> Al calcular esto contra los datos reales de `PRODUCCION` (no la muestra del prototipo) aparece un problema de calidad de datos: los nombres de proceso no están normalizados (`"Corte Chapa"` / `"Corte de Chapa"` / `"CORTE DE CHAPA"` conviven). Cualquier agregado por proceso necesita una normalización previa — ver la nota de `B-17` en [`REGISTRO.md §3`](../REGISTRO.md).
 
 ### 1.5 Cotizaciones
 
@@ -83,7 +83,7 @@ Formato por vista: **qué muestra** (según la captura) · **tabla(s) real(es)**
 
 **Tabla real:** no hay una hoja "materiales" única y limpia en el xlsx — el catálogo de códigos/costos/precios vive repartido entre `INVENTARIO` (catálogo + categoría) y los materiales embebidos en `COTIZACIONES.ITEMS_JSON` / `NOTAS_PEDIDO_V2.MATERIALES_JSON` (costo y precio de venta por código). `ARTICULOS COMPUESTOS` cubre un caso aparte: kits armados a partir de varios materiales con su propio costo total.
 
-**Cómo construirla:** de las 9, es la que más requiere una tabla de agregado propia — hay que consolidar código→costo→margen desde los JSON de cotizaciones en una tabla `materiales_precio` (ver `PAR-12` en [`REGISTRO.md`](REGISTRO.md)), no solo leer una hoja tal cual. Una vez consolidada, es 100% lectura.
+**Cómo construirla:** de las 9, es la que más requiere una tabla de agregado propia — hay que consolidar código→costo→margen desde los JSON de cotizaciones en una tabla `materiales_precio` (ver `PAR-12` en [`REGISTRO.md`](../REGISTRO.md)), no solo leer una hoja tal cual. Una vez consolidada, es 100% lectura.
 
 ### 1.8 Compras — sin captura real, inferida
 
@@ -124,13 +124,13 @@ Tomada de la captura de Configuración (9 columnas), no de la hoja `PERMISOS_MOD
 
 Construir las 9 vistas completas (con sus formularios) puso en tensión algo que `ADR-06` ya había resuelto para F8: el dashboard rápido se definió como **solo lectura sobre agregados precalculados**, sin tocar las tablas operativas. Pero 5 de las 9 vistas (Proyectos, Stock, Cotizaciones, Control de Taller, Configuración) tienen una acción de escritura real detrás (registrar proceso, mover stock, aprobar, completar checklist, editar permisos).
 
-Se registró como **`D-09`** en [`REGISTRO.md §5`](REGISTRO.md#5-decisiones-pendientes---d-xx): falta decidir si esas 5 escrituras se quedan en AppSheet (dashboard puramente de lectura, alcance chico, como dice `EPICA.md`) o si F8 crece para absorberlas (alcance mucho mayor, y se solapa con lo que ya construye el carril A en F0-F4). Mientras no se cierre, el prototipo sirve para validar el diseño de las 9 pantallas, no para decidir cuánto código real hay que escribir.
+Se registró como **`D-09`** en [`REGISTRO.md §5`](../REGISTRO.md#5-decisiones-pendientes---d-xx): falta decidir si esas 5 escrituras se quedan en AppSheet (dashboard puramente de lectura, alcance chico, como dice `EPICA.md`) o si F8 crece para absorberlas (alcance mucho mayor, y se solapa con lo que ya construye el carril A en F0-F4). Mientras no se cierre, el prototipo sirve para validar el diseño de las 9 pantallas, no para decidir cuánto código real hay que escribir.
 
 ---
 
 ## 4. Qué es y qué no es el prototipo
 
-El HTML en [`../prototipo-dashboard/`](../prototipo-dashboard/) implementa las 9 vistas de este documento con datos de muestra (no reales) y un selector de rol que aplica la matriz de §2 en vivo. Sirve para:
+El HTML en [`../prototipo-dashboard/`](../../prototipo-dashboard/) implementa las 9 vistas de este documento con datos de muestra (no reales) y un selector de rol que aplica la matriz de §2 en vivo. Sirve para:
 
 - Validar la identidad visual y la navegación con Vale y con el cliente antes de escribir una línea de backend.
 - Probar que "todo junto, sin red" se siente instantáneo — es la demostración de por qué `ADR-06` (agregados + refresco `PAR-23`) alcanza para cumplir `NFR-03`/`NFR-04`.

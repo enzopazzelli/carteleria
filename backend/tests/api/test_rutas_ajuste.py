@@ -1,5 +1,5 @@
 """Ajuste manual (mover/rotar una colocación) y exportación (plano SVG,
-DXF de corte) — paso 5 de `docs/PLAN-SLICE-VERTICAL.md`.
+DXF de corte) — paso 5 de `docs/historico/PLAN-SLICE-VERTICAL.md`.
 """
 from __future__ import annotations
 

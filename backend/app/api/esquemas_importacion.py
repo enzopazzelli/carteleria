@@ -1,5 +1,5 @@
 """Esquemas de la importación de DXF en dos pasos — analizar y confirmar
-(`docs/PLAN-ANALISIS-DXF.md`, `CART-509`/`510`/`511`).
+(`docs/historico/PLAN-ANALISIS-DXF.md`, `CART-509`/`510`/`511`).
 """
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Anidado en huecos — Capa 2 de `docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`.
+"""Anidado en huecos — Capa 2 de `docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`.
 
 Segunda pasada, greedy, sobre un resultado ya anidado por
 `MotorNestingRectangular`: para cada agujero real de una pieza ya

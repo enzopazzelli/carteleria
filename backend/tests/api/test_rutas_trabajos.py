@@ -1,5 +1,5 @@
 """Trabajos, importación de DXF, piezas y grupos de corte — paso 3 de
-`docs/PLAN-SLICE-VERTICAL.md`, a través de la API HTTP real.
+`docs/historico/PLAN-SLICE-VERTICAL.md`, a través de la API HTTP real.
 """
 from __future__ import annotations
 

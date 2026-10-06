@@ -1,6 +1,6 @@
 """Cliente del motor de nesting irregular (Deepnest headless).
 
-Spike de la Fase 0 de [`docs/PLAN-MOTOR-NESTING-DEEPNEST.md`]. **No es
+Spike de la Fase 0 de [`docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md`]. **No es
 código de producción todavía**: habla con el motor por `subprocess`, un
 proceso por corrida. El servicio HTTP en Docker es la Fase 1, y solo se
 justifica si el spike rinde.
@@ -54,7 +54,7 @@ class OpcionesMotorDeepnest:
     `PAR-04`) sino acá, separadas."""
 
     # Semilla del PRNG: lo que hace reproducible al algoritmo genético.
-    # Ver docs/PLAN-MOTOR-NESTING-DEEPNEST.md §5.
+    # Ver docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md §5.
     semilla: str = "cartelería"
     # Presupuesto de búsqueda. Cortar por generaciones y no por reloj es
     # lo que mantiene el resultado reproducible entre corridas.

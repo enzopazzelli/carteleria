@@ -1,10 +1,10 @@
 # GUION DE ENTREVISTAS — RELEVAMIENTO SPRINT 0
 
-> Versión de campo de [`REGISTRO.md §6`](REGISTRO.md#6-guion-de-relevamiento): las mismas 19 preguntas (`P-xx`) y los mismos insumos (`B-xx`), pero desarrollados para llevar a la reunión — con la pregunta en lenguaje llano, por qué importa y qué anotar.
+> Versión de campo de [`REGISTRO.md §6`](../REGISTRO.md#6-guion-de-relevamiento): las mismas 19 preguntas (`P-xx`) y los mismos insumos (`B-xx`), pero desarrollados para llevar a la reunión — con la pregunta en lenguaje llano, por qué importa y qué anotar.
 >
-> **Las respuestas se cargan en `REGISTRO.md`, no acá.** Este documento no es una fuente de verdad nueva: es la forma de usar la que ya existe en una conversación real. Después de cada encuentro, actualizar los `SUP-xx`/`PAR-xx`/`B-xx`/`P-xx`/`D-xx` que correspondan y dejar la entrada en [`BITACORA.md`](BITACORA.md).
+> **Las respuestas se cargan en `REGISTRO.md`, no acá.** Este documento no es una fuente de verdad nueva: es la forma de usar la que ya existe en una conversación real. Después de cada encuentro, actualizar los `SUP-xx`/`PAR-xx`/`B-xx`/`P-xx`/`D-xx` que correspondan y dejar la entrada en [`BITACORA.md`](../BITACORA.md).
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`REGISTRO.md`](REGISTRO.md) · [`EPICA.md`](EPICA.md) · [`BITACORA.md`](BITACORA.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`REGISTRO.md`](../REGISTRO.md) · [`EPICA.md`](../EPICA.md) · [`BITACORA.md`](../BITACORA.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-01
 

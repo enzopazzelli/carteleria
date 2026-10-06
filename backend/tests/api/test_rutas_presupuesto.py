@@ -1,5 +1,5 @@
 """Clientes, presupuestos y líneas de costo — pasos 1 y 2 de
-`docs/PLAN-SLICE-COTIZADOR.md` (`CART-301`, `CART-302`), contra la API
+`docs/historico/PLAN-SLICE-COTIZADOR.md` (`CART-301`, `CART-302`), contra la API
 HTTP real.
 """
 from __future__ import annotations

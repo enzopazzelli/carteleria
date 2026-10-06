@@ -1,5 +1,5 @@
 """Anidado: encolar, consultar, cancelar, marcar definitiva y costeo —
-paso 4 de `docs/PLAN-SLICE-VERTICAL.md`, a través de la API HTTP real.
+paso 4 de `docs/historico/PLAN-SLICE-VERTICAL.md`, a través de la API HTTP real.
 
 El anidado corre en un hilo de verdad (`app/cola/__init__.py`), no
 simulado: se espera con un polling corto en vez de asumir que ya

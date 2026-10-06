@@ -5,7 +5,7 @@
  * era un listener de IPC de Electron más una capa de Web Workers (`parallel.js`)
  * que no corre en Node: tiene `isNode = false` hardcodeado y su rama de Node
  * importa un `Worker.js` que no existe en el repositorio. Ver
- * `docs/PLAN-MOTOR-NESTING-DEEPNEST.md` §2.1.
+ * `docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md` §2.1.
  *
  * Acá esa capa se corre en serie. Lo que se paralelizaba era el cálculo de NFPs
  * exteriores: geometría pura, sin estado, con `clipper.js` + `geometryutil.js`.

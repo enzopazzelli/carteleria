@@ -1,5 +1,5 @@
 """Rutas de clientes y presupuestos — paso 1 de
-`docs/PLAN-SLICE-COTIZADOR.md` (`CART-301`).
+`docs/historico/PLAN-SLICE-COTIZADOR.md` (`CART-301`).
 
 Sin autenticación (`CART-002` se difiere): no hay "diseñador" ni
 bloqueo de edición entre usuarios todavía — cualquiera que llegue a la
@@ -433,7 +433,7 @@ def _calcular_totales(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> Tot
     el costo total, y redondea una sola vez al final.
 
     Nunca mezcla monedas distintas sin una cotización explícita de por
-    medio (`docs/PLAN-SLICE-COTIZADOR.md`, mismo criterio que
+    medio (`docs/historico/PLAN-SLICE-COTIZADOR.md`, mismo criterio que
     `costeo.ResumenMateriales.costo_total_por_moneda`): una línea en
     otra moneda que la del presupuesto queda afuera de la suma, con su
     propia advertencia — igual que una línea sin costo calculado ni

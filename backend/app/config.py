@@ -1,7 +1,7 @@
 """Configuración del backend.
 
 Todo sale de variables de entorno, con defaults que funcionan sin
-instalar nada — ver `docs/PLAN-SLICE-VERTICAL.md`. Los defaults son de
+instalar nada — ver `docs/historico/PLAN-SLICE-VERTICAL.md`. Los defaults son de
 **desarrollo local**: no cambian lo que decide `ADR-05` para producción
 (PostgreSQL + Celery/Redis), lo dejan como un cambio de configuración.
 """

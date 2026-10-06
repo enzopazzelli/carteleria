@@ -1,5 +1,5 @@
 """Esquemas Pydantic de trabajos, piezas, grupos de corte e importación
-de DXF — paso 3 de `docs/PLAN-SLICE-VERTICAL.md`.
+de DXF — paso 3 de `docs/historico/PLAN-SLICE-VERTICAL.md`.
 """
 from __future__ import annotations
 

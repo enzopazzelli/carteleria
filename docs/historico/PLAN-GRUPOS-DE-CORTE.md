@@ -2,7 +2,7 @@
 
 > Dos extensiones al slice vertical, decididas juntas porque una depende de la otra: el catálogo pasa a reflejar `COTIZADOR` (precio real, moneda, conversión de unidad), y el modelo de trabajo pasa a soportar que **un mismo proyecto se corte en varios materiales**, cada uno con su propio anidado — que es lo que hace falta para poder "identificar qué materiales se van a usar y cotizarlos".
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md) · [`RELEVAMIENTO-EXPORT-APPSHEET.md`](RELEVAMIENTO-EXPORT-APPSHEET.md) · [`BACKLOG.md`](BACKLOG.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md) · [`RELEVAMIENTO-EXPORT-APPSHEET.md`](../cliente/RELEVAMIENTO-EXPORT-APPSHEET.md) · [`BACKLOG.md`](../BACKLOG.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-11
 
@@ -75,7 +75,7 @@ erDiagram
     }
 ```
 
-**Qué cambia respecto del modelo anterior** (`docs/PLAN-SLICE-VERTICAL.md`):
+**Qué cambia respecto del modelo anterior** (`docs/historico/PLAN-SLICE-VERTICAL.md`):
 
 | Antes | Ahora | Por qué |
 |---|---|---|

@@ -1,7 +1,7 @@
 """Compara los dos motores de nesting sobre las MISMAS piezas reales.
 
 Es la herramienta de decisión del spike de la Fase 0
-(`docs/PLAN-MOTOR-NESTING-DEEPNEST.md`): corre `rectpack` y Deepnest
+(`docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md`): corre `rectpack` y Deepnest
 sobre el mismo DXF, con los mismos `PAR-01/02/03/04`, y muestra qué da
 cada uno. Con eso se decide con cuál avanzar — no con la teoría.
 
@@ -331,7 +331,7 @@ def _medir_deepnest(piezas, geometrias, plancha, params, opciones, piezas_rectas
 
 
 def _piezas_a_cortar_de_un_disenio(ruta_dxf: Path, escala_a_mm: Decimal, plancha: Plancha, id_de_referencia: str):
-    """Sub-proyecto 3 (`docs/PLAN-VALIDACION-CORTE-MANUAL.md`): el
+    """Sub-proyecto 3 (`docs/motor/PLAN-VALIDACION-CORTE-MANUAL.md`): el
     diseño que contiene `id_de_referencia`, sus hojas ya armadas y las
     piezas con rol sugerido `cortar` — las que el diseñador anidó a mano
     y las que el sistema tiene que volver a anidar para compararse."""

@@ -11,7 +11,7 @@ vez de dos tandas fijas del mismo material, un trabajo tiene N grupos,
 cada uno con su propio material y su propio anidado. Es lo que hace
 falta para "seleccionar piezas del layout, pasarlas a otro material,
 identificar qué materiales se van a usar y cotizarlos" — ver
-`docs/PLAN-GRUPOS-DE-CORTE.md`.
+`docs/historico/PLAN-GRUPOS-DE-CORTE.md`.
 """
 from __future__ import annotations
 

@@ -4,7 +4,7 @@
 >
 > **Es un plan, no una ejecución.** No modifica todavía `REGISTRO.md`, `BACKLOG.md`, `EPICA.md`, `README.md` ni `BITACORA.md` — eso es la Fase 4.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`REGISTRO.md`](REGISTRO.md) · [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) · [`FACTIBILIDAD-NESTING-WEB.md`](FACTIBILIDAD-NESTING-WEB.md) · [`BITACORA.md`](BITACORA.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`EPICA.md`](../EPICA.md) · [`REGISTRO.md`](../REGISTRO.md) · [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) · [`FACTIBILIDAD-NESTING-WEB.md`](FACTIBILIDAD-NESTING-WEB.md) · [`BITACORA.md`](../BITACORA.md)
 >
 > **Versión:** 2.0 · **Fecha:** 2026-09-08 · Reemplaza la v1.0 (2026-09-01)
 
@@ -187,7 +187,7 @@ Eso choca de frente con un requisito ya escrito en el código: el docstring de `
 
 > ### ✅ Fase 0 EJECUTADA — 2026-09-08. Resultado: **go técnico.**
 >
-> El motor corre headless en `nesting-engine/`, con las cinco verificaciones en verde (`npm test`). Las mediciones contra `rectpack` sobre piezas reales están en [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md); el contrato quedó congelado en [`CONTRATO-NESTING-ENGINE.md`](CONTRATO-NESTING-ENGINE.md).
+> El motor corre headless en `nesting-engine/`, con las cinco verificaciones en verde (`npm test`). Las mediciones contra `rectpack` sobre piezas reales están en [`COMO-FUNCIONA-CADA-MOTOR.md`](../motor/COMO-FUNCIONA-CADA-MOTOR.md); el contrato quedó congelado en [`CONTRATO-NESTING-ENGINE.md`](../motor/CONTRATO-NESTING-ENGINE.md).
 >
 > **Lo que salió mejor de lo esperado:** anidado en huecos y corte de líneas compartidas funcionan de verdad; en piezas irregulares (`carrusel.dxf`) Deepnest empaqueta con **61,1 % de compacidad contra 32,1 % de `rectpack`** — casi el doble.
 >

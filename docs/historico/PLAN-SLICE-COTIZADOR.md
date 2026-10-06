@@ -2,7 +2,7 @@
 
 > Mismo método que [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md) usó para F2: meter en la API real lo mínimo de `F3` que hace falta para que un anidado ya calculado se convierta en un presupuesto persistido, con desglose editable — sin esperar a `F0` (auth) ni a que `F1` tenga precios con vigencia completos.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`MAPA-DEL-PROYECTO.md`](../MAPA-DEL-PROYECTO.md) · [`EPICA.md`](../EPICA.md) · [`BACKLOG.md`](../BACKLOG.md) · [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md)
 >
 > **Versión:** 1.8 · **Fecha:** 2026-09-14 · **Estado:** los 6 pasos ejecutados (`CART-301`-`308`). Queda fuera de este plan: PDF (`CART-309`/`310`) y el frontend
 

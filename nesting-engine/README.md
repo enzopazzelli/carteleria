@@ -1,11 +1,11 @@
 # nesting-engine — el motor de Deepnest, headless
 
-Spike de la Fase 0 de [`../docs/PLAN-MOTOR-NESTING-DEEPNEST.md`](../docs/PLAN-MOTOR-NESTING-DEEPNEST.md): el motor de nesting irregular de `deepnest-next/deepnest` corriendo en Node sin Electron, sin ventanas y sin interfaz.
+Spike de la Fase 0 de [`../docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md`](../docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md): el motor de nesting irregular de `deepnest-next/deepnest` corriendo en Node sin Electron, sin ventanas y sin interfaz.
 
 **No es código de producción.** Existe para poder medir el motor contra el que ya tenemos (`rectpack`) sobre piezas reales y decidir con datos. Se puede borrar esta carpeta entera y el sistema queda como estaba.
 
-Para entender qué hace cada motor y qué dieron las mediciones: [`../docs/COMO-FUNCIONA-CADA-MOTOR.md`](../docs/COMO-FUNCIONA-CADA-MOTOR.md).
-Para el formato de entrada/salida: [`../docs/CONTRATO-NESTING-ENGINE.md`](../docs/CONTRATO-NESTING-ENGINE.md).
+Para entender qué hace cada motor y qué dieron las mediciones: [`../docs/motor/COMO-FUNCIONA-CADA-MOTOR.md`](../docs/motor/COMO-FUNCIONA-CADA-MOTOR.md).
+Para el formato de entrada/salida: [`../docs/motor/CONTRATO-NESTING-ENGINE.md`](../docs/motor/CONTRATO-NESTING-ENGINE.md).
 
 ---
 

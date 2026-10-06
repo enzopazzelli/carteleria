@@ -361,6 +361,25 @@ Además de lo anterior: medir las métricas del hito (`PAR-32` a `PAR-37`), demo
 | [`EPICA.md`](EPICA.md) | Cuando cambia el alcance, un ADR o el roadmap | Acordado entre los dos |
 | [`BACKLOG.md`](BACKLOG.md) | Al partir, agregar o reestimar historias | El dueño del carril |
 
+### Dónde va cada documento
+
+`docs/` se ordena por **estado**, para que se vea a simple vista qué vale hoy y qué ya pasó (orden adoptado el 2026-10-05):
+
+| Carpeta | Qué va | Se sigue |
+|---|---|---|
+| `docs/` (raíz) | Solo los documentos de referencia: `MAPA-DEL-PROYECTO`, `REGISTRO`, `EPICA`, `BACKLOG`, `BITACORA`, `CONVENCIONES`, `DECISIONES-Y-BLOQUEANTES`, `GUIA-PRUEBAS-LOCALES` | Sí |
+| `docs/plan/` | `PLAN-MAESTRO.md` y una carpeta por sub-proyecto en curso, con su número del plan maestro (`docs/plan/1.1-servidor-y-login/`). Adentro, `diseno.md` y `plan.md` | Sí: es lo que sigue |
+| `docs/motor/` | El motor de anidado: contrato, mediciones, plan del carril | Sí, en el carril del motor |
+| `docs/cliente/` | Lo que dijo y entregó la empresa, y lo que se le presentó: relevamientos, propuesta, presentaciones | Como fuente |
+| `docs/historico/` | Planes ejecutados o reemplazados, y estudios cerrados | **No.** Se consultan para entender por qué el código es como es |
+
+**Reglas:**
+
+1. **Un documento nuevo no va suelto en `docs/`.** Si no es de referencia, va en una de las carpetas.
+2. **Cuando un sub-proyecto termina, su carpeta pasa entera a `docs/historico/`**, en el mismo commit que lo cierra. Si otro plan lo reemplaza, también.
+3. **Al mover un documento se actualizan todas las rutas que lo citan**, en documentos y en comentarios del código, y se comprueba que no quede ningún enlace roto.
+4. **No hay documentos suspendidos.** Un plan que no se va a seguir pasa a `docs/historico/`, aunque se haya ejecutado solo una parte. La parte que siga viva la absorbe el plan vigente.
+
 ### Regla de la bitácora
 
 **Una entrada por sesión de trabajo, no una por commit.** Si en una tarde cerraste tres historias, es una sola entrada. Si arreglaste un typo, no es entrada.

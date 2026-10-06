@@ -1,5 +1,5 @@
 """Esquemas Pydantic de clientes, presupuestos y líneas de costo —
-pasos 1 y 2 de `docs/PLAN-SLICE-COTIZADOR.md`.
+pasos 1 y 2 de `docs/historico/PLAN-SLICE-COTIZADOR.md`.
 """
 from __future__ import annotations
 

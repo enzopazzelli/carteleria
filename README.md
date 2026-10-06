@@ -111,11 +111,11 @@ Cualquier cosa que te confunda (aunque funcione), el DXF con el que algo no se v
 
 ## 🆕 Novedad para Vale
 
-Enzo investigó tres motores de nesting open source (SVGnest, Deepnest, SheetNest) para evaluar si conviene anidar piezas del lado del navegador — resultado en [`docs/FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md). Encontró que el Deepnest original no tiene licencia de código abierto (el repo no tiene archivo `LICENSE`), pero decidió avanzar igual con Deepnest porque es el único de los tres con anidado dentro de huecos, DXF y corte de líneas compartidas — usando un fork comunitario con licencia MIT (`deepnest-next`) en vez del original.
+Enzo investigó tres motores de nesting open source (SVGnest, Deepnest, SheetNest) para evaluar si conviene anidar piezas del lado del navegador — resultado en [`docs/historico/FACTIBILIDAD-NESTING-WEB.md`](docs/historico/FACTIBILIDAD-NESTING-WEB.md). Encontró que el Deepnest original no tiene licencia de código abierto (el repo no tiene archivo `LICENSE`), pero decidió avanzar igual con Deepnest porque es el único de los tres con anidado dentro de huecos, DXF y corte de líneas compartidas — usando un fork comunitario con licencia MIT (`deepnest-next`) en vez del original.
 
-El plan técnico de esa implementación está en [`docs/PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/PLAN-MOTOR-NESTING-DEEPNEST.md): resuelve `D-01` a favor de Deepnest, como microservicio Node llamado desde Celery, reemplazando tanto `rectpack` (F2) como `nest2D` (F7). **Todavía no se ejecutó** — no se tocó `REGISTRO.md`, `BACKLOG.md` ni `EPICA.md` — es la Fase 4 del plan, pendiente de PR.
+El plan técnico de esa implementación está en [`docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md): resuelve `D-01` a favor de Deepnest, como microservicio Node llamado desde Celery, reemplazando tanto `rectpack` (F2) como `nest2D` (F7). **Todavía no se ejecutó** — no se tocó `REGISTRO.md`, `BACKLOG.md` ni `EPICA.md` — es la Fase 4 del plan, pendiente de PR.
 
-Hay un segundo plan como alternativa/contingencia: [`docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) — cómo acercarse al mismo valor (huecos, corte de líneas compartidas) sin sumar el microservicio Node, construyendo esas dos features encima de `shapely`/`rectpack`/`nest2D` dentro del mismo backend Python. Ninguno de los dos planes está ejecutado; la idea es probar primero este (sin infraestructura ni riesgo legal nuevo) y escalar al de Deepnest solo si no alcanza en el punto de validación de H1.
+Hay un segundo plan como alternativa/contingencia: [`docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) — cómo acercarse al mismo valor (huecos, corte de líneas compartidas) sin sumar el microservicio Node, construyendo esas dos features encima de `shapely`/`rectpack`/`nest2D` dentro del mismo backend Python. Ninguno de los dos planes está ejecutado; la idea es probar primero este (sin infraestructura ni riesgo legal nuevo) y escalar al de Deepnest solo si no alcanza en el punto de validación de H1.
 
 ---
 
@@ -131,13 +131,18 @@ Presupuestar toma mucho tiempo, acomodar las piezas sobre la chapa toma más, y 
 cartelería/
 ├── README.md          ← estás acá. Índice y guía de lectura
 │
-├── docs/              ← documentación del proyecto (viva, se edita)
-│   ├── EPICA.md                      Documento maestro
-│   ├── BACKLOG.md                    70 historias con criterios de aceptación
-│   ├── REGISTRO.md                   Supuestos, parámetros, dudas, insumos
+├── docs/              ← documentación, ordenada por estado (CONVENCIONES.md §8 bis)
+│   ├── MAPA-DEL-PROYECTO.md          Dónde estamos parados
+│   ├── REGISTRO.md                   Supuestos, parámetros, dudas, insumos, decisiones
+│   ├── EPICA.md · BACKLOG.md         Qué hay que construir
+│   ├── BITACORA.md                   Registro cronológico de todo
 │   ├── CONVENCIONES.md               Cómo trabajamos sin pisarnos
 │   ├── DECISIONES-Y-BLOQUEANTES.md   Correcciones a la spec técnica
-│   └── BITACORA.md                   Registro cronológico de todo
+│   ├── GUIA-PRUEBAS-LOCALES.md       Probar con datos reales del cliente
+│   ├── plan/        ← LO QUE SIGUE: el plan maestro y un diseño por sub-proyecto
+│   ├── motor/       ← el motor de anidado: contrato, mediciones, plan del carril
+│   ├── cliente/     ← relevamientos, propuesta y presentaciones
+│   └── historico/   ← planes ejecutados o reemplazados; no se siguen
 │
 ├── fuentes/           ← documentos originales (histórico, NO se editan)
 │   ├── propuesta-carteleria-automatizacion.md
@@ -152,7 +157,7 @@ cartelería/
 │   │                                 aprovechamiento real y listado de materiales
 │   │                                 (CART-202 a CART-206)
 │   ├── app/modelos/                  Tablas SQLAlchemy (catálogo, trabajos, grupos de
-│   │                                 corte) — docs/PLAN-SLICE-VERTICAL.md
+│   │                                 corte) — docs/historico/PLAN-SLICE-VERTICAL.md
 │   ├── app/api/                      FastAPI: catálogo (CART-102/105), trabajos y
 │   │                                 subida de DXF (CART-503), grupos de corte (CART-211),
 │   │                                 anidado en cola, costeo, ajuste manual y exportación,
@@ -179,6 +184,10 @@ cartelería/
 
 ## Guía de lectura
 
+### 🧭 Qué sigue
+
+[`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) — el plan vigente: en qué orden se construye todo lo que no es el motor y dónde se conecta el motor cuando esté listo. Si un documento dice otra cosa sobre el orden de trabajo, vale el plan maestro.
+
 ### 🆕 Es tu primera vez acá
 
 Una hora, en este orden:
@@ -193,7 +202,7 @@ Una hora, en este orden:
 
 ### 🔄 Volvés después de un tiempo
 
-[`docs/BITACORA.md`](docs/BITACORA.md) — las últimas tres entradas y ya sabés dónde estás parado. Después [`docs/REGISTRO.md §7`](docs/REGISTRO.md) para ver qué se movió.
+[`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) para saber qué sigue, y [`docs/BITACORA.md`](docs/BITACORA.md) — las últimas tres entradas — para saber qué pasó. Después [`docs/REGISTRO.md §7`](docs/REGISTRO.md) para ver qué se movió.
 
 ### 💻 Vas a tomar una historia
 
@@ -204,8 +213,8 @@ Una hora, en este orden:
 
 ### 🗣️ Vas a reunirte con el cliente
 
-- **Reunión de arranque** (para que confirme el inicio) → [`docs/PROPUESTA-CLIENTE.md`](docs/PROPUESTA-CLIENTE.md) — problema, solución, cronograma de 2 meses, insumos e inversión, sin jerga interna.
-- **Los tres encuentros de relevamiento**, ya confirmado el inicio → [`docs/GUION-ENTREVISTAS-RELEVAMIENTO.md`](docs/GUION-ENTREVISTAS-RELEVAMIENTO.md) — las 19 preguntas desarrolladas para llevar a la reunión: en lenguaje llano, por qué importa cada una y qué insumos pedir. Versión condensada en [`docs/REGISTRO.md §6`](docs/REGISTRO.md).
+- **Reunión de arranque** (para que confirme el inicio) → [`docs/cliente/PROPUESTA-CLIENTE.md`](docs/cliente/PROPUESTA-CLIENTE.md) — problema, solución, cronograma de 2 meses, insumos e inversión, sin jerga interna.
+- **Los tres encuentros de relevamiento**, ya confirmado el inicio → [`docs/cliente/GUION-ENTREVISTAS-RELEVAMIENTO.md`](docs/cliente/GUION-ENTREVISTAS-RELEVAMIENTO.md) — las 19 preguntas desarrolladas para llevar a la reunión: en lenguaje llano, por qué importa cada una y qué insumos pedir. Versión condensada en [`docs/REGISTRO.md §6`](docs/REGISTRO.md).
 
 ### 📊 Querés presentarle el proyecto a alguien
 
@@ -215,33 +224,63 @@ Una hora, en este orden:
 
 ## Índice completo de documentos
 
-### `docs/` — documentación viva
+### `docs/` — referencia
+
+Lo que vale siempre. Se edita.
 
 | Documento | Qué contiene | Se actualiza |
 |---|---|---|
-| [`EPICA.md`](docs/EPICA.md) | Contexto y origen, requisitos R1-R11, roles, alcance IN/OUT, features F0-F8, roadmap, **10 ADRs**, arquitectura, 12 NFRs, 13 riesgos, DoR/DoD, matriz de trazabilidad, glosario | Cuando cambia el alcance o una decisión |
-| [`PROPUESTA-CLIENTE.md`](docs/PROPUESTA-CLIENTE.md) | Prospecto para el cliente: problema, solución, cronograma de 2 meses, insumos necesarios e inversión — sin jerga interna, para la reunión de confirmación de inicio | Antes de la reunión de arranque, y cuando cambie el alcance o el cronograma ofrecido |
-| [`BACKLOG.md`](docs/BACKLOG.md) | 9 features, **70 historias**, 371 puntos. Cada una con narrativa, criterios Gherkin, estimación, dependencias y sprint | Al partir o agregar historias |
-| [`REGISTRO.md`](docs/REGISTRO.md) | **Fuente de verdad.** 16 supuestos (`SUP`), 37 parámetros (`PAR`), 23 insumos (`B`/`T`), 19 preguntas (`P`), 8 decisiones pendientes (`D`), guion de relevamiento, tablero de estado | **Cada sprint**, y cada vez que se cierra un ID |
-| [`GUION-ENTREVISTAS-RELEVAMIENTO.md`](docs/GUION-ENTREVISTAS-RELEVAMIENTO.md) | Las 19 preguntas de `REGISTRO.md §6` desarrolladas para llevar a los tres encuentros de relevamiento: en lenguaje llano, por qué importa cada una y qué insumos pedir | Cuando cambie el guion de `REGISTRO.md §6` |
-| [`RELEVAMIENTO-REUNION-ARRANQUE.md`](docs/RELEVAMIENTO-REUNION-ARRANQUE.md) | Hallazgos depurados de la reunión de arranque con Aníbal (Megacarteles): confirma/matiza `SUP-04`, `SUP-14`, `B-01`, `B-02`, `B-09` y suma hallazgos nuevos sin ID todavía | No se actualiza — es una nota puntual de esa reunión |
-| [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división de carriles, propiedad del código, Git y commits, migraciones Alembic, convenciones de código, contratos entre carriles, ritmo de trabajo | Cuando acordamos una regla nueva |
-| [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | **13 correcciones** a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
+| [`MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) | **Dónde estamos parados**: estado de cada feature, dónde se corta el flujo del dato, qué bloquea qué | Cuando cambia el estado de una feature |
+| [`REGISTRO.md`](docs/REGISTRO.md) | **Fuente de verdad** de supuestos (`SUP`), parámetros (`PAR`), insumos (`B`/`T`), preguntas (`P`) y decisiones pendientes (`D`), con guion de relevamiento y tablero de estado | Cada vez que se abre o se cierra un ID |
+| [`EPICA.md`](docs/EPICA.md) | Contexto y origen, requisitos R1-R11, roles, alcance, features F0-F8, roadmap, ADRs, arquitectura, NFRs, riesgos, DoR/DoD, trazabilidad, glosario | Cuando cambia el alcance o una decisión |
+| [`BACKLOG.md`](docs/BACKLOG.md) | Las historias, cada una con narrativa, criterios Gherkin, estimación, dependencias y sprint | Al partir o agregar historias |
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
-| [`DASHBOARD-VISTAS.md`](docs/DASHBOARD-VISTAS.md) | Las 9 vistas del dashboard actual, de qué tabla real sale cada una y cómo construirlas en F8 — avanza `CART-801` | Cuando se releve o confirme una vista nueva |
-| [`RELEVAMIENTO-EXPORT-APPSHEET.md`](docs/RELEVAMIENTO-EXPORT-APPSHEET.md) | Las 19 hojas del export del cliente, qué hay en cada una y qué implica para el modelo — resuelve `B-01` y `B-02` | Antes de modelar catálogo, precios o cotizador |
-| [`PLAN-SLICE-VERTICAL.md`](docs/PLAN-SLICE-VERTICAL.md) | Cómo sacar el nesting del script local a una app real (API, persistencia, cola) sin Docker, dejando el paso a producción como configuración | Mientras se construyan las fundaciones |
-| [`PLAN-SLICE-COTIZADOR.md`](docs/PLAN-SLICE-COTIZADOR.md) | Mismo método que el anterior, aplicado a F3: presupuesto, líneas de costo con override manual y desglose por API, sin esperar a auth ni a precios con vigencia completos | Mientras se construya F3 |
-| [`PLAN-GRUPOS-DE-CORTE.md`](docs/PLAN-GRUPOS-DE-CORTE.md) | Catálogo con precio real (moneda, conversión de unidad) + un trabajo repartido en varios materiales, cada uno con su propio anidado — resuelve `CART-211` | Al tocar el modelo de trabajos, grupos o costeo |
-| [`SPIKE-CDR.md`](docs/SPIKE-CDR.md) | ¿Se puede leer `.cdr` sin CorelDRAW? Sí, vía LibreOffice/`libcdr` — con dos límites conocidos. De paso corrigió la escala usada en las pruebas de nesting (era 10, es 1) | Antes de tocar `ADR-02` o construir ingesta de `.cdr` |
-| [`PLANILLA-PARAMETROS-TALLER.md`](docs/PLANILLA-PARAMETROS-TALLER.md) | Planilla para llenar con el operario: cierra `B-03` y `B-04` y las preguntas que surgieron de construir el motor | Antes de la próxima visita al taller |
-| [`MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) | **Dónde estamos parados**: diagramas Mermaid con el estado de las 9 features, dónde se corta el flujo del dato, qué bloquea qué y qué sigue | Para ubicarse rápido, o cuando cambie el estado de una feature |
-| [`COMO-FUNCIONA-CADA-MOTOR.md`](docs/COMO-FUNCIONA-CADA-MOTOR.md) | Cómo funciona `rectpack` y cómo funciona Deepnest, qué da cada uno y las mediciones reales sobre DXF del cliente | Al decidir `D-01`, o antes de cambiar de motor |
-| [`CONTRATO-NESTING-ENGINE.md`](docs/CONTRATO-NESTING-ENGINE.md) | El JSON que hablan Python y el motor irregular (`nesting-engine/`) | Al tocar cualquiera de los dos lados |
-| [`FACTIBILIDAD-NESTING-WEB.md`](docs/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores de nesting en el navegador — insumo para F7, no cambia `ADR-05` | Rara vez — es una investigación puntual |
-| [`PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/PLAN-MOTOR-NESTING-DEEPNEST.md) | Plan técnico para reemplazar `rectpack`/`nest2D` por un motor único basado en Deepnest (`deepnest-next`) como microservicio Node — resuelve `D-01`. Plan, no ejecutado todavía | Cuando avance alguna de sus 5 fases |
-| [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) | Plan de contingencia: cómo aproximar huecos y corte de líneas compartidas sin servicios externos, construido encima de `shapely`/`rectpack`/`nest2D` en el mismo backend Python | Cuando se decida probarlo o se mida contra el plan de Deepnest |
-| [`GUIA-PRUEBAS-LOCALES.md`](docs/GUIA-PRUEBAS-LOCALES.md) | Cómo probar el motor de nesting con datos reales del cliente: el xlsx de AppSheet y los DXF de `modelos/` — scripts de preparación, nunca se commitea lo que producen | Cuando cambie qué datos reales hay disponibles para probar |
+| [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división del trabajo, Git y commits, migraciones, código, **dónde va cada documento** (§8 bis) | Cuando acordamos una regla nueva |
+| [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | Las correcciones a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
+| [`GUIA-PRUEBAS-LOCALES.md`](docs/GUIA-PRUEBAS-LOCALES.md) | Cómo probar con datos reales del cliente: el xlsx de AppSheet y los DXF de `modelos/`. Nunca se commitea lo que producen | Cuando cambian los datos reales disponibles |
+
+### `docs/plan/` — lo que sigue
+
+| Documento | Qué contiene |
+|---|---|
+| [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) | **El plan vigente.** Etapas, sub-proyectos en orden, el enchufe del motor y las decisiones abiertas. Cada sub-proyecto suma acá su propia carpeta con `diseno.md` y `plan.md` |
+
+### `docs/motor/` — el motor de anidado
+
+| Documento | Qué contiene |
+|---|---|
+| [`PLAN-RUMBO-ANIDADO-Y-REVISION.md`](docs/motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md) | Rumbo del anidado para piezas grandes y curvas (carril A) y pantalla de revisión (carril B, que el plan maestro absorbe como 2.1) |
+| [`PLAN-VALIDACION-CORTE-MANUAL.md`](docs/motor/PLAN-VALIDACION-CORTE-MANUAL.md) | Spike que mide el corte manual del diseñador contra los motores, con los resultados de A1 y A2 |
+| [`COMO-FUNCIONA-CADA-MOTOR.md`](docs/motor/COMO-FUNCIONA-CADA-MOTOR.md) | Cómo funcionan `rectpack` y Deepnest, qué da cada uno y las mediciones sobre DXF reales |
+| [`CONTRATO-NESTING-ENGINE.md`](docs/motor/CONTRATO-NESTING-ENGINE.md) | El JSON que hablan Python y el motor irregular (`nesting-engine/`) |
+
+### `docs/cliente/` — lo que dijo y entregó la empresa
+
+| Documento | Qué contiene |
+|---|---|
+| [`PROPUESTA-CLIENTE.md`](docs/cliente/PROPUESTA-CLIENTE.md) | Prospecto para la reunión de arranque: problema, solución, cronograma, insumos e inversión, sin jerga interna. La presentación está en [`presentaciones/`](docs/cliente/presentaciones/) |
+| [`RELEVAMIENTO-REUNION-ARRANQUE.md`](docs/cliente/RELEVAMIENTO-REUNION-ARRANQUE.md) | Hallazgos depurados de la reunión de arranque con Aníbal (Megacarteles) |
+| [`GUION-ENTREVISTAS-RELEVAMIENTO.md`](docs/cliente/GUION-ENTREVISTAS-RELEVAMIENTO.md) | Las preguntas de `REGISTRO.md §6` desarrolladas para los tres encuentros de relevamiento |
+| [`RELEVAMIENTO-EXPORT-APPSHEET.md`](docs/cliente/RELEVAMIENTO-EXPORT-APPSHEET.md) | Las 19 hojas del export de AppSheet, qué hay en cada una y qué implica para el modelo |
+| [`DASHBOARD-VISTAS.md`](docs/cliente/DASHBOARD-VISTAS.md) | Las 9 vistas del dashboard actual, de qué tabla sale cada una y cómo construirlas en F8 |
+| [`PLANILLA-PARAMETROS-TALLER.md`](docs/cliente/PLANILLA-PARAMETROS-TALLER.md) | Planilla para llenar con el operario: kerf, márgenes y veta (`B-03`, `B-04`) |
+| [`ANALISIS-MUESTRA-MEGACARTELES.md`](docs/cliente/ANALISIS-MUESTRA-MEGACARTELES.md) | Qué trae la primera muestra real de diseño (`Muestra Vectores.dxf`) y qué hace el sistema con ella |
+
+### `docs/historico/` — ejecutado o reemplazado
+
+**No se sigue.** Se consulta para entender por qué el código es como es; el código cita estos documentos en sus comentarios.
+
+| Documento | Qué fue |
+|---|---|
+| [`PLAN-SLICE-VERTICAL.md`](docs/historico/PLAN-SLICE-VERTICAL.md) | Sacar el nesting del script local a una app real: API, persistencia y cola. Ejecutado |
+| [`PLAN-SLICE-COTIZADOR.md`](docs/historico/PLAN-SLICE-COTIZADOR.md) | Presupuesto, líneas de costo con override y desglose por API. Ejecutado salvo el PDF |
+| [`PLAN-GRUPOS-DE-CORTE.md`](docs/historico/PLAN-GRUPOS-DE-CORTE.md) | Catálogo con precio real y un trabajo repartido en varios materiales (`CART-211`). Ejecutado |
+| [`PLAN-ANALISIS-DXF.md`](docs/historico/PLAN-ANALISIS-DXF.md) | Análisis de un DXF con varios diseños y hojas ya armadas (`CART-509` a `CART-511`). Ejecutado |
+| [`frontend-cotizador/`](docs/historico/frontend-cotizador/) | Diseño y plan del frontend del cotizador. Ejecutado |
+| [`PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md) | Deepnest como motor único en un microservicio Node. Se ejecutó el spike; el rumbo siguió en `motor/` |
+| [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) | Alternativa sin servicios externos, sobre `shapely` y `rectpack`. Se ejecutó el anidado en huecos |
+| [`FACTIBILIDAD-NESTING-WEB.md`](docs/historico/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores en el navegador |
+| [`SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | ¿Se puede leer `.cdr` sin CorelDRAW? Sí, con dos límites conocidos. Lo cita `D-11` |
 
 ### `fuentes/` — documentos originales
 
@@ -326,7 +365,7 @@ pip install -r requirements-dev.txt
 pytest                     # dominio del nesting, importación de DXF y API
 ```
 
-Ya hay una API real, siguiendo [`docs/PLAN-SLICE-VERTICAL.md`](docs/PLAN-SLICE-VERTICAL.md) — SQLite local sin instalar nada, FastAPI, Alembic:
+Ya hay una API real, siguiendo [`docs/historico/PLAN-SLICE-VERTICAL.md`](docs/historico/PLAN-SLICE-VERTICAL.md) — SQLite local sin instalar nada, FastAPI, Alembic:
 
 ```bash
 cd backend
@@ -334,7 +373,7 @@ alembic upgrade head        # crea backend/local/carteleria.db
 uvicorn app.api.app:app --reload
 ```
 
-Documentación interactiva en `http://localhost:8000/docs`. Los 5 pasos de `PLAN-SLICE-VERTICAL.md` ya están: ABM de catálogo (`CART-102`/`CART-105`), trabajos con subida y parseo de DXF (`CART-503`), grupos de corte (`CART-211`), anidado real en cola (`POST /grupos/{id}/anidar` con `rectpack` — Deepnest no está conectado a la API todavía) con costeo (`GET /trabajos/{id}/costeo`), y ajuste manual + exportación (`PATCH /colocaciones/{id}` para mover/rotar, `GET /ejecuciones/{id}/plano` y `.../dxf`) — sin autenticación (`CART-002` se difiere) y por eso **no se expone fuera de `localhost`**. El paso 6 (el frontend) también está: para probarlo en tu máquina, ver [Probar el sistema en tu computadora](#-probar-el-sistema-en-tu-computadora). De [`PLAN-SLICE-COTIZADOR.md`](docs/PLAN-SLICE-COTIZADOR.md) (F3) los 6 pasos ya están: clientes y presupuestos en `BORRADOR` (`CART-301`), costo de material generado desde el anidado (`CART-302`), override manual con trazabilidad (`PATCH /lineas-costo/{id}/override`, `CART-303`), líneas libres de insumos/mano de obra/flete/instalación (`CART-304`-`306`), margen/IVA/total con redondeo único (`GET /presupuestos/{id}/totales`, `CART-307`) y el desglose completo (`GET /presupuestos/{id}/desglose`, `CART-308`). Falta el PDF (`CART-309`/`310`, sin `WeasyPrint` instalado).
+Documentación interactiva en `http://localhost:8000/docs`. Los 5 pasos de `PLAN-SLICE-VERTICAL.md` ya están: ABM de catálogo (`CART-102`/`CART-105`), trabajos con subida y parseo de DXF (`CART-503`), grupos de corte (`CART-211`), anidado real en cola (`POST /grupos/{id}/anidar` con `rectpack` — Deepnest no está conectado a la API todavía) con costeo (`GET /trabajos/{id}/costeo`), y ajuste manual + exportación (`PATCH /colocaciones/{id}` para mover/rotar, `GET /ejecuciones/{id}/plano` y `.../dxf`) — sin autenticación (`CART-002` se difiere) y por eso **no se expone fuera de `localhost`**. El paso 6 (el frontend) también está: para probarlo en tu máquina, ver [Probar el sistema en tu computadora](#-probar-el-sistema-en-tu-computadora). De [`PLAN-SLICE-COTIZADOR.md`](docs/historico/PLAN-SLICE-COTIZADOR.md) (F3) los 6 pasos ya están: clientes y presupuestos en `BORRADOR` (`CART-301`), costo de material generado desde el anidado (`CART-302`), override manual con trazabilidad (`PATCH /lineas-costo/{id}/override`, `CART-303`), líneas libres de insumos/mano de obra/flete/instalación (`CART-304`-`306`), margen/IVA/total con redondeo único (`GET /presupuestos/{id}/totales`, `CART-307`) y el desglose completo (`GET /presupuestos/{id}/desglose`, `CART-308`). Falta el PDF (`CART-309`/`310`, sin `WeasyPrint` instalado).
 
 No hay Docker todavía — eso es la versión de producción de F0 (`CART-001`), que sigue sin empezar; el modo local de arriba corre sin instalar nada pesado y el cambio a PostgreSQL/Docker es de configuración, no de código.
 

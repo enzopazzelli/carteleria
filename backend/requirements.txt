@@ -3,7 +3,7 @@ rectpack==0.2.2
 ezdxf==1.4.4
 shapely==2.1.2
 
-# API y persistencia (docs/PLAN-SLICE-VERTICAL.md).
+# API y persistencia (docs/historico/PLAN-SLICE-VERTICAL.md).
 # La base es SQLite en local y PostgreSQL en producción: se cambia con
 # DATABASE_URL, no hay driver de PostgreSQL acá todavía porque no hace
 # falta para desarrollar. Cuando exista el VPS se suma `psycopg[binary]`.

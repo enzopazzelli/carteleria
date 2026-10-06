@@ -1,6 +1,6 @@
 """Rutas de trabajos, piezas, grupos de corte e importación de DXF.
 
-Paso 3 de `docs/PLAN-SLICE-VERTICAL.md`: subir un DXF, parsearlo y
+Paso 3 de `docs/historico/PLAN-SLICE-VERTICAL.md`: subir un DXF, parsearlo y
 guardar las piezas — más el ABM mínimo de grupos de corte (`CART-211`)
 para que una pieza recién importada tenga adónde ir. La cola de
 anidado y las colocaciones son el paso siguiente del plan, no esto.

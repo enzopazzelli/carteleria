@@ -4,7 +4,7 @@
 materiales distintos, cada material aparece como línea separada"*. Lo que
 faltaba era de dónde salían esas líneas — acá es de dónde: un `Trabajo`
 puede repartirse en varios `GrupoDeCorte`, cada uno con su propio
-material y su propio anidado (`docs/PLAN-GRUPOS-DE-CORTE.md`).
+material y su propio anidado (`docs/historico/PLAN-GRUPOS-DE-CORTE.md`).
 
 Esto es un **preview calculado**, no una entidad persistida. Lee lo que
 ya está guardado y arma la lista; no crea ninguna fila nueva. El día que
@@ -43,7 +43,7 @@ class LineaMaterial:
     #: Lo que se multiplicó por `area_total_m2` para llegar a
     #: `costo_estimado` — `Formato.costo_unidad_venta` tal cual, `None`
     #: si el formato no tiene precio cargado. Expuesto para que quien
-    #: persista esta línea (`CART-302`, `docs/PLAN-SLICE-COTIZADOR.md`)
+    #: persista esta línea (`CART-302`, `docs/historico/PLAN-SLICE-COTIZADOR.md`)
     #: no tenga que volver a consultar `Formato` por su cuenta.
     precio_unitario: Decimal | None
     #: `Formato.unidad_venta` tal cual venga — puede no ser "M2" (el

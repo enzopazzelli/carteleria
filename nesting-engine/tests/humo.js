@@ -3,7 +3,7 @@
  *
  * No es una suite de tests del proyecto — es la verificación mínima de que el
  * motor extraído hace lo que el plan dice que hace. Los cuatro criterios de
- * go/no-go de `docs/PLAN-MOTOR-NESTING-DEEPNEST.md` §6:
+ * go/no-go de `docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md` §6:
  *
  *   1. corre headless, sin Electron ni ventanas
  *   2. anida piezas DENTRO del hueco de otra pieza

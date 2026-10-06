@@ -16,7 +16,7 @@
  *      y lo envuelve en una factory que recibe sus globales por parámetro.
  *   4. Recorta la clase `GeneticAlgorithm` de `main/deepnest.js` y le
  *      cambia `Math.random()` por un PRNG inyectable (determinismo,
- *      ver docs/PLAN-MOTOR-NESTING-DEEPNEST.md §5).
+ *      ver docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md §5).
  *
  * Uso:  node scripts/vendorizar.mjs [--repo <ruta-a-clone-existente>]
  */
@@ -223,7 +223,7 @@ module.exports = function crearMotorDeColocacion(entorno) {
       `Solo la clase GeneticAlgorithm (el resto del archivo es importación SVG\n` +
         `acoplada al DOM). Único cambio funcional: los ${usosDeRandom} usos de\n` +
         `\`Math.random()\` pasan a un PRNG inyectable, para que el motor sea\n` +
-        `reproducible — ver docs/PLAN-MOTOR-NESTING-DEEPNEST.md §5.`
+        `reproducible — ver docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md §5.`
     ) +
       `'use strict';
 

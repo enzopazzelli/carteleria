@@ -1,5 +1,5 @@
 """Cliente, Presupuesto y LineaCosto — pasos 1 y 2 de
-`docs/PLAN-SLICE-COTIZADOR.md`.
+`docs/historico/PLAN-SLICE-COTIZADOR.md`.
 """
 from __future__ import annotations
 

@@ -2,7 +2,7 @@
 
 > Sub-proyecto 1 de 3 (`ANALISIS-MUESTRA-MEGACARTELES.md §6`, orden 1 → 3 → 2). Cubre `CART-509`, `CART-510`, `CART-511` y la extensión de `CART-506`. Los otros dos sub-proyectos — validar contra las hojas del diseñador, y seccionar automáticamente lo que no entra en una chapa — son planes propios, todavía sin escribir.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`ANALISIS-MUESTRA-MEGACARTELES.md`](ANALISIS-MUESTRA-MEGACARTELES.md) · [`BACKLOG.md`](BACKLOG.md) · [`REGISTRO.md`](REGISTRO.md) · [`CONTRATO-NESTING-ENGINE.md`](CONTRATO-NESTING-ENGINE.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`ANALISIS-MUESTRA-MEGACARTELES.md`](../cliente/ANALISIS-MUESTRA-MEGACARTELES.md) · [`BACKLOG.md`](../BACKLOG.md) · [`REGISTRO.md`](../REGISTRO.md) · [`CONTRATO-NESTING-ENGINE.md`](../motor/CONTRATO-NESTING-ENGINE.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-25
 

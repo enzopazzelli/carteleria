@@ -1,6 +1,6 @@
 """Ajuste manual de una colocación (mover, rotar) y exportación del
 resultado (plano, DXF de corte) — paso 5 de
-`docs/PLAN-SLICE-VERTICAL.md`.
+`docs/historico/PLAN-SLICE-VERTICAL.md`.
 
 `services/nesting/` no se toca: esta capa solo traduce entre lo
 persistido (`Colocacion`, en centro + ángulo libre) y los tipos que ya

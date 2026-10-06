@@ -2,7 +2,7 @@
 
 > Vista de conjunto para ubicarse: qué está construido, qué está a medias, qué está bloqueado y qué falta. Los diagramas son Mermaid y se ven directamente en GitHub y en VS Code.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`REGISTRO.md`](REGISTRO.md) · [`PLAN-SLICE-VERTICAL.md`](PLAN-SLICE-VERTICAL.md) · [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md)
+> Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`REGISTRO.md`](REGISTRO.md) · [`PLAN-SLICE-VERTICAL.md`](historico/PLAN-SLICE-VERTICAL.md) · [`COMO-FUNCIONA-CADA-MOTOR.md`](motor/COMO-FUNCIONA-CADA-MOTOR.md)
 >
 > **Versión:** 2.2 · **Fecha:** 2026-09-14 · Rama actual: `main`
 
@@ -83,7 +83,7 @@ flowchart TD
 | 🟨 amarillo | en curso, parcial (incluye `F5`/`F7`, adelantadas fuera de orden) |
 | ⬜ gris | sin empezar |
 
-**Lo que cambió desde la versión 1.0 de este mapa:** `F0` y `F1` dejaron de estar en cero — no por seguir el orden del roadmap, sino porque `docs/PLAN-SLICE-VERTICAL.md` construyó el mínimo de cada una (config/Alembic de `F0`, catálogo de `F1`) que hacía falta para que `F2` deje de vivir en un script local. Ninguna de las dos está terminada: `F0` sigue sin auth/roles, `F1` sigue sin precios con vigencia.
+**Lo que cambió desde la versión 1.0 de este mapa:** `F0` y `F1` dejaron de estar en cero — no por seguir el orden del roadmap, sino porque `docs/historico/PLAN-SLICE-VERTICAL.md` construyó el mínimo de cada una (config/Alembic de `F0`, catálogo de `F1`) que hacía falta para que `F2` deje de vivir en un script local. Ninguna de las dos está terminada: `F0` sigue sin auth/roles, `F1` sigue sin precios con vigencia.
 
 ---
 
@@ -258,7 +258,7 @@ flowchart TD
     class GANA,EMPATE,COSTO amarillo
 ```
 
-Detalle completo, con todas las mediciones: [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md).
+Detalle completo, con todas las mediciones: [`COMO-FUNCIONA-CADA-MOTOR.md`](motor/COMO-FUNCIONA-CADA-MOTOR.md).
 
 **`D-01` sigue abierto.** Su enunciado en `REGISTRO.md` ("¿`nest2D` o Deepnest?") quedó desactualizado — la comparación real que se hizo fue `rectpack` vs. Deepnest, `nest2D` no llegó a implementarse. Lo que falta decidir de fondo es si los dos motores conviven (las mediciones dicen que no compiten por el mismo trabajo) y, si conviven, conectar Deepnest a `POST /grupos/{id}/anidar` como una segunda opción de `motor`.
 

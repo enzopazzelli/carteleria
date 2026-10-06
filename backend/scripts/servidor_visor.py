@@ -106,7 +106,7 @@ _AREA_MINIMA_HUECO_MM2 = Decimal("100")  # PAR-39, provisorio
 
 
 #: Materiales planos que NO son chapa, con las medidas que dio el cliente
-#: en la reunión de arranque (`docs/RELEVAMIENTO-REUNION-ARRANQUE.md`).
+#: en la reunión de arranque (`docs/cliente/RELEVAMIENTO-REUNION-ARRANQUE.md`).
 #: Están acá y no en `REGISTRO.md` porque son insumo de prueba local, no
 #: parámetros del sistema: el catálogo real es `CART-104`.
 #:
@@ -207,7 +207,7 @@ class _Tanda:
             self.posiciones = []
             self.advertencias = [str(error)]
             return
-        # Capa 2 del plan nativo (docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md):
+        # Capa 2 del plan nativo (docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md):
         # segunda pasada greedy que intenta reubicar piezas ya anidadas
         # adentro de agujeros reales de otras piezas ya anidadas.
         antes = {p.pieza_id: p for p in resultado.posiciones}
@@ -224,7 +224,7 @@ class _Tanda:
             ]
 
     def _recalcular_deepnest(self, registrar_proceso=None) -> None:
-        """Anida con el motor irregular (`docs/PLAN-MOTOR-NESTING-DEEPNEST.md`).
+        """Anida con el motor irregular (`docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md`).
 
         No hace falta la Capa 2 (`anidado_huecos`) acá: Deepnest ya
         considera los agujeros como espacio válido durante la colocación,

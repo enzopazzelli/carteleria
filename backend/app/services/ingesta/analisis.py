@@ -1,7 +1,7 @@
 """Análisis de un DXF ya parseado — CART-509.
 
 `parsear_dxf` lee geometría; este módulo decide qué significa. Están
-separados a propósito (`docs/PLAN-ANALISIS-DXF.md`): el parser no se
+separados a propósito (`docs/historico/PLAN-ANALISIS-DXF.md`): el parser no se
 toca, y el análisis se prueba con piezas armadas a mano, sin archivos.
 
 **Diseños (`CART-509`).** Un DXF real puede traer varios trabajos
@@ -191,7 +191,7 @@ def sugerir_factor_de_escala(
 ) -> Decimal | None:
     """Por cuánto habría que multiplicar la escala usada para que
     aparezcan hojas con medida de catálogo — el encabezado del DXF no es
-    confiable (`docs/ANALISIS-MUESTRA-MEGACARTELES.md §1`). `None` si con
+    confiable (`docs/cliente/ANALISIS-MUESTRA-MEGACARTELES.md §1`). `None` si con
     la escala actual ya hay hojas, o si ningún factor hace aparecer
     alguna. Si varios factores funcionan, gana el que encuentra más.
 

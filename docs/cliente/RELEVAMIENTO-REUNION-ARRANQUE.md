@@ -1,10 +1,10 @@
 # RELEVAMIENTO — REUNIÓN DE ARRANQUE CON MEGACARTELES
 
-> Notas depuradas de la reunión donde se presentó [`fuentes/Propuesta carteleria.pptx`](../fuentes/Propuesta%20carteleria.pptx) a Aníbal (dueño de Megacarteles). No es la transcripción cruda — se sacó la charla lateral (mate, café, un proyecto de otro cliente sin relación) y se organizó lo sustancial por tema, cruzado contra los IDs de `REGISTRO.md`.
+> Notas depuradas de la reunión donde se presentó [`presentaciones/Propuesta-cliente-cartel.pptx`](presentaciones/Propuesta-cliente-cartel.pptx) a Aníbal (dueño de Megacarteles). No es la transcripción cruda — se sacó la charla lateral (mate, café, un proyecto de otro cliente sin relación) y se organizó lo sustancial por tema, cruzado contra los IDs de `REGISTRO.md`.
 >
 > **Esta reunión no reemplaza los tres encuentros de relevamiento de `GUION-ENTREVISTAS-RELEVAMIENTO.md`** — fue la de presentación/arranque, pero salieron temas de las tres (negocio, taller, diseño) porque la conversación se fue por las ramas de forma útil. Se marca cada hallazgo con a qué encuentro le hubiera correspondido.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`REGISTRO.md`](REGISTRO.md) · [`GUION-ENTREVISTAS-RELEVAMIENTO.md`](GUION-ENTREVISTAS-RELEVAMIENTO.md) · [`DECISIONES-Y-BLOQUEANTES.md`](DECISIONES-Y-BLOQUEANTES.md) · [`BITACORA.md`](BITACORA.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`REGISTRO.md`](../REGISTRO.md) · [`GUION-ENTREVISTAS-RELEVAMIENTO.md`](GUION-ENTREVISTAS-RELEVAMIENTO.md) · [`DECISIONES-Y-BLOQUEANTES.md`](../DECISIONES-Y-BLOQUEANTES.md) · [`BITACORA.md`](../BITACORA.md)
 >
 > **Fecha de la reunión:** 2026-09-01 · **Participantes:** Aníbal (dueño, Megacarteles) · Enzo · Vale ("Mujer 1" en la grabación) · dos personas más del lado de Megacarteles ("Mujer 2", "Hombre 1" — **Hombre 1 podría ser el autor del dashboard de AppSheet actual**, a confirmar en el Encuentro 3)
 
@@ -88,7 +88,7 @@ Esto no cambia ninguna decisión ya tomada (`CART-303`/`ADR-07` ya cubre el over
 
 ### Dashboard actual (relevante para Vale / F8)
 
-**Confirmado: el módulo de Compras del dashboard actual está roto.** Uno de los presentes de Megacarteles mencionó haber intentado crear una función ahí que “no me leía” y terminó por no cargar más. Esto es evidencia directa a favor del hallazgo ya anotado en `docs/DASHBOARD-VISTAS.md`: la vista de Compras del prototipo está **inferida** de la tabla, no de una captura real, y ahora queda claro por qué — la vista real no anda. Si la persona que mencionó esto es el autor del dashboard (hipótesis, a confirmar en el Encuentro 3), vale la pena priorizar hablar con esa persona puntualmente sobre Compras.
+**Confirmado: el módulo de Compras del dashboard actual está roto.** Uno de los presentes de Megacarteles mencionó haber intentado crear una función ahí que “no me leía” y terminó por no cargar más. Esto es evidencia directa a favor del hallazgo ya anotado en `docs/cliente/DASHBOARD-VISTAS.md`: la vista de Compras del prototipo está **inferida** de la tabla, no de una captura real, y ahora queda claro por qué — la vista real no anda. Si la persona que mencionó esto es el autor del dashboard (hipótesis, a confirmar en el Encuentro 3), vale la pena priorizar hablar con esa persona puntualmente sobre Compras.
 
 ### Idea nueva, fuera de alcance por ahora: cotización remota a partir de una foto
 

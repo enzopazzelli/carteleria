@@ -16,7 +16,7 @@ jobs:
   # typecheck en cada push"), aplicado con los tests ya hechos.
   #
   # Corre sobre SQLite local, como el modo de desarrollo de
-  # docs/PLAN-SLICE-VERTICAL.md: no hace falta PostgreSQL ni Docker en el
+  # docs/historico/PLAN-SLICE-VERTICAL.md: no hace falta PostgreSQL ni Docker en el
   # runner, así que el CI no depende de infraestructura que todavía no existe
   # (CART-001 sigue sin empezar).
   # ---------------------------------------------------------------------------

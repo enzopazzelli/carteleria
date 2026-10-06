@@ -1,4 +1,4 @@
-> **Nota interna (no es para el cliente):** completar el nombre de la empresa antes de enviar o presentar este documento. A propósito no tiene jerga interna del proyecto (IDs, ADRs, puntos de historia) — está escrito para leerse en una reunión con el cliente, no para el equipo. La versión de trabajo del equipo sigue siendo [`EPICA.md`](EPICA.md).
+> **Nota interna (no es para el cliente):** completar el nombre de la empresa antes de enviar o presentar este documento. A propósito no tiene jerga interna del proyecto (IDs, ADRs, puntos de historia) — está escrito para leerse en una reunión con el cliente, no para el equipo. La versión de trabajo del equipo sigue siendo [`EPICA.md`](../EPICA.md).
 
 ---
 

@@ -1,5 +1,5 @@
 """Esquemas Pydantic de ejecuciones de nesting, colocaciones y el
-resumen de materiales — paso 4 de `docs/PLAN-SLICE-VERTICAL.md`.
+resumen de materiales — paso 4 de `docs/historico/PLAN-SLICE-VERTICAL.md`.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ class AnidarCrear(BaseModel):
     #: `rutas_nesting.py`. `deepnest` queda para cuando haga falta.
     motor: Literal["rectpack"] = "rectpack"
     #: Segunda pasada opcional (`anidado_huecos.py`, Capa 2 de
-    #: `docs/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`): reubica piezas ya
+    #: `docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`): reubica piezas ya
     #: anidadas adentro de agujeros reales de otras piezas. Apagada por
     #: default a propósito — cambia el layout respecto de lo que
     #: devuelve `rectpack` solo, y quien anida tiene que poder pedir el

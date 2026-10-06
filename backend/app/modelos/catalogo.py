@@ -1,7 +1,7 @@
 """Catálogo: materiales, sus formatos y sus parámetros de corte.
 
 Cubre el mínimo de `CART-102` (formatos) y `CART-105` (parámetros de
-corte), más lo que `docs/RELEVAMIENTO-EXPORT-APPSHEET.md` encontró en la
+corte), más lo que `docs/cliente/RELEVAMIENTO-EXPORT-APPSHEET.md` encontró en la
 hoja `COTIZADOR` real del cliente: precio con moneda, unidad de compra
 distinta de la de venta, y un factor de conversión entre las dos.
 
@@ -124,7 +124,7 @@ class Formato(Base):
     #: IMPORTADO tal cual de la planilla, NO recalculado acá. La fórmula
     #: real (qué hacen %COSTO1, %COSTO2 y los 4 márgenes de venta) es una
     #: pregunta abierta para administración — ver
-    #: docs/RELEVAMIENTO-EXPORT-APPSHEET.md. Inventar la fórmula sería un
+    #: docs/cliente/RELEVAMIENTO-EXPORT-APPSHEET.md. Inventar la fórmula sería un
     #: número adivinado disfrazado de cálculo; se guarda el que la
     #: planilla ya trae calculado, hasta que se confirme cómo se arma.
     costo_unidad_venta: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)

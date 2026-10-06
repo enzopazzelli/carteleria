@@ -2,7 +2,7 @@
   "name": "cartelería-nesting-engine",
   "version": "0.1.0",
   "private": true,
-  "description": "Spike Fase 0: motor de nesting irregular de deepnest-next corriendo headless, sin Electron. Ver docs/PLAN-MOTOR-NESTING-DEEPNEST.md",
+  "description": "Spike Fase 0: motor de nesting irregular de deepnest-next corriendo headless, sin Electron. Ver docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md",
   "license": "MIT",
   "type": "commonjs",
   "main": "src/index.js",

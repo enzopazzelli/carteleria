@@ -1,4 +1,4 @@
-"""Importación de DXF en dos pasos — `docs/PLAN-ANALISIS-DXF.md`.
+"""Importación de DXF en dos pasos — `docs/historico/PLAN-ANALISIS-DXF.md`.
 
 `analizar` sube el archivo, lo parsea y devuelve los diseños con el rol
 sugerido de cada forma, **sin tocar la base**. `confirmar` (con el

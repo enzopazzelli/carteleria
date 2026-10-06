@@ -2,7 +2,7 @@
 
 > Cierra lo que quedó abierto en el «Estado al cierre» de [`PLAN-VALIDACION-CORTE-MANUAL.md`](PLAN-VALIDACION-CORTE-MANUAL.md) y propone el orden de trabajo de las próximas sesiones. Son dos carriles independientes: **A** (motor de anidado) y **B** (pantalla de revisión, `CART-506`). Cada paso es chico, termina en algo que se puede probar y espera el visto bueno de Enzo antes del siguiente.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`PLAN-VALIDACION-CORTE-MANUAL.md`](PLAN-VALIDACION-CORTE-MANUAL.md) · [`PLAN-ANALISIS-DXF.md`](PLAN-ANALISIS-DXF.md) · [`ANALISIS-MUESTRA-MEGACARTELES.md`](ANALISIS-MUESTRA-MEGACARTELES.md) · [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md) · [`CONTRATO-NESTING-ENGINE.md`](CONTRATO-NESTING-ENGINE.md) · [`REGISTRO.md`](REGISTRO.md) (`D-01`)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`PLAN-VALIDACION-CORTE-MANUAL.md`](PLAN-VALIDACION-CORTE-MANUAL.md) · [`PLAN-ANALISIS-DXF.md`](../historico/PLAN-ANALISIS-DXF.md) · [`ANALISIS-MUESTRA-MEGACARTELES.md`](../cliente/ANALISIS-MUESTRA-MEGACARTELES.md) · [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md) · [`CONTRATO-NESTING-ENGINE.md`](CONTRATO-NESTING-ENGINE.md) · [`REGISTRO.md`](../REGISTRO.md) (`D-01`)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-26
 >
@@ -207,7 +207,7 @@ Con A2 medido, escribir el plan de **repartir un diseño en las chapas que neces
 
 **Punto de partida.** La API en dos pasos ya existe (`POST /importaciones/dxf/analizar` y `.../{token}/confirmar`, `rutas_importacion.py`), pero **nada del frontend la usa**: `PiezasTab.tsx` sigue con el import de una sola vez. Y `PiezaAnalizada` no trae contorno a propósito («un archivo real tiene miles de piezas»). Para dibujar hace falta un endpoint aparte, no engordar el análisis.
 
-Identidad visual: la ya definida en `docs/superpowers/specs/2026-09-15-frontend-cotizador-design.md §4`. Para B2 y B3 se usa el skill `frontend-design`.
+Identidad visual: la ya definida en `docs/historico/frontend-cotizador/diseno.md §4`. Para B2 y B3 se usa el skill `frontend-design`.
 
 ### B1 · Backend: la geometría para dibujar
 

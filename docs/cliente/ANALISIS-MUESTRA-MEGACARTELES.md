@@ -2,11 +2,11 @@
 
 > Qué trae la primera muestra real de diseño de Megacarteles, qué hace hoy el sistema con ella y por qué, y cómo se ordena el trabajo para que el sistema produzca lo que hoy arma a mano el diseñador.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`REGISTRO.md`](REGISTRO.md) · [`BACKLOG.md`](BACKLOG.md) · [`SPIKE-CDR.md`](SPIKE-CDR.md) · [`PLAN-GRUPOS-DE-CORTE.md`](PLAN-GRUPOS-DE-CORTE.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`REGISTRO.md`](../REGISTRO.md) · [`BACKLOG.md`](../BACKLOG.md) · [`SPIKE-CDR.md`](../historico/SPIKE-CDR.md) · [`PLAN-GRUPOS-DE-CORTE.md`](../historico/PLAN-GRUPOS-DE-CORTE.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-23
 >
-> **Cómo leer las afirmaciones.** Cada dato lleva su origen: **medido** (corrida sobre el archivo real), **leído de las imágenes** que compartió Enzo (no medido) o **hipótesis** (interpretación por confirmar). Las dudas abiertas están en [`REGISTRO.md §4`](REGISTRO.md) (`P-20` a `P-26`) y acá solo se referencian por ID.
+> **Cómo leer las afirmaciones.** Cada dato lleva su origen: **medido** (corrida sobre el archivo real), **leído de las imágenes** que compartió Enzo (no medido) o **hipótesis** (interpretación por confirmar). Las dudas abiertas están en [`REGISTRO.md §4`](../REGISTRO.md) (`P-20` a `P-26`) y acá solo se referencian por ID.
 
 ---
 
@@ -28,7 +28,7 @@
 
 ### Corrección pendiente a otros documentos
 
-[`SPIKE-CDR.md §3.1`](SPIKE-CDR.md) leyó `Muestra Vectores.cdr` como una hoja de referencia de ~132 × 68 mm, "no un trabajo de chapa", y [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md) repite que no está confirmado como trabajo para anidar. Este análisis lo contradice: hay 8 chapas de 2440 × 1220 mm dibujadas, y el círculo de Belgrano mide unos 4,6 m. **Hipótesis:** el spike midió en unidades del `.cdr` sin la escala de dibujo. No se verificó contra el `.cdr`; queda para reconciliar.
+[`SPIKE-CDR.md §3.1`](../historico/SPIKE-CDR.md) leyó `Muestra Vectores.cdr` como una hoja de referencia de ~132 × 68 mm, "no un trabajo de chapa", y [`COMO-FUNCIONA-CADA-MOTOR.md`](../motor/COMO-FUNCIONA-CADA-MOTOR.md) repite que no está confirmado como trabajo para anidar. Este análisis lo contradice: hay 8 chapas de 2440 × 1220 mm dibujadas, y el círculo de Belgrano mide unos 4,6 m. **Hipótesis:** el spike midió en unidades del `.cdr` sin la escala de dibujo. No se verificó contra el `.cdr`; queda para reconciliar.
 
 ---
 
@@ -153,7 +153,7 @@ Son independientes entre sí y cada uno pasa por su propio ciclo de diseño y pl
 
 ## 7. Qué falta confirmar
 
-- **Preguntas abiertas:** `P-20` a `P-26` en [`REGISTRO.md §4`](REGISTRO.md). Las que más condicionan: `P-20` (si las hojas son entrada o resultado en el uso real) y `P-21`/`P-22` (criterio de corte).
+- **Preguntas abiertas:** `P-20` a `P-26` en [`REGISTRO.md §4`](../REGISTRO.md). Las que más condicionan: `P-20` (si las hojas son entrada o resultado en el uso real) y `P-21`/`P-22` (criterio de corte).
 - **Supuestos de este análisis:**
   - `Muestra Vectores.dxf` es el archivo de las imágenes (coinciden tamaño, rectángulos y marcas; no se comparó pieza por pieza). Enzo describió las hojas 1 a 8 como el trabajo manual del diseñador, y eso es lo que se toma como resultado esperado.
   - Las formas sin gemela son piezas creadas cortando (§4).

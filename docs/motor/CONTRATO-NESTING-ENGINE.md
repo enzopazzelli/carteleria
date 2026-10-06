@@ -2,7 +2,7 @@
 
 > El formato JSON que hablan `backend/app/services/nesting/deepnest_cliente.py` y `nesting-engine/`. Definirlo temprano es lo que permite que el transporte cambie (hoy `subprocess`, mañana HTTP en Docker) sin tocar ninguno de los dos lados.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`PLAN-MOTOR-NESTING-DEEPNEST.md`](PLAN-MOTOR-NESTING-DEEPNEST.md) · [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md) · [`REGISTRO.md`](REGISTRO.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`PLAN-MOTOR-NESTING-DEEPNEST.md`](../historico/PLAN-MOTOR-NESTING-DEEPNEST.md) · [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md) · [`REGISTRO.md`](../REGISTRO.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-08 · Estado: **spike**, puede cambiar
 

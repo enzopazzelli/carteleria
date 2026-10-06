@@ -1,10 +1,10 @@
 # FACTIBILIDAD: NESTING EN EL NAVEGADOR — SVGnest, Deepnest y SheetNest
 
-> Investigación puntual de tres motores de nesting open source, para evaluar si conviene resolver parte del anidado del lado del cliente (navegador) en vez de — o además de — el motor Python de backend que ya cerró `ADR-05` en [`EPICA.md`](EPICA.md).
+> Investigación puntual de tres motores de nesting open source, para evaluar si conviene resolver parte del anidado del lado del cliente (navegador) en vez de — o además de — el motor Python de backend que ya cerró `ADR-05` en [`EPICA.md`](../EPICA.md).
 >
-> **No reemplaza ninguna decisión ya tomada.** Es un insumo para cuando se discuta cómo implementar F7 (nesting irregular), no una corrección como las de [`DECISIONES-Y-BLOQUEANTES.md`](DECISIONES-Y-BLOQUEANTES.md).
+> **No reemplaza ninguna decisión ya tomada.** Es un insumo para cuando se discuta cómo implementar F7 (nesting irregular), no una corrección como las de [`DECISIONES-Y-BLOQUEANTES.md`](../DECISIONES-Y-BLOQUEANTES.md).
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`REGISTRO.md`](REGISTRO.md) · [`BITACORA.md`](BITACORA.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`EPICA.md`](../EPICA.md) · [`REGISTRO.md`](../REGISTRO.md) · [`BITACORA.md`](../BITACORA.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-01
 

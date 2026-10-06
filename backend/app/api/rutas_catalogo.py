@@ -1,7 +1,7 @@
 """Rutas del catálogo: materiales, formatos y parámetros de corte.
 
 ABM mínimo de `CART-102`/`CART-105`, paso 2 de
-`docs/PLAN-SLICE-VERTICAL.md`. Sin autenticación (`CART-002` se difiere)
+`docs/historico/PLAN-SLICE-VERTICAL.md`. Sin autenticación (`CART-002` se difiere)
 y sin precios con vigencia (`CART-103`/`ADR-04`): un formato tiene un
 precio vigente, no un historial.
 """

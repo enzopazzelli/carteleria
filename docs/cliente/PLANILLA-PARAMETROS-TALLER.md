@@ -4,7 +4,7 @@
 >
 > Las preguntas y cómo formularlas están en [`GUION-ENTREVISTAS-RELEVAMIENTO.md`](GUION-ENTREVISTAS-RELEVAMIENTO.md) (`P-03`, `P-04`). Esto es dónde anotar las respuestas.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`REGISTRO.md`](REGISTRO.md) · [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`REGISTRO.md`](../REGISTRO.md) · [`MAPA-DEL-PROYECTO.md`](../MAPA-DEL-PROYECTO.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-10
 

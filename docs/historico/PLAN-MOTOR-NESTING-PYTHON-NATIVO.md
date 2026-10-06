@@ -6,7 +6,7 @@
 >
 > Es un plan, no una ejecución. No modifica todavía `REGISTRO.md`, `BACKLOG.md` ni `EPICA.md`.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`REGISTRO.md`](REGISTRO.md) · [`PLAN-MOTOR-NESTING-DEEPNEST.md`](PLAN-MOTOR-NESTING-DEEPNEST.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`EPICA.md`](../EPICA.md) · [`REGISTRO.md`](../REGISTRO.md) · [`PLAN-MOTOR-NESTING-DEEPNEST.md`](PLAN-MOTOR-NESTING-DEEPNEST.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-01
 

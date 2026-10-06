@@ -2,7 +2,7 @@
 
 > `ADR-02` (`EPICA.md`) decidió no parsear `.cdr` — *"formato cerrado y sin especificación pública... intentar parsearlo directamente es un pozo sin fondo"* — y exigir que el diseñador exporte a mano a DXF/SVG con una macro VBA. Enzo confirmó que **`.cdr` es el formato real con el que trabaja el equipo de diseño**. Este spike responde: ¿hay una vía automática, sin exportación manual?
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) (`ADR-02`) · [`REGISTRO.md`](REGISTRO.md) · [`GUIA-PRUEBAS-LOCALES.md`](GUIA-PRUEBAS-LOCALES.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`EPICA.md`](../EPICA.md) (`ADR-02`) · [`REGISTRO.md`](../REGISTRO.md) · [`GUIA-PRUEBAS-LOCALES.md`](../GUIA-PRUEBAS-LOCALES.md)
 >
 > **Versión:** 1.2 · **Fecha:** 2026-09-11 (corregido 2026-09-14, dos veces — ver §3 y §3.1) · Es un spike, no reemplaza a `ADR-02` — ver conclusión
 

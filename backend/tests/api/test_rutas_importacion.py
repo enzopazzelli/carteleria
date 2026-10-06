@@ -1,5 +1,5 @@
 """Importación de DXF en dos pasos — analizar (sin persistir) y
-confirmar. `docs/PLAN-ANALISIS-DXF.md`, `CART-509`/`510`/`511`.
+confirmar. `docs/historico/PLAN-ANALISIS-DXF.md`, `CART-509`/`510`/`511`.
 """
 from __future__ import annotations
 

@@ -41,7 +41,7 @@ Salida: `local/catalogo_chapa.json` (ignorado por git) con `formatos`, `sin_pars
 
 ## 2. Los DXF (`modelos/*.dxf`)
 
-> ⚠️ **No son diseños del cliente (2026-09-14).** Los tres se bajaron de internet, como contenido genérico para poder probar el parser y el motor sin esperar a tener archivos reales. Enzo confirmó que el trabajo real de la cartelería es de otra escala — usan chapas de ~2 m porque las piezas reales son grandes (letras corpóreas, paneles de señalética), no decoraciones de 3-9 cm como estas. **Ningún número de aprovechamiento, comparación de motores o tamaño de plancha corrido contra estos tres archivos —a ninguna escala— representa el trabajo real.** Sirven solo para lo que siempre sirvieron: ejercitar que el parser y el motor no se rompen con geometría real (agujeros, capas sucias, contornos abiertos). El único archivo real que hay hasta ahora es `Muestra Vectores.cdr` — ver [`SPIKE-CDR.md`](SPIKE-CDR.md).
+> ⚠️ **No son diseños del cliente (2026-09-14).** Los tres se bajaron de internet, como contenido genérico para poder probar el parser y el motor sin esperar a tener archivos reales. Enzo confirmó que el trabajo real de la cartelería es de otra escala — usan chapas de ~2 m porque las piezas reales son grandes (letras corpóreas, paneles de señalética), no decoraciones de 3-9 cm como estas. **Ningún número de aprovechamiento, comparación de motores o tamaño de plancha corrido contra estos tres archivos —a ninguna escala— representa el trabajo real.** Sirven solo para lo que siempre sirvieron: ejercitar que el parser y el motor no se rompen con geometría real (agujeros, capas sucias, contornos abiertos). El único archivo real que hay hasta ahora es `Muestra Vectores.cdr` — ver [`SPIKE-CDR.md`](historico/SPIKE-CDR.md).
 
 Hay tres archivos de ejemplo: `carrusel.dxf`, `esqueletos.dxf`, `repisas.dxf`. Antes de escribir el parser se inspeccionaron con `ezdxf` y aparecieron dos problemas reales, no hipotéticos:
 
@@ -57,7 +57,7 @@ El parser (`app/services/ingesta/dxf.py`, `CART-503` adelantada fuera de orden r
 
 El parser no lo hace por vos. Opciones, de más a menos confiable:
 
-1. **La más confiable: convertir el `.cdr` original y medir ahí.** CorelDRAW siempre guarda una unidad real, sin la ambigüedad del DXF exportado — ver [`SPIKE-CDR.md`](SPIKE-CDR.md). Confirmado con los tres archivos de `modelos/`: `carrusel.dxf` y `repisas.dxf` son **`escala_a_mm=1`**, no 10 (ver más abajo por qué el heurístico viejo llevaba a 10 y estaba mal).
+1. **La más confiable: convertir el `.cdr` original y medir ahí.** CorelDRAW siempre guarda una unidad real, sin la ambigüedad del DXF exportado — ver [`SPIKE-CDR.md`](historico/SPIKE-CDR.md). Confirmado con los tres archivos de `modelos/`: `carrusel.dxf` y `repisas.dxf` son **`escala_a_mm=1`**, no 10 (ver más abajo por qué el heurístico viejo llevaba a 10 y estaba mal).
 2. Preguntar a quien exportó el archivo en qué unidad trabajó CorelDRAW/el CAD de origen.
 3. Si conocés la medida real de al menos una pieza del diseño (por ejemplo, "esta repisa mide 300 mm de ancho"), abrí el DXF en un visor, medí esa misma pieza en unidades de archivo, y calculá `escala_a_mm = 300 / medida_en_archivo`.
 4. **Probar a ojo con el visor SVG** (`generar_visor_html.py`, punto 3 bis): la plancha se dibuja con una grilla de referencia cada 100 mm reales. Corré el script con un par de valores de `--escala-a-mm` candidatos (`1`, `10`, `25.4` si sospechás pulgadas, etc.) y mirá cuál da piezas de un tamaño que tenga sentido físico contra esa grilla — una pieza de cartelería no mide 0,5 mm ni 5 metros. Es una prueba visual, no una medición exacta, pero alcanza para descartar órdenes de magnitud mal puestos.
@@ -165,15 +165,15 @@ Mismas limitaciones que el punto 3: piezas por bounding box (`ADR-01`) — pero 
 
   > **No se genera G-code, y es a propósito.** El G-code es específico de cada máquina: velocidades, potencia del láser o RPM de la fresa, orden de corte, compensación de herramienta, lead-ins. Eso lo arma el CAM del fabricante, que conoce esa máquina. Hacerlo acá sería escribir un post-procesador por cada máquina del taller y hacernos responsables de que una potencia mal puesta arruine una chapa. El DXF es el formato que todos esos CAM leen.
 
-- **Cómo amontonar** (solo Deepnest): "contra el ancho" llena a lo ancho de la plancha y deja el sobrante como una franja entera al final del largo — un retazo re-stockeable. "Libre" da el layout más compacto pero suele dejar una tira fina inservible. Ver [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md). Con materiales **con veta** no se puede usar y el visor lo avisa.
+- **Cómo amontonar** (solo Deepnest): "contra el ancho" llena a lo ancho de la plancha y deja el sobrante como una franja entera al final del largo — un retazo re-stockeable. "Libre" da el layout más compacto pero suele dejar una tira fina inservible. Ver [`COMO-FUNCIONA-CADA-MOTOR.md`](motor/COMO-FUNCIONA-CADA-MOTOR.md). Con materiales **con veta** no se puede usar y el visor lo avisa.
 
-- **Materiales que no son chapa, y retazos.** El selector de formato ahora lista, además del catálogo de chapa del xlsx, los materiales planos que el cliente nombró en el relevamiento: **Polyfan 600 × 1200**, **MDF 1830 × 2600**, y acrílico/PVC/ACM con medidas de mercado **a confirmar** (`docs/RELEVAMIENTO-REUNION-ARRANQUE.md`). "Personalizado / retazo…" acepta cualquier medida — es la opción para *"nos quedó un pedazo de 60 × 90 de la chapa anterior"*.
+- **Materiales que no son chapa, y retazos.** El selector de formato ahora lista, además del catálogo de chapa del xlsx, los materiales planos que el cliente nombró en el relevamiento: **Polyfan 600 × 1200**, **MDF 1830 × 2600**, y acrílico/PVC/ACM con medidas de mercado **a confirmar** (`docs/cliente/RELEVAMIENTO-REUNION-ARRANQUE.md`). "Personalizado / retazo…" acepta cualquier medida — es la opción para *"nos quedó un pedazo de 60 × 90 de la chapa anterior"*.
 
   No están los tubos estructurales ni las tiras de LED: se facturan por metro lineal y no entran al motor de nesting. Meterlos haría que el packer los empuje como si fueran planchas.
 
 - **Sacar piezas del trabajo ("No cortar").** Distinto de mandarlas a la Tanda 2, que significa "se cortan después, en otra plancha". Acá la pieza no se corta en ninguna: se guarda y se puede volver a sumar con un botón. El anidado se recalcula sin ellas.
 
-- **Elegir el motor de anidado, en vivo.** Un selector arriba de los parámetros cambia entre `rectpack` (bounding box, `ADR-01`, instantáneo y determinista) y `deepnest` (forma real: aprovecha agujeros y zonas cóncavas, y persigue el corte de líneas compartidas — ver [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md)). **Todo lo demás del visor funciona igual con los dos**: las tandas, los parámetros en vivo, mover y rotar a mano, la separación extra entre piezas puntuales.
+- **Elegir el motor de anidado, en vivo.** Un selector arriba de los parámetros cambia entre `rectpack` (bounding box, `ADR-01`, instantáneo y determinista) y `deepnest` (forma real: aprovecha agujeros y zonas cóncavas, y persigue el corte de líneas compartidas — ver [`COMO-FUNCIONA-CADA-MOTOR.md`](motor/COMO-FUNCIONA-CADA-MOTOR.md)). **Todo lo demás del visor funciona igual con los dos**: las tandas, los parámetros en vivo, mover y rotar a mano, la separación extra entre piezas puntuales.
 
   Cambiar de motor es un recálculo completo y descarta los ajustes manuales de posición — igual que cambiar el kerf, y por el mismo motivo: el layout lo produjo otro algoritmo. El visor pide confirmación antes.
 
@@ -197,7 +197,7 @@ Abre `http://localhost:8765` solo en el navegador. Corta con `Ctrl+C` en la term
 
 ## 3 quater. Comparar los dos motores de nesting
 
-`scripts/comparar_motores.py` corre `rectpack` (el motor actual) y Deepnest (el spike de [`PLAN-MOTOR-NESTING-DEEPNEST.md`](PLAN-MOTOR-NESTING-DEEPNEST.md), en `nesting-engine/`) sobre **las mismas piezas y los mismos `PAR-01/02/03/04`**, e imprime una tabla comparativa más un HTML con los dos anidados lado a lado.
+`scripts/comparar_motores.py` corre `rectpack` (el motor actual) y Deepnest (el spike de [`PLAN-MOTOR-NESTING-DEEPNEST.md`](historico/PLAN-MOTOR-NESTING-DEEPNEST.md), en `nesting-engine/`) sobre **las mismas piezas y los mismos `PAR-01/02/03/04`**, e imprime una tabla comparativa más un HTML con los dos anidados lado a lado.
 
 ```powershell
 cd ../nesting-engine
@@ -208,7 +208,7 @@ python -X utf8 scripts/comparar_motores.py --dxf "../modelos/repisas.dxf" --esca
 
 > **En PowerShell el comando va en una sola línea.** El `\` que corta líneas es de bash; acá el carácter de continuación es la comilla invertida `` ` ``. El `-X utf8` es solo para que los acentos y el `×` de la tabla se vean bien en la consola.
 
-Tres flags cambian mucho el resultado y conviene entenderlos antes de sacar conclusiones — están explicados, junto con las mediciones ya hechas y cómo funciona cada motor, en [`COMO-FUNCIONA-CADA-MOTOR.md`](COMO-FUNCIONA-CADA-MOTOR.md):
+Tres flags cambian mucho el resultado y conviene entenderlos antes de sacar conclusiones — están explicados, junto con las mediciones ya hechas y cómo funciona cada motor, en [`COMO-FUNCIONA-CADA-MOTOR.md`](motor/COMO-FUNCIONA-CADA-MOTOR.md):
 
 - **`--repetir N`**: sin esto los dos motores suelen entrar en una plancha y **la comparación no distingue nada**.
 - **`--piezas-rectas`**: sin esto el corte de líneas compartidas queda apagado (y el motor lo avisa).

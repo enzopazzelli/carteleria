@@ -4,7 +4,7 @@
  * Es el único archivo que conoce el formato del contrato con Python. Todo lo
  * de adentro (`motor.js`, `vendor/`) trabaja con la forma de datos de deepnest.
  *
- * Contrato de entrada y salida: ver `docs/CONTRATO-NESTING-ENGINE.md`.
+ * Contrato de entrada y salida: ver `docs/motor/CONTRATO-NESTING-ENGINE.md`.
  */
 "use strict";
 
@@ -146,7 +146,7 @@ function nest(entrada, alProgresar) {
     advertencias.push(
       "El corte de líneas compartidas está activo pero ninguna pieza declaró aristas rectas " +
         "(`contorno_recto` o `vertices_exactos`), así que no se va a detectar ninguna. " +
-        "Ver docs/CONTRATO-NESTING-ENGINE.md."
+        "Ver docs/motor/CONTRATO-NESTING-ENGINE.md."
     );
   }
 

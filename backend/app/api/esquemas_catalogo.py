@@ -1,5 +1,5 @@
 """Esquemas Pydantic del catálogo: materiales, formatos y parámetros de
-corte (`CART-102`, `CART-105` — ver `docs/PLAN-SLICE-VERTICAL.md`).
+corte (`CART-102`, `CART-105` — ver `docs/historico/PLAN-SLICE-VERTICAL.md`).
 
 Los de "Crear"/"Actualizar" son lo que entra por HTTP; los de "Leer" son
 lo que sale. Nunca se expone el modelo de SQLAlchemy directo: separa lo

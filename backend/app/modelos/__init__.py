@@ -2,7 +2,7 @@
 
 Todo el schema es portable entre SQLite y PostgreSQL a propósito — sin
 `JSONB`, sin `ARRAY`, sin nada específico de un motor. Ver las cinco
-reglas de `docs/PLAN-SLICE-VERTICAL.md`.
+reglas de `docs/historico/PLAN-SLICE-VERTICAL.md`.
 """
 from .base import Base
 from .catalogo import CotizacionMoneda, Formato, Material, Moneda, ParametrosCorteMaterial

@@ -26,5 +26,5 @@ Todo el dataset vive en el propio HTML: cambiar de módulo o tipear en un buscad
 
 ## Documentación relacionada
 
-- [`../docs/DASHBOARD-VISTAS.md`](../docs/DASHBOARD-VISTAS.md) — de qué tabla real sale cada vista y cómo construirla en serio. Léelo antes de tocar este HTML en profundidad.
+- [`../docs/cliente/DASHBOARD-VISTAS.md`](../docs/cliente/DASHBOARD-VISTAS.md) — de qué tabla real sale cada vista y cómo construirla en serio. Léelo antes de tocar este HTML en profundidad.
 - [`../docs/REGISTRO.md`](../docs/REGISTRO.md) — `D-09` registra la decisión pendiente sobre qué tan lejos llega F8 (solo lectura vs. absorber también las escrituras que este prototipo muestra).

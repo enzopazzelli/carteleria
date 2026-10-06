@@ -1,4 +1,4 @@
-"""Punto de entrada de la API — ver `docs/PLAN-SLICE-VERTICAL.md`.
+"""Punto de entrada de la API — ver `docs/historico/PLAN-SLICE-VERTICAL.md`.
 
 Correr localmente (desde `backend/`, con el entorno de
 `requirements.txt` instalado):
@@ -40,7 +40,7 @@ app = FastAPI(
 )
 
 # Único origen permitido: el dev server de Vite del frontend interno
-# (docs/superpowers/specs/2026-09-15-frontend-cotizador-design.md). No se
+# (docs/historico/frontend-cotizador/diseno.md). No se
 # amplía a "*" ni a una lista: esta API sigue sin autenticación y solo
 # corre en localhost (ver el docstring de este módulo).
 app.add_middleware(

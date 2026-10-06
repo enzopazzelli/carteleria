@@ -2,7 +2,7 @@
 
 > Meter lo que ya funciona (parseo DXF, los dos motores, ajuste manual, exportación) adentro de una aplicación real: API, persistencia y trabajos en cola. Es lo mínimo para que exista algo contra lo que un frontend pueda hablar, y para que el trabajo de UX/UI no haya que rehacerlo.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`MAPA-DEL-PROYECTO.md`](../MAPA-DEL-PROYECTO.md) · [`EPICA.md`](../EPICA.md) · [`BACKLOG.md`](../BACKLOG.md)
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-10
 
@@ -164,7 +164,7 @@ alembic/           ← nuevo: migraciones
 ## Orden de trabajo
 
 1. **Config + base + Alembic + el tipo `Decimal`.** Sin esto no hay dónde guardar nada. Termina con `alembic upgrade head` creando las tablas.
-2. **Materiales, formatos y parámetros de corte** (`CART-102`, `CART-105`) — ABM mínimo por API. Es donde van a caer los valores reales de [`PLANILLA-PARAMETROS-TALLER.md`](PLANILLA-PARAMETROS-TALLER.md).
+2. **Materiales, formatos y parámetros de corte** (`CART-102`, `CART-105`) — ABM mínimo por API. Es donde van a caer los valores reales de [`PLANILLA-PARAMETROS-TALLER.md`](../cliente/PLANILLA-PARAMETROS-TALLER.md).
 3. **Trabajos y piezas**: subir un DXF, parsearlo y guardar las piezas.
 4. **La cola y el anidado**: encolar, consultar, cancelar. Persistir las colocaciones.
 5. **Ajuste manual y exportación** por API: mover, rotar, descartar, plano y DXF.

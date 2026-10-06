@@ -2,7 +2,7 @@
 
 > Guía para decidir con cuál avanzar. No es un plan ni una decisión tomada: es la explicación de las dos máquinas que hoy conviven en el repositorio, y de qué las diferencia de verdad.
 >
-> Índice del proyecto: [`../README.md`](../README.md) · [`PLAN-MOTOR-NESTING-DEEPNEST.md`](PLAN-MOTOR-NESTING-DEEPNEST.md) · [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) · [`GUIA-PRUEBAS-LOCALES.md`](GUIA-PRUEBAS-LOCALES.md) · [`REGISTRO.md`](REGISTRO.md)
+> Índice del proyecto: [`../README.md`](../../README.md) · [`PLAN-MOTOR-NESTING-DEEPNEST.md`](../historico/PLAN-MOTOR-NESTING-DEEPNEST.md) · [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](../historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) · [`GUIA-PRUEBAS-LOCALES.md`](../GUIA-PRUEBAS-LOCALES.md) · [`REGISTRO.md`](../REGISTRO.md)
 >
 > **Versión:** 1.1 · **Fecha:** 2026-09-08 (corrección de escala: 2026-09-11)
 
@@ -65,7 +65,7 @@ Los tres parámetros de corte se aplican por geometría, no como opciones del al
 - **No optimiza el corte compartido.** Un packer tipo guillotina *tiende* a alinear bordes por su propia mecánica, pero no lo busca ni lo mide.
 - **Solo rota 0°/90°.** `ADR-01`.
 
-**Lo que se le agregó encima** (`anidado_huecos.py`, la Capa 2 de [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](PLAN-MOTOR-NESTING-PYTHON-NATIVO.md)): una segunda pasada *greedy* que, sobre el resultado ya anidado, intenta meter piezas chicas dentro de los agujeros reales de las ya colocadas. Prueba una grilla de posiciones y varios ángulos, y compara dos planes por hueco. **No es una optimización conjunta** — es un rescate posterior, sobre decisiones que el packer ya tomó mirando solo rectángulos.
+**Lo que se le agregó encima** (`anidado_huecos.py`, la Capa 2 de [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](../historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md)): una segunda pasada *greedy* que, sobre el resultado ya anidado, intenta meter piezas chicas dentro de los agujeros reales de las ya colocadas. Prueba una grilla de posiciones y varios ángulos, y compara dos planes por hueco. **No es una optimización conjunta** — es un rescate posterior, sobre decisiones que el packer ya tomó mirando solo rectángulos.
 
 ---
 
