@@ -114,6 +114,7 @@ Cualquier cosa que te confunda (aunque funcione), el DXF con el que algo no se v
 
 - **Hay un plan maestro:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md). Enzo construye todo lo que no es el motor de anidado, en cuatro etapas; el motor es el carril de Vale y se conecta por un enchufe que se define primero en papel (E1).
 - **`rectpack` sale del producto.** Queda en el código como motor de prueba. Hasta que llegue el motor, el costo de material figura como pendiente.
+- **Lo de afuera va al final.** Servidor, mail, WhatsApp y logo no frenan nada: se usan reemplazos locales y se conectan en la etapa 4.
 - **`docs/` se ordenó por estado:** `plan/`, `motor/`, `cliente/` e `historico/`. La regla está en [`docs/CONVENCIONES.md §8 bis`](docs/CONVENCIONES.md).
 
 ---
@@ -320,10 +321,11 @@ Detalle, zona compartida y propiedad del código en [`docs/CONVENCIONES.md §2-3
 
 El orden vigente es el de [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md):
 
-1. **Preparar** — documentación al día y trámites lentos pedidos (servidor, dominio, mail, WhatsApp).
-2. **Recorrido fino** — login, presupuesto sin anidado, PDF, aprobación del dueño desde el celular y envío por mail, en el servidor.
+1. **Preparar** — documentación al día.
+2. **Recorrido fino** — login, presupuesto sin anidado, PDF, aprobación del dueño y envío por mail, en Docker local igual que en el servidor.
 3. **Engordar** — importar y revisar, catálogo y precios, cotizador completo, aprobación y envío completos, fundaciones completas.
 4. **Resto del alcance** — dashboard y fotomontaje.
+5. **Conectar lo externo** — servidor real, mail, WhatsApp, formato de la empresa y confirmaciones del dueño. Hasta acá, nada de afuera frena el trabajo: se usan reemplazos locales.
 
 El motor se conecta en paralelo (E1 y E2), cuando esté listo. Los hitos H1 a H6 y las semanas de la estimación original siguen en [`docs/EPICA.md §8`](docs/EPICA.md).
 
@@ -372,11 +374,11 @@ No hay Docker todavía — eso es la versión de producción de F0 (`CART-001`),
 
 ### Lo que frena hoy
 
-Los pedidos de la etapa 0 (servidor, dominio, mail, WhatsApp, logo y formato del presupuesto, quién aprueba) están en [`docs/plan/PLAN-MAESTRO.md §5`](docs/plan/PLAN-MAESTRO.md), y qué frena qué en [`docs/MAPA-DEL-PROYECTO.md §3`](docs/MAPA-DEL-PROYECTO.md). El estado de cada ID, en [`docs/REGISTRO.md §7`](docs/REGISTRO.md).
+Nada de afuera frena el trabajo: servidor, dominio, mail, WhatsApp, logo y formato del presupuesto se reemplazan en local y se conectan en la etapa 4 ([`docs/plan/PLAN-MAESTRO.md §5`](docs/plan/PLAN-MAESTRO.md)). Qué frena qué, en [`docs/MAPA-DEL-PROYECTO.md §3`](docs/MAPA-DEL-PROYECTO.md). El estado de cada ID, en [`docs/REGISTRO.md §7`](docs/REGISTRO.md).
 
 ### Lo que falta para tener algo desplegable
 
-Es el sub-proyecto 1.1 del plan maestro: servidor con PostgreSQL y HTTPS, login y backups. Ningún secreto va al repositorio: ver `ADR-10` y [`docs/CONVENCIONES.md §4`](docs/CONVENCIONES.md).
+El sub-proyecto 1.1 del plan maestro lo deja corriendo en Docker, con PostgreSQL, login y backups, igual que en el servidor. El servidor real es 4.1. Ningún secreto va al repositorio: ver `ADR-10` y [`docs/CONVENCIONES.md §4`](docs/CONVENCIONES.md).
 
 ---
 

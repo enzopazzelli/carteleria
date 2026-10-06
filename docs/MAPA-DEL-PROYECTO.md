@@ -83,15 +83,15 @@ flowchart LR
 
 | Lo que frena | A qué | Quién lo mueve |
 |---|---|---|
-| Servidor, dominio, cuenta de mail, lugar de los backups (`T-01`, `T-02`, `T-03`, `T-06`) | Etapa 1 | La empresa y Enzo (`PLAN-MAESTRO.md §5`) |
-| Logo y formato del presupuesto (`B-13`), quién aprueba (`B-11`), validez y margen (`PAR-11`, `PAR-12`) | 1.2 a 1.4 | El dueño |
-| Alta de WhatsApp Business (`B-12`) | 2.4 | La empresa |
-| En qué forma llega el motor (`D-14`) | E1 | Vale |
+| Servidor, dominio, cuenta de mail, lugar de los backups (`T-01`, `T-02`, `T-03`, `T-06`) | Nada hasta la etapa 4: mientras tanto, Docker local y buzón de prueba | La empresa y Enzo (`PLAN-MAESTRO.md §5`) |
+| Logo y formato del presupuesto (`B-13`), quién aprueba (`B-11`), validez y margen (`PAR-11`, `PAR-12`) | Nada hasta la etapa 4: mientras tanto, plantilla propia, usuario de prueba y valores a mano | El dueño |
+| Alta de WhatsApp Business (`B-12`) | Nada hasta 4.3: mientras tanto, solo mail | La empresa |
+| En qué forma llega el motor (`D-14`) | Nada: E1 se escribe con el valor por defecto | Vale lo confirma |
 | Qué hacer con los diseños que el motor no toca (`D-13`) | El costo de material de la mayoría de los diseños reales | Se decide en 2.1 |
 | Margen de borde y corte hasta el borde (`P-03`, `P-28`); cómo se parte un diseño que no entra en una chapa (`P-21`, `P-22`) | El motor | El taller y el diseñador, carril del motor |
 | Kerf, margen y veta reales (`B-03`, `B-04`) | Todo lo que se corte | El taller |
 
-El estado de cada ID está en [`REGISTRO.md §7`](REGISTRO.md).
+Lo que depende de afuera no frena las etapas 1 a 3: se conecta en la etapa 4 (`PLAN-MAESTRO.md §3`, regla 4). El estado de cada ID está en [`REGISTRO.md §7`](REGISTRO.md).
 
 ---
 

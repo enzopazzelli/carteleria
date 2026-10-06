@@ -20,11 +20,12 @@ Decisiones de Enzo del 2026-10-05, que reemplazan la prioridad del 2026-09-26 (�
 | Qué usa primero la empresa | El ciclo de cotización completo: armar el presupuesto, generar el PDF, aprobación del dueño y envío al cliente |
 | El paso de anidado, mientras no haya motor | Queda vacío. El costo de material figura como pendiente |
 | `rectpack` | No es parte del producto. Queda en el código como motor de prueba, deshabilitado en el servidor |
-| Quién usa el sistema | La empresa, con sus roles, en un servidor |
+| Quién usa el sistema | La empresa, con sus roles, en un servidor. Hasta la etapa 4 corre en local con Docker, igual que va a correr en el servidor |
 | Quién construye | Enzo, un solo carril. Vale sigue con el motor |
 | En qué orden | Recorrido fino de punta a punta primero; después se engorda cada paso |
+| Lo que depende de afuera | **No frena nada** (Enzo, más tarde el mismo día): servidor, dominio, mail, WhatsApp, logo y formato del presupuesto, y las respuestas del dueño. Cada sub-proyecto usa un reemplazo local y lo real se conecta al final, en la etapa 4 |
 
-**Por qué el recorrido fino.** Con el anidado vacío no puede salir un presupuesto real con chapa hasta que llegue el motor, se construya en el orden que se construya. Ese tiempo rinde más dejando todo el circuito instalado y probado por los roles reales que terminando una sola parte. Además, lo que más tarda no es código: servidor, dominio, cuenta de mail y el alta de WhatsApp Business.
+**Por qué el recorrido fino.** Con el anidado vacío no puede salir un presupuesto real con chapa hasta que llegue el motor, se construya en el orden que se construya. Ese tiempo rinde más dejando todo el circuito instalado y probado por los roles reales que terminando una sola parte. Lo que depende de afuera no frena ese recorrido: se arma con reemplazos locales y se conecta en la etapa 4.
 
 ---
 
@@ -45,38 +46,40 @@ El estado de cada parte del sistema al 2026-10-05 está en [`MAPA-DEL-PROYECTO.m
 
 ## 3. Forma general
 
-Cuatro etapas en fila, porque hay un solo carril, y un carril aparte para el motor.
+Cinco etapas en fila, porque hay un solo carril, y un carril aparte para el motor.
 
 ```mermaid
 flowchart LR
-    ET0["0 · Preparar"] --> ET1["1 · Recorrido fino"] --> ET2["2 · Engordar"] --> ET3["3 · Resto del alcance"]
+    ET0["0 · Preparar"] --> ET1["1 · Recorrido fino"] --> ET2["2 · Engordar"] --> ET3["3 · Resto del alcance"] --> ET4["4 · Conectar lo externo"]
     MOT1["E1 · Definir el enchufe"] -.-> MOT2["E2 · Conectar el motor"]
     ET0 --- MOT1
     MOT2 -.->|"cuando el motor esté listo"| ET2
 
     classDef etapa fill:#d7e6f5,stroke:#3d6b96,color:#12314d
     classDef motor fill:#fdf0c8,stroke:#a8862a,color:#3d3007
-    class ET0,ET1,ET2,ET3 etapa
+    class ET0,ET1,ET2,ET3,ET4 etapa
     class MOT1,MOT2 motor
 ```
 
 | Etapa | Qué queda andando al terminar | Sub-proyectos, en orden |
 |---|---|---|
-| **0. Preparar** | Documentación al día y trámites lentos iniciados | Registro, mapa y backlog; pedidos a la empresa (§5) |
-| **1. Recorrido fino** | Un diseñador entra con su usuario, arma un presupuesto con líneas a mano y lo manda a aprobar; el dueño aprueba desde el celular y al cliente le llega el PDF por mail | 1.1 Servidor y login · 1.2 Presupuesto sin anidado · 1.3 PDF mínimo · 1.4 Aprobación mínima · 1.5 Envío por mail |
+| **0. Preparar** | Documentación al día | Registro, mapa y backlog (§5) |
+| **1. Recorrido fino** | Un diseñador entra con su usuario, arma un presupuesto con líneas a mano y lo manda a aprobar; el dueño lo aprueba desde un link y al cliente le llega el PDF por mail. Todo en Docker local, con los mails en un buzón de prueba | 1.1 Servidor y login · 1.2 Presupuesto sin anidado · 1.3 PDF mínimo · 1.4 Aprobación mínima · 1.5 Envío por mail |
 | **2. Engordar** | El mismo recorrido, con datos y pantallas completos | 2.1 Importar y revisar · 2.2 Catálogo y precios · 2.3 Cotizador completo · 2.4 Aprobación y envío completos · 2.5 Fundaciones completas |
 | **3. Resto del alcance** | Lo que no es el ciclo de cotización | 3.1 Dashboard · 3.2 Fotomontaje |
+| **4. Conectar lo externo** | El sistema en el servidor real, con mail y WhatsApp reales, el formato de la empresa y las decisiones del dueño confirmadas | 4.1 Servidor y dominio · 4.2 Mail real · 4.3 WhatsApp · 4.4 Formato de la empresa · 4.5 Confirmar con el dueño |
 
 **Carril del motor (Vale):**
 
 - **E1. Definir el enchufe.** Un documento con qué recibe el motor y qué devuelve. Sale primero para que el motor se construya contra eso.
 - **E2. Conectarlo.** Cuando el motor esté listo. Es el único paso que junta los dos carriles y puede caer en cualquier etapa.
 
-**Tres reglas de orden:**
+**Cuatro reglas de orden:**
 
 1. **Importar y revisar abre la etapa 2, antes que precios.** Es lo que le entrega al motor las piezas revisadas y agrupadas por material. Los precios pueden esperar porque el costeo ya funciona con el precio de referencia importado (`D-10`).
 2. **En la etapa 1 el recorrido se prueba con presupuestos sin trabajo asociado**, solo con líneas a mano. El modelo lo permite: `Presupuesto.trabajo_id` es opcional.
 3. **Cada sub-proyecto tiene su propio ciclo** de diseño, plan y construcción, con el visto bueno de Enzo en cada paso.
+4. **Nada de afuera frena una etapa.** Si un sub-proyecto necesita algo de la empresa, trabaja con un reemplazo local (§5) y lo anota en su diseño, para que la etapa 4 sepa qué cambiar. Si necesita una respuesta del dueño, avanza con el valor por defecto del registro y la respuesta se confirma en 4.5.
 
 ---
 
@@ -151,44 +154,44 @@ Los incisos de A3 en `PLAN-RUMBO-ANIDADO-Y-REVISION.md §4` se reparten así:
 
 ## 5. Etapa 0 — Preparar
 
-Sin código de producto. Dos partes.
+Sin código de producto.
 
-**Documentación:**
+**Documentación** (hecha el 2026-10-05):
 
 - Altas en `REGISTRO.md`: `D-14` a `D-18` (§8).
 - Corrección de `CART-402` en `BACKLOG.md` y nota sobre `ADR-05` en `EPICA.md` (§9).
 - `MAPA-DEL-PROYECTO.md` al día con el estado del §2.
 - Entrada en `BITACORA.md`.
 
-**Pedidos, ordenados por cuánto tardan:**
+**Lo que depende de afuera, y con qué se reemplaza hasta la etapa 4.** Nada de esto frena el trabajo. Se puede pedir antes si conviene, pero ningún sub-proyecto lo espera:
 
-| Qué | Lo destraba | Quién lo mueve |
+| Qué | Reemplazo local mientras tanto | Se conecta en |
 |---|---|---|
-| Alta de WhatsApp Business (`B-12`) | 2.4 | La empresa |
-| Servidor y dominio (`T-01`, `T-02`) | 1.1 | La empresa los contrata |
-| Cuenta de mail y lugar de los backups (`T-03`, `T-06`) | 1.1, 1.4 y 1.5 | Enzo |
-| Logo, datos fiscales y formato actual del presupuesto (`B-13`) | 1.3 | La empresa |
-| Quién aprueba y por qué canal (`B-11`, `PAR-20`) | 1.4 | El dueño |
-| Validez y margen por defecto (`PAR-11`, `PAR-12`) | 1.2 | El dueño |
-| En qué forma llega el motor (`D-14`) | E1 | Vale |
+| Servidor y dominio (`T-01`, `T-02`) | Docker en local, igual que en el servidor | 4.1 |
+| Lugar de los backups (`T-06`) | Backup a una carpeta local | 4.1 |
+| Cuenta de mail (`T-03`) | Un buzón de prueba local que muestra los mails sin mandarlos | 4.2 |
+| Alta de WhatsApp Business (`B-12`) | Solo mail | 4.3 |
+| Logo, datos fiscales y formato del presupuesto (`B-13`) | Una plantilla propia, con el logo como espacio reservado | 4.4 |
+| Quién aprueba y por qué canal (`B-11`, `PAR-20`) | Un usuario de prueba con el permiso «puede aprobar», avisado por mail | 4.5 |
+| Validez y margen (`PAR-11`, `PAR-12`) | Se cargan a mano en cada presupuesto, como hoy | 4.5 |
 
-**Listo cuando:** el registro y el mapa reflejan este plan, y cada pedido de la tabla está hecho a quien corresponde.
+**`D-14` tampoco frena:** E1 se escribe con el valor por defecto del registro y Vale lo confirma al leer el contrato.
 
-**Estado (2026-10-05):** documentación hecha. Pedidos: pendientes, los mueve Enzo.
+**Listo cuando:** el registro y el mapa reflejan este plan. **Estado:** hecho el 2026-10-05.
 
 ---
 
 ## 6. Etapa 1 — Recorrido fino
 
-**Hito.** Con el sistema en el servidor: un diseñador entra con su usuario, crea un presupuesto con un cliente y líneas cargadas a mano, y lo manda a aprobar. El dueño recibe un mail con un link, abre el presupuesto en el celular y lo aprueba. El cliente recibe el PDF por mail. El presupuesto queda congelado como enviado.
+**Hito.** Con el sistema corriendo en Docker, igual que va a correr en el servidor: un diseñador entra con su usuario, crea un presupuesto con un cliente y líneas cargadas a mano, y lo manda a aprobar. El dueño recibe un mail con un link, abre el presupuesto y lo aprueba. El cliente recibe el PDF por mail. Los mails llegan al buzón de prueba. El presupuesto queda congelado como enviado.
 
-| Sub-proyecto | Lo mínimo para el recorrido | Se posterga a la etapa 2 | Historias que toca | Necesita de afuera |
+| Sub-proyecto | Lo mínimo para el recorrido | Se posterga a la etapa 2 | Historias que toca | Reemplazo local hasta la etapa 4 |
 |---|---|---|---|---|
-| **1.1 Servidor y login** | Todo levantado en el servidor con PostgreSQL y HTTPS, sin credenciales en el repositorio (`ADR-10`), con backup diario. Usuarios con contraseña y el permiso «puede aprobar». Todas las rutas exigen sesión. Los usuarios se crean por línea de comandos. Lista de motores con ninguno habilitado (§4.4, cambios 1 y 2) | Pantalla de usuarios, menú por rol, auditoría general | `CART-001`, `CART-002` | `T-01`, `T-02`, `T-06` |
-| **1.2 Presupuesto sin anidado** | Lista de presupuestos fuera del espacio de trabajo: cliente, líneas a mano por rubro, margen, IVA y total. El material figura «pendiente de anidado» | Insumos elegidos de un catálogo, mano de obra por etapa | `CART-301`, `CART-304` a `CART-308` | `PAR-11`, `PAR-12` |
-| **1.3 PDF mínimo** | Una plantilla: logo, cliente, código, fecha, validez, ítems y total. Sin costos internos ni márgenes | Documento interno, plano de corte adentro, fotomontaje | `CART-309` | `B-13` |
-| **1.4 Aprobación mínima** | Estados borrador, pendiente, observado y aprobado. Aviso al dueño por mail con link firmado (`PAR-17`). El dueño aprueba u observa sin iniciar sesión. Historial de quién cambió qué estado | Vencimiento automático, anulación, resumen agrupado de avisos | `CART-401` a `CART-404` | `B-11`, `T-03` |
-| **1.5 Envío por mail** | Al aprobar sale el PDF al cliente y el presupuesto queda como enviado, con el PDF y las líneas congelados. Se puede aprobar sin enviar. El cliente tiene un email cargado | WhatsApp, reintentos, respuesta del cliente por link | `CART-405`, `CART-406`, `CART-004` | `T-03` |
+| **1.1 Servidor y login** | Todo levantado con Docker y PostgreSQL, igual que en el servidor, sin credenciales en el repositorio (`ADR-10`), con backup diario. Usuarios con contraseña y el permiso «puede aprobar». Todas las rutas exigen sesión. Los usuarios se crean por línea de comandos. Lista de motores con ninguno habilitado (§4.4, cambios 1 y 2) | Pantalla de usuarios, menú por rol, auditoría general | `CART-001`, `CART-002` | Docker local en vez del servidor; backup a una carpeta |
+| **1.2 Presupuesto sin anidado** | Lista de presupuestos fuera del espacio de trabajo: cliente, líneas a mano por rubro, margen, IVA y total. El material figura «pendiente de anidado» | Insumos elegidos de un catálogo, mano de obra por etapa | `CART-301`, `CART-304` a `CART-308` | Validez y margen a mano |
+| **1.3 PDF mínimo** | Una plantilla: logo, cliente, código, fecha, validez, ítems y total. Sin costos internos ni márgenes | Documento interno, plano de corte adentro, fotomontaje | `CART-309` | Plantilla propia, logo como espacio reservado |
+| **1.4 Aprobación mínima** | Estados borrador, pendiente, observado y aprobado. Aviso al dueño por mail con link firmado (`PAR-17`). El dueño aprueba u observa sin iniciar sesión. Historial de quién cambió qué estado | Vencimiento automático, anulación, resumen agrupado de avisos | `CART-401` a `CART-404` | Usuario de prueba que aprueba; buzón de prueba |
+| **1.5 Envío por mail** | Al aprobar sale el PDF al cliente y el presupuesto queda como enviado, con el PDF y las líneas congelados. Se puede aprobar sin enviar. El cliente tiene un email cargado | WhatsApp, reintentos, respuesta del cliente por link | `CART-405`, `CART-406`, `CART-004` | Buzón de prueba |
 
 **Regla para mandar a aprobar.** El presupuesto tiene cliente, al menos una línea de costo y ningún material pendiente. **Material pendiente** es una línea de rubro material sin valor efectivo: ni calculado ni cargado por override. Si falta algo, el sistema lo rechaza diciendo qué falta.
 
@@ -198,7 +201,7 @@ Sin código de producto. Dos partes.
 
 ---
 
-## 7. Etapas 2 y 3 — alcance y orden
+## 7. Etapas 2, 3 y 4 — alcance y orden
 
 Se detallan cuando les toque, cada una con su diseño.
 
@@ -207,10 +210,15 @@ Se detallan cuando les toque, cada una con su diseño.
 | **2.1 Importar y revisar** | El carril B de `PLAN-RUMBO-ANIDADO-Y-REVISION.md §5` (pasos B1 a B6): pantalla de importación, visor con roles y confirmación. Más la regla de las islas, el alcance de cada diseño y la asignación de material | `CART-506`, `CART-507` | `D-13` |
 | **2.2 Catálogo y precios** | Precios con vigencia, carga desde la planilla de la empresa, insumos que no son chapa, historial. Completa lo que falta de materiales y parámetros de corte | `CART-101`, `CART-103` a `CART-107` | `D-10` |
 | **2.3 Cotizador completo** | Insumos desde catálogo, mano de obra por etapa, documento interno, PDF completo | `CART-304`, `CART-305`, `CART-309`, `CART-310` | 2.2 |
-| **2.4 Aprobación y envío completos** | WhatsApp, reintentos, respuesta del cliente, vencimientos, congelado con versiones de precio | `CART-401`, `CART-403`, `CART-405`, `CART-407`, `CART-408` | 2.2, `B-12`, `D-04`, `D-07`, `D-17` |
+| **2.4 Aprobación y envío completos** | Reintentos, respuesta del cliente, vencimientos, congelado con versiones de precio | `CART-401`, `CART-405`, `CART-407`, `CART-408` | 2.2, `D-07`, `D-17` |
 | **2.5 Fundaciones completas** | Pantallas de usuarios y clientes, menú por rol, auditoría general | `CART-003` a `CART-006` | — |
 | **3.1 Dashboard** | Las vistas relevadas en `DASHBOARD-VISTAS.md` | `CART-801` a `CART-808` | `D-09` |
 | **3.2 Fotomontaje** | Composición del cartel sobre la foto del local (`ADR-03`) | `CART-601` a `CART-607` | 2.3 |
+| **4.1 Servidor y dominio** | Llevar al servidor real lo que ya corre en Docker, con HTTPS y los backups donde se defina | `CART-001` | `T-01`, `T-02`, `T-06` |
+| **4.2 Mail real** | Cambiar el buzón de prueba por la cuenta real | `CART-403`, `CART-406` | `T-03` |
+| **4.3 WhatsApp** | Aviso al dueño y envío al cliente por WhatsApp | `CART-403`, `CART-406` | `B-12`, `D-04` |
+| **4.4 Formato de la empresa** | Logo, datos fiscales y formato del presupuesto en el PDF | `CART-309` | `B-13` |
+| **4.5 Confirmar con el dueño** | Lo que avanzó con su valor por defecto: quién aprueba, validez, margen, `D-07`, `D-15` y `D-17` | — | `B-11`, `PAR-11`, `PAR-12`, `PAR-20` |
 
 **Lo que no entra en ninguna etapa de este plan**, y por qué:
 
@@ -226,7 +234,7 @@ Se detallan cuando les toque, cada una con su diseño.
 
 ## 8. Decisiones abiertas
 
-Cada una avanza con su valor por defecto hasta que se cierre. El enunciado completo y el valor por defecto de cada una están en [`REGISTRO.md §5`](../REGISTRO.md); acá solo va en qué paso se cierra.
+Cada una avanza con su valor por defecto hasta que se cierre. El enunciado completo y el valor por defecto de cada una están en [`REGISTRO.md §5`](../REGISTRO.md); acá solo va en qué paso se cierra. Las que dependen de una respuesta de la empresa (`D-07`, `D-15`, `D-17`) se construyen con su valor por defecto en ese paso y se confirman en 4.5.
 
 | ID | Decisión, en corto | Se cierra en |
 |---|---|---|
@@ -238,7 +246,7 @@ Cada una avanza con su valor por defecto hasta que se cierre. El enunciado compl
 | `D-18` | ¿El override puede completar una línea de material sin anidado? | 1.2 |
 | `D-08` | Retención y backup de archivos generados | 1.1 |
 | `D-10` | Fórmula del costo por unidad de venta | 2.2 |
-| `D-04` | WhatsApp directo o por un intermediario | 2.4 |
+| `D-04` | WhatsApp directo o por un intermediario | 4.3 |
 | `D-07` | Presupuesto vencido: se reajusta o solo se marca | 2.4 |
 | `D-02` | Se cobra la chapa entera o lo que se usa | E2 |
 | `D-12` | El anidado corre con alguien esperando o en segundo plano | E2 |
@@ -266,9 +274,9 @@ Se aplican en la etapa 0.
 
 | Riesgo | Efecto | Qué se hace |
 |---|---|---|
-| El servidor lo contrata la empresa y puede demorar | 1.1 no se puede publicar | Se arma y se prueba en local con Docker. El resto de la etapa 1 sigue |
+| Lo real se conecta al final (etapa 4) | Las sorpresas de servidor, mail o formato aparecen tarde | Docker igual al servidor desde 1.1, y cada reemplazo local anotado en el diseño de su sub-proyecto, para saber qué cambiar |
 | WeasyPrint es incómodo de instalar en Windows, donde se desarrolla | 1.3 se traba en el entorno | La herramienta se elige en el diseño de 1.3 (`D-16`) |
-| El alta de WhatsApp Business tarda semanas | 2.4 se atrasa | Se pide en la etapa 0. El mail cubre todo el recorrido |
+| El alta de WhatsApp Business tarda semanas | 4.3 se atrasa | Se puede pedir antes sin frenar nada. El mail cubre todo el recorrido |
 | No se sabe en qué forma llega el motor | E2 puede necesitar un adaptador que nadie planificó | E1 lo pregunta primero (`D-14`) |
 | Sin motor no se emite ningún presupuesto con chapa | La empresa prueba el circuito pero no lo usa para trabajos reales | Es consecuencia aceptada del §1. `D-18` es la única vía que lo cambiaría |
 | Cada paso se construye dos veces, fino y completo | Retrabajo en pantallas | Las migraciones de Alembic están desde el primer commit, así que el modelo crece sin rehacerse |
@@ -280,15 +288,16 @@ Se aplican en la etapa 0.
 
 - **Etapa 0:** revisión de Enzo sobre el registro y el mapa.
 - **E1:** el documento de contrato, leído y aceptado por Vale.
-- **Etapa 1:** el hito del §6, hecho en el servidor por tres personas distintas (diseñador, dueño y un cliente de prueba). Cada sub-proyecto con tests automatizados para su lógica; la máquina de estados es obligatoria según `EPICA.md §14`.
+- **Etapa 1:** el hito del §6, hecho en Docker local con tres usuarios de prueba (diseñador, dueño y cliente) y los mails en el buzón de prueba. Cada sub-proyecto con tests automatizados para su lógica; la máquina de estados es obligatoria según `EPICA.md §14`.
 - **E2:** un grupo listo se anida con el motor real, el resultado pasa la validación contra la forma real y la línea de material del presupuesto se llena sola.
 - **Etapas 2 y 3:** se define en el diseño de cada sub-proyecto.
+- **Etapa 4:** el hito del §6 otra vez, en el servidor real y con personas reales.
 
 ---
 
 ## 12. Qué sigue y dónde se escribe
 
-1. Etapa 0, parte de documentación, en un paso aparte.
-2. Primer sub-proyecto con su propio diseño: **E1**, porque es corto y es lo único que el carril del motor espera de este lado. Después 1.1.
+1. **E1**, el primer sub-proyecto con su propio diseño, porque es corto y es lo único que el carril del motor espera de este lado. Se escribe con el valor por defecto de `D-14`.
+2. Después **1.1**.
 
 **Cada sub-proyecto vive en su propia carpeta** dentro de `docs/plan/`, con el número de este documento: `docs/plan/E1-enchufe-del-motor/`, `docs/plan/1.1-servidor-y-login/`, etc. Adentro van `diseno.md` y, cuando se escriba, `plan.md`. Al terminar un sub-proyecto, su carpeta pasa a `docs/historico/`. La regla completa está en [`CONVENCIONES.md §8 bis`](../CONVENCIONES.md).

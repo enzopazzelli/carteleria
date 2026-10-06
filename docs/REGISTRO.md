@@ -308,7 +308,7 @@ Desde el 2026-10-05, «Se cierra en» nombra el paso de [`plan/PLAN-MAESTRO.md`]
 | **D-01** | ¿`nest2D` o Deepnest para el nesting irregular? | Spike técnico + `P-01` | E2 (carril del motor) | `nest2D` (mantiene todo en Python). **Desactualizado:** la comparación real fue `rectpack` contra Deepnest, y el carril del motor sigue con el híbrido de `motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`. Lo reformula el carril del motor |
 | **D-02** | ¿Plancha entera o m² aprovechados? | `P-10` | E2 | `PAR-15` = plancha entera |
 | **D-03** | Fórmula exacta de desarrollo de plegado | `P-05` | Sin paso: el plegado queda fuera del plan maestro (§7) | `PAR-10` sin definir → carga manual |
-| **D-04** | ¿WhatsApp Business API directo o vía Twilio? | `P-16` + costo del onboarding | 2.4 | Solo mail hasta resolver |
+| **D-04** | ¿WhatsApp Business API directo o vía Twilio? | `P-16` + costo del onboarding | 4.3 | Solo mail hasta resolver |
 | **D-05** | Proveedor de IA para el retoque del fotomontaje | Prueba de calidad y costo por imagen | 3.2 | Replicate |
 | **D-06** | Estructura del modelo de agregados del dashboard | `P-19` + `CART-801` | 3.1 | — |
 | **D-07** | ¿El presupuesto vencido se reajusta por inflación o solo se marca vencido? | Conversación con el dueño | 2.4 | `SUP-13` = solo se marca vencido |

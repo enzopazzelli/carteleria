@@ -86,11 +86,17 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Pendiente
 
-- **Los pedidos de la etapa 0** (`PLAN-MAESTRO.md §5`): servidor y dominio, cuenta de mail, lugar de los backups, alta de WhatsApp Business, logo y formato del presupuesto, quién aprueba, validez y margen, y la forma del motor con Vale.
-- **Próximo paso: el diseño de E1** (el enchufe del motor, en papel).
+- ~~Los pedidos de la etapa 0~~: ya no son pendientes que frenen, ver el addendum.
+- **Próximo paso: el diseño de E1** (el enchufe del motor, en papel), con el valor por defecto de `D-14`.
 - **La regla de las islas** quedó a medio hacer en `analisis.py`, con su `TODO(human)` y dos tests en rojo, sin commitear. El umbral que cita, `PAR-49`, todavía no existe en el registro.
 - **El repositorio es público** y `cliente/PROPUESTA-CLIENTE.md` y la presentación, con el precio, están publicados. Lo decide Enzo.
 - La bitácora no tiene entradas entre el 2026-09-15 y el 2026-09-26. Lo de esas fechas está en los commits y en los documentos de `motor/` e `historico/`.
+
+### Addendum — mismo día: lo de afuera va al final
+
+Enzo: «No nos vamos a detener con el WhatsApp, el mail, los logos y demás. Continuaremos con todo y dejamos eso para el último.» El plan maestro suma una **etapa 4, Conectar lo externo** (servidor y dominio, mail real, WhatsApp, formato de la empresa y confirmaciones del dueño), y una cuarta regla de orden: nada de afuera frena una etapa. Hasta la etapa 4 se trabaja con reemplazos locales: Docker en vez del servidor, un buzón de prueba en vez del mail, una plantilla propia en vez del formato de la empresa, y los valores por defecto del registro en vez de las respuestas del dueño (`PLAN-MAESTRO.md §5`). WhatsApp sale de 2.4 y pasa a 4.3; `D-04` se cierra en 4.3.
+
+Se pusheó `main` con los commits de la jornada y tres del 2026-09-26 que no estaban en el remoto. CI corrió sobre ese push.
 
 ---
 
