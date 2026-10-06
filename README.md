@@ -2,9 +2,10 @@
 
 Plataforma a medida para una empresa de cartelería de gran formato en chapa. Automatiza el armado de presupuestos, calcula cómo anidar las piezas sobre la plancha para desperdiciar lo menos posible, gestiona el circuito de autorización del dueño y envía el presupuesto al cliente con el fotomontaje del cartel sobre el frente del local.
 
-**Estado:** 🚧 En desarrollo · el cotizador ya funciona de punta a punta **en local** (DXF → piezas → nesting → ajuste manual → presupuesto) · faltan el PDF, auth/roles, aprobación y envío al cliente — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md)
-**Equipo:** Enzo (carril A — cotización) · Vale (carril B — dashboard)
-**Última actualización:** 2026-09-23 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
+**Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**, hasta el desglose · faltan el PDF, el login, la aprobación y el envío, y el motor de anidado se conecta después — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md)
+**Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md)
+**Equipo:** Enzo (todo lo que no es el motor) · Vale (motor de anidado)
+**Última actualización:** 2026-10-05 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 
@@ -109,13 +110,11 @@ Cualquier cosa que te confunda (aunque funcione), el DXF con el que algo no se v
 
 ---
 
-## 🆕 Novedad para Vale
+## 🆕 Novedad (2026-10-05)
 
-Enzo investigó tres motores de nesting open source (SVGnest, Deepnest, SheetNest) para evaluar si conviene anidar piezas del lado del navegador — resultado en [`docs/historico/FACTIBILIDAD-NESTING-WEB.md`](docs/historico/FACTIBILIDAD-NESTING-WEB.md). Encontró que el Deepnest original no tiene licencia de código abierto (el repo no tiene archivo `LICENSE`), pero decidió avanzar igual con Deepnest porque es el único de los tres con anidado dentro de huecos, DXF y corte de líneas compartidas — usando un fork comunitario con licencia MIT (`deepnest-next`) en vez del original.
-
-El plan técnico de esa implementación está en [`docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md): resuelve `D-01` a favor de Deepnest, como microservicio Node llamado desde Celery, reemplazando tanto `rectpack` (F2) como `nest2D` (F7). **Todavía no se ejecutó** — no se tocó `REGISTRO.md`, `BACKLOG.md` ni `EPICA.md` — es la Fase 4 del plan, pendiente de PR.
-
-Hay un segundo plan como alternativa/contingencia: [`docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) — cómo acercarse al mismo valor (huecos, corte de líneas compartidas) sin sumar el microservicio Node, construyendo esas dos features encima de `shapely`/`rectpack`/`nest2D` dentro del mismo backend Python. Ninguno de los dos planes está ejecutado; la idea es probar primero este (sin infraestructura ni riesgo legal nuevo) y escalar al de Deepnest solo si no alcanza en el punto de validación de H1.
+- **Hay un plan maestro:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md). Enzo construye todo lo que no es el motor de anidado, en cuatro etapas; el motor es el carril de Vale y se conecta por un enchufe que se define primero en papel (E1).
+- **`rectpack` sale del producto.** Queda en el código como motor de prueba. Hasta que llegue el motor, el costo de material figura como pendiente.
+- **`docs/` se ordenó por estado:** `plan/`, `motor/`, `cliente/` e `historico/`. La regla está en [`docs/CONVENCIONES.md §8 bis`](docs/CONVENCIONES.md).
 
 ---
 
@@ -178,7 +177,7 @@ cartelería/
     └── index.html             Abrir directo en el navegador — ver su README
 ```
 
-**Lo que todavía no existe:** auth/roles, el PDF del presupuesto, aprobación y envío al cliente, Docker (`CART-001`), Celery/Redis (el anidado corre en hilos) y PostgreSQL (hoy es SQLite local). Ver el detalle historia por historia en [`docs/BACKLOG.md`](docs/BACKLOG.md).
+**Lo que todavía no existe:** auth/roles, el PDF del presupuesto, aprobación y envío al cliente, Docker (`CART-001`), PostgreSQL (hoy es SQLite local) y el motor de anidado real (en local anida `rectpack`, que es solo motor de prueba). Ver el detalle historia por historia en [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 ---
 
@@ -308,31 +307,25 @@ Desarrolladas en [`docs/CONVENCIONES.md`](docs/CONVENCIONES.md). Si te llevás s
 
 ## Equipo y división del trabajo
 
-| Carril | Dueño | Alcance | Sprints |
-|---|---|---|---|
-| **A — Cotización** | Enzo | F0 a F7: fundaciones, catálogo, nesting, cotizador, aprobación, Corel, fotomontaje | S1 → S10 |
-| **B — Dashboard** | Vale | F8: reemplazo del dashboard de AppSheet | S2 → S5 |
+| Carril | Dueño | Alcance |
+|---|---|---|
+| **Producto** | Enzo | Todo lo que no es el motor de anidado, en el orden del plan maestro |
+| **Motor** | Vale | El motor de anidado, hasta conectarlo (E2) |
 
-Los carriles son independientes por diseño: tocan tablas, endpoints y pantallas distintas. A partir de **S6 Vale entra al carril A**. Propiedad del código y protocolo para tocar la zona del otro en [`docs/CONVENCIONES.md §2-3`](docs/CONVENCIONES.md).
-
-**Capacidad asumida:** part-time, ~15-20 hs/semana cada uno (supuesto `SUP-15`).
+Detalle, zona compartida y propiedad del código en [`docs/CONVENCIONES.md §2-3`](docs/CONVENCIONES.md). **Capacidad asumida:** part-time, ~15-20 hs/semana cada uno (supuesto `SUP-15`).
 
 ---
 
 ## Roadmap
 
-| Hito | Qué entrega | Semana |
-|---|---|---|
-| **H1** | Cotizador con nesting rectangular, plano de corte y PDF | 7 |
-| **H2** | Aprobación desde el celular y envío automático al cliente | 9 |
-| **H6** | Dashboard rápido *(carril paralelo)* | 12 |
-| **H3** | Importación desde CorelDRAW | 13 |
-| **H4** | Fotomontaje en el presupuesto | 17 |
-| **H5** | Nesting irregular para letras corpóreas | 21 |
+El orden vigente es el de [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md):
 
-**H1 es el punto de validación.** Si el nesting automático no mejora el aprovechamiento contra trabajos reales, el plan se replantea antes de invertir en Corel y fotomontaje. Está previsto que eso pueda pasar.
+1. **Preparar** — documentación al día y trámites lentos pedidos (servidor, dominio, mail, WhatsApp).
+2. **Recorrido fino** — login, presupuesto sin anidado, PDF, aprobación del dueño desde el celular y envío por mail, en el servidor.
+3. **Engordar** — importar y revisar, catálogo y precios, cotizador completo, aprobación y envío completos, fundaciones completas.
+4. **Resto del alcance** — dashboard y fotomontaje.
 
-Detalle en [`docs/EPICA.md §8`](docs/EPICA.md).
+El motor se conecta en paralelo (E1 y E2), cuando esté listo. Los hitos H1 a H6 y las semanas de la estimación original siguen en [`docs/EPICA.md §8`](docs/EPICA.md).
 
 ---
 
@@ -341,17 +334,17 @@ Detalle en [`docs/EPICA.md §8`](docs/EPICA.md).
 | Capa | Tecnología |
 |---|---|
 | Backend | Python 3.11 + FastAPI |
-| Base de datos | PostgreSQL 15 + SQLAlchemy + Alembic |
-| Cola de tareas | Celery + Redis |
-| Frontend | React + Vite + TypeScript + TailwindCSS (SPA local; la especificación original decía Next.js) |
-| Geometría y nesting | `shapely`, `rectpack`, `nest2D` |
+| Base de datos | SQLAlchemy + Alembic; SQLite en local, PostgreSQL en el servidor |
+| Cola de tareas | Hilos; Celery + Redis solo si el motor lo pide |
+| Frontend | React + Vite + TypeScript + TailwindCSS (la especificación original decía Next.js) |
+| Geometría y nesting | `shapely`; el motor de anidado es el carril de Vale |
 | Parseo CAD | `ezdxf`, `svgelements` |
 | Imagen | OpenCV + Pillow |
-| PDF | WeasyPrint |
+| PDF | A elegir (`D-16`) |
 | Mensajería | SendGrid + WhatsApp Business API / Twilio |
 | Infra | Docker Compose sobre VPS |
 
-Python en el backend es prácticamente obligatorio: el ecosistema de geometría computacional, parseo CAD y visión por computadora está ahí. Ver `ADR-05` en [`docs/EPICA.md §9`](docs/EPICA.md).
+Python en el backend es prácticamente obligatorio: el ecosistema de geometría computacional, parseo CAD y visión por computadora está ahí. Ver `ADR-05` y su nota del 2026-10-05 en [`docs/EPICA.md §9`](docs/EPICA.md).
 
 ---
 
@@ -377,46 +370,13 @@ Documentación interactiva en `http://localhost:8000/docs`. Los 5 pasos de `PLAN
 
 No hay Docker todavía — eso es la versión de producción de F0 (`CART-001`), que sigue sin empezar; el modo local de arriba corre sin instalar nada pesado y el cambio a PostgreSQL/Docker es de configuración, no de código.
 
-### Bloqueantes de negocio que siguen abiertos
+### Lo que frena hoy
 
-El relevamiento con el cliente (Sprint 0) avanzó parcialmente pero no cerró del todo — ver el tablero de estado en [`docs/REGISTRO.md §7`](docs/REGISTRO.md) y la última entrada de [`docs/BITACORA.md`](docs/BITACORA.md) para el detalle actualizado. Los que más duelen:
-
-1. **`SUP-04` / `P-01`** — ¿piezas rectas o corpóreas? Reordena el roadmap completo
-2. **`SUP-08` / `P-05`** — ¿cómo calculan el desarrollo de plegado? Sin esto el nesting calcula sobre medidas equivocadas
-3. **`B-02`** — formatos de chapa (🟡 parcial: catálogo de 16 formatos relevado, falta confirmar si compran algo fuera de ese conjunto)
-4. **`B-17`** — baseline de métricas (🟡 parcial: hay datos de producción pero sin normalizar)
-5. **`B-07`** — 🟢 resuelto: acceso a las tablas de AppSheet obtenido
+Los pedidos de la etapa 0 (servidor, dominio, mail, WhatsApp, logo y formato del presupuesto, quién aprueba) están en [`docs/plan/PLAN-MAESTRO.md §5`](docs/plan/PLAN-MAESTRO.md), y qué frena qué en [`docs/MAPA-DEL-PROYECTO.md §3`](docs/MAPA-DEL-PROYECTO.md). El estado de cada ID, en [`docs/REGISTRO.md §7`](docs/REGISTRO.md).
 
 ### Lo que falta para tener algo desplegable
 
-Estructura prevista del repositorio completo (hoy existen `backend/` y `frontend/` para correr en local; faltan Docker, la base de producción y `corel/`):
-
-```
-cartelería/
-├── README.md
-├── docs/                          # esta documentación
-├── fuentes/                       # documentos originales
-├── backend/
-│   ├── app/
-│   │   ├── core/                  # config, auth, permisos
-│   │   ├── models/                # SQLAlchemy
-│   │   ├── api/                   # endpoints
-│   │   ├── services/              # nesting, costeo, fotomontaje, ingesta, agregados
-│   │   └── tasks/                 # Celery
-│   ├── alembic/versions/
-│   └── tests/
-├── frontend/
-├── corel/                         # macro VBA de exportación
-├── docker-compose.yml
-└── .env.example
-```
-
-```bash
-cp .env.example .env      # completar las variables
-docker compose up         # levanta api, db, redis, worker y frontend
-```
-
-Ningún secreto va al repositorio. Ver `ADR-10` y [`docs/CONVENCIONES.md §4`](docs/CONVENCIONES.md).
+Es el sub-proyecto 1.1 del plan maestro: servidor con PostgreSQL y HTTPS, login y backups. Ningún secreto va al repositorio: ver `ADR-10` y [`docs/CONVENCIONES.md §4`](docs/CONVENCIONES.md).
 
 ---
 

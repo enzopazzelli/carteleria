@@ -96,7 +96,7 @@ La trazabilidad completa de R1–R11 contra features e historias está en [§15]
 | **Título** | Plataforma de cotización asistida, nesting y aprobación para cartelería |
 | **Tipo** | Épica de producto — desarrollo pro-code a medida |
 | **Duración estimada** | ~21 semanas (~5 meses) |
-| **Equipo** | Enzo (carril A — cotización) + Vale (carril B — dashboard), part-time ~15-20 hs/semana c/u |
+| **Equipo** | Enzo + Vale, part-time ~15-20 hs/semana c/u. Desde el 2026-10-05: Enzo todo lo que no es el motor de anidado, Vale el motor ([`CONVENCIONES.md §2`](CONVENCIONES.md)) |
 | **Estado** | Listo para Sprint 0 (relevamiento) |
 
 ### Objetivo
@@ -201,6 +201,8 @@ Esto se conversa con el cliente **antes** de arrancar, no cuando lo pida:
 
 ## 8. Roadmap y hitos
 
+> **El orden vigente es el de [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md)** (2026-10-05): etapas en vez de sprints, el motor como carril aparte y un primer hito sin anidado. Las tablas de esta sección quedan como la estimación original.
+
 Dos carriles en paralelo. Sprints de 2 semanas, ~60-80 hs de equipo por sprint.
 
 ### Carril A — Cotización (Enzo)
@@ -249,6 +251,8 @@ Formato corto: **contexto → decisión → consecuencias**. Estas decisiones es
 
 **Consecuencias.** Se entrega valor en la semana 7 en vez de la 21. El motor rectangular es explicable al usuario, lo que ayuda a la adopción. Contrapartida: las piezas irregulares se anidan por su bounding box hasta F7, lo que subestima el aprovechamiento posible en esos casos — se comunica explícitamente en la UI.
 
+**Nota 2026-10-05.** La muestra real resultó ser de piezas grandes y curvas, y `rectpack` no iguala el anidado del diseñador. Por eso `rectpack` sale del producto: queda en el código como motor de prueba, deshabilitado en el servidor, y el primer hito del plan maestro es el recorrido fino sin anidado. El anidado lo trae el carril del motor ([`plan/PLAN-MAESTRO.md §4`](plan/PLAN-MAESTRO.md)).
+
 ### ADR-02 — No parsear `.cdr`; exportar a DXF/SVG desde CorelDRAW
 
 **Contexto.** El formato `.cdr` es cerrado y sin especificación pública. Intentar parsearlo directamente es un pozo sin fondo.
@@ -288,6 +292,8 @@ Formato corto: **contexto → decisión → consecuencias**. Estas decisiones es
 **Decisión.** Backend Python 3.11 + FastAPI. Base PostgreSQL con SQLAlchemy + Alembic. Tareas pesadas (nesting, IA, PDF) en Celery + Redis. Frontend Next.js + TailwindCSS. PDF con WeasyPrint. Todo en Docker Compose sobre un VPS.
 
 **Consecuencias.** Python en backend es prácticamente obligatorio. El frontend podría ser otra cosa, pero Next.js mantiene un solo stack de JS y da SSR para las vistas del dashboard.
+
+**Nota 2026-10-05.** Lo construido es Vite con React para el frontend y una cola de hilos para el anidado, y el plan maestro sigue con eso. Celery y Redis entran solo si las corridas largas del motor lo piden (E2). Next.js se reconsidera al diseñar el dashboard (3.1), que era su justificación. La herramienta del PDF es `D-16` ([`plan/PLAN-MAESTRO.md §9`](plan/PLAN-MAESTRO.md)).
 
 ### ADR-06 — Dashboard sobre agregados precomputados, mismas tablas de origen
 

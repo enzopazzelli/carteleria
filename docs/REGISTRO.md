@@ -301,21 +301,28 @@ Surgen de la muestra real de Megacarteles (ver [`ANALISIS-MUESTRA-MEGACARTELES.m
 
 Decisiones que hay que tomar y todavía no se pueden cerrar.
 
+Desde el 2026-10-05, «Se cierra en» nombra el paso de [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md) donde hace falta la decisión (los sprints S0-S10 del roadmap original dejaron de ser el calendario). Las que no tienen paso son las que el plan maestro deja fuera de todas sus etapas (§7).
+
 | ID | Decisión | Depende de | Se cierra en | Default mientras tanto |
 |---|---|---|---|---|
-| **D-01** | ¿`nest2D` o Deepnest para el nesting irregular? | Spike técnico + `P-01` | S9 | `nest2D` (mantiene todo en Python) |
-| **D-02** | ¿Plancha entera o m² aprovechados? | `P-10` | **S0** | `PAR-15` = plancha entera |
-| **D-03** | Fórmula exacta de desarrollo de plegado | `P-05` | **S0** | `PAR-10` sin definir → carga manual |
-| **D-04** | ¿WhatsApp Business API directo o vía Twilio? | `P-16` + costo del onboarding | **S0** | Solo mail hasta resolver |
-| **D-05** | Proveedor de IA para el retoque del fotomontaje | Prueba de calidad y costo por imagen | S7 | Replicate |
-| **D-06** | Estructura del modelo de agregados del dashboard | `P-19` + `CART-801` | S2 | — |
-| **D-07** | ¿El presupuesto vencido se reajusta por inflación o solo se marca vencido? | Conversación con el dueño | S4 | `SUP-13` = solo se marca vencido |
-| **D-08** | Política de retención y backup de archivos generados | Volumen estimado tras H1 | S4 | Backup diario completo |
-| **D-10** | ¿Cómo se arma `costo_unidad_venta` a partir de `%COSTO1`, `%COSTO2` y los 4 márgenes de venta de `COTIZADOR`? | Conversación con administración | Antes de recalcular precios en serio | Se importa tal cual el valor que la planilla ya trae calculado (`backend/app/modelos/catalogo.py`), no se recalcula |
-| **D-09** | ¿F8 se queda solo-lectura sobre agregados (`ADR-06`) o crece para absorber también las pantallas de escritura del dashboard actual (control de taller, movimientos de stock, aprobación de cotizaciones, edición de permisos)? | Revisión de alcance con el cliente y con Vale, ver `docs/cliente/DASHBOARD-VISTAS.md §3` | Antes de **S2** (arranca `CART-801`) | Prototipo de UI muestra las 9 vistas completas para validar diseño; `ADR-06` sigue vigente para lo que se construya en serio |
+| **D-01** | ¿`nest2D` o Deepnest para el nesting irregular? | Spike técnico + `P-01` | E2 (carril del motor) | `nest2D` (mantiene todo en Python). **Desactualizado:** la comparación real fue `rectpack` contra Deepnest, y el carril del motor sigue con el híbrido de `motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`. Lo reformula el carril del motor |
+| **D-02** | ¿Plancha entera o m² aprovechados? | `P-10` | E2 | `PAR-15` = plancha entera |
+| **D-03** | Fórmula exacta de desarrollo de plegado | `P-05` | Sin paso: el plegado queda fuera del plan maestro (§7) | `PAR-10` sin definir → carga manual |
+| **D-04** | ¿WhatsApp Business API directo o vía Twilio? | `P-16` + costo del onboarding | 2.4 | Solo mail hasta resolver |
+| **D-05** | Proveedor de IA para el retoque del fotomontaje | Prueba de calidad y costo por imagen | 3.2 | Replicate |
+| **D-06** | Estructura del modelo de agregados del dashboard | `P-19` + `CART-801` | 3.1 | — |
+| **D-07** | ¿El presupuesto vencido se reajusta por inflación o solo se marca vencido? | Conversación con el dueño | 2.4 | `SUP-13` = solo se marca vencido |
+| **D-08** | Política de retención y backup de archivos generados | Volumen estimado tras H1 | 1.1 | Backup diario completo |
+| **D-10** | ¿Cómo se arma `costo_unidad_venta` a partir de `%COSTO1`, `%COSTO2` y los 4 márgenes de venta de `COTIZADOR`? | Conversación con administración | 2.2 | Se importa tal cual el valor que la planilla ya trae calculado (`backend/app/modelos/catalogo.py`), no se recalcula |
+| **D-09** | ¿F8 se queda solo-lectura sobre agregados (`ADR-06`) o crece para absorber también las pantallas de escritura del dashboard actual (control de taller, movimientos de stock, aprobación de cotizaciones, edición de permisos)? | Revisión de alcance con el cliente y con Vale, ver `docs/cliente/DASHBOARD-VISTAS.md §3` | Antes de 3.1 | Prototipo de UI muestra las 9 vistas completas para validar diseño; `ADR-06` sigue vigente para lo que se construya en serio |
 | **D-11** | ¿La pantalla de Piezas del frontend del cotizador acepta `.cdr` directo (vía `libcdr`, ver `SPIKE-CDR.md`) o exige un `.dxf` ya exportado a mano desde Corel? | `SUP-05`/`B-15` (compromiso del equipo de diseño con una convención de capas) — `B-08`/`SPIKE-CDR.md` ya prueban que `libcdr` lee el archivo end-to-end, pero no resuelven si conserva capas, que es lo que de verdad falta | Encuentro 3 de relevamiento (diseño), después de `SUP-05` | El frontend exige `.dxf`; un `.cdr` se rechaza con mensaje explícito ("exportá el DXF desde Corel primero"), no se intenta parsear |
-| **D-12** | ¿El anidado irregular corre con alguien esperando frente a la pantalla (meta `PAR-09`) o en segundo plano con aviso, medido solo contra el trabajo manual (`B-17`)? | `B-17` (rango, y si incluye partir el aro) y el spike A2 de `PLAN-RUMBO-ANIDADO-Y-REVISION.md` | Después de A2 | Segundo plano con aviso, medido contra `B-17` |
-| **D-13** | ¿Qué hace el sistema con un diseño que «queda como está» (hojas de otra medida que la del catálogo, `PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.4`)? | `P-26`, `D-02` | Paso B4 del mismo plan | Se reconoce y se muestra en la revisión, sin anidar |
+| **D-12** | ¿El anidado irregular corre con alguien esperando frente a la pantalla (meta `PAR-09`) o en segundo plano con aviso, medido solo contra el trabajo manual (`B-17`)? | `B-17` (rango, y si incluye partir el aro) y el spike A2 de `PLAN-RUMBO-ANIDADO-Y-REVISION.md` | E2 | Segundo plano con aviso, medido contra `B-17` |
+| **D-13** | ¿Qué hace el sistema con un diseño que «queda como está» (hojas de otra medida que la del catálogo, `PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.4`)? | `P-26`, `D-02` | **2.1, sin falta** | Se reconoce y se muestra en la revisión, sin anidar. **Pesa más desde el 2026-10-05:** con el anidado vacío hasta el motor, estos diseños no tendrían costo de material nunca, y son la mayoría de la muestra (`PLAN-MAESTRO.md §8`) |
+| **D-14** | ¿En qué forma llega el motor del carril de Vale al producto: función de Python, servicio aparte, otro lenguaje? | Conversación con Vale | E1 | Una función de Python en `backend/app/services/nesting/` que devuelve un `ResultadoAnidado`, como `deepnest_cliente.py` |
+| **D-15** | ¿El dueño aprueba el presupuesto entero, o ítem por ítem como modela AppSheet en `COT_APROBACIONES` (`cliente/DASHBOARD-VISTAS.md §1.5`)? | `B-11` y conversación con el dueño | 1.4 | Entero |
+| **D-16** | ¿Con qué herramienta se genera el PDF del presupuesto? | Que se instale en Windows (donde se desarrolla) y en el servidor; formato actual de `B-13` | 1.3 | Sin elegir. `ADR-05` nombra WeasyPrint |
+| **D-17** | Cuando el cliente acepta, ¿se crea sola la nota de pedido en AppSheet? | Conversación con el dueño; cuál de `NOTAS_PEDIDO` y `NOTAS_PEDIDO_V2` es la fuente de verdad (`cliente/DASHBOARD-VISTAS.md §1.2`) | 2.4 | Se carga a mano, como hoy |
+| **D-18** | ¿El override manual (`ADR-07`) puede completar una línea de material que no tiene anidado? Si puede, se emiten presupuestos con chapa antes de que llegue el motor | Conversación con el dueño | 1.2 | `ADR-07` sigue vigente: el override alcanza a cualquier línea |
 
 ---
 
@@ -343,7 +350,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Parámetros (`PAR`) | 48 | 12 | 24 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 29 | 27 | 2 | 0 |
-| Decisiones (`D`) | 13 | 13 | 0 | 0 |
+| Decisiones (`D`) | 18 | 18 | 0 | 0 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).
 

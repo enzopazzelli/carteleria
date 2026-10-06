@@ -6,7 +6,7 @@
 >
 > **Versión:** 1.0 · **Fecha:** 2026-10-05
 >
-> **Sobre los valores.** Los parámetros, supuestos, insumos y decisiones se citan por ID (`PAR-xx`, `B-xx`, `T-xx`, `D-xx`) y viven en `REGISTRO.md`. Este documento no repite ningún valor. Las decisiones marcadas «nueva» se dan de alta en el registro en la etapa 0 (§5).
+> **Sobre los valores.** Los parámetros, supuestos, insumos y decisiones se citan por ID (`PAR-xx`, `B-xx`, `T-xx`, `D-xx`) y viven en `REGISTRO.md`. Este documento no repite ningún valor. Las decisiones marcadas «nueva» se dieron de alta en el registro en la etapa 0 (§5).
 
 ---
 
@@ -30,19 +30,11 @@ Decisiones de Enzo del 2026-10-05, que reemplazan la prioridad del 2026-09-26 (�
 
 ## 2. Punto de partida
 
-`MAPA-DEL-PROYECTO.md` (versión 2.2) quedó atrás de lo construido. El estado real al 2026-10-05:
+El estado de cada parte del sistema al 2026-10-05 está en [`MAPA-DEL-PROYECTO.md §1`](../MAPA-DEL-PROYECTO.md). Lo que importa para este plan:
 
-| Parte | Estado |
-|---|---|
-| API del cotizador | Presupuesto, líneas de costo por rubro, override, margen, IVA, totales y desglose. Falta el PDF |
-| Frontend | Lista de trabajos y un espacio de trabajo con cinco pestañas: Piezas, Grupos, Anidado, Ajuste y Costeo. Sin login |
-| Importación de DXF | El análisis (diseños, hojas dibujadas, roles) y la API en dos pasos existen. Ninguna pantalla usa la API en dos pasos todavía |
-| Catálogo | Materiales, formatos y parámetros de corte. Sin precios con vigencia |
-| Fundaciones | Sin login, sin roles, sin servidor |
-| Aprobación y envío | Nada. El presupuesto solo conoce el estado borrador |
-| Motor | Medido, no construido: los spikes A1 y A2 de `PLAN-RUMBO-ANIDADO-Y-REVISION.md` igualan las chapas del diseñador en Belgrano. El paso A3 (pasarlo a código de producto) no está hecho |
-
-El trabajo de Vale sobre el motor no está en este repositorio a esta fecha. Relevarlo es parte de E1 (§4.5).
+- El cotizador funciona por API y en pantalla, en local y sin login. Falta el PDF.
+- El presupuesto solo conoce el estado borrador: no hay aprobación ni envío.
+- El motor está medido, no construido (pasos A1 y A2 de `motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`). El trabajo de Vale sobre el motor no está en este repositorio a esta fecha; relevarlo es parte de E1 (§4.6).
 
 **Dónde llama hoy el producto a `rectpack`.** En dos lugares, y los dos pasan por el enchufe:
 
@@ -182,6 +174,8 @@ Sin código de producto. Dos partes.
 
 **Listo cuando:** el registro y el mapa reflejan este plan, y cada pedido de la tabla está hecho a quien corresponde.
 
+**Estado (2026-10-05):** documentación hecha. Pedidos: pendientes, los mueve Enzo.
+
 ---
 
 ## 6. Etapa 1 — Recorrido fino
@@ -232,22 +226,26 @@ Se detallan cuando les toque, cada una con su diseño.
 
 ## 8. Decisiones abiertas
 
-Cada una avanza con su valor por defecto hasta que se cierre.
+Cada una avanza con su valor por defecto hasta que se cierre. El enunciado completo y el valor por defecto de cada una están en [`REGISTRO.md §5`](../REGISTRO.md); acá solo va en qué paso se cierra.
 
-| ID | Decisión | Por defecto, mientras tanto | Se cierra en |
-|---|---|---|---|
-| `D-13` | Qué hace el sistema con un diseño que «queda como está» | Se muestra sin anidar | 2.1 |
-| `D-14` (nueva) | En qué forma llega el motor de Vale | Una función de Python en `backend/app/services/nesting/` que devuelve un `ResultadoAnidado`, como `deepnest_cliente.py` | E1 |
-| `D-15` (nueva) | Aprobación del presupuesto entero, o ítem por ítem como modela AppSheet en `COT_APROBACIONES` | Entero | 1.4 |
-| `D-16` (nueva) | Herramienta para generar el PDF | Sin elegir. `ADR-05` nombra WeasyPrint | 1.3 |
-| `D-17` (nueva) | Al aceptar el cliente, ¿se crea sola la nota de pedido en AppSheet? | Se carga a mano, como hoy | 2.4 |
-| `D-18` (nueva) | ¿El override manual puede completar una línea de material sin anidado? | `ADR-07` sigue vigente: el override alcanza a cualquier línea | 1.2 |
-| `D-10` | Fórmula del costo por unidad de venta | Se importa el valor de la planilla | 2.2 |
-| `D-04` | WhatsApp directo o por un intermediario | Solo mail | 2.4 |
-| `D-07` | Presupuesto vencido: se reajusta o solo se marca | Solo se marca | 2.4 |
-| `D-02` | Se cobra la chapa entera o lo que se usa | `PAR-15` | E2 |
-| `D-12` | El anidado corre con alguien esperando o en segundo plano | En segundo plano, con aviso | E2 |
-| `D-09` | Dashboard de solo lectura o con escrituras | Solo lectura (`ADR-06`) | Antes de 3.1 |
+| ID | Decisión, en corto | Se cierra en |
+|---|---|---|
+| `D-13` | Qué hace el sistema con un diseño que «queda como está» | 2.1 |
+| `D-14` | En qué forma llega el motor de Vale | E1 |
+| `D-15` | Aprobación del presupuesto entero o ítem por ítem | 1.4 |
+| `D-16` | Herramienta para generar el PDF | 1.3 |
+| `D-17` | Al aceptar el cliente, ¿se crea sola la nota de pedido en AppSheet? | 2.4 |
+| `D-18` | ¿El override puede completar una línea de material sin anidado? | 1.2 |
+| `D-08` | Retención y backup de archivos generados | 1.1 |
+| `D-10` | Fórmula del costo por unidad de venta | 2.2 |
+| `D-04` | WhatsApp directo o por un intermediario | 2.4 |
+| `D-07` | Presupuesto vencido: se reajusta o solo se marca | 2.4 |
+| `D-02` | Se cobra la chapa entera o lo que se usa | E2 |
+| `D-12` | El anidado corre con alguien esperando o en segundo plano | E2 |
+| `D-01` | Qué motor para piezas irregulares (enunciado desactualizado) | E2 |
+| `D-09` | Dashboard de solo lectura o con escrituras | Antes de 3.1 |
+| `D-06` | Modelo de agregados del dashboard | 3.1 |
+| `D-05` | Proveedor de IA para el retoque del fotomontaje | 3.2 |
 
 **`D-13` cambió de peso.** Con el anidado vacío hasta el motor, los diseños que el motor no toca no tendrían costo de material nunca, ni siquiera con el motor conectado. Son la mayoría de la muestra medida en `PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.4`. Hay que cerrarla en 2.1.
 

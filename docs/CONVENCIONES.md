@@ -77,14 +77,16 @@ Misma lógica: un supuesto es `SUP-xx`, una duda es `P-xx`, un insumo pendiente 
 
 ### Los dos carriles
 
-| Carril | Dueño | Alcance | Sprints |
+Reparto vigente desde el 2026-10-05 ([`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md)). Reemplaza al original (Enzo cotización, Vale dashboard), que nunca se aplicó así.
+
+| Carril | Dueño | Alcance | Orden |
 |---|---|---|---|
-| **A — Cotización** | Enzo | F0, F1, F2, F3, F4, F5, F6, F7 | S1 → S10 |
-| **B — Dashboard** | Vale | F8 completo | S2 → S5 |
+| **Producto** | Enzo | Todo lo que no es el motor de anidado: fundaciones, catálogo, importación y revisión, cotizador, aprobación y envío, dashboard, fotomontaje | Etapas 0 a 3 del plan maestro |
+| **Motor** | Vale | El motor de anidado: la estrategia de anidado, `nesting-engine/` y lo que queda del lado del motor en el enchufe (`PLAN-MAESTRO.md §4`) | Carril del motor, hasta E2 |
 
-Los carriles son **independientes por diseño**: tocan tablas distintas, endpoints distintos y pantallas distintas. Esa independencia es lo que permite trabajar en paralelo sin coordinación constante.
+Los carriles son **independientes por diseño**: se tocan solo en el enchufe del motor, cuyo borde define E1 por escrito antes de que nadie lo cambie. Esa independencia es lo que permite trabajar en paralelo sin coordinación constante.
 
-A partir de **S6 Vale entra al carril A**, y ahí sí hace falta la coordinación de [§3](#3-propiedad-del-código).
+Se juntan en **E2** (conectar el motor), y ahí sí hace falta la coordinación de [§3](#3-propiedad-del-código).
 
 ### Zona compartida
 
@@ -92,7 +94,8 @@ Solo tres cosas son de los dos, y son las que hay que cuidar:
 
 | Zona | Por qué es compartida | Regla |
 |---|---|---|
-| `F0` — auth, roles, usuarios, layout | Los dos carriles la usan | La construye Enzo en S1, **antes** de que arranque el carril B. Después se toca solo por acuerdo |
+| El enchufe del motor: `rutas_nesting.py`, `app/cola/` y los modelos de `services/nesting/models.py` | De un lado entra el motor, del otro lo usa el producto | Lo define E1 por escrito. Después se toca solo por acuerdo |
+| `F0` — auth, roles, usuarios, layout | Los dos carriles la usan | La construye Enzo (plan maestro 1.1 y 2.5). Después se toca solo por acuerdo |
 | Schema de base y migraciones | Un conflicto acá rompe los dos carriles | Ver [§5](#5-migraciones-de-base-de-datos) |
 | `REGISTRO.md` | Es la fuente de verdad de los dos | Cualquiera da de alta IDs nuevos; nadie edita ni borra un ID ajeno sin avisar |
 
@@ -111,37 +114,30 @@ Solo en estos cuatro casos. El resto se resuelve en el PR:
 
 Cada carpeta tiene un dueño por defecto. **Dueño no significa permiso exclusivo, significa que su review es obligatorio.**
 
+Sobre la estructura real del repositorio (2026-10-05):
+
 ```
 backend/
 ├── app/
-│   ├── core/           # config, auth, permisos          → Enzo (zona compartida)
-│   ├── models/         # SQLAlchemy                       → Enzo (zona compartida)
-│   ├── api/
-│   │   ├── presupuestos/                                  → Enzo
-│   │   ├── catalogo/                                      → Enzo
-│   │   └── dashboard/                                     → Vale
-│   ├── services/
-│   │   ├── nesting/                                       → Enzo
-│   │   ├── costeo/                                        → Enzo
-│   │   ├── fotomontaje/                                   → Enzo
-│   │   ├── ingesta/       # parsers DXF/SVG               → Enzo
-│   │   └── agregados/     # ETL del dashboard             → Vale
-│   └── tasks/          # Celery                           → según el servicio
-├── alembic/versions/   # zona compartida, ver §5
-└── tests/              # espeja la estructura de app/
+│   ├── config.py · modelos/   # configuración y SQLAlchemy        → Enzo (zona compartida)
+│   ├── api/                   # rutas_*.py y esquemas_*.py        → Enzo
+│   │   └── rutas_nesting.py   # el enchufe del motor              → zona compartida (E1)
+│   ├── cola/                  # cola de trabajos                  → zona compartida (E1)
+│   ├── costeo.py                                                  → Enzo
+│   └── services/
+│       ├── ingesta/           # DXF y análisis de diseños         → Enzo
+│       ├── piezas/                                                → Enzo
+│       └── nesting/           # los motores                       → Vale
+│                              # aprovechamiento, exportación,
+│                              # plano y validación del resultado  → Enzo
+├── alembic/versions/          # zona compartida, ver §5
+├── scripts/                   # herramientas locales              → según lo que toquen
+└── tests/                     # espeja la estructura de app/
 
-frontend/
-├── app/
-│   ├── (presupuestos)/                                    → Enzo
-│   ├── (catalogo)/                                        → Enzo
-│   └── (dashboard)/                                       → Vale
-├── components/
-│   ├── ui/             # botones, inputs, tablas          → zona compartida
-│   └── nesting/        # visor SVG                        → Enzo
-└── lib/                # cliente API, helpers             → zona compartida
-
-corel/                  # macro VBA                        → Enzo
-docs/                   # los .md de este proyecto         → los dos
+nesting-engine/                # motor irregular en Node           → Vale
+frontend/src/                  # pantallas                         → Enzo
+prototipo-dashboard/           # maqueta de F8                     → Enzo
+docs/                          # los .md del proyecto, §8 bis      → los dos
 ```
 
 **Si necesitás tocar algo del otro:** hacelo, pero pedile review explícito y decilo en la descripción del PR. Lo que no se hace es refactorizar código ajeno "de paso" en un PR que va de otra cosa.
@@ -256,9 +252,9 @@ alembic merge -m "merge de heads" <head1> <head2>
 
 Pero antes de mergear: **hablarlo**. Dos heads casi siempre significan que los dos tocamos la misma tabla, y el merge automático puede dejar un schema que no es lo que ninguno quería.
 
-### Antes de S6
+### Mientras los carriles estén separados
 
-Mientras los carriles están separados, el riesgo es bajo: Enzo toca las tablas de presupuestos y catálogo, Vale toca las de agregados. **La regla de oro hasta S6:** Vale no crea ni modifica tablas fuera de las suyas de agregados. Si necesita un campo en una tabla del carril A, lo pide.
+Con el reparto del 2026-10-05 (§2), el riesgo es bajo: el carril del motor no necesita tablas propias, porque el producto guarda el resultado del anidado. **La regla de oro hasta E2:** el carril del motor no crea ni modifica tablas. Si necesita un campo, lo pide, y se acuerda en el contrato de E1.
 
 ---
 
@@ -312,6 +308,8 @@ Para el nesting, además: un set de casos de referencia con resultado esperado c
 ## 7. Contratos entre carriles
 
 Lo que hace que los dos carriles no se rompan mutuamente.
+
+> **Nota 2026-10-05.** Esta sección se escribió para el reparto original, con Vale en el dashboard. Con el reparto vigente (§2), el contrato entre carriles es el enchufe del motor, que define E1 (`plan/PLAN-MAESTRO.md §4`). Las reglas de abajo siguen valiendo para cualquier tabla o API que un carril consuma del otro.
 
 ### Regla: el schema es un contrato
 

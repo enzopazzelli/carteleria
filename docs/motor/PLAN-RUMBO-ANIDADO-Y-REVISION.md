@@ -6,6 +6,8 @@
 >
 > **Versión:** 1.0 · **Fecha:** 2026-09-26
 >
+> **Actualización 2026-10-05 — qué sigue vigente.** El orden de trabajo lo fija ahora [`plan/PLAN-MAESTRO.md`](../plan/PLAN-MAESTRO.md). El **carril A** (motor) pasa a Vale y deja de ser el camino crítico de Enzo: la «Prioridad (Enzo, 2026-09-26)» del §1 queda reemplazada. El **carril B** (§5) pasa a ser el sub-proyecto 2.1 del plan maestro, que tendrá su propio diseño. Los incisos de A3 se reparten entre los dos lados según `PLAN-MAESTRO.md §4.5`: la regla de las islas y el alcance van con 2.1; el resto queda en el carril del motor.
+>
 > **Sobre los valores.** Los números que son parámetros o supuestos se citan por ID (`PAR-xx`, `P-xx`, `B-17`) y viven en `REGISTRO.md`. Lo aprendido en esta sesión quedó cargado ahí en el paso **A0** (2026-09-26); este documento solo lo referencia.
 
 ---

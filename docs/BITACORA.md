@@ -58,6 +58,42 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-05 — Plan maestro del ciclo de cotización, `docs/` ordenada por estado y etapa 0
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (desde hoy se avanza por etapas del plan maestro)
+
+### Qué se hizo
+
+- **Plan maestro** ([`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md)): ordena todo lo que no es el motor de anidado en cuatro etapas (preparar, recorrido fino, engordar, resto del alcance) y define dónde se enchufa el motor (E1 en papel, E2 conectado).
+- **`docs/` ordenada por estado**: `plan/`, `motor/`, `cliente/` e `historico/`, con solo los documentos de referencia arriba. Se actualizaron todas las rutas que citaban los documentos movidos, en docs y en comentarios del código, y se arreglaron 12 enlaces que ya estaban rotos. Se borraron dos copias sueltas de la presentación, idénticas a la de `cliente/presentaciones/`. Regla nueva en [`CONVENCIONES.md §8 bis`](CONVENCIONES.md).
+- **Etapa 0, documentación**: registro, backlog, épica, convenciones, mapa (versión 3.0) y README al día con el plan.
+
+### Qué se decidió
+
+- **El ciclo de cotización completo va primero**: presupuesto, PDF, aprobación del dueño y envío al cliente, en un servidor y con los roles de la empresa.
+- **El anidado queda vacío hasta que llegue el motor.** `rectpack` sale del producto y queda como motor de prueba (`EPICA.md`, nota de `ADR-01`).
+- **Reparto:** Enzo construye todo lo que no es el motor; Vale, el motor. Cierra el pendiente del 2026-08-31 («confirmar la separación real de tareas»): el reparto original (Enzo cotización, Vale dashboard) nunca se aplicó así. Corregido en `CONVENCIONES.md §2-3`, `EPICA.md §3` y el README.
+- **Orden: recorrido fino de punta a punta primero**, después engordar cada paso.
+- **Stack:** se sigue con Vite y React y con la cola de hilos; Celery solo si el motor lo pide (`EPICA.md`, nota de `ADR-05`).
+- **`CART-402`** ya no exige «al menos una pieza» para mandar a aprobar: alcanza con cliente, al menos una línea y ningún material pendiente.
+- **`PLAN-RUMBO-ANIDADO-Y-REVISION.md`** deja de ser el camino crítico de Enzo: su carril A sigue con Vale y su carril B pasa a ser el sub-proyecto 2.1.
+
+### Cambios en el registro
+
+- Altas: **`D-14`** (forma en que llega el motor), **`D-15`** (aprobación entera o por ítem), **`D-16`** (herramienta del PDF), **`D-17`** (nota de pedido automática en AppSheet), **`D-18`** (override sobre material sin anidado).
+- «Se cierra en» de las decisiones abiertas pasa de sprints a pasos del plan maestro. `D-13` sube de peso. `D-01` queda marcada como desactualizada, para que la reformule el carril del motor.
+- Tablero: decisiones de 13 a 18, todas abiertas.
+
+### Pendiente
+
+- **Los pedidos de la etapa 0** (`PLAN-MAESTRO.md §5`): servidor y dominio, cuenta de mail, lugar de los backups, alta de WhatsApp Business, logo y formato del presupuesto, quién aprueba, validez y margen, y la forma del motor con Vale.
+- **Próximo paso: el diseño de E1** (el enchufe del motor, en papel).
+- **La regla de las islas** quedó a medio hacer en `analisis.py`, con su `TODO(human)` y dos tests en rojo, sin commitear. El umbral que cita, `PAR-49`, todavía no existe en el registro.
+- **El repositorio es público** y `cliente/PROPUESTA-CLIENTE.md` y la presentación, con el precio, están publicados. Lo decide Enzo.
+- La bitácora no tiene entradas entre el 2026-09-15 y el 2026-09-26. Lo de esas fechas está en los commits y en los documentos de `motor/` e `historico/`.
+
+---
+
 ## 2026-09-14 — Spike de Deepnest headless (D-01), visor con motor seleccionable (CART-210), esqueleto de persistencia del backend (CART-211) y relevamiento de AppSheet/.cdr
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —

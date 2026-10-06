@@ -1011,11 +1011,11 @@ Entonces queda registrada en auditoría con usuario, timestamp y motivo si corre
 **Como** diseñador **quiero** mandar el presupuesto a revisión del dueño **para** que siga su curso.
 
 ```gherkin
-Dado un presupuesto en BORRADOR con al menos una pieza y una línea de costo
+Dado un presupuesto en BORRADOR con cliente, al menos una línea de costo y ningún material pendiente
 Cuando el diseñador lo envía a autorización
 Entonces pasa a PENDIENTE_APROBACION y deja de ser editable por él
 
-Dado un presupuesto sin cliente, sin piezas o sin líneas de costo
+Dado un presupuesto sin cliente, sin líneas de costo o con un material pendiente
 Cuando se intenta enviarlo a autorización
 Entonces el sistema lo rechaza indicando exactamente qué falta
 
@@ -1025,6 +1025,8 @@ Entonces el sistema lo bloquea y le ofrece solicitar que se lo devuelvan a borra
 ```
 
 > Cubre **R7**.
+>
+> **Corregido 2026-10-05** ([`plan/PLAN-MAESTRO.md §6 y §9`](plan/PLAN-MAESTRO.md)): ya no exige «al menos una pieza», porque un presupuesto puede no llevar chapa (`Presupuesto.trabajo_id` es opcional). **Material pendiente** es una línea de rubro material sin valor efectivo: ni calculado ni cargado por override. Si un override puede completarla lo decide `D-18`.
 
 **Puntos:** 3 · **Depende de:** CART-401 · **Sprint:** S4
 
