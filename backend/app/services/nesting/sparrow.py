@@ -23,13 +23,36 @@ class OpcionesSparrow:
     simplificacion_mm: float = 0.3
     intentos: int = 3
 
-def preparar_entrada(piezas, geometrias, plancha, params, opciones):
+def _area_util(plancha, params):
     borde = float(params.margen_borde_mm + params.kerf_mm / 2)
-    width, height = float(plancha.ancho_mm)-2*borde, float(plancha.alto_mm)-2*borde
+    return borde, float(plancha.ancho_mm)-2*borde, float(plancha.alto_mm)-2*borde
+
+def _rotaciones(params):
+    return [0,180] if params.rotaciones_permitidas is RotacionPermitida.SOLO_0_180 else [0,90,180,270]
+
+def _entra(shell, rotations, width, height):
+    for a in rotations:
+        b=affinity.rotate(shell,a,origin=(0,0)).bounds
+        if b[2]-b[0]<=width+1e-8 and b[3]-b[1]<=height+1e-8: return True
+    return False
+
+def piezas_que_no_entran(piezas, geometrias, plancha, params):
+    """Las piezas cuya silueta no entra en el área útil con ninguna rotación
+    permitida: el mismo chequeo que `preparar_entrada` hace antes de buscar.
+    No se descartan: son las que habría que seccionar (A5) para usar este
+    formato. Las que no tienen contorno las rechaza `preparar_entrada`."""
+    _, width, height = _area_util(plancha, params)
+    rotations = _rotaciones(params)
+    return [p.id for p in piezas
+            if (g := geometrias.get(p.id)) is not None and g.contorno_local_mm
+            and not _entra(Polygon(g.contorno_local_mm), rotations, width, height)]
+
+def preparar_entrada(piezas, geometrias, plancha, params, opciones):
+    borde, width, height = _area_util(plancha, params)
     gap = float(params.kerf_mm + params.separacion_piezas_mm)
     if width <= 0 or height <= 0 or min(borde, gap) < 0:
         raise ValueError('Los parámetros no dejan un formato útil válido.')
-    rotations = [0,180] if params.rotaciones_permitidas is RotacionPermitida.SOLO_0_180 else [0,90,180,270]
+    rotations = _rotaciones(params)
     items=[]; blocked=[]; invalidas=[]; normalizadas=[]
     for p in piezas:
         g=geometrias.get(p.id)
@@ -44,11 +67,7 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
         if not original.is_valid:
             normalizadas.append(p.id)
         shell=Polygon(g.contorno_local_mm)
-        fits=False
-        for a in rotations:
-            b=affinity.rotate(shell,a,origin=(0,0)).bounds
-            fits |= b[2]-b[0]<=width+1e-8 and b[3]-b[1]<=height+1e-8
-        if not fits: blocked.append(p.id)
+        if not _entra(shell, rotations, width, height): blocked.append(p.id)
         for n in range(p.cantidad):
             items.append({'id':f'{p.id}#{n}','shell':list(shell.exterior.coords),'holes':[list(r.coords) for r in original.interiors]})
     if invalidas:

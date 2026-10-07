@@ -31,7 +31,7 @@ from ..services.nesting.anidado_huecos import anidar_en_huecos
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.comparador import OpcionFormato, comparar_formatos, formato_recomendado
 from ..services.nesting.engine import MotorNestingRectangular
-from ..services.nesting.sparrow import anidar_sparrow, preparar_entrada, OpcionesSparrow, ErrorGeometriaSparrow
+from ..services.nesting.sparrow import anidar_sparrow, piezas_que_no_entran, preparar_entrada, OpcionesSparrow, ErrorGeometriaSparrow
 from ..services.nesting.models import (
     ParametrosCorte,
     Plancha,
@@ -48,6 +48,7 @@ from .esquemas_nesting import (
     ComparacionFormatosCrear,
     EjecucionLeer,
     OpcionFormatoLeer,
+    PiezaASeccionarLeer,
     ResumenMaterialesLeer,
 )
 from .rutas_trabajos import _grupo_o_404, _trabajo_o_404
@@ -513,16 +514,26 @@ def comparar_formatos_de_grupo(
         )
         formatos.append(formato)
 
+    # Un formato donde alguna pieza no entra ni rotándola no se anida: sale
+    # con sus piezas a seccionar y no frena a los demás. Un diseño más
+    # grande que la chapa se parte en tramos que se sueldan (A5); hasta que
+    # el sistema lo haga, ese formato queda sin planchas ni costo.
+    geometrias = _geometrias_del_grupo(grupo) if datos.motor == "sparrow" else {}
+    if datos.motor == "sparrow":
+        no_entran = [piezas_que_no_entran(piezas_dominio, geometrias, o.plancha, o.params) for o in opciones]
+    else:
+        no_entran = [MotorNestingRectangular(o.plancha, o.params).piezas_que_no_entran(piezas_dominio) for o in opciones]
+    a_anidar = [opcion for opcion, ids in zip(opciones, no_entran) if not ids]
+
     try:
         if datos.motor == "sparrow":
             from ..services.nesting.comparador import ResultadoComparacionFormato
-            geometrias = _geometrias_del_grupo(grupo)
             opciones_sparrow = OpcionesSparrow(**datos.model_dump(exclude={"motor", "formato_ids", "usar_anidado_en_huecos", "criterio"}))
             # Validar todos antes de iniciar búsquedas costosas.
-            for opcion in opciones:
+            for opcion in a_anidar:
                 preparar_entrada(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
             resultados = []
-            for opcion in opciones:
+            for opcion in a_anidar:
                 resultado = anidar_sparrow(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
                 resultados.append(ResultadoComparacionFormato(
                     opcion, resultado, calcular_aprovechamiento(resultado, opcion.plancha, geometrias),
@@ -530,7 +541,7 @@ def comparar_formatos_de_grupo(
                 ))
         else:
             resultados = comparar_formatos(
-                piezas_dominio, opciones, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
+                piezas_dominio, a_anidar, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
             )
     except ErrorGeometriaSparrow as error:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, {
@@ -539,22 +550,45 @@ def comparar_formatos_de_grupo(
         }) from error
     except ValueError as error:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
-    recomendado = formato_recomendado(resultados, datos.criterio)
+    recomendado = formato_recomendado(resultados, datos.criterio) if resultados else None
 
-    return [
-        OpcionFormatoLeer(
+    por_id = {str(p.id): p for p in piezas}
+    resultados_en_orden = iter(resultados)
+    filas = []
+    for formato, ids in zip(formatos, no_entran):
+        comunes = dict(
             motor=datos.motor,
-            advertencias=resultado.resultado_anidado.advertencias,
-            area_total_m2=resultado.reporte_aprovechamiento.area_total_planchas_mm2 / Decimal(1000000),
             formato_id=formato.id,
             formato_descripcion=f"{formato.ancho_mm}×{formato.alto_mm} mm",
             material_nombre=formato.material.nombre,
+            moneda=formato.moneda,
+            precio_simulado=formato.precio_simulado,
+        )
+        if ids:
+            filas.append(OpcionFormatoLeer(
+                **comunes,
+                area_total_m2=None,
+                planchas_usadas=None,
+                aprovechamiento_pct=None,
+                costo_total=None,
+                recomendado=False,
+                piezas_a_seccionar=[
+                    PiezaASeccionarLeer(
+                        id=por_id[i].id, id_origen=por_id[i].id_origen,
+                        ancho_mm=por_id[i].ancho_mm, alto_mm=por_id[i].alto_mm,
+                    )
+                    for i in ids
+                ],
+            ))
+            continue
+        resultado = next(resultados_en_orden)
+        filas.append(OpcionFormatoLeer(
+            **comunes,
+            advertencias=resultado.resultado_anidado.advertencias,
+            area_total_m2=resultado.reporte_aprovechamiento.area_total_planchas_mm2 / Decimal(1000000),
             planchas_usadas=resultado.resultado_anidado.planchas_usadas,
             aprovechamiento_pct=resultado.reporte_aprovechamiento.porcentaje_aprovechamiento,
             costo_total=resultado.costo_total,
-            moneda=formato.moneda,
             recomendado=resultado is recomendado,
-            precio_simulado=formato.precio_simulado,
-        )
-        for formato, resultado in zip(formatos, resultados)
-    ]
+        ))
+    return filas

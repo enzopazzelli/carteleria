@@ -51,19 +51,30 @@ export function descartarPieza(piezaId: number, descartada: boolean): Promise<Pi
   return apiPatch<Pieza>(`/piezas/${piezaId}`, { descartada });
 }
 
+export interface PiezaASeccionar {
+  id: number;
+  id_origen: string;
+  ancho_mm: string;
+  alto_mm: string;
+}
+
+/** Con `piezas_a_seccionar` no vacío, el formato no se anidó: alguna
+ * pieza no entra ni rotándola y hay que partirla en tramos (seccionado).
+ * Por eso planchas, consumo, aprovechamiento y costo llegan en `null`. */
 export interface OpcionFormato {
-  area_total_m2: string;
+  area_total_m2: string | null;
   motor: "rectpack" | "sparrow";
   advertencias: string[];
   formato_id: number;
   formato_descripcion: string;
   material_nombre: string;
-  planchas_usadas: number;
-  aprovechamiento_pct: string;
-  costo_total: string;
+  planchas_usadas: number | null;
+  aprovechamiento_pct: string | null;
+  costo_total: string | null;
   moneda: string;
   recomendado: boolean;
   precio_simulado: boolean;
+  piezas_a_seccionar: PiezaASeccionar[];
 }
 
 export function crearGrupo(trabajoId: number, nombre: string): Promise<GrupoDeCorte> {

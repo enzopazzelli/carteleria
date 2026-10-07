@@ -93,6 +93,25 @@ class MotorNestingRectangular:
         extra_mm = self.params.kerf_mm + self.params.separacion_piezas_mm
         return pieza.ancho_mm + extra_mm, pieza.alto_mm + extra_mm
 
+    def _area_util_mm(self) -> tuple[Decimal, Decimal]:
+        margen = self.params.margen_borde_mm
+        return self.plancha.ancho_mm - 2 * margen, self.plancha.alto_mm - 2 * margen
+
+    def piezas_que_no_entran(self, piezas: list[Pieza]) -> list[str]:
+        """Las piezas cuya celda no entra en el área útil con ninguna
+        rotación permitida: con ellas `anidar` falla. No se descartan: son
+        las que habría que seccionar (A5) para usar este formato."""
+        ancho_util, alto_util = (_a_micrones(v) for v in self._area_util_mm())
+        permite_rotacion_90 = self.params.rotaciones_permitidas is RotacionPermitida.LIBRE_0_90
+        no_entran = []
+        for pieza in piezas:
+            ancho, alto = (_a_micrones(v) for v in self._tamano_celda_mm(pieza))
+            derecha = ancho <= ancho_util and alto <= alto_util
+            rotada = permite_rotacion_90 and alto <= ancho_util and ancho <= alto_util
+            if not (derecha or rotada):
+                no_entran.append(pieza.id)
+        return no_entran
+
     def _armar_packer(self, piezas_expandidas: list[Pieza]):
         permite_rotacion_90 = self.params.rotaciones_permitidas is RotacionPermitida.LIBRE_0_90
 
@@ -102,9 +121,7 @@ class MotorNestingRectangular:
             rotation=permite_rotacion_90,
         )
 
-        margen = self.params.margen_borde_mm
-        ancho_util_mm = self.plancha.ancho_mm - 2 * margen
-        alto_util_mm = self.plancha.alto_mm - 2 * margen
+        ancho_util_mm, alto_util_mm = self._area_util_mm()
 
         # count=float("inf"): nunca un `for i in range(N)` con tope arbitrario.
         packer.add_bin(

@@ -482,23 +482,67 @@ def test_comparar_formatos_sparrow_real_sin_modificar_grupo(cliente, tmp_path, m
     assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json() == []
 
 
-def test_comparar_sparrow_valida_todos_los_formatos_antes_de_buscar(cliente, tmp_path, monkeypatch):
-    from app.api import rutas_nesting
-    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
-    material, formato = _material_con_formato_y_parametros(cliente)
-    chico = cliente.post(f"/materiales/{material['id']}/formatos", json={
+def _formato_chico(cliente, material) -> dict:
+    """50 x 50: la pieza de 100 x 100 de los grupos de prueba no entra."""
+    return cliente.post(f"/materiales/{material['id']}/formatos", json={
         "ancho_mm": "50", "alto_mm": "50", "unidad_venta": "M2", "costo_unidad_venta": "10",
     }).json()
 
-    def no_buscar(*args, **kwargs):
-        raise AssertionError("No debe iniciar búsquedas si un formato no admite las piezas")
 
-    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", no_buscar)
+def test_comparar_sparrow_un_formato_donde_no_entran_piezas_no_frena_a_los_demas(cliente, tmp_path, monkeypatch):
+    # Un diseño más grande que la chapa se secciona (A5), no se descarta:
+    # ese formato sale con las piezas a seccionar, sin buscar en él, y los
+    # demás se comparan igual.
+    from app.api import rutas_nesting
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    material, formato = _material_con_formato_y_parametros(cliente)
+    chico = _formato_chico(cliente, material)
+    planchas_buscadas = []
+    original = rutas_nesting.anidar_sparrow
+
+    def registrar(piezas, geometrias, plancha, params, opciones):
+        planchas_buscadas.append(plancha)
+        return original(piezas, geometrias, plancha, params, opciones)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
-        "formato_ids": [formato["id"], chico["id"]], "motor": "sparrow",
+        "formato_ids": [formato["id"], chico["id"]], "motor": "sparrow", "tiempo_maximo_s": 30,
     })
-    assert respuesta.status_code == 400
-    assert "no entran" in respuesta.json()["detail"]
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert [p.ancho_mm for p in planchas_buscadas] == [Decimal("1000")]
+    entra, no_entra = respuesta.json()
+    assert entra["planchas_usadas"] == 1 and entra["recomendado"] and entra["piezas_a_seccionar"] == []
+    assert no_entra["planchas_usadas"] is None and no_entra["costo_total"] is None and not no_entra["recomendado"]
+    [pieza] = no_entra["piezas_a_seccionar"]
+    assert (Decimal(pieza["ancho_mm"]), Decimal(pieza["alto_mm"])) == (Decimal("100"), Decimal("100"))
+
+
+def test_comparar_rectangular_un_formato_donde_no_entran_piezas_no_frena_a_los_demas(cliente, tmp_path):
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    material, formato = _material_con_formato_y_parametros(cliente)
+    chico = _formato_chico(cliente, material)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
+        "formato_ids": [formato["id"], chico["id"]],
+    })
+
+    assert respuesta.status_code == 200, respuesta.text
+    entra, no_entra = respuesta.json()
+    assert entra["planchas_usadas"] == 1 and entra["recomendado"]
+    assert no_entra["planchas_usadas"] is None and len(no_entra["piezas_a_seccionar"]) == 1
+
+
+def test_comparar_si_no_entran_en_ningun_formato_no_hay_recomendado(cliente, tmp_path):
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    material, _formato = _material_con_formato_y_parametros(cliente)
+    chico = _formato_chico(cliente, material)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": [chico["id"]]})
+
+    assert respuesta.status_code == 200, respuesta.text
+    [opcion] = respuesta.json()
+    assert not opcion["recomendado"] and len(opcion["piezas_a_seccionar"]) == 1
 
 
 def _grupo_con_piezas_sin_formato(cliente, tmp_path, *, ancho=100, alto=100) -> dict:

@@ -123,18 +123,32 @@ class ComparacionFormatosCrear(AnidarCrear):
     criterio: Literal["costo", "material"] = "costo"
 
 
+class PiezaASeccionarLeer(BaseModel):
+    id: int
+    id_origen: str
+    ancho_mm: Decimal
+    alto_mm: Decimal
+
+
 class OpcionFormatoLeer(BaseModel):
     motor: str = "rectpack"
     advertencias: list[str] = Field(default_factory=list)
-    area_total_m2: Decimal = Decimal(0)
+    #: Vacíos (`None`) cuando hay `piezas_a_seccionar`: ese formato no se
+    #: anidó, así que no tiene planchas, consumo, aprovechamiento ni costo.
+    area_total_m2: Decimal | None = Decimal(0)
     formato_id: int
     formato_descripcion: str
     material_nombre: str
-    planchas_usadas: int
-    aprovechamiento_pct: Decimal
-    costo_total: Decimal
+    planchas_usadas: int | None
+    aprovechamiento_pct: Decimal | None
+    costo_total: Decimal | None
     moneda: str
     recomendado: bool
     #: `Formato.precio_simulado` — si esto es `True`, `costo_total` no
     #: es un número real, es de prueba (ver docstring del modelo).
     precio_simulado: bool
+    #: Piezas que no entran en este formato con ninguna rotación permitida.
+    #: No es un error de la comparación: un diseño más grande que la chapa
+    #: se secciona en tramos que se sueldan después (A5, todavía manual).
+    #: Hasta que exista el seccionado, el formato queda sin anidar.
+    piezas_a_seccionar: list[PiezaASeccionarLeer] = Field(default_factory=list)

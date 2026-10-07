@@ -289,6 +289,19 @@ export default function GruposTab() {
               </fieldset>
               <p className="text-sm mb-3">Se usan los parámetros de corte de cada material. La comparación no guarda un plano; luego ejecutá el mismo motor en Anidado.</p>
               {motor === "sparrow" && <p className="text-sm mb-3">Calcula siluetas reales, sin la pasada en huecos. Los formatos se procesan uno por uno; puede demorar hasta {candidatos.length * limite} segundos más la validación de geometría.</p>}
+              <label className="text-xs flex items-center gap-1 mb-2 font-medium cursor-pointer">
+                <input
+                  type="checkbox"
+                  disabled={compararFormatos.isPending || formatos.length === 0}
+                  checked={formatos.length > 0 && candidatos.length === formatos.length}
+                  // A medio llenar cuando hay algunas tildadas, como en la lista de piezas.
+                  ref={(nodo) => {
+                    if (nodo) nodo.indeterminate = candidatos.length > 0 && candidatos.length < formatos.length;
+                  }}
+                  onChange={(e) => setCandidatos(e.target.checked ? formatos.map((f) => f.id) : [])}
+                />
+                Seleccionar todas ({formatos.length})
+              </label>
               <div className="flex flex-wrap gap-2 mb-3">
                 {cargando && <p>Cargando materiales y formatos…</p>}
                 {!cargando && !errorCatalogo && formatos.length === 0 && <p>No hay formatos en el catálogo.</p>}
@@ -337,7 +350,27 @@ export default function GruposTab() {
                     </tr>
                   </thead>
                   <tbody>
-                    {resultado.map((opcion) => (
+                    {/* Las que hay que seccionar, al final: no tienen números para comparar. */}
+                    {[...resultado]
+                      .sort((a, b) => Number(a.piezas_a_seccionar.length > 0) - Number(b.piezas_a_seccionar.length > 0))
+                      .map((opcion) => opcion.piezas_a_seccionar.length > 0 ? (
+                      <tr key={opcion.formato_id} className="border-b border-line text-ink/70">
+                        <td>{opcion.material_nombre}</td>
+                        <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
+                        <td>{opcion.formato_descripcion}</td>
+                        <td
+                          colSpan={5}
+                          title="No entra en este formato ni rotándola: hay que partirla en tramos que se sueldan después (seccionado). El sistema todavía no lo hace solo."
+                        >
+                          Hay que seccionar {opcion.piezas_a_seccionar.length} pieza(s):{" "}
+                          {opcion.piezas_a_seccionar
+                            .slice(0, 3)
+                            .map((p) => `${Math.round(Number(p.ancho_mm))}×${Math.round(Number(p.alto_mm))} mm`)
+                            .join(", ")}
+                          {opcion.piezas_a_seccionar.length > 3 && "…"}
+                        </td>
+                      </tr>
+                    ) : (
                       <tr
                         key={opcion.formato_id}
                         className={`border-b border-line ${opcion.recomendado ? "bg-bronze/10" : ""}`}
