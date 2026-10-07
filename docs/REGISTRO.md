@@ -90,6 +90,7 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-46** | Fracción mínima del área de una pieza dentro de una hoja para considerarla anidada ahí | 99 | % | Sistema | Config | `CART-511` | 🟡 provisorio — la cuña roja de Belgrano está 99,98 % adentro, apoyada en el borde; con contención estricta se la excluía como duplicado |
 | **PAR-47** | Colores ACI que identifican cotas y rótulos (fuera de las hojas) | 1 (rojo) | — | Diseño | Config | `CART-511` | 🟡 provisorio — `P-27`. En la muestra, 767 de 769 formas rojas son texto de cotas; las otras 2 están en una hoja |
 | **PAR-48** | Criterio para que una pieza sea «grande»: va sola a su hoja y no entra al anidado con las demás | *sin definir* | — | Sistema | Config | `PLAN-RUMBO-ANIDADO-Y-REVISION.md` A3 | 🔴 sin valor hasta A3 — medido sobre Belgrano: ni el área (un tramo del aro de 1941 × 1085 ocupa 10 % de la hoja; una letra de 874 × 860, 11 %) ni la extensión sola (una tira de 20 × 1200 abarca todo el lado corto) los separan. Decisión de diseño de Enzo |
+| **PAR-49** | Área máxima que puede cambiar al reparar un contorno que cierra pero se cruza a sí mismo (lo que se tira más lo que se rellena). Si cambia más, la forma se excluye con aviso | 1 | mm² | Sistema | Config | `CART-503` | 🟡 provisorio — en el corpus las púas y rulitos reales corrigen entre 0 y 0,005 mm²; una forma en «8» de verdad cambiaría la mitad de su área. Decisión de Enzo del 2026-10-07: reparar si se pierde poco. *No es el umbral de islas que mencionaba la bitácora del 2026-10-05: ese nunca se dio de alta* |
 
 ### 2.2 Parámetros comerciales
 
@@ -347,7 +348,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
 | Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
-| Parámetros (`PAR`) | 48 | 12 | 24 | 12 |
+| Parámetros (`PAR`) | 49 | 12 | 25 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 29 | 27 | 2 | 0 |
 | Decisiones (`D`) | 18 | 18 | 0 | 0 |

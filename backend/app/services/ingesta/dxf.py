@@ -12,7 +12,11 @@ Implementa los criterios de aceptación de las dos historias:
    alcance, no un default silencioso: en cuanto exista la convención,
    filtrar por `entidad.dxf.layer == "CORTE"` es un cambio de una línea.
 2. **Contornos abiertos** se cierran si la distancia entre sus extremos
-   es menor a `PAR-06`; si no, se listan en `contornos_no_cerrados`.
+   es menor a `PAR-06`; si no, se listan en `contornos_no_cerrados`. Un
+   contorno que cierra pero se cruza a sí mismo (una púa o un rulito del
+   dibujo) se repara si arreglarlo cambia a lo sumo `PAR-49` de área, y
+   si no se excluye; en los dos casos va a `contornos_que_se_cruzan`,
+   con el punto del cruce.
 3. **Líneas duplicadas superpuestas** se descartan por firma geométrica
    y se cuentan en `lineas_duplicadas_descartadas` (`PAR-38`).
 4. **Archivo corrupto o no soportado** levanta `ArchivoDXFInvalido`.
@@ -55,6 +59,7 @@ confiar en una suposición silenciosa del sistema.
 from __future__ import annotations
 
 import math
+import re
 from collections import Counter
 from dataclasses import dataclass
 from decimal import Decimal
@@ -63,14 +68,21 @@ from pathlib import Path
 import ezdxf
 from ezdxf import DXFError
 from ezdxf.path import make_path
+from shapely import is_valid_reason, make_valid
 from shapely.geometry import Polygon
 
-from .models import ContornoAbierto, PiezaImportada, ResultadoImportacionDXF
+from .models import ContornoAbierto, ContornoQueSeCruza, PiezaImportada, ResultadoImportacionDXF
 
 _TOLERANCIA_CIERRE_MM = Decimal("0.1")  # PAR-06
 _TOLERANCIA_DUPLICADO_MM = Decimal("0.1")  # PAR-38
 _TOLERANCIA_APLANADO_MM = Decimal("0.1")  # PAR-07
+_AREA_MAXIMA_REPARABLE_MM2 = Decimal("1")  # PAR-49
 _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT = Decimal("25")  # heurístico, no un PAR-xx — ver _clasificar_piezas_y_agujeros
+# Precisión con que se guardan las coordenadas, no una tolerancia (no es
+# un PAR-xx): cinco órdenes por debajo de PAR-06. Corta el ruido de float
+# del aplanado, que deja el inicio de una spline en `6415.738999999999`
+# y su final en `6415.739`: dos puntos que tienen que ser el mismo.
+_RESOLUCION_MM = Decimal("0.000001")
 # Lista explícita, no "todo lo que `make_path` sepa convertir": también
 # convierte `IMAGE` (devuelve el marco de la imagen como un rectángulo
 # cerrado) y eso terminaría como una pieza más de chapa.
@@ -162,10 +174,17 @@ def _puntos_en_mm(
     `POLYLINE` (el R12 de los archivos reales de `modelos/`) y
     `LWPOLYLINE`, con sus arcos `bulge`, en una sola representación: no
     hace falta un `if` por tipo de entidad, ni un `bulge` ignorado que
-    deje un arco convertido en una recta."""
+    deje un arco convertido en una recta.
+
+    Se redondea a `_RESOLUCION_MM`: con el ruido de float, el cierre de
+    un contorno agregaba un tramo de 1e-12 mm en cualquier dirección y
+    shapely lo veía como una autointersección."""
     return [
         [
-            (Decimal(str(float(v.x))) * escala_a_mm, Decimal(str(float(v.y))) * escala_a_mm)
+            (
+                (Decimal(str(float(v.x))) * escala_a_mm).quantize(_RESOLUCION_MM),
+                (Decimal(str(float(v.y))) * escala_a_mm).quantize(_RESOLUCION_MM),
+            )
             for v in trazado.flattening(distancia_aplanado)
         ]
         for trazado in make_path(entidad).sub_paths()
@@ -290,13 +309,42 @@ def _con_cierre_explicito(puntos: list[tuple[Decimal, Decimal]]) -> list[tuple[D
     return puntos if puntos[0] == puntos[-1] else [*puntos, puntos[0]]
 
 
-def _construir_poligono(puntos: list[tuple[Decimal, Decimal]]) -> Polygon | None:
-    """`None` si el polígono resultante es degenerado (área nula o
-    autointersecante) — se reporta como contorno no cerrado."""
-    poligono = Polygon(puntos)
-    if not poligono.is_valid or poligono.area == 0:
-        return None
-    return poligono
+def _en_mm(valor: float) -> Decimal:
+    return Decimal(str(valor)).quantize(_RESOLUCION_MM)
+
+
+def _partes_con_area(geometria) -> list[Polygon]:
+    if isinstance(geometria, Polygon):
+        return [geometria] if geometria.area > 0 else []
+    return [parte for g in getattr(geometria, "geoms", ()) for parte in _partes_con_area(g)]
+
+
+def _donde_se_cruza(poligono: Polygon) -> tuple[Decimal, Decimal]:
+    """El punto que informa GEOS (`"Self-intersection[x y]"`), para
+    encontrar el defecto en el diseño: en una pieza de 800 mm, una púa de
+    2 mm no se ve. Si el motivo no trae coordenadas, el centro de la caja."""
+    coordenadas = re.findall(r"-?\d+(?:\.\d+)?(?:[eE]-?\d+)?", is_valid_reason(poligono).partition("[")[2])
+    if len(coordenadas) >= 2:
+        return _en_mm(float(coordenadas[0])), _en_mm(float(coordenadas[1]))
+    x0, y0, x1, y1 = poligono.bounds
+    return _en_mm((x0 + x1) / 2), _en_mm((y0 + y1) / 2)
+
+
+def _reparar(poligono: Polygon) -> tuple[Polygon | None, Decimal]:
+    """El contorno exterior de la parte más grande de un contorno que se
+    cruza a sí mismo, y cuánta área cambia al quedarse con eso: lo que se
+    tira (púas, lóbulos) más lo que se rellena (los rulitos que el cruce
+    encerraba como agujero). `None` si eso pasa `PAR-49`: un "8" de
+    verdad, o un nudo que encierra algo grande, no se inventa."""
+    partes = _partes_con_area(make_valid(poligono))
+    if not partes:
+        return None, Decimal(0)
+    mayor = max(partes, key=lambda parte: parte.area)
+    sin_rulitos = Polygon(mayor.exterior)
+    corregida = _en_mm(sum(parte.area for parte in partes) - mayor.area + sin_rulitos.area - mayor.area)
+    if corregida > _AREA_MAXIMA_REPARABLE_MM2:
+        return None, corregida
+    return sin_rulitos, corregida
 
 
 def _bbox_contiene(exterior: tuple, interior: tuple) -> bool:
@@ -476,16 +524,21 @@ def parsear_dxf(
         )
         for trazo in sin_cerrar
     ]
+    contornos_que_se_cruzan: list[ContornoQueSeCruza] = []
     contornos_validos: list[_ContornoValido] = []
     for trazo in sorted([*cerrados, *encadenados], key=lambda t: t.indice):
         puntos = _con_cierre_explicito(trazo.puntos)
-        poligono = _construir_poligono(puntos)
-        if poligono is None:
-            contornos_no_cerrados.append(
-                ContornoAbierto(capa=trazo.capa, indice=trazo.indice, distancia_apertura_mm=Decimal("0"))
+        poligono = Polygon(puntos)
+        if not poligono.is_valid or poligono.area == 0:
+            x, y = _donde_se_cruza(poligono)
+            reparado, corregida = _reparar(poligono)
+            contornos_que_se_cruzan.append(
+                ContornoQueSeCruza(trazo.capa, trazo.indice, x, y, corregida, reparado is not None)
             )
-        else:
-            contornos_validos.append(_ContornoValido(poligono, puntos, trazo.capa, trazo.indice, trazo.color))
+            if reparado is None:
+                continue
+            poligono, puntos = reparado, [(_en_mm(px), _en_mm(py)) for px, py in reparado.exterior.coords]
+        contornos_validos.append(_ContornoValido(poligono, puntos, trazo.capa, trazo.indice, trazo.color))
 
     piezas = [
         _pieza_desde_clasificacion(ruta, pieza, agujeros, contenedora)
@@ -495,8 +548,9 @@ def parsear_dxf(
     return ResultadoImportacionDXF(
         piezas=piezas,
         contornos_no_cerrados=contornos_no_cerrados,
+        contornos_que_se_cruzan=contornos_que_se_cruzan,
         lineas_duplicadas_descartadas=duplicados_descartados,
-        advertencias=_advertencias(len(contornos_no_cerrados), ignoradas, ilegibles),
+        advertencias=_advertencias(len(contornos_no_cerrados), contornos_que_se_cruzan, ignoradas, ilegibles),
     )
 
 
@@ -504,12 +558,30 @@ def _detalle(cuentas: Counter) -> str:
     return ", ".join(f"{cantidad} {tipo}" for tipo, cantidad in cuentas.most_common())
 
 
-def _advertencias(no_cerrados: int, ignoradas: Counter, ilegibles: Counter) -> list[str]:
+def _lugares(contornos: list[ContornoQueSeCruza]) -> str:
+    return ", ".join(f"en ({c.x_mm:.0f}, {c.y_mm:.0f}) mm" for c in contornos)
+
+
+def _advertencias(
+    no_cerrados: int, que_se_cruzan: list[ContornoQueSeCruza], ignoradas: Counter, ilegibles: Counter
+) -> list[str]:
     advertencias = []
     if no_cerrados:
         advertencias.append(
             f"{no_cerrados} contorno(s) no se pudieron cerrar dentro de "
             f"PAR-06 ({_TOLERANCIA_CIERRE_MM} mm) y se excluyeron."
+        )
+    reparados = [c for c in que_se_cruzan if c.reparado]
+    excluidos = [c for c in que_se_cruzan if not c.reparado]
+    if reparados:
+        advertencias.append(
+            f"Se repararon {len(reparados)} contorno(s) que se cruzaban a sí mismos, corrigiendo "
+            f"a lo sumo PAR-49 ({_AREA_MAXIMA_REPARABLE_MM2} mm²) de área cada uno: {_lugares(reparados)}."
+        )
+    if excluidos:
+        advertencias.append(
+            f"{len(excluidos)} contorno(s) se cruzan a sí mismos y se excluyeron: {_lugares(excluidos)}. "
+            "Hay que corregirlos en el diseño."
         )
     if ilegibles:
         advertencias.append(
