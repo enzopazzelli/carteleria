@@ -77,7 +77,7 @@ def _ejecucion_para_costear(grupo: GrupoDeCorte) -> tuple[EjecucionNesting | Non
     Prioridad: la marcada `es_definitiva`. Si no hay ninguna marcada, la
     más reciente en estado `lista` — con advertencia, porque puede ser
     una prueba que el usuario no llegó a confirmar."""
-    definitivas = [e for e in grupo.ejecuciones if e.es_definitiva]
+    definitivas = [e for e in grupo.ejecuciones if e.es_definitiva and e.estado == "lista"]
     if definitivas:
         return definitivas[0], []
 
@@ -112,6 +112,18 @@ def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:
         _ejecucion_para_costear(grupo) if grupo.formato_id is not None else (None, [])
     )
     advertencias.extend(advertencias_ejecucion)
+
+    snapshot = (ejecucion.parametros or {}).get("formato") if ejecucion else None
+    if snapshot and formato and (
+        snapshot.get("id") != formato.id
+        or Decimal(str(snapshot["ancho_mm"])) != formato.ancho_mm
+        or Decimal(str(snapshot["alto_mm"])) != formato.alto_mm
+    ):
+        advertencias.append(
+            f"Grupo «{grupo.nombre}»: el material o formato cambió después del anidado. "
+            "Calculá un nuevo anidado antes de presupuestar."
+        )
+        ejecucion = None
 
     if grupo.formato_id is not None and ejecucion is None:
         advertencias.append(f"Grupo «{grupo.nombre}»: todavía no tiene un anidado terminado.")

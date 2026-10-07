@@ -2,7 +2,7 @@
 definitiva y ver el costeo resultante — paso 4 de
 `docs/historico/PLAN-SLICE-VERTICAL.md`.
 
-Motor soportado hoy: solo `rectpack` (`CART-202`/`CART-203`) —
+Motores: `rectpack` y `sparrow` experimental. Rectpack (`CART-202`/`CART-203`) —
 determinista, corre en milisegundos y solo necesita el bounding box de
 cada pieza. Deepnest (irregular, necesita Node y el contorno real de
 `Pieza.contorno_mm`) no está conectado todavía: `ColaDeTrabajos` ya no
@@ -31,6 +31,7 @@ from ..services.nesting.anidado_huecos import anidar_en_huecos
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.comparador import OpcionFormato, comparar_formatos, formato_recomendado
 from ..services.nesting.engine import MotorNestingRectangular
+from ..services.nesting.sparrow import anidar_sparrow, preparar_entrada, OpcionesSparrow, ErrorGeometriaSparrow
 from ..services.nesting.models import (
     ParametrosCorte,
     Plancha,
@@ -226,6 +227,12 @@ def _con_anidado_en_huecos(
     )
 
 
+def _esta_cancelada(ejecucion_id: int) -> bool:
+    with Sesion() as s:
+        e = s.get(EjecucionNesting, ejecucion_id)
+        return e is None or e.estado == EstadoEjecucion.CANCELADA.value
+
+
 def _ejecutar_anidado(ejecucion_id: int) -> None:
     """La tarea que corre en la cola (un hilo, hoy). Necesita su PROPIA
     sesión: la del request que encoló ya se cerró para cuando esto
@@ -242,14 +249,36 @@ def _ejecutar_anidado(ejecucion_id: int) -> None:
         geometrias: dict[str, GeometriaPieza] = {}
         try:
             plancha, params, piezas = _datos_para_anidar(sesion, ejecucion.grupo)
+            if (ejecucion.parametros or {}).get("formato"):
+                snapshot = ejecucion.parametros
+                plancha = Plancha(Decimal(snapshot["formato"]["ancho_mm"]), Decimal(snapshot["formato"]["alto_mm"]))
+                params = ParametrosCorte(Decimal(snapshot["kerf_mm"]), Decimal(snapshot["margen_borde_mm"]), Decimal(snapshot["separacion_piezas_mm"]), RotacionPermitida(snapshot["rotaciones_permitidas"]))
             # Se arman una sola vez: las usan tanto la segunda pasada en
             # huecos como la medición de aprovechamiento por área real.
             geometrias = _geometrias_del_grupo(ejecucion.grupo)
-            resultado = MotorNestingRectangular(plancha, params).anidar(
-                piezas, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
-            )
+            if ejecucion.motor == "sparrow":
+                opciones = OpcionesSparrow(**{k: v for k, v in (ejecucion.opciones or {}).items() if k != "usar_anidado_en_huecos"})
+                resultado = anidar_sparrow(piezas, geometrias, plancha, params, opciones,
+                    cancelada=lambda: _esta_cancelada(ejecucion_id))
+            else:
+                resultado = MotorNestingRectangular(plancha, params).anidar(
+                    piezas, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
+                )
             if (ejecucion.opciones or {}).get("usar_anidado_en_huecos"):
                 resultado = _con_anidado_en_huecos(geometrias, resultado, plancha, params)
+                if ejecucion.motor == "sparrow":
+                    from ..services.nesting.validacion_manual import validar_posicion_manual, posicion_manual_desde_pieza
+                    posiciones = [(posicion_manual_desde_pieza(p), geometrias[p.pieza_id.split("#")[0]]) for p in resultado.posiciones]
+                    for posicion, geometria in posiciones:
+                        from shapely.geometry import box
+                        from ..services.nesting.validacion_manual import poligono_colocado
+                        borde = float(params.margen_borde_mm + params.kerf_mm / 2)
+                        util = box(borde, borde, float(plancha.ancho_mm)-borde, float(plancha.alto_mm)-borde)
+                        if poligono_colocado(posicion, geometria).difference(util).area > 0.01:
+                            raise ValueError("El ajuste en huecos invade la reserva de borde/kerf.")
+                        validacion = validar_posicion_manual(posicion, geometria, posiciones, plancha, params)
+                        if not validacion.valida:
+                            raise ValueError(validacion.motivo)
         except Exception as error:  # noqa: BLE001 - cualquier falla del motor se reporta, no se pierde
             sesion.refresh(ejecucion)
             if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
@@ -278,8 +307,8 @@ def _ejecutar_anidado(ejecucion_id: int) -> None:
                     pieza_id=int(pieza_id_str),
                     instancia=int(instancia_str),
                     plancha_indice=posicion.plancha_indice,
-                    centro_x_mm=posicion.x_mm + posicion.ancho_colocado_mm / 2,
-                    centro_y_mm=posicion.y_mm + posicion.alto_colocado_mm / 2,
+                    centro_x_mm=posicion.centro_libre_x_mm if posicion.centro_libre_x_mm is not None else posicion.x_mm + posicion.ancho_colocado_mm / 2,
+                    centro_y_mm=posicion.centro_libre_y_mm if posicion.centro_libre_y_mm is not None else posicion.y_mm + posicion.alto_colocado_mm / 2,
                     angulo_grados=angulo,
                 )
             )
@@ -288,7 +317,8 @@ def _ejecutar_anidado(ejecucion_id: int) -> None:
         ejecucion.aprovechamiento_pct = aprovechamiento.porcentaje_aprovechamiento
         ejecucion.milisegundos = milisegundos
         ejecucion.mensajes = resultado.advertencias
-        ejecucion.parametros = _parametros_snapshot(params)
+        if not (ejecucion.parametros or {}).get("formato"):
+            ejecucion.parametros = _parametros_snapshot(params)
         ejecucion.estado = EstadoEjecucion.LISTA.value
         sesion.commit()
 
@@ -307,19 +337,28 @@ def anidar(
     ejecución que nace condenada a terminar en `error`."""
     grupo = _grupo_o_404(sesion, grupo_id)
     try:
-        _datos_para_anidar(sesion, grupo)
+        plancha, params, piezas = _datos_para_anidar(sesion, grupo)
+        if datos.motor == "sparrow":
+            preparar_entrada(piezas, _geometrias_del_grupo(grupo), plancha, params, OpcionesSparrow())
     except ValueError as error:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
 
+    formato = sesion.get(Formato, grupo.formato_id)
+    snapshot = {**_parametros_snapshot(params), "formato": {
+        "id": formato.id, "ancho_mm": str(formato.ancho_mm), "alto_mm": str(formato.alto_mm),
+        "material_nombre": formato.material.nombre, "espesor": formato.material.espesor,
+    }}
     ejecucion = EjecucionNesting(
         grupo_id=grupo_id,
+        parametros=snapshot,
         motor=datos.motor,
         estado=EstadoEjecucion.ENCOLADA.value,
         # En `opciones` (no como argumento del hilo) para que quede
         # persistido junto al resultado: mirando una ejecución vieja se
         # puede saber con qué opciones se generó ese layout, que es lo
         # mismo que ya hace `parametros` con los PAR-01..04.
-        opciones={"usar_anidado_en_huecos": datos.usar_anidado_en_huecos},
+        opciones=datos.model_dump(exclude={"motor"}) if datos.motor == "sparrow" else {"usar_anidado_en_huecos": datos.usar_anidado_en_huecos},
+        semilla=str(datos.semilla) if datos.motor == "sparrow" else None,
     )
     sesion.add(ejecucion)
     sesion.commit()
@@ -366,8 +405,8 @@ def cancelar_ejecucion(
     cuando exista un motor lento (Deepnest) corriendo atrás. Marca
     `cancelada`; si la tarea en la cola ya estaba corriendo, es ella
     quien nota el cambio de estado y descarta su resultado (ver
-    `_ejecutar_anidado`) — cancelar acá nunca mata un proceso, todavía
-    no hay ninguno que matar con `rectpack`."""
+    `_ejecutar_anidado`) — para Sparrow el supervisor detecta el estado y termina el worker;
+    rectpack conserva la cancelación best-effort."""
     ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
     if ejecucion.estado not in (EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value):
         raise HTTPException(
@@ -423,6 +462,8 @@ def comparar_formatos_de_grupo(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"El grupo «{grupo.nombre}» no tiene piezas para comparar.")
     if not datos.formato_ids:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Hace falta indicar al menos un formato para comparar.")
+    if datos.usar_anidado_en_huecos:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "La comparación todavía no admite la pasada en huecos.")
     piezas_dominio = [
         PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad) for p in piezas
     ]
@@ -473,15 +514,38 @@ def comparar_formatos_de_grupo(
         formatos.append(formato)
 
     try:
-        resultados = comparar_formatos(
-            piezas_dominio, opciones, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
-        )
+        if datos.motor == "sparrow":
+            from ..services.nesting.comparador import ResultadoComparacionFormato
+            geometrias = _geometrias_del_grupo(grupo)
+            opciones_sparrow = OpcionesSparrow(**datos.model_dump(exclude={"motor", "formato_ids", "usar_anidado_en_huecos", "criterio"}))
+            # Validar todos antes de iniciar búsquedas costosas.
+            for opcion in opciones:
+                preparar_entrada(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
+            resultados = []
+            for opcion in opciones:
+                resultado = anidar_sparrow(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
+                resultados.append(ResultadoComparacionFormato(
+                    opcion, resultado, calcular_aprovechamiento(resultado, opcion.plancha, geometrias),
+                    resultado.planchas_usadas * opcion.precio_por_plancha,
+                ))
+        else:
+            resultados = comparar_formatos(
+                piezas_dominio, opciones, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
+            )
+    except ErrorGeometriaSparrow as error:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, {
+            "mensaje": str(error),
+            "piezas_invalidas": [int(i) for i in error.piezas_invalidas],
+        }) from error
     except ValueError as error:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
-    recomendado = formato_recomendado(resultados)
+    recomendado = formato_recomendado(resultados, datos.criterio)
 
     return [
         OpcionFormatoLeer(
+            motor=datos.motor,
+            advertencias=resultado.resultado_anidado.advertencias,
+            area_total_m2=resultado.reporte_aprovechamiento.area_total_planchas_mm2 / Decimal(1000000),
             formato_id=formato.id,
             formato_descripcion=f"{formato.ancho_mm}×{formato.alto_mm} mm",
             material_nombre=formato.material.nombre,

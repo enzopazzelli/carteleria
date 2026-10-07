@@ -8,6 +8,7 @@ import {
   obtenerEjecucion,
   type Colocacion,
   type Ejecucion,
+  type OpcionesAnidado,
 } from "../api/nesting";
 
 const ESTADOS_TERMINALES = new Set(["lista", "error", "cancelada"]);
@@ -28,13 +29,15 @@ export function useEjecucionesDeGrupo(grupoId: number) {
   return useQuery({
     queryKey: ["ejecuciones", grupoId],
     queryFn: () => listarEjecucionesDeGrupo(grupoId),
+    enabled: grupoId > 0,
+    refetchInterval: (query) => (query.state.data as Ejecucion[] | undefined)?.some((e) => !ESTADOS_TERMINALES.has(e.estado)) ? 1000 : false,
   });
 }
 
 export function useAnidar(grupoId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (usarAnidadoEnHuecos: boolean = false) => anidar(grupoId, usarAnidadoEnHuecos),
+    mutationFn: (opciones: OpcionesAnidado = {}) => anidar(grupoId, opciones),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ejecuciones", grupoId] }),
   });
 }

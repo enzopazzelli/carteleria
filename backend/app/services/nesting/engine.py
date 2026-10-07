@@ -52,9 +52,10 @@ class MotorNestingRectangular:
     sistema (CART-202): si el número cambia solo, nadie confía en él.
     """
 
-    def __init__(self, plancha: Plancha, params: ParametrosCorte):
+    def __init__(self, plancha: Plancha, params: ParametrosCorte, *, algoritmo=MaxRectsBssf):
         self.plancha = plancha
         self.params = params
+        self.algoritmo = algoritmo
 
     def anidar(self, piezas: list[Pieza], tope_planchas_advertencia: int) -> ResultadoAnidado:
         piezas_expandidas = self._expandir_piezas(piezas)
@@ -97,7 +98,7 @@ class MotorNestingRectangular:
 
         packer = newPacker(
             mode=PackingMode.Offline,
-            pack_algo=MaxRectsBssf,
+            pack_algo=self.algoritmo,
             rotation=permite_rotacion_90,
         )
 

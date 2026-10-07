@@ -50,7 +50,7 @@ export function useActualizarParametrosGrupo(trabajoId: number) {
 
 export function useCompararFormatos() {
   return useMutation({
-    mutationFn: ({ grupoId, formatoIds }: { grupoId: number; formatoIds: number[] }) =>
-      compararFormatos(grupoId, formatoIds),
+    mutationFn: ({ grupoId, formatoIds, opciones }: { grupoId: number; formatoIds: number[]; opciones?: import("../api/nesting").OpcionesAnidado }) =>
+      compararFormatos(grupoId, formatoIds, opciones),
   });
 }

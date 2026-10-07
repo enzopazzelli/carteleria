@@ -2,6 +2,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { apiGet, ApiError } from "./client";
 
 describe("apiGet", () => {
+  it("conserva el diagnóstico y los IDs de piezas inválidas", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false, status: 400,
+      json: async () => ({ detail: { mensaje: "Revisar geometría", piezas_invalidas: [23, 138] } }),
+    }));
+    await expect(apiGet("/grupos/1")).rejects.toMatchObject({ message: "Revisar geometría", piezasInvalidas: [23, 138] });
+  });
   afterEach(() => {
     vi.restoreAllMocks();
   });

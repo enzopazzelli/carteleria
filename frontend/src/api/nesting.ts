@@ -4,6 +4,7 @@ export interface Ejecucion {
   id: number;
   grupo_id: number;
   motor: string;
+  semilla: string | null;
   estado: "encolada" | "corriendo" | "lista" | "cancelada" | "error";
   planchas_usadas: number | null;
   aprovechamiento_pct: string | null;
@@ -12,12 +13,25 @@ export interface Ejecucion {
   error: string | null;
   es_definitiva: boolean;
   creado_en: string;
+  parametros?: { formato?: { id?: number; ancho_mm: string; alto_mm: string; material_nombre: string; espesor: string | null } } | null;
 }
 
-export function anidar(grupoId: number, usarAnidadoEnHuecos = false): Promise<Ejecucion> {
+export interface OpcionesAnidado {
+  intentos?: number;
+  criterio?: "costo" | "material";
+  usar_anidado_en_huecos?: boolean;
+  motor?: "rectpack" | "sparrow";
+  semilla?: number;
+  segundos_por_busqueda?: number;
+  tiempo_maximo_s?: number;
+  workers?: number;
+  simplificacion_mm?: number;
+}
+
+export function anidar(grupoId: number, opciones: OpcionesAnidado = {}): Promise<Ejecucion> {
   return apiPost<Ejecucion>(`/grupos/${grupoId}/anidar`, {
     motor: "rectpack",
-    usar_anidado_en_huecos: usarAnidadoEnHuecos,
+    ...opciones,
   });
 }
 
@@ -66,4 +80,8 @@ export function urlPlano(ejecucionId: number, plancha: number): string {
 
 export function urlDxf(ejecucionId: number, plancha: number): string {
   return `http://localhost:8000/ejecuciones/${ejecucionId}/dxf?plancha=${plancha}`;
+}
+
+export function cancelarEjecucion(id: number): Promise<Ejecucion> {
+  return apiPost<Ejecucion>(`/ejecuciones/${id}/cancelar`);
 }

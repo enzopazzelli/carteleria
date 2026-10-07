@@ -67,6 +67,9 @@ def _parametros_desde_snapshot(snapshot: dict | None) -> ParametrosCorte:
 
 
 def _plancha_de(sesion: Session, ejecucion) -> Plancha:
+    snapshot = (ejecucion.parametros or {}).get("formato")
+    if snapshot:
+        return Plancha(Decimal(snapshot["ancho_mm"]), Decimal(snapshot["alto_mm"]))
     formato = sesion.get(Formato, ejecucion.grupo.formato_id)
     return Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm)
 
@@ -164,7 +167,7 @@ def ajustar_colocacion(
 
 @router.get("/ejecuciones/{ejecucion_id}/plano")
 def obtener_plano(
-    ejecucion_id: int, plancha: int = 0, sesion: Session = Depends(obtener_sesion)
+    ejecucion_id: int, plancha: int = 0, etiquetas: bool = True, sesion: Session = Depends(obtener_sesion)
 ) -> Response:
     """El plano imprimible de una plancha, como SVG.
 
@@ -179,7 +182,7 @@ def obtener_plano(
     _validar_lista_y_plancha(ejecucion, plancha)
     resultado, geometrias = _resultado_y_geometrias(ejecucion)
     plancha_dominio = _plancha_de(sesion, ejecucion)
-    svg = render_svg_plancha(resultado, plancha_dominio, plancha, geometrias=geometrias)
+    svg = render_svg_plancha(resultado, plancha_dominio, plancha, geometrias=geometrias, mostrar_etiquetas=etiquetas)
     return Response(content=svg, media_type="image/svg+xml")
 
 

@@ -451,6 +451,56 @@ def test_listar_ejecuciones_de_grupo_inexistente_da_404(cliente):
 # --- Comparar formatos (CART-205) -----------------------------------------
 
 
+def test_comparar_formatos_sparrow_real_sin_modificar_grupo(cliente, tmp_path, monkeypatch):
+    from app.api import rutas_nesting
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    material, formato = _material_con_formato_y_parametros(cliente)
+    segundo = cliente.post(
+        f"/materiales/{material['id']}/formatos",
+        json={"ancho_mm": "500", "alto_mm": "500", "unidad_venta": "M2", "costo_unidad_venta": "10"},
+    ).json()
+    llamadas = []
+    original = rutas_nesting.anidar_sparrow
+
+    def registrar(piezas, geometrias, plancha, params, opciones):
+        llamadas.append((geometrias, opciones))
+        return original(piezas, geometrias, plancha, params, opciones)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
+        "formato_ids": [formato["id"], segundo["id"]], "motor": "sparrow",
+        "semilla": 7, "segundos_por_busqueda": 1, "tiempo_maximo_s": 30, "simplificacion_mm": 0,
+    })
+    assert respuesta.status_code == 200, respuesta.text
+    assert len(llamadas) == 2
+    assert all(g and o.semilla == 7 and o.segundos_por_busqueda == 1 and o.simplificacion_mm == 0 for g, o in llamadas)
+    opciones = respuesta.json()
+    assert all(o["motor"] == "sparrow" and o["planchas_usadas"] == 1 for o in opciones)
+    assert sum(o["recomendado"] for o in opciones) == 1
+    assert Decimal(opciones[1]["aprovechamiento_pct"]) == Decimal("4")
+    assert cliente.get(f"/trabajos/{grupo['trabajo_id']}/grupos").json()[0]["formato_id"] is None
+    assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json() == []
+
+
+def test_comparar_sparrow_valida_todos_los_formatos_antes_de_buscar(cliente, tmp_path, monkeypatch):
+    from app.api import rutas_nesting
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    material, formato = _material_con_formato_y_parametros(cliente)
+    chico = cliente.post(f"/materiales/{material['id']}/formatos", json={
+        "ancho_mm": "50", "alto_mm": "50", "unidad_venta": "M2", "costo_unidad_venta": "10",
+    }).json()
+
+    def no_buscar(*args, **kwargs):
+        raise AssertionError("No debe iniciar búsquedas si un formato no admite las piezas")
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", no_buscar)
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
+        "formato_ids": [formato["id"], chico["id"]], "motor": "sparrow",
+    })
+    assert respuesta.status_code == 400
+    assert "no entran" in respuesta.json()["detail"]
+
+
 def _grupo_con_piezas_sin_formato(cliente, tmp_path, *, ancho=100, alto=100) -> dict:
     """Un grupo con piezas asignadas pero SIN formato — el estado en el
     que corresponde comparar, antes de decidir un material."""
@@ -564,3 +614,24 @@ def test_comparar_formatos_sin_precio_no_confunde_la_unidad_de_venta(cliente, tm
     detalle = respuesta.json()["detail"]
     assert "precio" in detalle
     assert "se vende por" not in detalle
+
+
+@pytest.mark.parametrize("huecos", [False, True])
+def test_sparrow_por_api_con_opciones_persistidas(cliente, tmp_path, huecos):
+    trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    response=cliente.post(f"/grupos/{grupo['id']}/anidar", json={"motor":"sparrow","usar_anidado_en_huecos":huecos,"semilla":7,"segundos_por_busqueda":1,"tiempo_maximo_s":20,"simplificacion_mm":0})
+    assert response.status_code==202
+    result=_esperar_estado(cliente,response.json()['id'],timeout=20)
+    assert result['estado']=='lista', result.get('error')
+    assert result['motor']=='sparrow'
+    assert result['semilla']=='7'
+    assert result['opciones']['segundos_por_busqueda']==1
+    assert len(cliente.get(f"/ejecuciones/{result['id']}/colocaciones").json())==1
+
+
+def test_sparrow_preflight_no_encola_piezas_que_no_entran(cliente,tmp_path):
+    _,grupo=_trabajo_con_grupo_listo(cliente,tmp_path,ancho=1000,alto=1000)
+    r=cliente.post(f"/grupos/{grupo['id']}/anidar",json={"motor":"sparrow"})
+    assert r.status_code==400
+    assert 'no entran' in r.json()['detail']
+    assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json()==[]
