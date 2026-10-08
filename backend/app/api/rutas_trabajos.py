@@ -16,8 +16,22 @@ from sqlalchemy.orm import Session
 
 from .. import config
 from ..modelos.trabajo import GrupoDeCorte, Pieza, Trabajo
+from ..services.ingesta.analisis import (
+    AREA_MINIMA_GEMELA_MM2,
+    COLORES_DE_ROTULO,
+    DISTANCIA_MAXIMA_ENTRE_PIEZAS_DE_UN_DISENIO_MM,
+    FRACCION_MINIMA_EN_HOJA,
+    TOLERANCIA_MEDIDA_DE_HOJA_MM,
+    TOLERANCIA_RELATIVA_GEMELA,
+    DisenioDetectado,
+    Rol,
+    agrupar_en_disenios,
+    detectar_hojas,
+    sugerir_roles,
+)
 from ..services.ingesta.dxf import ArchivoDXFInvalido, parsear_dxf
 from ..services.ingesta.models import PiezaImportada
+from ..services.nesting.models import Plancha
 from .dependencias import obtener_sesion
 from .esquemas_trabajos import (
     GrupoDeCorteActualizar,
@@ -29,7 +43,7 @@ from .esquemas_trabajos import (
     TrabajoCrear,
     TrabajoLeer,
 )
-from .rutas_catalogo import _formato_o_404
+from .rutas_catalogo import _formato_o_404, _formatos_del_catalogo
 
 router = APIRouter(tags=["trabajos"])
 
@@ -108,6 +122,36 @@ def _pieza_orm_desde_importada(trabajo_id: int, pieza: PiezaImportada) -> Pieza:
     )
 
 
+def _hojas_y_roles(disenio: DisenioDetectado, formatos: list[Plancha]):
+    hojas = detectar_hojas(disenio, formatos, TOLERANCIA_MEDIDA_DE_HOJA_MM)
+    return hojas, sugerir_roles(
+        disenio,
+        hojas,
+        formatos,
+        TOLERANCIA_RELATIVA_GEMELA,
+        AREA_MINIMA_GEMELA_MM2,
+        FRACCION_MINIMA_EN_HOJA,
+        COLORES_DE_ROTULO,
+    )
+
+
+def _recortes_de_huecos(piezas: list[PiezaImportada], formatos: list[Plancha]) -> set[str]:
+    """Las formas que son el recorte del agujero de otra pieza que se
+    corta (el centro de una «O»): el lector las devuelve como agujero de
+    esa pieza y además como pieza propia (`_clasificar_piezas_y_agujeros`
+    en `dxf.py`), y anidarlas contaría dos veces su área.
+
+    Lo decide el análisis de `CART-511` (`Rol.CONTRAPIEZA`). De sus otros
+    roles no se usa ninguno acá: una forma que no entra en ninguna chapa
+    o que parece un rótulo se sigue importando como hasta ahora, y qué
+    hacer con ella lo resuelve quien revisa las piezas."""
+    recortes: set[str] = set()
+    for disenio in agrupar_en_disenios(piezas, DISTANCIA_MAXIMA_ENTRE_PIEZAS_DE_UN_DISENIO_MM):
+        _, roles = _hojas_y_roles(disenio, formatos)
+        recortes.update(rol.pieza_id for rol in roles if rol.rol is Rol.CONTRAPIEZA)
+    return recortes
+
+
 @router.post("/trabajos/{trabajo_id}/dxf", response_model=ImportacionDXFLeer)
 async def subir_dxf(
     trabajo_id: int,
@@ -121,6 +165,10 @@ async def subir_dxf(
 
     `escala_a_mm` es obligatorio, sin default — mismo criterio que
     `parsear_dxf`: nunca se asume la escala del header del archivo.
+
+    Se guardan todas las formas que devuelve el parser. Las que son el
+    recorte del hueco de otra pieza entran descartadas, con un aviso
+    (`_recortes_de_huecos`).
 
     Volver a subir un archivo (para corregir la escala o el propio DXF)
     reemplaza las piezas anteriores del trabajo. Re-parsear el mismo
@@ -148,20 +196,31 @@ async def subir_dxf(
         sesion.delete(pieza_existente)
     sesion.flush()
 
+    recortes = _recortes_de_huecos(resultado.piezas, _formatos_del_catalogo(sesion))
     for pieza_importada in resultado.piezas:
-        sesion.add(_pieza_orm_desde_importada(trabajo_id, pieza_importada))
+        pieza = _pieza_orm_desde_importada(trabajo_id, pieza_importada)
+        # Descartada y no omitida: queda a la vista, y si en este dibujo
+        # esa forma se corta aparte se restaura con un clic.
+        pieza.descartada = pieza_importada.id in recortes
+        sesion.add(pieza)
 
     trabajo.archivo_origen = archivo.filename
     trabajo.archivo_guardado = str(ruta_guardada)
     trabajo.escala_a_mm = escala_a_mm
     sesion.commit()
 
+    advertencias = list(resultado.advertencias)
+    if recortes:
+        advertencias.append(
+            f"{len(recortes)} forma(s) son el recorte del hueco de otra pieza (como el centro de una «O») "
+            "y entraron descartadas: no se cortan ni se anidan. Si alguna se corta aparte, tocá «Restaurar»."
+        )
     return ImportacionDXFLeer(
         trabajo=TrabajoLeer.model_validate(trabajo),
         piezas_creadas=len(resultado.piezas),
         contornos_no_cerrados=len(resultado.contornos_no_cerrados),
         lineas_duplicadas_descartadas=resultado.lineas_duplicadas_descartadas,
-        advertencias=resultado.advertencias,
+        advertencias=advertencias,
     )
 
 

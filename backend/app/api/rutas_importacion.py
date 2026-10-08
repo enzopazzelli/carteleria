@@ -17,25 +17,17 @@ from decimal import Decimal
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import config
-from ..modelos.catalogo import Formato, Material
 from ..modelos.trabajo import Trabajo
 from ..services.ingesta.analisis import (
-    AREA_MINIMA_GEMELA_MM2,
-    COLORES_DE_ROTULO,
     DISTANCIA_MAXIMA_ENTRE_PIEZAS_DE_UN_DISENIO_MM,
-    FRACCION_MINIMA_EN_HOJA,
     TOLERANCIA_MEDIDA_DE_HOJA_MM,
-    TOLERANCIA_RELATIVA_GEMELA,
     DisenioDetectado,
     Rol,
     agrupar_en_disenios,
-    detectar_hojas,
     sugerir_factor_de_escala,
-    sugerir_roles,
 )
 from ..services.ingesta.dxf import ArchivoDXFInvalido, parsear_dxf
 from ..services.nesting.models import Plancha
@@ -49,7 +41,8 @@ from .esquemas_importacion import (
     TrabajoImportado,
 )
 from .esquemas_trabajos import TrabajoLeer
-from .rutas_trabajos import _pieza_orm_desde_importada
+from .rutas_catalogo import _formatos_del_catalogo
+from .rutas_trabajos import _hojas_y_roles, _pieza_orm_desde_importada
 
 router = APIRouter(tags=["importacion"])
 
@@ -62,18 +55,6 @@ def _directorio_importaciones() -> Path:
     return directorio
 
 
-def _formatos_del_catalogo(sesion: Session) -> list[Plancha]:
-    """Las medidas contra las que se reconocen hojas: formatos
-    disponibles de materiales que se anidan por área (un tubo o una
-    tira de LED no son una chapa)."""
-    filas = sesion.execute(
-        select(Formato.ancho_mm, Formato.alto_mm)
-        .join(Material)
-        .where(Formato.disponible.is_(True), Material.nesteable_por_area.is_(True))
-    ).all()
-    return [Plancha(ancho_mm=ancho, alto_mm=alto) for ancho, alto in filas]
-
-
 def _legible(valor: Decimal) -> Decimal:
     """Sin ceros de más y sin notación científica: `normalize()` solo
     convierte 100 en `1E+2`, que es exacto pero nadie lo lee así."""
@@ -84,19 +65,6 @@ def _caja(disenio: DisenioDetectado) -> tuple[Decimal, Decimal, Decimal, Decimal
     xs = [x for p in disenio.piezas for x, _ in p.contorno_mm]
     ys = [y for p in disenio.piezas for _, y in p.contorno_mm]
     return min(xs), min(ys), max(xs), max(ys)
-
-
-def _hojas_y_roles(disenio: DisenioDetectado, formatos: list[Plancha]):
-    hojas = detectar_hojas(disenio, formatos, TOLERANCIA_MEDIDA_DE_HOJA_MM)
-    return hojas, sugerir_roles(
-        disenio,
-        hojas,
-        formatos,
-        TOLERANCIA_RELATIVA_GEMELA,
-        AREA_MINIMA_GEMELA_MM2,
-        FRACCION_MINIMA_EN_HOJA,
-        COLORES_DE_ROTULO,
-    )
 
 
 def _disenio_analizado(indice: int, disenio: DisenioDetectado, formatos: list[Plancha]) -> DisenioAnalizado:
