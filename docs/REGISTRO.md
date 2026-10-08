@@ -55,6 +55,7 @@ Cosas que damos por ciertas sin haberlas confirmado. Un supuesto que se cae pued
 | **SUP-14** | El fotomontaje es una herramienta de venta, no un requisito formal del presupuesto | 🟡 | `P-18` — parcial: reunión de arranque 2026-09-01, confirmado como herramienta de venta pero su peso varía por tipo de cliente (nuevo vs. recurrente) | F6 sube de prioridad y no puede ser opcional en el PDF |
 | **SUP-15** | El equipo trabaja part-time, ~15-20 hs/semana cada uno | 🟡 | Enzo y Vale | Todo el cronograma de `EPICA.md §8` se recalcula |
 | **SUP-16** | Una sola empresa, una sola instancia: no hace falta multi-tenancy | 🟢 | Alcance definido en `EPICA.md §6` | El modelo de datos necesitaría `empresa_id` en todas las tablas — caro de agregar después |
+| **SUP-17** | Lo que hay que seccionar el diseñador lo exporta **soldado** desde Corel: una sola forma con sus huecos, no la vista armada en capas encimadas | 🔴 | Diseño: pedirle el aro de `Complejo.dxf` exportado así (`plan/A5-seccionado/diseno.md §2`) | El sistema tendría que reconstruir el metal desde las capas, y puede ser imposible: en `Complejo.dxf` ni la unión ni la regla par-impar lo reconstruyen, y el DXF probablemente no guarda el grosor de los trazos |
 
 > **SUP-04 y SUP-08 son los dos que más pueden doler.** El primero reordena el roadmap; el segundo invalida los cálculos del motor. Los dos se responden en el encuentro 2 del relevamiento ([§6](#6-guion-de-relevamiento)).
 
@@ -271,8 +272,8 @@ Surgen de la muestra real de Megacarteles (ver [`ANALISIS-MUESTRA-MEGACARTELES.m
 | ID | Pregunta | Alimenta |
 |---|---|---|
 | **P-20** | Cuando llega un DXF, ¿el diseñador ya armó las hojas a mano (trabajo terminado) o solo entrega el diseño ensamblado y las hojas las tiene que producir el sistema? | Si las hojas dibujadas son una entrada o el resultado esperado — sub-proyectos 1 y 3 |
-| **P-21** | ¿Cómo decide el diseñador por dónde partir lo que no entra en una chapa (líneas ya dibujadas, simetría, evitar cortar letras, largo máximo de corte)? | Criterio del seccionado — sub-proyecto 2 |
-| **P-22** | Las secciones de una pieza partida, ¿llevan uniones (solapes, pestañas, tornillos, soldadura) que cambien la geometría del corte? | Geometría del seccionado — sub-proyecto 2 |
+| **P-21** | ¿Cómo decide el diseñador por dónde partir lo que no entra en una chapa (líneas ya dibujadas, simetría, evitar cortar letras, largo máximo de corte)? *Medido y confirmado por Enzo (2026-10-07): corta a lo ancho de las bandas angostas (soldaduras cortas), cada tramo entra en la chapa y repite la simetría del diseño. En Belgrano: 8 tramos, 4 de 2292 × 1220 y 4 de 1941 × 1085 (`plan/A5-seccionado/diseno.md §2`). A confirmar con diseño.* | Criterio del seccionado — `plan/A5-seccionado/` |
+| **P-22** | Las secciones de una pieza partida, ¿llevan uniones (solapes, pestañas, tornillos, soldadura) que cambien la geometría del corte? *Respuesta de Enzo (2026-10-07): se sueldan a tope, sin solape. Partir no agrega material. A confirmar con taller.* | Geometría del seccionado — `plan/A5-seccionado/` |
 | **P-23** | Las tiras "chapa cal. 22 0,30×1,20" que se dibujan como peines de rectángulos finos, ¿qué son (fajas laterales, refuerzos, otra cosa) y cómo se costean? *Medido (2026-09-25): cada tira es una pieza suelta de 20 × 1.200–1.214 mm, no una hoja.* | Rol de esas formas — sub-proyecto 1 |
 | **P-24** | Las versiones "Pinturas" y los logos a color, ¿se pintan o también se cortan? | Rol `referencia` — sub-proyecto 1 |
 | **P-25** | Los distintos diseños de un mismo DXF (Belgrano, Awaduct, Vulcano...), ¿son trabajos de clientes distintos? | Si un Diseño equivale a un Trabajo — sub-proyecto 1 |
@@ -324,6 +325,7 @@ Desde el 2026-10-05, «Se cierra en» nombra el paso de [`plan/PLAN-MAESTRO.md`]
 | **D-16** | ¿Con qué herramienta se genera el PDF del presupuesto? | Que se instale en Windows (donde se desarrolla) y en el servidor; formato actual de `B-13` | 1.3 | Sin elegir. `ADR-05` nombra WeasyPrint |
 | **D-17** | Cuando el cliente acepta, ¿se crea sola la nota de pedido en AppSheet? | Conversación con el dueño; cuál de `NOTAS_PEDIDO` y `NOTAS_PEDIDO_V2` es la fuente de verdad (`cliente/DASHBOARD-VISTAS.md §1.2`) | 2.4 | Se carga a mano, como hoy |
 | **D-18** | ¿El override manual (`ADR-07`) puede completar una línea de material que no tiene anidado? Si puede, se emiten presupuestos con chapa antes de que llegue el motor | Conversación con el dueño | 1.2 | `ADR-07` sigue vigente: el override alcanza a cualquier línea |
+| **D-19** | ¿Cómo propone el sistema los cortes del seccionado? | `P-21`, `P-22`, `SUP-17` | A5 | **Cerrada (Enzo, 2026-10-07):** grilla del tamaño de la chapa, que se corre y se gira; primero menos tramos, después menos soldadura. El diseñador la ajusta antes de aplicar. Se descartaron partir por lo más angosto y la búsqueda global de cortes (`plan/A5-seccionado/diseno.md`) |
 
 ---
 
@@ -347,11 +349,11 @@ Resumen para revisar de un vistazo en cada daily.
 
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
-| Supuestos (`SUP`) | 16 | 10 | 4 | 2 |
+| Supuestos (`SUP`) | 17 | 11 | 4 | 2 |
 | Parámetros (`PAR`) | 49 | 12 | 25 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
-| Preguntas (`P`) | 29 | 27 | 2 | 0 |
-| Decisiones (`D`) | 18 | 18 | 0 | 0 |
+| Preguntas (`P`) | 29 | 25 | 4 | 0 |
+| Decisiones (`D`) | 19 | 18 | 0 | 1 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).
 
