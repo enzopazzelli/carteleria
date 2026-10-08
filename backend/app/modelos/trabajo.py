@@ -142,6 +142,18 @@ class Pieza(Base):
     #: Si sus tramos rectos son rectas reales. Habilita el corte de
     #: líneas compartidas — el motor ignora toda arista sin esta marca.
     contorno_recto: Mapped[bool] = mapped_column(Boolean, default=False)
+    #: En un tramo: la pieza de la que salió al seccionarla (A5,
+    #: `docs/plan/A5-seccionado/`). `SET NULL` y no `CASCADE`: reimportar
+    #: un DXF borra todas las piezas con el ORM, y una cascada en la base
+    #: borraría los tramos antes que él, que después fallaría al no
+    #: encontrarlos.
+    seccionada_de_id: Mapped[int | None] = mapped_column(
+        ForeignKey("piezas.id", ondelete="SET NULL", name="fk_piezas_seccionada_de_id"), default=None
+    )
+    #: En la pieza original: cómo se seccionó (formato, grilla, cortes y
+    #: soldadura). Con esto la pieza queda `descartada` y la reemplazan
+    #: sus tramos.
+    seccionado: Mapped[dict | None] = mapped_column(JSON, default=None)
 
     trabajo: Mapped[Trabajo] = relationship(back_populates="piezas")
     grupo: Mapped[GrupoDeCorte | None] = relationship(back_populates="piezas")
