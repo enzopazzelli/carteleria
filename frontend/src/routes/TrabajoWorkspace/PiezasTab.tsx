@@ -1,9 +1,14 @@
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { usePiezas, useSubirDxf, useDescartarPieza } from "../../hooks/usePiezas";
+import { usePiezas, useSubirDxf, useDescartarPieza, useDeshacerSeccionado } from "../../hooks/usePiezas";
+import { useGrupos } from "../../hooks/useGrupos";
+import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import PiezaMiniPreview from "../../components/PiezaMiniPreview";
 import Banner from "../../components/Banner";
+import SeccionarPanel from "../../components/Seccionado/SeccionarPanel";
+import { entraEnAlgunFormato } from "../../components/Seccionado/geometria";
 import { ApiError } from "../../api/client";
+import type { Pieza } from "../../api/piezasYgrupos";
 
 export default function PiezasTab() {
   const { trabajoId } = useParams();
@@ -13,6 +18,11 @@ export default function PiezasTab() {
   const { data: piezas, isLoading } = usePiezas(id);
   const subirDxf = useSubirDxf(id);
   const descartarPieza = useDescartarPieza(id);
+  const deshacerSeccionado = useDeshacerSeccionado(id);
+  const { data: grupos } = useGrupos(id);
+  const { formatos } = useTodosLosFormatos();
+  // La pieza cuyo panel de seccionar está abierto.
+  const [seccionando, setSeccionando] = useState<number | null>(null);
   const [escalaAMm, setEscalaAMm] = useState("1");
   const [error, setError] = useState<string | null>(null);
   // Lo que el importador avisó del último archivo: entidades que no son
@@ -70,6 +80,62 @@ export default function PiezasTab() {
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "No se pudo actualizar la pieza.");
     }
+  }
+
+  async function alDeshacer(piezaId: number) {
+    setError(null);
+    try {
+      await deshacerSeccionado.mutateAsync(piezaId);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "No se pudo deshacer el seccionado.");
+    }
+  }
+
+  const visibles = (piezas ?? []).filter((pieza) => revisar.size === 0 || revisar.has(pieza.id));
+  // Cada tramo, debajo de la pieza de la que salió.
+  const ordenadas = [
+    ...visibles
+      .filter((p) => p.seccionada_de_id === null)
+      .flatMap((p) => [p, ...visibles.filter((t) => t.seccionada_de_id === p.id)]),
+    ...visibles.filter((t) => t.seccionada_de_id !== null && !visibles.some((p) => p.id === t.seccionada_de_id)),
+  ];
+
+  function acciones(pieza: Pieza) {
+    if (pieza.seccionado) {
+      return (
+        <>
+          <span className="block">
+            Seccionada en {pieza.seccionado.tramos} tramos · {(pieza.seccionado.soldadura_mm / 1000).toFixed(2)} m de
+            soldadura
+          </span>
+          <button className="underline mr-2" onClick={() => setSeccionando(pieza.id)}>
+            Volver a seccionar
+          </button>
+          <button className="underline" onClick={() => void alDeshacer(pieza.id)}>
+            Deshacer
+          </button>
+        </>
+      );
+    }
+    const noEntra =
+      pieza.seccionada_de_id === null &&
+      !pieza.descartada &&
+      !entraEnAlgunFormato(Number(pieza.ancho_mm), Number(pieza.alto_mm), formatos);
+    return (
+      <>
+        {noEntra && (
+          <>
+            <span className="block text-conflict">No entra en ninguna chapa</span>
+            <button className="underline mr-2" onClick={() => setSeccionando(pieza.id)}>
+              Seccionar
+            </button>
+          </>
+        )}
+        <button className="underline" onClick={() => alDescartarPieza(pieza.id, !pieza.descartada)}>
+          {pieza.descartada ? "Restaurar" : "Descartar"}
+        </button>
+      </>
+    );
   }
 
   return (
@@ -135,24 +201,34 @@ export default function PiezasTab() {
             </tr>
           </thead>
           <tbody>
-            {piezas?.filter((pieza) => revisar.size === 0 || revisar.has(pieza.id)).map((pieza) => (
-              <tr key={pieza.id} className={`border-b border-line ${pieza.descartada ? "opacity-40" : ""}`}>
-                <td className="py-2">
-                  <PiezaMiniPreview contornoMm={pieza.contorno_mm} anchoMm={pieza.ancho_mm} altoMm={pieza.alto_mm} />
-                </td>
-                <td>{pieza.id_origen}{revisar.has(pieza.id) && <span className="block text-conflict">ID {pieza.id}: revisar geometría</span>}</td>
-                <td className="font-mono">{pieza.ancho_mm} mm</td>
-                <td className="font-mono">{pieza.alto_mm} mm</td>
-                <td className="font-mono">{pieza.cantidad}</td>
-                <td>
-                  <button
-                    className="text-xs underline"
-                    onClick={() => alDescartarPieza(pieza.id, !pieza.descartada)}
-                  >
-                    {pieza.descartada ? "Restaurar" : "Descartar"}
-                  </button>
-                </td>
-              </tr>
+            {ordenadas.map((pieza) => (
+              <Fragment key={pieza.id}>
+                <tr className={`border-b border-line ${pieza.descartada ? "opacity-40" : ""}`}>
+                  <td className="py-2">
+                    <PiezaMiniPreview contornoMm={pieza.contorno_mm} anchoMm={pieza.ancho_mm} altoMm={pieza.alto_mm} />
+                  </td>
+                  <td>
+                    {pieza.seccionada_de_id !== null && "↳ "}
+                    {pieza.id_origen}
+                    {revisar.has(pieza.id) && <span className="block text-conflict">ID {pieza.id}: revisar geometría</span>}
+                  </td>
+                  <td className="font-mono">{pieza.ancho_mm} mm</td>
+                  <td className="font-mono">{pieza.alto_mm} mm</td>
+                  <td className="font-mono">{pieza.cantidad}</td>
+                  <td className="text-xs">{acciones(pieza)}</td>
+                </tr>
+                {seccionando === pieza.id && (
+                  <tr>
+                    <td colSpan={6}>
+                      <SeccionarPanel
+                        pieza={pieza}
+                        formatoInicial={pieza.seccionado?.formato_id ?? grupos?.find((g) => g.id === pieza.grupo_id)?.formato_id ?? null}
+                        onCerrar={() => setSeccionando(null)}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
