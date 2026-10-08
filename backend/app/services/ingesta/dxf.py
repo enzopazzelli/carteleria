@@ -165,16 +165,38 @@ def _entidades_geometricas(entidades, ignoradas: Counter, profundidad: int = 0):
             ignoradas[tipo] += 1
 
 
-def _puntos_en_mm(
-    entidad, escala_a_mm: Decimal, distancia_aplanado: float
-) -> list[list[tuple[Decimal, Decimal]]]:
-    """Cada sub-trazado de la entidad, aplanado a puntos y pasado a mm.
+def _aplanada(entidad, distancia_aplanado: float) -> list[list]:
+    """Cada sub-trazado de la entidad, aplanado a puntos, todavía en
+    unidades del dibujo.
 
     `make_path` unifica `LINE`, `ARC`, `CIRCLE`, `ELLIPSE`, `SPLINE`,
     `POLYLINE` (el R12 de los archivos reales de `modelos/`) y
     `LWPOLYLINE`, con sus arcos `bulge`, en una sola representación: no
     hace falta un `if` por tipo de entidad, ni un `bulge` ignorado que
     deje un arco convertido en una recta.
+
+    La excepción son las `SPLINE` con pesos o que no son cúbicas. A esas
+    `make_path` no las convierte: las aproxima con curvas que pasan por
+    puntos de la original, y en las esquinas la aproximación se pasa de
+    largo (un rectángulo de 300 mm salía de 302,7) y llega a cruzarse a
+    sí misma. Se evalúan directo sobre la curva. Las cúbicas sin pesos,
+    que es lo que exporta CorelDRAW, siguen por `make_path`, que las
+    convierte exactas.
+
+    Una spline que no está anclada en las puntas se lee mal por los dos
+    caminos (`ezdxf` la evalúa fuera de su rango). No apareció en ningún
+    archivo real y no está resuelta."""
+    if entidad.dxftype() == "SPLINE":
+        curva = entidad.construction_tool()
+        if curva.is_rational or curva.degree != 3:
+            return [list(curva.flattening(distancia_aplanado))]
+    return [list(trazado.flattening(distancia_aplanado)) for trazado in make_path(entidad).sub_paths()]
+
+
+def _puntos_en_mm(
+    entidad, escala_a_mm: Decimal, distancia_aplanado: float
+) -> list[list[tuple[Decimal, Decimal]]]:
+    """Cada sub-trazado de la entidad, aplanado a puntos y pasado a mm.
 
     Se redondea a `_RESOLUCION_MM`: con el ruido de float, el cierre de
     un contorno agregaba un tramo de 1e-12 mm en cualquier dirección y
@@ -185,9 +207,9 @@ def _puntos_en_mm(
                 (Decimal(str(float(v.x))) * escala_a_mm).quantize(_RESOLUCION_MM),
                 (Decimal(str(float(v.y))) * escala_a_mm).quantize(_RESOLUCION_MM),
             )
-            for v in trazado.flattening(distancia_aplanado)
+            for v in puntos
         ]
-        for trazado in make_path(entidad).sub_paths()
+        for puntos in _aplanada(entidad, distancia_aplanado)
     ]
 
 
