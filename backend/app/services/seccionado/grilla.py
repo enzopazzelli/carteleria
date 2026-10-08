@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 from shapely import affinity
 from shapely.geometry import LineString, MultiLineString, Polygon, box
-from shapely.ops import linemerge
+from shapely.ops import linemerge, unary_union
 
 from ..nesting.models import ParametrosCorte, Plancha
 
@@ -91,9 +91,38 @@ def _cortes_entre(tramos: list[Polygon]) -> list[LineString]:
     return cortes
 
 
+def _cabe(poligono: Polygon, ancho: float, alto: float) -> bool:
+    x0, y0, x1, y1 = poligono.bounds
+    return x1 - x0 <= ancho + _TOLERANCIA_MM and y1 - y0 <= alto + _TOLERANCIA_MM
+
+
+def _primera_union_posible(tramos: list[Polygon], ancho: float, alto: float):
+    """El primer par que se puede pegar: empieza por el tramo más chico
+    y prueba sus vecinos del borde compartido más largo al más corto
+    (pegar ahí borra la soldadura más larga). `None` si no hay ninguno."""
+    for chico in sorted(tramos, key=lambda t: t.area):
+        vecinos = sorted(
+            ((otro, chico.intersection(otro).length) for otro in tramos if otro is not chico),
+            key=lambda par: -par[1],
+        )
+        for vecino, borde in vecinos:
+            if borde <= _TOLERANCIA_MM:
+                break
+            unido = unary_union([chico, vecino])
+            if isinstance(unido, Polygon) and _cabe(unido, ancho, alto):
+                return chico, vecino, unido
+    return None
+
+
 def _pegar_pedacitos(pedazos: list[Polygon], ancho: float, alto: float) -> list[Polygon]:
-    """Tarea 2. Por ahora no pega nada."""
-    return pedazos
+    """Pega cada pedacito a un vecino con el que comparte un corte si
+    juntos siguen cabiendo en la celda (§5.2): un corte menos es una
+    soldadura menos y un tramo menos. Se repite hasta que no hay más."""
+    tramos = list(pedazos)
+    while (union := _primera_union_posible(tramos, ancho, alto)) is not None:
+        chico, vecino, unido = union
+        tramos = [t for t in tramos if t is not chico and t is not vecino] + [unido]
+    return tramos
 
 
 def seccionar_con_grilla(forma: Polygon, celda: tuple[float, float], grilla: Grilla) -> Seccionado:

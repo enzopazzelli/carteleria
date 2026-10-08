@@ -80,3 +80,25 @@ def test_la_misma_grilla_da_siempre_el_mismo_resultado():
     otro = seccionar_con_grilla(aro, celda, Grilla(30, 100, 200))
 
     assert [t.wkt for t in uno.tramos] == [t.wkt for t in otro.tramos]
+
+
+def test_una_forma_que_cabe_pero_queda_partida_por_la_grilla_se_vuelve_a_unir():
+    # La línea en x = 500 parte un cuadrado de 800 que entra entero en
+    # una celda de 1000: los dos pedazos se pegan y no queda ningún corte.
+    cuadrado = box(0, 0, 800, 800)
+
+    resultado = seccionar_con_grilla(cuadrado, (1000, 1000), Grilla(0, 500, 0))
+
+    assert len(resultado.tramos) == 1
+    assert resultado.cortes == []
+
+
+def test_los_pedacitos_que_juntos_no_entran_quedan_separados():
+    # Líneas en x = 200 y x = 1200 sobre una franja de 1500: cualquier
+    # unión mide más de 1000, así que quedan los tres tramos.
+    franja = box(0, 0, 1500, 800)
+
+    resultado = seccionar_con_grilla(franja, (1000, 1000), Grilla(0, 200, 0))
+
+    assert len(resultado.tramos) == 3
+    assert resultado.soldadura_mm == pytest.approx(1600)
