@@ -181,6 +181,11 @@ def actualizar_pieza(
     if pieza is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe la pieza {pieza_id}.")
     valores = datos.model_dump(exclude_unset=True)
+    if valores.get("descartada") is False and pieza.seccionado is not None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"«{pieza.id_origen}» está seccionada: para volver a usarla entera, deshacé el seccionado.",
+        )
     if "grupo_id" in valores and valores["grupo_id"] is not None:
         _grupo_o_404(sesion, valores["grupo_id"])
     for campo, valor in valores.items():

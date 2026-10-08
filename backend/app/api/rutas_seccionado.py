@@ -6,19 +6,23 @@ formato, y se guardan los tramos.
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from shapely.geometry import Polygon
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato
-from ..modelos.trabajo import Pieza
+from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza
 from ..services.nesting.engine import MotorNestingRectangular
 from ..services.nesting.geometria_material import poligono_material
 from ..services.nesting.models import ParametrosCorte, Plancha, RotacionPermitida
 from ..services.nesting.models import Pieza as PiezaDominio
 from ..services.seccionado import Grilla, Seccionado, celda_util, mejor_grilla, seccionar_con_grilla, tramo_orientado
 from .dependencias import obtener_sesion
-from .esquemas_seccionado import CorteLeer, PropuestaLeer, SeccionadoPedido, TramoPropuesto
+from .esquemas_seccionado import CorteLeer, PropuestaLeer, SeccionadoAplicar, SeccionadoPedido, TramoPropuesto
+from .esquemas_trabajos import PiezaLeer
 
 router = APIRouter(tags=["seccionado"])
 
@@ -130,3 +134,104 @@ def proponer_seccionado(
         grilla = Grilla(datos.angulo_grados, datos.desplazamiento_x_mm, datos.desplazamiento_y_mm)
         resultado = seccionar_con_grilla(forma, celda, grilla)
     return _propuesta(resultado, celda)
+
+
+def _tramos_de(sesion: Session, original: Pieza) -> list[Pieza]:
+    return list(sesion.execute(select(Pieza).where(Pieza.seccionada_de_id == original.id)).scalars())
+
+
+def _borrar_tramos(sesion: Session, original: Pieza) -> None:
+    """Rechaza si algún tramo está en un anidado guardado: las
+    colocaciones apuntan a los tramos, y borrarlos dejaría ese plano sin
+    piezas (§5.3). Un anidado solo se borra con su grupo."""
+    tramos = _tramos_de(sesion, original)
+    ids = [tramo.id for tramo in tramos]
+    if ids:
+        grupo = sesion.execute(
+            select(GrupoDeCorte.nombre)
+            .join(EjecucionNesting, EjecucionNesting.grupo_id == GrupoDeCorte.id)
+            .join(Colocacion, Colocacion.ejecucion_id == EjecucionNesting.id)
+            .where(Colocacion.pieza_id.in_(ids))
+            .limit(1)
+        ).scalar()
+        if grupo is not None:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                f"Algún tramo de «{original.id_origen}» está en un anidado guardado del grupo «{grupo}». "
+                "Volver a seccionar o deshacer dejaría ese plano sin sus piezas: primero borrá ese grupo "
+                "(se borran sus anidados) y armalo de nuevo.",
+            )
+    for tramo in tramos:
+        sesion.delete(tramo)
+    sesion.flush()
+
+
+def _en_orden(tramos: list[Polygon]) -> list[Polygon]:
+    """De abajo hacia arriba y de izquierda a derecha, para que `/t1`,
+    `/t2`... no cambien entre corridas con la misma grilla."""
+    return sorted(tramos, key=lambda t: (round(t.centroid.y, 3), round(t.centroid.x, 3)))
+
+
+def _como_texto(coordenadas) -> list[list[str]]:
+    return [[str(round(x, 6)), str(round(y, 6))] for x, y in coordenadas]
+
+
+def _tramo_orm(original: Pieza, tramo: Polygon, grilla: Grilla, numero: int) -> Pieza:
+    orientado = tramo_orientado(tramo, grilla)
+    _, _, ancho, alto = orientado.bounds
+    return Pieza(
+        trabajo_id=original.trabajo_id,
+        grupo_id=original.grupo_id,
+        id_origen=f"{original.id_origen}/t{numero}",
+        cantidad=original.cantidad,
+        ancho_mm=Decimal(str(round(ancho, 6))),
+        alto_mm=Decimal(str(round(alto, 6))),
+        contorno_mm=_como_texto(orientado.exterior.coords),
+        agujeros_mm=[_como_texto(agujero.coords) for agujero in orientado.interiors],
+        seccionada_de_id=original.id,
+    )
+
+
+def _resumen(formato_id: int, resultado: Seccionado) -> dict:
+    return {
+        "formato_id": formato_id,
+        "angulo_grados": resultado.grilla.angulo_grados,
+        "desplazamiento_x_mm": resultado.grilla.desplazamiento_x_mm,
+        "desplazamiento_y_mm": resultado.grilla.desplazamiento_y_mm,
+        "tramos": len(resultado.tramos),
+        "soldadura_mm": round(resultado.soldadura_mm, 3),
+        "cortes": [{"puntos": _a_lista(c.coords), "largo_mm": round(c.length, 3)} for c in resultado.cortes],
+    }
+
+
+@router.post("/piezas/{pieza_id}/seccionado", response_model=list[PiezaLeer], status_code=status.HTTP_201_CREATED)
+def aplicar_seccionado(
+    pieza_id: int, datos: SeccionadoAplicar, sesion: Session = Depends(obtener_sesion)
+) -> list[Pieza]:
+    """Aplica una grilla: los tramos pasan a ser piezas y la original
+    queda `descartada` (§5.3). Si ya estaba seccionada, reemplaza los
+    tramos anteriores."""
+    pieza = _pieza_o_404(sesion, pieza_id)
+    _no_es_tramo(pieza)
+    plancha, params = _chapa_y_parametros(sesion, datos.formato_id)
+    _validar_que_no_entra(pieza, plancha, params)
+    grilla = Grilla(datos.angulo_grados, datos.desplazamiento_x_mm, datos.desplazamiento_y_mm)
+    resultado = seccionar_con_grilla(_forma(pieza), celda_util(plancha, params), grilla)
+    _borrar_tramos(sesion, pieza)
+    tramos = [_tramo_orm(pieza, tramo, grilla, n) for n, tramo in enumerate(_en_orden(resultado.tramos), start=1)]
+    sesion.add_all(tramos)
+    pieza.descartada = True
+    pieza.seccionado = _resumen(datos.formato_id, resultado)
+    sesion.commit()
+    return tramos
+
+
+@router.delete("/piezas/{pieza_id}/seccionado", status_code=status.HTTP_204_NO_CONTENT)
+def deshacer_seccionado(pieza_id: int, sesion: Session = Depends(obtener_sesion)) -> None:
+    pieza = _pieza_o_404(sesion, pieza_id)
+    if pieza.seccionado is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"«{pieza.id_origen}» no está seccionada.")
+    _borrar_tramos(sesion, pieza)
+    pieza.seccionado = None
+    pieza.descartada = False
+    sesion.commit()

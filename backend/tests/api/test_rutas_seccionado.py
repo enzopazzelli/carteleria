@@ -133,3 +133,124 @@ def test_una_pieza_inexistente_da_404(cliente):
     # El mensaje, y no solo el 404: una ruta que no existe también da 404.
     assert respuesta.status_code == 404
     assert "No existe la pieza 999" in respuesta.json()["detail"]
+
+
+def _aplicar(cliente, pieza_id, formato_id, angulo=0, dx=0, dy=0):
+    return cliente.post(f"/piezas/{pieza_id}/seccionado", json={
+        "formato_id": formato_id, "angulo_grados": angulo,
+        "desplazamiento_x_mm": dx, "desplazamiento_y_mm": dy,
+    })
+
+
+def _piezas(cliente, trabajo_id) -> list[dict]:
+    return cliente.get(f"/trabajos/{trabajo_id}/piezas").json()
+
+
+def test_aplicar_crea_los_tramos_y_descarta_la_original(cliente, tmp_path):
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"], "cantidad": 3})
+
+    respuesta = _aplicar(cliente, pieza["id"], formato["id"])
+
+    assert respuesta.status_code == 201, respuesta.text
+    tramos = respuesta.json()
+    assert [t["id_origen"] for t in tramos] == [f"{pieza['id_origen']}/t1", f"{pieza['id_origen']}/t2"]
+    assert all(t["seccionada_de_id"] == pieza["id"] for t in tramos)
+    assert all(t["grupo_id"] == grupo["id"] and t["cantidad"] == 3 for t in tramos)
+    assert all(Decimal(t["ancho_mm"]) <= 973 and Decimal(t["alto_mm"]) <= 973 for t in tramos)
+    original = next(p for p in _piezas(cliente, trabajo["id"]) if p["id"] == pieza["id"])
+    assert original["descartada"]
+    assert original["seccionado"]["tramos"] == 2
+    assert original["seccionado"]["soldadura_mm"] == pytest.approx(500)
+
+
+def test_volver_a_seccionar_reemplaza_los_tramos(cliente, tmp_path):
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    _aplicar(cliente, pieza["id"], formato["id"])
+
+    respuesta = _aplicar(cliente, pieza["id"], formato["id"], dx=200)
+
+    assert respuesta.status_code == 201, respuesta.text
+    tramos = [p for p in _piezas(cliente, trabajo["id"]) if p["seccionada_de_id"] == pieza["id"]]
+    assert len(tramos) == len(respuesta.json())
+
+
+def test_deshacer_borra_los_tramos_y_restaura_la_original(cliente, tmp_path):
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    _aplicar(cliente, pieza["id"], formato["id"])
+
+    respuesta = cliente.delete(f"/piezas/{pieza['id']}/seccionado")
+
+    assert respuesta.status_code == 204
+    [original] = _piezas(cliente, trabajo["id"])
+    assert not original["descartada"] and original["seccionado"] is None
+
+
+def test_un_tramo_no_se_secciona(cliente, tmp_path):
+    _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    tramo = _aplicar(cliente, pieza["id"], formato["id"]).json()[0]
+
+    respuesta = cliente.post(f"/piezas/{tramo['id']}/seccionado/propuesta", json={"formato_id": formato["id"]})
+
+    assert respuesta.status_code == 400
+    assert "es un tramo" in respuesta.json()["detail"]
+
+
+def _guardar_anidado_con(cliente, trabajo_id: int, pieza_id: int) -> None:
+    grupo = cliente.post(f"/trabajos/{trabajo_id}/grupos", json={"nombre": "Con anidado"}).json()
+    with Session(cliente.motor) as sesion:
+        ejecucion = EjecucionNesting(grupo_id=grupo["id"], motor="rectpack", estado="lista")
+        sesion.add(ejecucion)
+        sesion.flush()
+        sesion.add(Colocacion(
+            ejecucion_id=ejecucion.id, pieza_id=pieza_id,
+            centro_x_mm=Decimal(0), centro_y_mm=Decimal(0), angulo_grados=Decimal(0),
+        ))
+        sesion.commit()
+
+
+def test_con_un_tramo_en_un_anidado_guardado_no_se_deshace_ni_se_vuelve_a_seccionar(cliente, tmp_path):
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    tramo = _aplicar(cliente, pieza["id"], formato["id"]).json()[0]
+    _guardar_anidado_con(cliente, trabajo["id"], tramo["id"])
+
+    deshacer = cliente.delete(f"/piezas/{pieza['id']}/seccionado")
+    rehacer = _aplicar(cliente, pieza["id"], formato["id"], dx=200)
+
+    assert deshacer.status_code == 409 and "Con anidado" in deshacer.json()["detail"]
+    assert rehacer.status_code == 409
+
+
+def test_restaurar_una_pieza_seccionada_se_rechaza(cliente, tmp_path):
+    # Si no, el metal se contaría dos veces: la original y sus tramos.
+    _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    _aplicar(cliente, pieza["id"], formato["id"])
+
+    respuesta = cliente.patch(f"/piezas/{pieza['id']}", json={"descartada": False})
+
+    assert respuesta.status_code == 409
+    assert "deshacé el seccionado" in respuesta.json()["detail"]
+
+
+# Con `ON DELETE CASCADE` la base borraría los tramos antes que el ORM, que
+# no falla pero avisa («expected to delete 1 row(s); 0 were matched»). Acá
+# ese aviso es un error: es lo que defiende el `SET NULL` de la clave.
+@pytest.mark.filterwarnings("error::sqlalchemy.exc.SAWarning")
+def test_reimportar_el_dxf_de_un_trabajo_con_una_pieza_seccionada_funciona(cliente, tmp_path):
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    # Sin tramos guardados la reimportación anda siempre y el test no prueba nada.
+    assert _aplicar(cliente, pieza["id"], formato["id"]).status_code == 201
+    documento = ezdxf.new()
+    documento.modelspace().add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], close=True)
+    ruta = tmp_path / "otra.dxf"
+    documento.saveas(ruta)
+
+    respuesta = cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("otra.dxf", ruta.read_bytes(), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert len(_piezas(cliente, trabajo["id"])) == 1

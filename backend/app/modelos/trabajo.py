@@ -145,8 +145,8 @@ class Pieza(Base):
     #: En un tramo: la pieza de la que salió al seccionarla (A5,
     #: `docs/plan/A5-seccionado/`). `SET NULL` y no `CASCADE`: reimportar
     #: un DXF borra todas las piezas con el ORM, y una cascada en la base
-    #: borraría los tramos antes que él, que después fallaría al no
-    #: encontrarlos.
+    #: borraría los tramos antes que él, que después no los encuentra y
+    #: avisa («expected to delete 1 row(s); 0 were matched»).
     seccionada_de_id: Mapped[int | None] = mapped_column(
         ForeignKey("piezas.id", ondelete="SET NULL", name="fk_piezas_seccionada_de_id"), default=None
     )
