@@ -24,6 +24,22 @@ class ContornoAbierto:
 
 
 @dataclass(frozen=True)
+class ContornoQueSeCruza:
+    """Un contorno que cierra pero se cruza a sí mismo: una púa o un rulito
+    del dibujo. Si arreglarlo cambia a lo sumo PAR-49 de área (lo que se
+    tira más lo que se rellena), se importa arreglado (`reparado`); si
+    no, se excluye. Siempre se avisa, con el punto del cruce para
+    encontrarlo en el diseño."""
+
+    capa: str
+    indice: int
+    x_mm: Decimal
+    y_mm: Decimal
+    area_corregida_mm2: Decimal
+    reparado: bool
+
+
+@dataclass(frozen=True)
 class PiezaImportada:
     """Una pieza detectada en el archivo importado.
 
@@ -60,5 +76,6 @@ class ResultadoImportacionDXF:
 
     piezas: list[PiezaImportada]
     contornos_no_cerrados: list[ContornoAbierto] = field(default_factory=list)
+    contornos_que_se_cruzan: list[ContornoQueSeCruza] = field(default_factory=list)
     lineas_duplicadas_descartadas: int = 0
     advertencias: list[str] = field(default_factory=list)

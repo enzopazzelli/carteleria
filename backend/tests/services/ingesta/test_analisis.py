@@ -412,3 +412,122 @@ def test_una_forma_de_otro_color_fuera_de_las_hojas_no_es_rotulo():
     roles = _roles([_con_color(_rectangulo("letra", 0, 0, 200, 300), 7)])
 
     assert roles["letra"][0] is Rol.CORTAR
+
+
+# --- Contra-piezas: el recorte del agujero de otra pieza ---------------------
+#
+# En Belgrano, 17 de las 48 formas a cortar son el recorte del agujero de otra
+# (el centro de la O, la B, la P; la isla de la punta de cada tramo): el DXF las
+# trae aparte, el diseñador las deja en su lugar. Anidarlas solas cuenta dos
+# veces su área (`docs/motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.5`). La regla
+# mira solo dentro de las hojas armadas: afuera, una letra sobre un panel puede
+# ser un calado o una letra corpórea pegada encima, y la geometría no lo dice.
+
+
+def _con_agujero(pieza: PiezaImportada, x: int, y: int, ancho: int, alto: int) -> PiezaImportada:
+    contorno = [
+        (Decimal(x), Decimal(y)),
+        (Decimal(x + ancho), Decimal(y)),
+        (Decimal(x + ancho), Decimal(y + alto)),
+        (Decimal(x), Decimal(y + alto)),
+        (Decimal(x), Decimal(y)),
+    ]
+    return replace(pieza, agujeros_mm=[*pieza.agujeros_mm, contorno])
+
+
+def _roles_completos(piezas: list[PiezaImportada]):
+    """`{id: PiezaConRol}`, para mirar también `madre_id` y `motivo`."""
+    disenio = DisenioDetectado(piezas=piezas)
+    hojas = detectar_hojas(disenio, [_CHAPA], _TOLERANCIA_HOJA_MM)
+    return {
+        r.pieza_id: r
+        for r in sugerir_roles(
+            disenio, hojas, [_CHAPA], _TOLERANCIA_GEMELA, _AREA_MINIMA_GEMELA_MM2, _FRACCION_MINIMA_EN_HOJA, _COLORES_DE_ROTULO
+        )
+    }
+
+
+def _letra_con_isla():
+    """Una letra de 400 x 400 con un agujero de 200 x 200, y el recorte de
+    ese agujero como forma aparte, como lo trae el parser."""
+    letra = _con_agujero(_rectangulo("letra", 0, 0, 400, 400), 100, 100, 200, 200)
+    return [letra, _rectangulo("isla", 100, 100, 200, 200, contenida_en_id="letra")]
+
+
+def _en_una_hoja(piezas: list[PiezaImportada]) -> list[PiezaImportada]:
+    """Las piezas dentro de una hoja armada de 2440 x 1220, que es donde
+    mira la regla. Las que no colgaban de nadie pasan a colgar de la hoja."""
+    hoja = _rectangulo("hoja", 0, 0, 2440, 1220)
+    return [hoja, *(p if p.contenida_en_id else replace(p, contenida_en_id="hoja") for p in piezas)]
+
+
+def test_en_una_hoja_el_recorte_del_agujero_de_otra_pieza_es_su_contrapieza():
+    roles = _roles_completos(_en_una_hoja(_letra_con_isla()))
+
+    assert roles["isla"].rol is Rol.CONTRAPIEZA
+    assert roles["isla"].madre_id == "letra"
+    assert roles["letra"].rol is Rol.CORTAR
+
+
+def test_fuera_de_las_hojas_el_recorte_del_color_de_su_madre_es_contrapieza():
+    # El centro de una O en el cartel armado: sin hojas, la señal es el
+    # color. En `Complejo.dxf` los 24 centros tienen el de su letra.
+    roles = _roles_completos([_con_color(p, 250) for p in _letra_con_isla()])
+
+    assert roles["isla"].rol is Rol.CONTRAPIEZA
+    assert roles["isla"].madre_id == "letra"
+
+
+def test_fuera_de_las_hojas_una_forma_de_otro_color_adentro_de_otra_sigue_a_cortar():
+    # Una cara de otro color sobre la letra (en `Complejo.dxf`, una de 97 x
+    # 145 de color 160 sobre una letra de 108 x 156 de color 7): es otra pieza.
+    letra, cara = _letra_con_isla()
+
+    roles = _roles_completos([_con_color(letra, 7), _con_color(cara, 160)])
+
+    assert roles["isla"].rol is Rol.CORTAR
+
+
+def test_fuera_de_las_hojas_sin_color_conocido_sigue_a_cortar():
+    # Puede ser el centro de una O o una letra corpórea sobre un panel: sin
+    # hoja ni color no hay cómo saberlo, y lo decide el diseñador.
+    roles = _roles_completos(_letra_con_isla())
+
+    assert roles["isla"].rol is Rol.CORTAR
+    assert roles["isla"].madre_id is None
+
+
+def test_una_pieza_anidada_a_proposito_en_el_hueco_no_es_contrapieza():
+    # Así lo arma el parser (`_clasificar_piezas_y_agujeros`): el hueco de
+    # la letra es también una pieza, y la que el diseñador metió en el
+    # hueco cuelga de él, no de la letra. El hueco es el recorte; la pieza
+    # de adentro hay que cortarla.
+    letra, hueco = _letra_con_isla()
+    hueco = _con_agujero(hueco, 150, 150, 100, 100)
+    anidada = _rectangulo("anidada", 150, 150, 100, 100, contenida_en_id="isla")
+
+    roles = _roles_completos(_en_una_hoja([letra, hueco, anidada]))
+
+    assert roles["isla"].rol is Rol.CONTRAPIEZA
+    assert roles["anidada"].rol is Rol.CORTAR
+    assert roles["anidada"].madre_id is None
+
+
+def test_una_letra_en_su_hoja_no_es_contrapieza_de_la_hoja():
+    # El parser también trae la letra como agujero de la hoja, y lo llena
+    # al 100 %: lo que la separa de una isla es que la hoja no se corta.
+    hoja, letra = _en_una_hoja([_rectangulo("letra", 100, 100, 400, 400)])
+    hoja = _con_agujero(hoja, 100, 100, 400, 400)
+
+    roles = _roles_completos([hoja, letra])
+
+    assert roles["hoja"].rol is Rol.MARCO_DE_CHAPA
+    assert roles["letra"].rol is Rol.CORTAR
+
+
+def test_una_forma_igual_al_agujero_pero_que_no_estaba_adentro_no_es_contrapieza():
+    # La forma coincide con el agujero pero está en otro lado: es otra pieza.
+    letra, _ = _letra_con_isla()
+    suelta = _rectangulo("suelta", 1000, 0, 200, 200)
+
+    assert _roles_completos(_en_una_hoja([letra, suelta]))["suelta"].rol is Rol.CORTAR

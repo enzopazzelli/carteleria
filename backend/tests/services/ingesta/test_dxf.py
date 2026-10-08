@@ -65,6 +65,89 @@ def test_cierra_contorno_abierto_dentro_de_tolerancia(tmp_path):
     assert not resultado.contornos_no_cerrados
 
 
+def test_el_ruido_de_float_en_el_cierre_no_descarta_la_pieza(tmp_path):
+    # Corel exporta splines cuyo primer punto, al aplanarlas, sale con ruido
+    # de float (`6415.738999999999` en vez de `6415.739`). Cerrar con un
+    # tramo de 1e-12 mm armaba una púa que shapely ve como autointersección:
+    # en `Complejo.dxf` se perdían 4 letras así.
+    ruta = _guardar_dxf(
+        tmp_path,
+        "ruido_en_el_cierre.dxf",
+        lambda msp: msp.add_lwpolyline(
+            [(-0.000000000001, 0.000000000001), (100, 0), (100, 50), (0, 50), (0, 0)], close=False
+        ),
+    )
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert len(resultado.piezas) == 1
+    assert resultado.piezas[0].area_real_mm2 == Decimal("5000")
+    assert not resultado.contornos_no_cerrados
+
+
+def test_un_contorno_con_una_pua_dibujada_se_repara_y_se_avisa(tmp_path):
+    # Como la entidad 66 de `Complejo.dxf`: la curva sale 20 mm y vuelve por
+    # el mismo camino. Cierra, pero se cruza a sí misma; lo que sobra no
+    # tiene área, así que la pieza se importa entera y se avisa.
+    ruta = _guardar_dxf(
+        tmp_path,
+        "pua.dxf",
+        lambda msp: msp.add_lwpolyline(
+            [(0, 0), (100, 0), (100, 50), (50, 50), (50, 70), (50, 50), (0, 50)], close=True
+        ),
+    )
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert len(resultado.piezas) == 1
+    assert resultado.piezas[0].area_real_mm2 == Decimal("5000")
+    assert not resultado.contornos_no_cerrados
+    [cruce] = resultado.contornos_que_se_cruzan
+    assert cruce.reparado
+    assert any("repar" in a for a in resultado.advertencias)
+
+
+def test_un_rulito_que_encierra_un_agujero_despreciable_se_rellena(tmp_path):
+    # Como el índice 163 de la muestra: el contorno se toca a sí mismo y
+    # encierra un triangulito de 0,25 mm². Es tan despreciable como una
+    # púa: se rellena y cuenta para PAR-49 igual que lo que se tira.
+    ruta = _guardar_dxf(
+        tmp_path,
+        "rulito.dxf",
+        lambda msp: msp.add_lwpolyline(
+            [(0, 0), (100, 0), (100, 50), (50, 50), (50, 49), (50.5, 49.5), (50, 50), (0, 50)], close=True
+        ),
+    )
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert len(resultado.piezas) == 1
+    assert resultado.piezas[0].area_real_mm2 == Decimal("5000")
+    assert not resultado.piezas[0].agujeros_mm
+    [cruce] = resultado.contornos_que_se_cruzan
+    assert cruce.reparado
+    assert cruce.area_corregida_mm2 == Decimal("0.25")
+
+
+def test_una_forma_en_ocho_se_excluye_y_se_avisa_donde_se_cruza(tmp_path):
+    # Repararla tiraría la mitad de la forma: no se inventa, se excluye
+    # diciendo dónde está el cruce, para corregirlo en el diseño.
+    ruta = _guardar_dxf(
+        tmp_path,
+        "ocho.dxf",
+        lambda msp: msp.add_lwpolyline([(0, 0), (100, 100), (100, 0), (0, 100)], close=True),
+    )
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert not resultado.piezas
+    assert not resultado.contornos_no_cerrados  # cierra: el problema es otro
+    [cruce] = resultado.contornos_que_se_cruzan
+    assert not cruce.reparado
+    assert (cruce.x_mm, cruce.y_mm) == (Decimal("50"), Decimal("50"))
+    assert any("se cruza" in a and "(50, 50)" in a for a in resultado.advertencias)
+
+
 def test_reporta_contorno_no_cerrado_fuera_de_tolerancia(tmp_path):
     # Le falta un lado entero: no hay forma de que cierre dentro de PAR-06.
     ruta = _guardar_dxf(

@@ -220,6 +220,13 @@ class Rol(str, enum.Enum):
     #: Cotas y rótulos convertidos a curvas ("Chapa 1.22x2.44 mts"): se
     #: ven como letras a cortar, pero son anotaciones del plano.
     ROTULO = "rotulo"
+    #: El recorte del agujero de otra pieza (el centro de una "O", la isla
+    #: de la punta de un tramo): el DXF la trae como forma aparte, pero el
+    #: diseñador la deja en su lugar y no ocupa espacio propio. Viaja con
+    #: su madre: anidarla sola contaría dos veces su área
+    #: (`docs/motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.5`). Ver
+    #: `_marcar_contrapiezas`.
+    CONTRAPIEZA = "contrapieza"
 
 
 @dataclass(frozen=True)
@@ -230,6 +237,8 @@ class PiezaConRol:
     #: diseñador pueda juzgar la sugerencia y no solo aceptarla.
     motivo: str
     gemela_id: str | None = None
+    #: Solo para `CONTRAPIEZA`: la pieza cuyo agujero llena.
+    madre_id: str | None = None
 
 
 def _firma(pieza: PiezaImportada) -> tuple[float, float]:
@@ -307,8 +316,12 @@ def sugerir_roles(
 ) -> list[PiezaConRol]:
     """Un rol sugerido por pieza, con las reglas de `CART-511` en orden
     de prioridad: hoja → rótulo (color de rótulo fuera de las hojas) →
-    gemela entre hoja y ensamblado → no entra en ninguna chapa → cortar. Nunca se excluye nada en silencio: sin
-    señal, el default es cortar."""
+    gemela entre hoja y ensamblado → no entra en ninguna chapa → cortar.
+    Después, dos pasadas sobre lo ya decidido: lo que está adentro de una
+    referencia con gemela tampoco se corta, y lo que está adentro de una
+    pieza que se corta es su contra-pieza (en una hoja armada, o fuera
+    con el mismo color). Nunca se excluye nada en silencio: sin señal,
+    el default es cortar."""
     por_id = {p.id: p for p in disenio.piezas}
     ids_de_hojas = {h.pieza_id for h in hojas}
     firmas = {p.id: _firma(p) for p in disenio.piezas}
@@ -345,7 +358,7 @@ def sugerir_roles(
             roles.append(PiezaConRol(pieza.id, Rol.REFERENCIA, "no entra en ningún formato: no se corta tal cual"))
             continue
         roles.append(PiezaConRol(pieza.id, Rol.CORTAR, "sin otra señal"))
-    return _heredar_referencia_de_gemelas(roles, por_id)
+    return _marcar_contrapiezas(_heredar_referencia_de_gemelas(roles, por_id), por_id, hoja_de)
 
 
 def _heredar_referencia_de_gemelas(roles: list[PiezaConRol], por_id: dict[str, PiezaImportada]) -> list[PiezaConRol]:
@@ -367,3 +380,56 @@ def _heredar_referencia_de_gemelas(roles: list[PiezaConRol], por_id: dict[str, P
                 actual = por_id[actual.contenida_en_id]
         resultado.append(rol)
     return resultado
+
+
+def _marcar_contrapiezas(
+    roles: list[PiezaConRol], por_id: dict[str, PiezaImportada], hoja_de: dict[str, str | None]
+) -> list[PiezaConRol]:
+    """Una pieza a cortar que está adentro de otra que también se corta es
+    el recorte de su agujero, su contra-pieza: en una hoja armada siempre,
+    y fuera de las hojas solo si tiene el color de su madre.
+
+    No se mide cuánto llena el agujero. El parser dibuja toda forma
+    interior como agujero de su contenedora y además como pieza propia
+    (`_clasificar_piezas_y_agujeros` en `dxf.py`), así que toda pieza
+    contenida llena el suyo al 100 %: la isla de un tramo, pero también
+    una letra en su hoja o una hoja en el marco. Lo que las separa es si
+    la madre se corta: una hoja no.
+
+    Fuera de las hojas, en la vista del cartel armado, una forma adentro
+    de una pieza puede ser un calado o algo pegado encima (una letra
+    corpórea, una cara de otro material), y la geometría no lo dice. El
+    color sí, a veces: en `Complejo.dxf`, los 24 centros de letras tienen
+    el color de su letra y las 5 caras superpuestas tienen otro. No
+    alcanza siempre: en la muestra hay paneles con letras de su mismo
+    color, que pueden ser calados o no. Sin color conocido queda a
+    cortar, que es el error que no esconde una pieza.
+
+    Va de afuera hacia adentro, así una contra-pieza no es madre de
+    nadie: lo que el diseñador anidó en el hueco de una "O" cuelga del
+    recorte, no de la "O", y sigue a cortar. En Belgrano marca las 17
+    islas medidas a mano (`docs/motor/PLAN-VALIDACION-CORTE-MANUAL.md`)."""
+    rol_de = {r.pieza_id: r for r in roles}
+
+    def _profundidad(pieza_id: str) -> int:
+        profundidad, actual = 0, por_id[pieza_id]
+        while actual.contenida_en_id in por_id:
+            profundidad, actual = profundidad + 1, por_id[actual.contenida_en_id]
+        return profundidad
+
+    for pieza_id in sorted(rol_de, key=_profundidad):
+        madre = rol_de.get(por_id[pieza_id].contenida_en_id or "")
+        if madre is None or rol_de[pieza_id].rol is not Rol.CORTAR or madre.rol is not Rol.CORTAR:
+            continue
+        color = por_id[pieza_id].color_aci
+        en_hoja = hoja_de[pieza_id] is not None
+        if not en_hoja and (color is None or color != por_id[madre.pieza_id].color_aci):
+            continue
+        rol_de[pieza_id] = PiezaConRol(
+            pieza_id,
+            Rol.CONTRAPIEZA,
+            f"recorte del agujero de {madre.pieza_id}{'' if en_hoja else ', de su mismo color'}: "
+            "viaja con esa pieza, no se anida sola",
+            madre_id=madre.pieza_id,
+        )
+    return [rol_de[r.pieza_id] for r in roles]
