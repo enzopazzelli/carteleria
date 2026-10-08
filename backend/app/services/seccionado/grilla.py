@@ -26,6 +26,17 @@ from ..nesting.models import ParametrosCorte, Plancha
 _AREA_MINIMA_MM2 = 1e-6
 _TOLERANCIA_MM = 1e-6
 
+#: Búsqueda de `mejor_grilla` (§5.2): pasos gruesos en todo el rango y
+#: después finos alrededor de la mejor. No son parámetros de negocio:
+#: se afinan si la búsqueda tarda o se queda corta. Los ángulos gruesos
+#: van de a 5°: de a 15° el aro de Belgrano solo veía la grilla de 45°,
+#: que corta a lo largo de los rayos, y no las de 25°, 65°, 115° y 155°.
+_ANGULOS_GRUESOS = tuple(range(0, 180, 5))
+_DIVISIONES_GRUESAS = 4
+_ANGULOS_FINOS = (-10, -5, 0, 5, 10)
+_PASOS_FINOS = (-2, -1, 0, 1, 2)
+_DIVISIONES_FINAS = 16
+
 
 @dataclass(frozen=True)
 class Grilla:
@@ -145,3 +156,34 @@ def seccionar_con_grilla(forma: Polygon, celda: tuple[float, float], grilla: Gri
         return affinity.rotate(geometria, grilla.angulo_grados, origin=(0, 0))
 
     return Seccionado(grilla, [volver(t) for t in tramos], [volver(c) for c in cortes])
+
+
+def _costo(resultado: Seccionado) -> tuple[int, float]:
+    """Primero menos tramos, después menos soldadura (`D-19`)."""
+    return len(resultado.tramos), round(resultado.soldadura_mm, 3)
+
+
+def mejor_grilla(forma: Polygon, celda: tuple[float, float]) -> Seccionado:
+    """La grilla que deja menos tramos y, si empatan, suelda menos.
+    `min` se queda con la primera de las empatadas, así que el resultado
+    no cambia entre corridas."""
+    ancho, alto = celda
+    gruesas = [
+        Grilla(angulo, ancho * i / _DIVISIONES_GRUESAS, alto * j / _DIVISIONES_GRUESAS)
+        for angulo in _ANGULOS_GRUESOS
+        for i in range(_DIVISIONES_GRUESAS)
+        for j in range(_DIVISIONES_GRUESAS)
+    ]
+    mejor = min((seccionar_con_grilla(forma, celda, g) for g in gruesas), key=_costo)
+    base = mejor.grilla
+    finas = [
+        Grilla(
+            (base.angulo_grados + delta) % 180,
+            base.desplazamiento_x_mm + ancho * i / _DIVISIONES_FINAS,
+            base.desplazamiento_y_mm + alto * j / _DIVISIONES_FINAS,
+        )
+        for delta in _ANGULOS_FINOS
+        for i in _PASOS_FINOS
+        for j in _PASOS_FINOS
+    ]
+    return min([mejor, *(seccionar_con_grilla(forma, celda, g) for g in finas)], key=_costo)

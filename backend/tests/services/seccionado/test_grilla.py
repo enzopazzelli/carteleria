@@ -8,11 +8,12 @@ import math
 from decimal import Decimal
 
 import pytest
+from shapely import affinity
 from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
 from app.services.nesting.models import ParametrosCorte, Plancha, RotacionPermitida
-from app.services.seccionado import Grilla, celda_util, seccionar_con_grilla
+from app.services.seccionado import Grilla, Seccionado, celda_util, mejor_grilla, seccionar_con_grilla
 
 _CHAPA = Plancha(ancho_mm=Decimal("1220"), alto_mm=Decimal("2440"))
 _PARAMS = ParametrosCorte(
@@ -102,3 +103,44 @@ def test_los_pedacitos_que_juntos_no_entran_quedan_separados():
 
     assert len(resultado.tramos) == 3
     assert resultado.soldadura_mm == pytest.approx(1600)
+
+
+def test_la_mejor_grilla_de_un_panel_lo_parte_una_sola_vez_por_el_lado_corto():
+    panel = box(0, 0, 3000, 1000)
+
+    resultado = mejor_grilla(panel, celda_util(_CHAPA, _PARAMS))
+
+    assert len(resultado.tramos) == 2
+    assert resultado.soldadura_mm == pytest.approx(1000)
+
+
+@pytest.fixture(scope="module")
+def mejor_del_aro() -> Seccionado:
+    """La búsqueda sobre el aro tarda unos segundos: se hace una sola vez."""
+    return mejor_grilla(_aro_calado(), celda_util(_CHAPA, _PARAMS))
+
+
+def test_la_mejor_grilla_del_aro_deja_tramos_que_entran_sin_perder_metal(mejor_del_aro):
+    ancho, alto = celda_util(_CHAPA, _PARAMS)
+
+    assert _area_total(mejor_del_aro.tramos) == pytest.approx(_aro_calado().area, rel=1e-6)
+    assert mejor_del_aro.cortes
+    for tramo in mejor_del_aro.tramos:
+        girado = affinity.rotate(tramo, -mejor_del_aro.grilla.angulo_grados, origin=(0, 0))
+        x0, y0, x1, y1 = girado.bounds
+        assert x1 - x0 <= ancho + 1e-6 and y1 - y0 <= alto + 1e-6
+
+
+def test_la_mejor_grilla_del_aro_no_corta_a_lo_largo_de_los_rayos(mejor_del_aro):
+    # Con 8 tramos hay grillas que cruzan las bandas de 80 mm (1,4 m de
+    # soldadura) y otra, a 45°, que corre a lo largo de los rayos (6,4 m).
+    # La búsqueda tiene que llegar a ver las primeras.
+    assert len(mejor_del_aro.tramos) <= 8
+    assert mejor_del_aro.soldadura_mm < 2000
+
+
+def test_la_mejor_grilla_es_siempre_la_misma():
+    panel = box(0, 0, 3000, 1000)
+    celda = celda_util(_CHAPA, _PARAMS)
+
+    assert mejor_grilla(panel, celda).grilla == mejor_grilla(panel, celda).grilla

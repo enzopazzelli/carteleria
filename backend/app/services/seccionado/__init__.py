@@ -3,6 +3,6 @@
 Diseño: `docs/plan/A5-seccionado/diseno.md`."""
 from __future__ import annotations
 
-from .grilla import Grilla, Seccionado, celda_util, seccionar_con_grilla
+from .grilla import Grilla, Seccionado, celda_util, mejor_grilla, seccionar_con_grilla
 
-__all__ = ["Grilla", "Seccionado", "celda_util", "seccionar_con_grilla"]
+__all__ = ["Grilla", "Seccionado", "celda_util", "mejor_grilla", "seccionar_con_grilla"]
