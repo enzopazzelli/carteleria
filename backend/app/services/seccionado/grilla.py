@@ -187,3 +187,13 @@ def mejor_grilla(forma: Polygon, celda: tuple[float, float]) -> Seccionado:
         for j in _PASOS_FINOS
     ]
     return min([mejor, *(seccionar_con_grilla(forma, celda, g) for g in finas)], key=_costo)
+
+
+def tramo_orientado(tramo: Polygon, grilla: Grilla) -> Polygon:
+    """El tramo girado para que su celda quede derecha sobre la chapa, en
+    el marco local `[0, ancho] × [0, alto]` (como `Pieza.contorno_mm`).
+    Se gira `-angulo` y no al ángulo que mejor le quede: así respeta la
+    veta y entra seguro, porque cabía en la celda tal cual (§5.2)."""
+    girado = affinity.rotate(tramo, -grilla.angulo_grados, origin=(0, 0))
+    x0, y0, _, _ = girado.bounds
+    return affinity.translate(girado, -x0, -y0)

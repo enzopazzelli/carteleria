@@ -13,7 +13,14 @@ from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
 from app.services.nesting.models import ParametrosCorte, Plancha, RotacionPermitida
-from app.services.seccionado import Grilla, Seccionado, celda_util, mejor_grilla, seccionar_con_grilla
+from app.services.seccionado import (
+    Grilla,
+    Seccionado,
+    celda_util,
+    mejor_grilla,
+    seccionar_con_grilla,
+    tramo_orientado,
+)
 
 _CHAPA = Plancha(ancho_mm=Decimal("1220"), alto_mm=Decimal("2440"))
 _PARAMS = ParametrosCorte(
@@ -144,3 +151,18 @@ def test_la_mejor_grilla_es_siempre_la_misma():
     celda = celda_util(_CHAPA, _PARAMS)
 
     assert mejor_grilla(panel, celda).grilla == mejor_grilla(panel, celda).grilla
+
+
+def test_cada_tramo_orientado_queda_derecho_en_la_chapa_y_conserva_su_area():
+    # Todos se giran el mismo ángulo: con veta (PAR-04), la veta queda
+    # en el mismo sentido en todos los tramos.
+    aro = _aro_calado()
+    ancho, alto = celda_util(_CHAPA, _PARAMS)
+    resultado = seccionar_con_grilla(aro, (ancho, alto), Grilla(30))
+
+    for tramo in resultado.tramos:
+        orientado = tramo_orientado(tramo, resultado.grilla)
+        x0, y0, x1, y1 = orientado.bounds
+        assert (x0, y0) == pytest.approx((0, 0), abs=1e-6)
+        assert x1 <= ancho + 1e-6 and y1 <= alto + 1e-6
+        assert orientado.area == pytest.approx(tramo.area)
