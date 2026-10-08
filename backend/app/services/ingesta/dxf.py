@@ -68,7 +68,7 @@ from pathlib import Path
 import ezdxf
 from ezdxf import DXFError
 from ezdxf.path import make_path
-from shapely import is_valid_reason, make_valid
+from shapely import is_valid_reason, make_valid, set_precision
 from shapely.geometry import Polygon
 
 from .models import ContornoAbierto, ContornoQueSeCruza, PiezaImportada, ResultadoImportacionDXF
@@ -352,12 +352,32 @@ def _donde_se_cruza(poligono: Polygon) -> tuple[Decimal, Decimal]:
     return _en_mm((x0 + x1) / 2), _en_mm((y0 + y1) / 2)
 
 
+def _en_la_grilla(poligono: Polygon) -> Polygon | None:
+    """El polígono con sus vértices en la grilla de `_RESOLUCION_MM`, que
+    es como se guardan, o `None` si ahí deja de ser un solo polígono
+    válido.
+
+    No alcanza con redondear cada vértice por separado. Los que crea
+    `make_valid` al resolver un cruce quedan casi alineados con sus
+    vecinos, y redondeados de a uno cambian de lado: el contorno se vuelve
+    a cruzar (23 de los 37 contornos reparados de un `Complejo.dxf` con
+    las curvas mal aproximadas). `set_precision` los lleva a la grilla sin
+    romper la forma, y lo que se devuelve se valida igual: es exactamente
+    lo que queda guardado."""
+    partes = _partes_con_area(set_precision(poligono, float(_RESOLUCION_MM)))
+    if len(partes) != 1:
+        return None
+    guardado = Polygon([(float(_en_mm(x)), float(_en_mm(y))) for x, y in partes[0].exterior.coords])
+    return guardado if guardado.is_valid else None
+
+
 def _reparar(poligono: Polygon) -> tuple[Polygon | None, Decimal]:
     """El contorno exterior de la parte más grande de un contorno que se
-    cruza a sí mismo, y cuánta área cambia al quedarse con eso: lo que se
-    tira (púas, lóbulos) más lo que se rellena (los rulitos que el cruce
-    encerraba como agujero). `None` si eso pasa `PAR-49`: un "8" de
-    verdad, o un nudo que encierra algo grande, no se inventa."""
+    cruza a sí mismo, ya en la grilla en que se guarda, y cuánta área
+    cambia al quedarse con eso: lo que se tira (púas, lóbulos) más lo que
+    se rellena (los rulitos que el cruce encerraba como agujero). `None`
+    si eso pasa `PAR-49` (un "8" de verdad, o un nudo que encierra algo
+    grande, no se inventa) o si lo reparado no llega válido a la grilla."""
     partes = _partes_con_area(make_valid(poligono))
     if not partes:
         return None, Decimal(0)
@@ -366,7 +386,7 @@ def _reparar(poligono: Polygon) -> tuple[Polygon | None, Decimal]:
     corregida = _en_mm(sum(parte.area for parte in partes) - mayor.area + sin_rulitos.area - mayor.area)
     if corregida > _AREA_MAXIMA_REPARABLE_MM2:
         return None, corregida
-    return sin_rulitos, corregida
+    return _en_la_grilla(sin_rulitos), corregida
 
 
 def _bbox_contiene(exterior: tuple, interior: tuple) -> bool:

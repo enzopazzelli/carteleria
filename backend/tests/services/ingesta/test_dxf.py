@@ -16,6 +16,8 @@ from decimal import Decimal
 
 import ezdxf
 import pytest
+from shapely import is_valid_reason
+from shapely.geometry import Polygon
 
 from app.services.ingesta.dxf import ArchivoDXFInvalido, parsear_dxf
 
@@ -127,6 +129,50 @@ def test_un_rulito_que_encierra_un_agujero_despreciable_se_rellena(tmp_path):
     [cruce] = resultado.contornos_que_se_cruzan
     assert cruce.reparado
     assert cruce.area_corregida_mm2 == Decimal("0.25")
+
+
+def _trapecio_con_ida_y_vuelta(msp):
+    """Un trapecio de 4932,5 mm² cuyo lado inclinado sube, vuelve a bajar y
+    sube otra vez sobre casi la misma recta, a centésimas de micrón."""
+    msp.add_lwpolyline(
+        [(0, 0), (100, 0), (97.961492, 37.75), (98.282784, 31.799999), (99.365475, 11.749999), (97.3, 50), (0, 50)],
+        close=True,
+    )
+
+
+def test_un_contorno_reparado_se_guarda_valido_tambien_despues_de_redondear(tmp_path):
+    # Como 23 contornos de un `Complejo.dxf` con las curvas mal aproximadas.
+    # Reparar el cruce crea vértices casi alineados con sus vecinos; al
+    # redondearlos de a uno a la resolución con que se guardan cambiaban de
+    # lado, y el contorno guardado se volvía a cruzar («Contorno exterior
+    # inválido» al seccionar o anidar).
+    ruta = _guardar_dxf(tmp_path, "ida_y_vuelta.dxf", _trapecio_con_ida_y_vuelta)
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    [pieza] = resultado.piezas
+    guardado = Polygon([(float(x), float(y)) for x, y in pieza.contorno_mm])
+    assert guardado.is_valid, is_valid_reason(guardado)
+    assert float(pieza.area_real_mm2) == pytest.approx(4932.5, abs=0.01)
+    [cruce] = resultado.contornos_que_se_cruzan
+    assert cruce.reparado
+
+
+def test_si_lo_reparado_no_llega_valido_a_la_grilla_se_excluye_y_se_avisa(tmp_path, monkeypatch):
+    # Nunca se guarda un contorno que se cruza. Si llevarlo a la grilla no
+    # lo deja válido (acá se anula ese paso para provocarlo), se trata
+    # igual que uno que no se pudo reparar.
+    from app.services.ingesta import dxf
+
+    monkeypatch.setattr(dxf, "set_precision", lambda geometria, _grilla: geometria)
+    ruta = _guardar_dxf(tmp_path, "ida_y_vuelta.dxf", _trapecio_con_ida_y_vuelta)
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert not resultado.piezas
+    [cruce] = resultado.contornos_que_se_cruzan
+    assert not cruce.reparado
+    assert any("se cruza" in a and "excluy" in a for a in resultado.advertencias)
 
 
 def test_una_forma_en_ocho_se_excluye_y_se_avisa_donde_se_cruza(tmp_path):
