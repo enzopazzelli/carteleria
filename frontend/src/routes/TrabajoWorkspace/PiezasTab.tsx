@@ -6,7 +6,7 @@ import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import PiezaMiniPreview from "../../components/PiezaMiniPreview";
 import Banner from "../../components/Banner";
 import SeccionarPanel from "../../components/Seccionado/SeccionarPanel";
-import { entraEnAlgunFormato } from "../../components/Seccionado/geometria";
+import { porQueSeccionar } from "../../components/Seccionado/geometria";
 import { ApiError } from "../../api/client";
 import type { Pieza } from "../../api/piezasYgrupos";
 
@@ -15,6 +15,10 @@ export default function PiezasTab() {
   const id = Number(trabajoId);
   const [busqueda] = useSearchParams();
   const revisar = new Set((busqueda.get("revisar") ?? "").split(",").filter(Boolean).map(Number));
+  // Las piezas que la comparación de formatos (pestaña Grupos) mandó a
+  // seccionar y contra qué chapa: llegan en el enlace de su aviso.
+  const aSeccionar = new Set((busqueda.get("seccionar") ?? "").split(",").filter(Boolean).map(Number));
+  const formatoPedido = Number(busqueda.get("formato")) || null;
   const { data: piezas, isLoading } = usePiezas(id);
   const subirDxf = useSubirDxf(id);
   const descartarPieza = useDescartarPieza(id);
@@ -91,7 +95,16 @@ export default function PiezasTab() {
     }
   }
 
-  const visibles = (piezas ?? []).filter((pieza) => revisar.size === 0 || revisar.has(pieza.id));
+  const visibles = (piezas ?? []).filter(
+    (pieza) =>
+      (revisar.size === 0 || revisar.has(pieza.id)) &&
+      // Con sus tramos, para que se vean aparecer al aplicar.
+      (aSeccionar.size === 0 || aSeccionar.has(pieza.id) || aSeccionar.has(pieza.seccionada_de_id ?? -1)),
+  );
+  const medidas = (formato: { ancho_mm: string; alto_mm: string }) =>
+    `${Math.round(Number(formato.ancho_mm))}×${Math.round(Number(formato.alto_mm))}`;
+  const chapaPedida = formatos.find((f) => f.id === formatoPedido) ?? null;
+  const formatoDelGrupo = (pieza: Pieza) => grupos?.find((g) => g.id === pieza.grupo_id)?.formato_id ?? null;
   // Cada tramo, debajo de la pieza de la que salió.
   const ordenadas = [
     ...visibles
@@ -117,15 +130,26 @@ export default function PiezasTab() {
         </>
       );
     }
-    const noEntra =
-      pieza.seccionada_de_id === null &&
-      !pieza.descartada &&
-      !entraEnAlgunFormato(Number(pieza.ancho_mm), Number(pieza.alto_mm), formatos);
+    const chapaDelGrupo = formatos.find((f) => f.id === formatoDelGrupo(pieza)) ?? null;
+    // Un tramo o una descartada no se seccionan. A las que mandó Grupos
+    // se les ofrece siempre: que no entran ya lo calculó el servidor,
+    // con márgenes y kerf, y acá la cuenta es aproximada.
+    const motivo =
+      pieza.seccionada_de_id !== null || pieza.descartada
+        ? null
+        : aSeccionar.has(pieza.id)
+          ? "pedida"
+          : porQueSeccionar(Number(pieza.ancho_mm), Number(pieza.alto_mm), formatos, chapaDelGrupo);
+    const aviso = {
+      ninguna: "No entra en ninguna chapa",
+      grupo: `No entra en la chapa de su grupo${chapaDelGrupo ? ` (${medidas(chapaDelGrupo)})` : ""}`,
+      pedida: `No entra en la chapa ${chapaPedida ? `de ${medidas(chapaPedida)}` : "elegida"}`,
+    };
     return (
       <>
-        {noEntra && (
+        {motivo && (
           <>
-            <span className="block text-conflict">No entra en ninguna chapa</span>
+            <span className="block text-conflict">{aviso[motivo]}</span>
             <button className="underline mr-2" onClick={() => setSeccionando(pieza.id)}>
               Seccionar
             </button>
@@ -143,6 +167,15 @@ export default function PiezasTab() {
       <h1 className="text-2xl font-semibold mb-4">Piezas</h1>
       {revisar.size > 0 && <div className="mb-4">
         <Banner variante="aviso">Estas {revisar.size} piezas impiden el cálculo con Sparrow. Revisá sus contornos y huecos en el DXF. Descartar una pieza la excluye de todo el trabajo; usalo solo si no corresponde cortarla.</Banner>
+        <Link className="underline text-sm" to={`/trabajos/${id}/piezas`}>Mostrar todas las piezas</Link>
+      </div>}
+      {aSeccionar.size > 0 && <div className="mb-4">
+        <Banner variante="aviso">
+          {aSeccionar.size === 1
+            ? `Esta pieza no entra en la chapa ${chapaPedida ? `de ${medidas(chapaPedida)}` : "elegida"} ni rotándola. Tocá «Seccionar» para partirla en tramos`
+            : `Estas ${aSeccionar.size} piezas no entran en la chapa ${chapaPedida ? `de ${medidas(chapaPedida)}` : "elegida"} ni rotándolas. Tocá «Seccionar» en cada una para partirla en tramos`}
+          , o volvé a Grupos y elegí una chapa más grande.
+        </Banner>
         <Link className="underline text-sm" to={`/trabajos/${id}/piezas`}>Mostrar todas las piezas</Link>
       </div>}
 
@@ -222,7 +255,11 @@ export default function PiezasTab() {
                     <td colSpan={6}>
                       <SeccionarPanel
                         pieza={pieza}
-                        formatoInicial={pieza.seccionado?.formato_id ?? grupos?.find((g) => g.id === pieza.grupo_id)?.formato_id ?? null}
+                        formatoInicial={
+                          pieza.seccionado?.formato_id ??
+                          (aSeccionar.has(pieza.id) ? formatoPedido : null) ??
+                          formatoDelGrupo(pieza)
+                        }
                         onCerrar={() => setSeccionando(null)}
                       />
                     </td>

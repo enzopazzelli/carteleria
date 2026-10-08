@@ -25,6 +25,21 @@ export function entraEnAlgunFormato(
   });
 }
 
+/** Por qué se le ofrece «Seccionar» a una pieza: no entra en ninguna
+ * chapa del catálogo, o entra en alguna pero no en la que tiene
+ * asignada su grupo. `null` si entra. Como `entraEnAlgunFormato`, es la
+ * cuenta aproximada: la exacta la hace el servidor. */
+export function porQueSeccionar(
+  anchoMm: number,
+  altoMm: number,
+  formatos: { ancho_mm: string; alto_mm: string }[],
+  formatoDelGrupo: { ancho_mm: string; alto_mm: string } | null,
+): "ninguna" | "grupo" | null {
+  if (!entraEnAlgunFormato(anchoMm, altoMm, formatos)) return "ninguna";
+  if (formatoDelGrupo && !entraEnAlgunFormato(anchoMm, altoMm, [formatoDelGrupo])) return "grupo";
+  return null;
+}
+
 function girar(x: number, y: number, radianes: number): [number, number] {
   return [x * Math.cos(radianes) - y * Math.sin(radianes), x * Math.sin(radianes) + y * Math.cos(radianes)];
 }

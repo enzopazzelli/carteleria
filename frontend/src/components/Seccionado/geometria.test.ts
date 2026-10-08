@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { desplazamientoEnGrilla, entraEnAlgunFormato, lineasDeGrilla } from "./geometria";
+import { desplazamientoEnGrilla, entraEnAlgunFormato, lineasDeGrilla, porQueSeccionar } from "./geometria";
 
 describe("entraEnAlgunFormato", () => {
   const formatos = [{ ancho_mm: "1220.00", alto_mm: "2440.00" }];
@@ -14,6 +14,32 @@ describe("entraEnAlgunFormato", () => {
 
   it("sin catálogo cargado no ofrece seccionar", () => {
     expect(entraEnAlgunFormato(9000, 9000, [])).toBe(true);
+  });
+});
+
+describe("porQueSeccionar", () => {
+  const chica = { ancho_mm: "1000.00", alto_mm: "2000.00" };
+  const grande = { ancho_mm: "1220.00", alto_mm: "2440.00" };
+  const catalogo = [chica, grande];
+
+  it("avisa cuando la pieza no entra en ninguna chapa del catálogo", () => {
+    expect(porQueSeccionar(3000, 1000, catalogo, grande)).toBe("ninguna");
+  });
+
+  it("avisa cuando no entra en la chapa de su grupo aunque entre en otra más grande", () => {
+    expect(porQueSeccionar(1100, 2300, catalogo, chica)).toBe("grupo");
+  });
+
+  it("no ofrece seccionar si entra en la chapa de su grupo", () => {
+    expect(porQueSeccionar(1100, 2300, catalogo, grande)).toBeNull();
+  });
+
+  it("sin chapa asignada al grupo, solo mira el catálogo", () => {
+    expect(porQueSeccionar(1100, 2300, catalogo, null)).toBeNull();
+  });
+
+  it("sin catálogo cargado no ofrece seccionar", () => {
+    expect(porQueSeccionar(9000, 9000, [], null)).toBeNull();
   });
 });
 
