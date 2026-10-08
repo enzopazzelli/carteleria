@@ -23,6 +23,7 @@ from .rutas_catalogo import router as router_catalogo
 from .rutas_importacion import router as router_importacion
 from .rutas_nesting import router as router_nesting
 from .rutas_presupuesto import router as router_presupuesto
+from .rutas_seccionado import router as router_seccionado
 from .rutas_trabajos import router as router_trabajos
 
 
@@ -56,3 +57,4 @@ app.include_router(router_importacion)
 app.include_router(router_nesting)
 app.include_router(router_ajuste)
 app.include_router(router_presupuesto)
+app.include_router(router_seccionado)
