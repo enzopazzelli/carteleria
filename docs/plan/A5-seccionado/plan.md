@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** construido el 2026-10-08 en la rama `feat/seccionado` (PR pendiente de abrir). Tareas 0 a 9 hechas, más una de rendimiento que no estaba en el plan (7b). Faltan dos pasos: que Enzo lo pruebe en la app (Tarea 9, Step 6) y abrir el PR (Tarea 10, Step 4). Falta también la validación con el aro real soldado (`SUP-17`, §7 del diseño). **El código se aparta de las tareas de abajo en los puntos de la sección [«Desvíos»](#desvíos-respecto-de-este-plan-2026-10-08), al final.**
+> **Estado:** construido el 2026-10-08 en la rama `feat/seccionado` (PR pendiente de abrir). Tareas 0 a 9 hechas, más dos que no estaban en el plan: 7b (rendimiento) y 9b (conectar Grupos con Piezas). Faltan dos pasos: que Enzo lo pruebe en la app (Tarea 9, Step 6) y abrir el PR (Tarea 10, Step 4). Falta también la validación con el aro real soldado (`SUP-17`, §7 del diseño). **El código se aparta de las tareas de abajo en los puntos de la sección [«Desvíos»](#desvíos-respecto-de-este-plan-2026-10-08), al final.**
 
 **Goal:** Que una pieza más grande que la chapa se pueda partir en tramos con una grilla del tamaño de la chapa, ajustable por el diseñador, y que los tramos queden como piezas comunes para anidar y cotizar.
 
@@ -2225,6 +2225,7 @@ El código quedó distinto de lo que muestran las tareas de arriba en estos punt
 | 7b (nueva) | `_pegar_pedacitos` mide el borde compartido una sola vez por par y descarta por caja; `_cortes_entre` solo mira tramos cuyas cajas se tocan. Test nuevo de equivalencia contra el pegado original, que quedó en los tests como referencia | La búsqueda tardaba minutos con piezas reales grandes (ver abajo). Decisión de Enzo: solo cambios que no alteren resultados |
 | 9 | El panel muestra «Probando grillas…» mientras busca la mejor grilla | La propuesta de una pieza de 10 a 12 m tarda cerca de un minuto |
 | 9 | La prueba en la app (Step 4) se hizo sobre una copia de los datos, con `CARTELERIA_DATOS` apuntando a otra carpeta | No dejar un trabajo de prueba ni un DXF en los datos reales |
+| 9b (nueva) | En Grupos, el aviso «Hay que seccionar N pieza(s)» de la comparación de formatos es un enlace a Piezas con esas piezas y esa chapa (`?seccionar=…&formato=…`), y su texto de ayuda ya no dice que el sistema no lo hace. En Piezas, «Seccionar» aparece también cuando la pieza no entra en la chapa de su grupo aunque entre en otra (`porQueSeccionar`, con tests) | Enzo preguntó dónde se secciona. Las dos pantallas no estaban conectadas: Grupos avisa formato por formato, y el botón de Piezas solo aparecía si la pieza no entraba en ninguna chapa del catálogo |
 
 ### Tiempo de la búsqueda de la mejor grilla
 
@@ -2248,3 +2249,4 @@ Las cuatro piezas reales dan los mismos tramos y la misma soldadura antes y desp
 2. Los dos colores se alternan por orden de tramo: tramos vecinos pueden quedar del mismo color y solo los separa el corte rojo.
 3. Arrastrar deja corrimientos no redondos y tramos de medidas como 321.428571 mm. Falta decidir si la grilla se ajusta a milímetros enteros.
 4. La pieza 1009 del trabajo 4 parece un plano de referencia y no una pieza a cortar.
+5. En Piezas, la cuenta que decide si se muestra «Seccionar» es aproximada: compara la caja de la pieza con la chapa entera, sin márgenes ni kerf. Una pieza que mide casi lo mismo que la chapa (el caso de `P-28`) no muestra el botón al entrar directo a Piezas, aunque el servidor diga que no entra. Llegando por el enlace de Grupos sí lo muestra, porque ahí la lista la calculó el servidor.
