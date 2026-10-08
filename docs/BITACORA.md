@@ -97,6 +97,24 @@ Sin cambios. Lo que el diseño llevó al registro (`D-19` cerrada, `P-21` y `P-2
 - **Lo que se vio en el panel y no se tocó:** la fila de la original seccionada queda atenuada con sus enlaces, dos colores no distinguen tramos vecinos, y arrastrar deja medidas no redondas. Además, al entrar directo a Piezas el botón «Seccionar» se decide con una cuenta sin márgenes ni kerf: una pieza que mide casi lo mismo que la chapa (el caso de `P-28`) no lo muestra; llegando por el enlace de Grupos, sí.
 - **Documentación que viene del 2026-10-07 y sigue sin hacer:** ese día no tiene entrada en esta bitácora (diseño y plan del seccionado, y el PR #15 de la importación de `Complejo.dxf`); el plan maestro sigue tratando la llegada del motor como pendiente (`D-14`, E1), y la integración de Sparrow ya está en `main`; y dos documentos sobre Sparrow están sueltos en `docs/`, fuera de `docs/motor/` (`GUIA-SPARROW-PRUEBAS.md` e `INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md`).
 
+### Addendum — mismo día: lo que salió de probarlo con `Complejo.dxf`
+
+Enzo editó `Complejo.dxf` para dejar un solo diseño, lo importó, seccionó, agrupó y anidó. De esa prueba salieron tres cosas.
+
+- **Curvas con pesos** (`308e402`). El programa con que lo editó guardó las 40 curvas «con pesos». `ezdxf.make_path` solo convierte exacta la curva cúbica sin pesos; a las demás las aproxima, y la aproximación deforma (un rectángulo de 300 mm salía de 302,7) y se cruza a sí misma. El lector ahora evalúa esas curvas directo. El archivo pasó de 39 piezas con 16 válidas a 40 válidas.
+- **Los huecos entraban como piezas a cortar.** El lector devuelve todo hueco de más de 25 mm como agujero de su pieza y además como pieza propia, y la carga de la pantalla (`POST /trabajos/{id}/dxf`) guardaba todo. Ahora consulta el análisis de `CART-511` y deja **descartadas** las formas que son el recorte del hueco de otra pieza que se corta, con un aviso. Siguen a la vista y se restauran con un clic. En `Complejo.dxf` son los 9 centros de letras, los mismos que Enzo había descartado a mano.
+- **Más pasadas no mejoran el anidado.** Medido con las 31 piezas de ese trabajo en chapa de 1220 × 2440 (6 chapas, 32,2 %): con 8 pasadas en vez de 3, con 10 y 30 segundos por búsqueda y con la chapa acostada, el mejor resultado sigue siendo 6. Sparrow sí mejora con tiempo (la franja pasa de 4,95 a 4,34 chapas de largo entre 2 y 60 segundos), pero la integración recorta una chapa de la franja, se queda con las piezas que cayeron enteras y recalcula el resto, y ahí se pierde. Una prueba que llena cada chapa de a una pieza, consultando a Sparrow si el conjunto entra, dio **5 chapas validadas (38,6 %)** en 6 minutos y medio contra 1.
+
+**Qué se decidió.** Descartar los recortes al cargar, en vez de adelantar la pantalla de revisión (2.1). Y escribir un plan para repartir chapa por chapa, sin tocar el motor todavía.
+
+**Cambios en el registro.** Sin cambios.
+
+**Pendiente.**
+
+- **Las formas del emblema** (6 en `Complejo.dxf`) no siguen una regla: de dos formas del mismo nivel, una se corta y la otra no. Eso lo resuelve la pantalla de revisión (2.1), que es también donde va el botón para confirmar la carga una vez puesta la escala.
+- **El lector repara un contorno que se cruza y no lo vuelve a validar después de redondear.** Con las curvas bien leídas ya no aparece en `Complejo.dxf`, pero la falla sigue.
+- **El plan del reparto chapa por chapa,** y hablarlo con Vale, que hizo la integración de Sparrow.
+
 ---
 
 ## 2026-10-05 — Plan maestro del ciclo de cotización, `docs/` ordenada por estado y etapa 0
