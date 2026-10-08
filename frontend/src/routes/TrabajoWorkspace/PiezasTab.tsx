@@ -9,6 +9,7 @@ import SeccionarPanel from "../../components/Seccionado/SeccionarPanel";
 import { porQueSeccionar } from "../../components/Seccionado/geometria";
 import { ApiError } from "../../api/client";
 import type { Pieza } from "../../api/piezasYgrupos";
+import { escalaParaCargar } from "./cargaDxf";
 
 export default function PiezasTab() {
   const { trabajoId } = useParams();
@@ -34,47 +35,51 @@ export default function PiezasTab() {
   // Sin esto, un dibujo que "no se ve" no tiene ninguna explicación.
   const [avisos, setAvisos] = useState<string[]>([]);
   const inputArchivo = useRef<HTMLInputElement>(null);
-  // Se guarda el File elegido (no solo lo que trae el input nativo, que
-  // se limpia después de cada subida) para poder reimportar con otra
-  // escala sin volver a abrir el explorador — probar la escala correcta
-  // a los tumbos, reabriendo el diálogo del SO en cada intento, era la
-  // fricción real.
+  // El archivo elegido, que todavía puede no estar cargado: elegirlo no
+  // carga nada, porque antes hay que poner la escala (cargaba solo, con
+  // la escala que hubiera, y había que cargarlo dos veces). Se guarda el
+  // File para poder cargarlo de nuevo con otra escala sin reabrir el
+  // explorador.
   const [archivoActual, setArchivoActual] = useState<File | null>(null);
+  const escala = escalaParaCargar(escalaAMm);
 
-  async function subir(archivo: File) {
+  async function alCargar() {
+    if (!archivoActual || escala === null) return;
     setError(null);
     setAvisos([]);
     try {
-      const resultado = await subirDxf.mutateAsync({ archivo, escalaAMm });
-      setArchivoActual(archivo);
+      const resultado = await subirDxf.mutateAsync({ archivo: archivoActual, escalaAMm: escala });
       setAvisos([
         `${resultado.piezas_creadas} pieza(s) importada(s).`,
         ...resultado.advertencias,
       ]);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo subir el archivo.");
+      setError(
+        e instanceof ApiError
+          ? e.message
+          : "No se pudo subir el archivo. Si lo modificaste después de elegirlo, volvé a elegirlo."
+      );
     }
   }
 
-  async function alElegirArchivo() {
+  function alElegirArchivo() {
     const archivo = inputArchivo.current?.files?.[0];
+    // Se limpia siempre: si no, volver a elegir el mismo archivo después
+    // de corregirlo en Corel no dispara este evento, y el File guardado,
+    // que es el de antes del cambio, ya no se puede leer.
+    if (inputArchivo.current) inputArchivo.current.value = "";
     if (!archivo) return;
 
     if (!archivo.name.toLowerCase().endsWith(".dxf")) {
       setError(
         `Este archivo es «${archivo.name.split(".").pop()}». Exportá el DXF desde Corel ` +
-          "(Archivo → Exportar → DXF) y subí ese archivo."
+          "(Archivo → Exportar → DXF) y elegí ese archivo."
       );
-      if (inputArchivo.current) inputArchivo.current.value = "";
       return;
     }
 
-    await subir(archivo);
-    if (inputArchivo.current) inputArchivo.current.value = "";
-  }
-
-  function alReimportar() {
-    if (archivoActual) subir(archivoActual);
+    setError(null);
+    setArchivoActual(archivo);
   }
 
   async function alDescartarPieza(piezaId: number, descartada: boolean) {
@@ -179,25 +184,46 @@ export default function PiezasTab() {
         <Link className="underline text-sm" to={`/trabajos/${id}/piezas`}>Mostrar todas las piezas</Link>
       </div>}
 
-      <div className="flex items-center gap-2 mb-4">
-        <label className="text-sm">
-          Escala a mm:{" "}
-          <input
-            className="border border-line rounded px-2 py-1 w-16 font-mono bg-paper"
-            value={escalaAMm}
-            onChange={(evento) => setEscalaAMm(evento.target.value)}
-          />
-        </label>
-        <input ref={inputArchivo} type="file" accept=".dxf" onChange={alElegirArchivo} />
-        {archivoActual && (
+      <div className="mb-4">
+        <div className="flex items-center gap-2">
+          <label className="text-sm">
+            Escala a mm:{" "}
+            <input
+              className="border border-line rounded px-2 py-1 w-16 font-mono bg-paper"
+              value={escalaAMm}
+              onChange={(evento) => setEscalaAMm(evento.target.value)}
+            />
+          </label>
+          <input ref={inputArchivo} type="file" accept=".dxf" className="hidden" onChange={alElegirArchivo} />
           <button
-            className="text-sm underline disabled:opacity-50"
-            disabled={subirDxf.isPending}
-            onClick={alReimportar}
-            title={`Vuelve a parsear «${archivoActual.name}» con la escala actual, sin reabrir el explorador`}
+            className="border border-line rounded px-2 py-1 text-sm hover:bg-line/40"
+            onClick={() => inputArchivo.current?.click()}
           >
-            Reimportar «{archivoActual.name}» con esta escala
+            Elegir archivo
           </button>
+          <span className="text-sm">{archivoActual ? archivoActual.name : "Ningún archivo elegido"}</span>
+        </div>
+        {archivoActual && (
+          <div className="mt-2">
+            <button
+              className="bg-cut text-paper rounded px-3 py-1 text-sm disabled:opacity-50"
+              disabled={escala === null || subirDxf.isPending}
+              onClick={() => void alCargar()}
+            >
+              {subirDxf.isPending
+                ? "Cargando…"
+                : `Cargar «${archivoActual.name}»${escala === null ? "" : ` a escala ${escala}`}`}
+            </button>
+            {escala === null && (
+              <p className="text-sm text-conflict mt-1">La escala tiene que ser un número mayor que cero.</p>
+            )}
+            {piezas && piezas.length > 0 && (
+              <p className="text-sm mt-1">
+                Cargar reemplaza {piezas.length === 1 ? "la pieza" : `las ${piezas.length} piezas`} que ya tiene este
+                trabajo.
+              </p>
+            )}
+          </div>
         )}
       </div>
 
