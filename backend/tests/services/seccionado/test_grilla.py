@@ -13,6 +13,7 @@ from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
 from app.services.nesting.models import ParametrosCorte, Plancha, RotacionPermitida
+from app.services.seccionado import grilla as modulo_grilla
 from app.services.seccionado import (
     Grilla,
     Seccionado,
@@ -166,3 +167,89 @@ def test_cada_tramo_orientado_queda_derecho_en_la_chapa_y_conserva_su_area():
         assert (x0, y0) == pytest.approx((0, 0), abs=1e-6)
         assert x1 <= ancho + 1e-6 and y1 <= alto + 1e-6
         assert orientado.area == pytest.approx(tramo.area)
+
+
+# --- El pegado del módulo contra el de referencia --------------------------
+#
+# Con piezas reales de 10 a 12 m (unos 70 pedazos por grilla) el pegado
+# escrito de la forma obvia se llevaba la mitad del tiempo de la búsqueda.
+# El módulo usa una versión que no recalcula todo en cada vuelta; acá queda
+# la obvia, como vara: tienen que dar exactamente los mismos tramos.
+
+
+def _pegar_de_referencia(pedazos: list[Polygon], ancho: float, alto: float) -> list[Polygon]:
+    """La regla del pegado (§5.2) dicha sin atajos: en cada vuelta recorre
+    los tramos del más chico al más grande, mide el borde que cada uno
+    comparte con todos los demás y pega el primero que cabe en la celda
+    junto a su vecino de borde más largo."""
+
+    def primera_union(tramos):
+        for chico in sorted(tramos, key=lambda t: t.area):
+            vecinos = sorted(
+                ((otro, chico.intersection(otro).length) for otro in tramos if otro is not chico),
+                key=lambda par: -par[1],
+            )
+            for vecino, borde in vecinos:
+                if borde <= 1e-6:
+                    break
+                unido = unary_union([chico, vecino])
+                if isinstance(unido, Polygon):
+                    x0, y0, x1, y1 = unido.bounds
+                    if x1 - x0 <= ancho + 1e-6 and y1 - y0 <= alto + 1e-6:
+                        return chico, vecino, unido
+        return None
+
+    tramos = list(pedazos)
+    while (union := primera_union(tramos)) is not None:
+        chico, vecino, unido = union
+        tramos = [t for t in tramos if t is not chico and t is not vecino] + [unido]
+    return tramos
+
+
+def _cortes_de_referencia(tramos: list[Polygon]) -> list[LineString]:
+    return [
+        segmento
+        for i, uno in enumerate(tramos)
+        for otro in tramos[i + 1 :]
+        for segmento in modulo_grilla._segmentos(uno.intersection(otro))
+    ]
+
+
+def _reja() -> Polygon:
+    """Barras de 60 mm cada 400: la grilla deja astillas en los bordes."""
+    marco = box(0, 0, 5260, 3660)
+    huecos = [box(x, y, x + 340, y + 340) for x in range(60, 5200, 400) for y in range(60, 3600, 400)]
+    return marco.difference(unary_union(huecos))
+
+
+def _racimo() -> Polygon:
+    """Discos de 500 mm unidos por barras finas: muchas partes más chicas
+    que la celda, que se pegan de a varias."""
+    discos = [Point(700 * i, 700 * j).buffer(250) for i in range(7) for j in range(5)]
+    barras = [box(0, 700 * j - 20, 4200, 700 * j + 20) for j in range(5)]
+    barras += [box(700 * i - 20, 0, 700 * i + 20, 2800) for i in range(7)]
+    racimo = unary_union([*discos, *barras])
+    assert isinstance(racimo, Polygon)
+    return racimo
+
+
+_FORMAS_CON_PEDACITOS = {"aro": _aro_calado, "racimo": _racimo, "reja": _reja}
+
+
+@pytest.mark.parametrize("nombre", sorted(_FORMAS_CON_PEDACITOS))
+def test_el_pegado_del_modulo_da_los_mismos_tramos_que_el_de_referencia(nombre, monkeypatch):
+    forma = _FORMAS_CON_PEDACITOS[nombre]()
+    celda = celda_util(_CHAPA, _PARAMS)
+    grillas = [Grilla(a, dx, dy) for a in (0, 17, 45, 90, 133) for dx, dy in ((0, 0), (300, 700), (900, 1900))]
+
+    del_modulo = [seccionar_con_grilla(forma, celda, g) for g in grillas]
+    monkeypatch.setattr(modulo_grilla, "_pegar_pedacitos", _pegar_de_referencia)
+    monkeypatch.setattr(modulo_grilla, "_cortes_entre", _cortes_de_referencia)
+    de_referencia = [seccionar_con_grilla(forma, celda, g) for g in grillas]
+    monkeypatch.setattr(modulo_grilla, "_pegar_pedacitos", lambda pedazos, ancho, alto: pedazos)
+    sin_pegar = [seccionar_con_grilla(forma, celda, g) for g in grillas]
+
+    assert [[t.wkt for t in r.tramos] for r in del_modulo] == [[t.wkt for t in r.tramos] for r in de_referencia]
+    assert [[c.wkt for c in r.cortes] for r in del_modulo] == [[c.wkt for c in r.cortes] for r in de_referencia]
+    # Si la batería no pegara nada, lo de arriba no probaría el pegado.
+    assert sum(len(r.tramos) for r in de_referencia) < sum(len(r.tramos) for r in sin_pegar)

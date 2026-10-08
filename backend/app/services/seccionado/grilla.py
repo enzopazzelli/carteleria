@@ -25,6 +25,11 @@ from ..nesting.models import ParametrosCorte, Plancha
 #: queda por debajo es ruido de las intersecciones, no metal ni corte.
 _AREA_MINIMA_MM2 = 1e-6
 _TOLERANCIA_MM = 1e-6
+#: Holgura de los descartes por caja, muy por encima de ese ruido. Dos
+#: tramos cuyas cajas no pasan esta cuenta gruesa ni se tocan ni caben
+#: juntos, así que no hace falta intersecarlos; los que la pasan se
+#: comprueban igual con la geometría.
+_HOLGURA_CAJA_MM = 1e-3
 
 #: Búsqueda de `mejor_grilla` (§5.2): pasos gruesos en todo el rango y
 #: después finos alrededor de la mejor. No son parámetros de negocio:
@@ -94,11 +99,22 @@ def _segmentos(geometria) -> list[LineString]:
     return [segmento for g in getattr(geometria, "geoms", ()) for segmento in _segmentos(g)]
 
 
+def _cajas_se_tocan(a: tuple, b: tuple) -> bool:
+    return (
+        a[0] <= b[2] + _HOLGURA_CAJA_MM
+        and b[0] <= a[2] + _HOLGURA_CAJA_MM
+        and a[1] <= b[3] + _HOLGURA_CAJA_MM
+        and b[1] <= a[3] + _HOLGURA_CAJA_MM
+    )
+
+
 def _cortes_entre(tramos: list[Polygon]) -> list[LineString]:
+    cajas = [tramo.bounds for tramo in tramos]
     cortes = []
     for i, uno in enumerate(tramos):
-        for otro in tramos[i + 1 :]:
-            cortes.extend(_segmentos(uno.intersection(otro)))
+        for j in range(i + 1, len(tramos)):
+            if _cajas_se_tocan(cajas[i], cajas[j]):
+                cortes.extend(_segmentos(uno.intersection(tramos[j])))
     return cortes
 
 
@@ -107,33 +123,68 @@ def _cabe(poligono: Polygon, ancho: float, alto: float) -> bool:
     return x1 - x0 <= ancho + _TOLERANCIA_MM and y1 - y0 <= alto + _TOLERANCIA_MM
 
 
-def _primera_union_posible(tramos: list[Polygon], ancho: float, alto: float):
-    """El primer par que se puede pegar: empieza por el tramo más chico
-    y prueba sus vecinos del borde compartido más largo al más corto
-    (pegar ahí borra la soldadura más larga). `None` si no hay ninguno."""
-    for chico in sorted(tramos, key=lambda t: t.area):
-        vecinos = sorted(
-            ((otro, chico.intersection(otro).length) for otro in tramos if otro is not chico),
-            key=lambda par: -par[1],
-        )
-        for vecino, borde in vecinos:
-            if borde <= _TOLERANCIA_MM:
-                break
-            unido = unary_union([chico, vecino])
-            if isinstance(unido, Polygon) and _cabe(unido, ancho, alto):
-                return chico, vecino, unido
-    return None
+def _caja_comun_cabe(a: tuple, b: tuple, ancho: float, alto: float) -> bool:
+    return (
+        max(a[2], b[2]) - min(a[0], b[0]) <= ancho + _HOLGURA_CAJA_MM
+        and max(a[3], b[3]) - min(a[1], b[1]) <= alto + _HOLGURA_CAJA_MM
+    )
 
 
 def _pegar_pedacitos(pedazos: list[Polygon], ancho: float, alto: float) -> list[Polygon]:
     """Pega cada pedacito a un vecino con el que comparte un corte si
     juntos siguen cabiendo en la celda (§5.2): un corte menos es una
-    soldadura menos y un tramo menos. Se repite hasta que no hay más."""
-    tramos = list(pedazos)
-    while (union := _primera_union_posible(tramos, ancho, alto)) is not None:
+    soldadura menos y un tramo menos. Se repite hasta que no hay más.
+
+    En cada vuelta pega el primer par posible: empieza por el tramo más
+    chico y prueba sus vecinos del borde compartido más largo al más
+    corto (pegar ahí borra la soldadura más larga).
+
+    El borde compartido se mide una sola vez por par, y solo entre
+    tramos cuya caja común cabe en la celda. Medir todos contra todos en
+    cada vuelta era la mitad del tiempo de la búsqueda con piezas de
+    10 m, que dejan unos 70 pedazos por grilla. La versión sin atajos
+    quedó en los tests, que comprueban que las dos dan lo mismo."""
+    # Los tramos van numerados en orden de aparición: los empates de
+    # área o de borde se resuelven por ese número.
+    tramos = dict(enumerate(pedazos))
+    cajas = {n: tramo.bounds for n, tramo in tramos.items()}
+    areas = {n: tramo.area for n, tramo in tramos.items()}
+
+    def borde(uno: int, otro: int) -> float:
+        if not _caja_comun_cabe(cajas[uno], cajas[otro], ancho, alto):
+            return 0.0
+        return tramos[uno].intersection(tramos[otro]).length
+
+    def vecinos_de(uno: int) -> dict[int, float]:
+        return {otro: largo for otro in tramos if otro != uno and (largo := borde(uno, otro)) > _TOLERANCIA_MM}
+
+    # Por tramo, con cuáles podría pegarse y cuánto borde comparten.
+    vecinos = {n: vecinos_de(n) for n in tramos}
+
+    def primera_union():
+        for chico in sorted(tramos, key=lambda n: (areas[n], n)):
+            for vecino in sorted(vecinos[chico], key=lambda n: (-vecinos[chico][n], n)):
+                unido = unary_union([tramos[chico], tramos[vecino]])
+                if isinstance(unido, Polygon) and _cabe(unido, ancho, alto):
+                    return chico, vecino, unido
+                del vecinos[chico][vecino]  # no se pegan: no hace falta volver a probarlo
+        return None
+
+    siguiente = len(tramos)
+    while (union := primera_union()) is not None:
         chico, vecino, unido = union
-        tramos = [t for t in tramos if t is not chico and t is not vecino] + [unido]
-    return tramos
+        for viejo in (chico, vecino):
+            del tramos[viejo], cajas[viejo], areas[viejo], vecinos[viejo]
+        for otros in vecinos.values():
+            otros.pop(chico, None)
+            otros.pop(vecino, None)
+        tramos[siguiente], cajas[siguiente], areas[siguiente] = unido, unido.bounds, unido.area
+        vecinos[siguiente] = vecinos_de(siguiente)
+        for otro in tramos:
+            if otro != siguiente and (largo := borde(otro, siguiente)) > _TOLERANCIA_MM:
+                vecinos[otro][siguiente] = largo
+        siguiente += 1
+    return list(tramos.values())
 
 
 def seccionar_con_grilla(forma: Polygon, celda: tuple[float, float], grilla: Grilla) -> Seccionado:
