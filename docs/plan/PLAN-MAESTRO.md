@@ -224,7 +224,7 @@ Se detallan cuando les toque, cada una con su diseño.
 
 | Historias | Motivo |
 |---|---|
-| `CART-701` a `CART-705` | Son el motor. Carril de Vale. El seccionado (A5) lo tomó Enzo el 2026-10-07: `plan/A5-seccionado/` |
+| `CART-701` a `CART-705` | Son el motor. Carril de Vale. El seccionado (A5) lo tomó Enzo el 2026-10-07: `plan/A5-seccionado/`. El reparto por chapa (A6), que baja las chapas que usa Sparrow, está planificado desde el 2026-10-08 y sin empezar, a la espera de hablarlo con Vale: `plan/A6-reparto-por-chapa/` |
 | `CART-205`, `CART-207`, `CART-208`, `CART-210` | Dependen de que haya un resultado de anidado. Se retoman después de E2 |
 | `CART-201` | La carga manual de piezas existe como servicio, sin ruta propia. Si hace falta se decide en el diseño de 2.1 |
 | `CART-501`, `CART-502`, `CART-504` | Dependen de acordar una convención de capas con diseño (`SUP-05`, `B-15`, `D-11`) |

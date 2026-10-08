@@ -113,7 +113,7 @@ Enzo editó `Complejo.dxf` para dejar un solo diseño, lo importó, seccionó, a
 
 - **Las formas del emblema** (6 en `Complejo.dxf`) no siguen una regla: de dos formas del mismo nivel, una se corta y la otra no. Eso lo resuelve la pantalla de revisión (2.1), que es también donde va el botón para confirmar la carga una vez puesta la escala.
 - **El lector repara un contorno que se cruza y no lo vuelve a validar después de redondear.** Con las curvas bien leídas ya no aparece en `Complejo.dxf`, pero la falla sigue.
-- **El plan del reparto chapa por chapa,** y hablarlo con Vale, que hizo la integración de Sparrow.
+- **El reparto por chapa (A6)** quedó diseñado y planificado en [`plan/A6-reparto-por-chapa/`](plan/A6-reparto-por-chapa/diseno.md), con el código del plan probado sobre una copia del backend. Sin empezar: primero hay que hablarlo con Vale, que hizo la integración de Sparrow.
 
 ---
 
