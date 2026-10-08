@@ -58,6 +58,46 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-08 — Seccionado (A5) construido: grilla de chapas, rutas y panel en la pestaña Piezas
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A5, que Enzo tomó del carril del motor el 2026-10-07)
+
+### Qué se hizo
+
+- **Seccionado construido** en la rama `feat/seccionado`, siguiendo [`plan/A5-seccionado/plan.md`](plan/A5-seccionado/plan.md) tarea por tarea y con el visto bueno de Enzo al final de cada una. Una pieza que no entra en la chapa se parte en tramos con una grilla del tamaño de la chapa, que el diseñador corre y gira antes de aplicar (`D-19`).
+  - **Cálculo** (`backend/app/services/seccionado/`): cortar con una grilla fija, pegar los pedacitos que entran juntos, buscar la mejor grilla y orientar cada tramo derecho sobre la chapa. Geometría pura, sin base.
+  - **Modelo y migración** `5ecc10ad0a5a`: `Pieza.seccionada_de_id` (en un tramo, su original) y `Pieza.seccionado` (en la original, cómo se cortó). La original queda `descartada` y la reemplazan sus tramos, así el anidado y el costeo no cambian.
+  - **Rutas:** `POST /piezas/{id}/seccionado/propuesta` (calcula sin guardar), `POST /piezas/{id}/seccionado` (aplica) y `DELETE /piezas/{id}/seccionado` (deshace). Un tramo no se vuelve a seccionar, un anidado guardado no pierde sus piezas, una pieza seccionada no se restaura a mano y reimportar el DXF sigue funcionando.
+  - **Pantalla:** panel en la pestaña Piezas que dibuja la propuesta, deja correr la grilla arrastrando y cambiar el ángulo, y lista los tramos debajo de su original.
+- **Tests:** backend 384 en verde (355 antes de empezar); frontend 13 (8 antes). Cada test nuevo se vio fallar antes de escribir el código.
+- **Números del aro sintético** (el de los tests, con las medidas del real): 8 tramos y 1,36 m de soldadura, con el corte más largo de 96 mm. La búsqueda tarda 4,4 s.
+- **Rendimiento con piezas reales**, medido sobre el trabajo 4: la búsqueda de la mejor grilla tardaba 225 s en una pieza de 12,0 × 9,4 m y 115 s en una de 10,0 × 6,4 m. Con una tarea que no estaba en el plan (medir cada borde compartido una sola vez al pegar) bajó a 77 s y 56 s, y el aro sin soldar a 2,9 s, con los mismos resultados. Tabla completa en la sección «Desvíos» del plan.
+- **Prueba en la app** sobre una copia de los datos: el panel de 3000 × 1000 da 2 tramos y 1,00 m de soldadura; arrastrar, aplicar y deshacer funcionan.
+- **Migración aplicada en la base local de Enzo**, con respaldo previo en `backend/local/`.
+
+### Qué se decidió
+
+- **La búsqueda prueba ángulos de a 5°, no de a 15°.** Los 6,4 m de soldadura que le salían al aro no eran culpa del orden de prioridad de `D-19`, sino de que la búsqueda no llegaba a ver las grillas buenas. `D-19` queda como está y **no** se suma una regla contra cortes largos.
+- **Rendimiento:** primero solo cambios que no alteran resultados; con esos números, pasar a la pantalla. Repartir las grillas en hilos da cerca del doble en las piezas grandes: quedó medido y sin aplicar.
+- **Tres correcciones al plan,** anotadas en su sección «Desvíos». Dos tests pasaban antes de escribir el código que decían probar. Y el plan afirmaba que con `ON DELETE CASCADE` la reimportación fallaría: no falla, SQLAlchemy solo avisa. `SET NULL` sigue siendo lo correcto y ahora un test lo defiende.
+
+### Cambios en el registro
+
+Sin cambios. Lo que el diseño llevó al registro (`D-19` cerrada, `P-21` y `P-22` respondidas el 2026-10-07, y `SUP-17`) ya estaba cargado.
+
+### Pendiente
+
+- **Que Enzo lo pruebe en la app** y, con su visto bueno, **abrir el PR** contra `main`. Antes del PR falta la revisión de toda la rama.
+- **Avisarle a Vale** que Enzo tomó el seccionado.
+- **El aro real soldado** (`SUP-17`): pedírselo al diseñador. Sin él no se puede hacer la validación del §7 del diseño. La pieza 198 del trabajo 4 es el aro sin el calado.
+- **`P-28`** sigue abierta: decide si los tramos que miden exacto el alto de la chapa entran.
+- **Sugerir «seccionar» al importar** (2.1) y **cotizar la soldadura** (2.3): el largo de cada corte ya queda guardado.
+- **Las piezas de 10 a 12 m tardan cerca de un minuto en proponer.** Además, no se revisó si lo que propone para ellas sirve (28 y 44 tramos), y la pieza 1009 del trabajo 4 parece un plano de referencia y no una pieza a cortar.
+- **Lo que se vio en el panel y no se tocó:** la fila de la original seccionada queda atenuada con sus enlaces, dos colores no distinguen tramos vecinos, y arrastrar deja medidas no redondas.
+- **Documentación que viene del 2026-10-07 y sigue sin hacer:** ese día no tiene entrada en esta bitácora (diseño y plan del seccionado, y el PR #15 de la importación de `Complejo.dxf`); el plan maestro sigue tratando la llegada del motor como pendiente (`D-14`, E1), y la integración de Sparrow ya está en `main`; y dos documentos sobre Sparrow están sueltos en `docs/`, fuera de `docs/motor/` (`GUIA-SPARROW-PRUEBAS.md` e `INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md`).
+
+---
+
 ## 2026-10-05 — Plan maestro del ciclo de cotización, `docs/` ordenada por estado y etapa 0
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (desde hoy se avanza por etapas del plan maestro)

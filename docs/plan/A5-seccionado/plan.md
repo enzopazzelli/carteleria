@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** escrito el 2026-10-07, sin empezar. **Al terminar cada tarea se frena y Enzo da el visto bueno antes de seguir** (pasos chicos con validación).
+> **Estado:** construido el 2026-10-08 en la rama `feat/seccionado` (PR pendiente de abrir). Tareas 0 a 9 hechas, más una de rendimiento que no estaba en el plan (7b). Faltan dos pasos: que Enzo lo pruebe en la app (Tarea 9, Step 6) y abrir el PR (Tarea 10, Step 4). Falta también la validación con el aro real soldado (`SUP-17`, §7 del diseño). **El código se aparta de las tareas de abajo en los puntos de la sección [«Desvíos»](#desvíos-respecto-de-este-plan-2026-10-08), al final.**
 
 **Goal:** Que una pieza más grande que la chapa se pueda partir en tramos con una grilla del tamaño de la chapa, ajustable por el diseñador, y que los tramos queden como piezas comunes para anidar y cotizar.
 
@@ -58,7 +58,7 @@
 
 ### Task 0: Rama
 
-- [ ] **Step 1: Crear la rama**
+- [x] **Step 1: Crear la rama**
 
 ```bash
 cd "D:/User/Desktop/proyectos/cartelería" && git checkout main && git pull --ff-only origin main && git checkout -b feat/seccionado
@@ -83,7 +83,7 @@ Expected: `Switched to a new branch 'feat/seccionado'`.
   - `celda_util(plancha: Plancha, params: ParametrosCorte) -> tuple[float, float]`
   - `seccionar_con_grilla(forma: Polygon, celda: tuple[float, float], grilla: Grilla) -> Seccionado`
 
-- [ ] **Step 1: Escribir los tests que fallan**
+- [x] **Step 1: Escribir los tests que fallan**
 
 `backend/tests/services/seccionado/test_grilla.py`:
 
@@ -172,12 +172,12 @@ def test_la_misma_grilla_da_siempre_el_mismo_resultado():
     assert [t.wkt for t in uno.tramos] == [t.wkt for t in otro.tramos]
 ```
 
-- [ ] **Step 2: Correrlos y ver que fallan**
+- [x] **Step 2: Correrlos y ver que fallan**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/services/seccionado/test_grilla.py`
 Expected: FAIL con `ModuleNotFoundError: No module named 'app.services.seccionado'`.
 
-- [ ] **Step 3: Escribir el módulo**
+- [x] **Step 3: Escribir el módulo**
 
 `backend/app/services/seccionado/__init__.py`:
 
@@ -315,19 +315,19 @@ def seccionar_con_grilla(forma: Polygon, celda: tuple[float, float], grilla: Gri
     return Seccionado(grilla, [volver(t) for t in tramos], [volver(c) for c in cortes])
 ```
 
-- [ ] **Step 4: Correrlos y ver que pasan**
+- [x] **Step 4: Correrlos y ver que pasan**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/services/seccionado/test_grilla.py`
 Expected: `4 passed`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/seccionado backend/tests/services/seccionado
 git commit -m "feat(seccionado): cortar una forma con una grilla fija de chapas"
 ```
 
-- [ ] **Step 6: Pausa — visto bueno de Enzo**
+- [x] **Step 6: Pausa — visto bueno de Enzo**
 
 ---
 
@@ -341,7 +341,7 @@ git commit -m "feat(seccionado): cortar una forma con una grilla fija de chapas"
 - Consumes: `seccionar_con_grilla`, `Grilla` (Tarea 1).
 - Produces: el mismo `seccionar_con_grilla`; ahora los tramos ya vienen pegados.
 
-- [ ] **Step 1: Escribir los tests que fallan**
+- [x] **Step 1: Escribir los tests que fallan**
 
 Agregar al final de `test_grilla.py`:
 
@@ -368,12 +368,12 @@ def test_los_pedacitos_que_juntos_no_entran_quedan_separados():
     assert resultado.soldadura_mm == pytest.approx(1600)
 ```
 
-- [ ] **Step 2: Correrlos y ver que fallan**
+- [x] **Step 2: Correrlos y ver que fallan**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/services/seccionado/test_grilla.py -k "unir or separados"`
 Expected: falla `test_una_forma_que_cabe_pero_queda_partida_por_la_grilla_se_vuelve_a_unir` (`assert 2 == 1`); el otro ya pasa.
 
-- [ ] **Step 3: Implementar el pegado**
+- [x] **Step 3: Implementar el pegado**
 
 En `grilla.py`, cambiar los imports de shapely:
 
@@ -418,19 +418,19 @@ def _pegar_pedacitos(pedazos: list[Polygon], ancho: float, alto: float) -> list[
     return tramos
 ```
 
-- [ ] **Step 4: Correr todos los tests del módulo**
+- [x] **Step 4: Correr todos los tests del módulo**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/services/seccionado/test_grilla.py`
 Expected: `6 passed`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/seccionado/grilla.py backend/tests/services/seccionado/test_grilla.py
 git commit -m "feat(seccionado): pegar los pedacitos que juntos entran en la chapa"
 ```
 
-- [ ] **Step 6: Pausa — visto bueno de Enzo**
+- [x] **Step 6: Pausa — visto bueno de Enzo**
 
 ---
 
@@ -445,7 +445,7 @@ git commit -m "feat(seccionado): pegar los pedacitos que juntos entran en la cha
 - Consumes: `seccionar_con_grilla`, `Grilla`, `Seccionado`.
 - Produces: `mejor_grilla(forma: Polygon, celda: tuple[float, float]) -> Seccionado`.
 
-- [ ] **Step 1: Escribir los tests que fallan**
+- [x] **Step 1: Escribir los tests que fallan**
 
 En `test_grilla.py`, cambiar el import del módulo:
 
@@ -488,12 +488,12 @@ def test_la_mejor_grilla_es_siempre_la_misma():
 
 y agregar `from shapely import affinity` a los imports del test.
 
-- [ ] **Step 2: Correrlos y ver que fallan**
+- [x] **Step 2: Correrlos y ver que fallan**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/services/seccionado/test_grilla.py -k mejor`
 Expected: FAIL con `ImportError: cannot import name 'mejor_grilla'`.
 
-- [ ] **Step 3: Implementar la búsqueda**
+- [x] **Step 3: Implementar la búsqueda**
 
 En `grilla.py`, después de `_TOLERANCIA_MM`:
 
@@ -550,12 +550,12 @@ from .grilla import Grilla, Seccionado, celda_util, mejor_grilla, seccionar_con_
 __all__ = ["Grilla", "Seccionado", "celda_util", "mejor_grilla", "seccionar_con_grilla"]
 ```
 
-- [ ] **Step 4: Correr todos los tests del módulo**
+- [x] **Step 4: Correr todos los tests del módulo**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/services/seccionado/test_grilla.py`
 Expected: `9 passed`.
 
-- [ ] **Step 5: Medir cuánto tarda con el aro**
+- [x] **Step 5: Medir cuánto tarda con el aro**
 
 Run:
 
@@ -572,14 +572,14 @@ print(f'{time.perf_counter() - t:.1f} s, {len(r.tramos)} tramos, {r.soldadura_mm
 
 Expected: menos de 30 s. Anotar el número en el mensaje del commit. Si tarda más, subir `_ANGULOS_GRUESOS` a pasos de 30° y repetir los Steps 4 y 5.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/app/services/seccionado backend/tests/services/seccionado/test_grilla.py
 git commit -m "feat(seccionado): buscar la grilla con menos tramos y menos soldadura"
 ```
 
-- [ ] **Step 7: Pausa — visto bueno de Enzo**, con el tiempo medido y la cantidad de tramos del aro.
+- [x] **Step 7: Pausa — visto bueno de Enzo**, con el tiempo medido y la cantidad de tramos del aro.
 
 ---
 
@@ -594,7 +594,7 @@ git commit -m "feat(seccionado): buscar la grilla con menos tramos y menos solda
 - Consumes: `Grilla`.
 - Produces: `tramo_orientado(tramo: Polygon, grilla: Grilla) -> Polygon`, en el marco local `[0, ancho] × [0, alto]`.
 
-- [ ] **Step 1: Escribir el test que falla**
+- [x] **Step 1: Escribir el test que falla**
 
 En `test_grilla.py`, sumar `tramo_orientado` al import del módulo y agregar:
 
@@ -614,12 +614,12 @@ def test_cada_tramo_orientado_queda_derecho_en_la_chapa_y_conserva_su_area():
         assert orientado.area == pytest.approx(tramo.area)
 ```
 
-- [ ] **Step 2: Correrlo y ver que falla**
+- [x] **Step 2: Correrlo y ver que falla**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/services/seccionado/test_grilla.py -k orientado`
 Expected: FAIL con `ImportError: cannot import name 'tramo_orientado'`.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 Al final de `grilla.py`:
 
@@ -642,19 +642,19 @@ from .grilla import Grilla, Seccionado, celda_util, mejor_grilla, seccionar_con_
 __all__ = ["Grilla", "Seccionado", "celda_util", "mejor_grilla", "seccionar_con_grilla", "tramo_orientado"]
 ```
 
-- [ ] **Step 4: Correr todos los tests del módulo**
+- [x] **Step 4: Correr todos los tests del módulo**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/services/seccionado/test_grilla.py`
 Expected: `10 passed`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/seccionado backend/tests/services/seccionado/test_grilla.py
 git commit -m "feat(seccionado): orientar cada tramo derecho sobre la chapa"
 ```
 
-- [ ] **Step 6: Pausa — visto bueno de Enzo**
+- [x] **Step 6: Pausa — visto bueno de Enzo**
 
 ---
 
@@ -669,7 +669,7 @@ git commit -m "feat(seccionado): orientar cada tramo derecho sobre la chapa"
 **Interfaces:**
 - Produces: `Pieza.seccionada_de_id: int | None` y `Pieza.seccionado: dict | None`, que también salen en `PiezaLeer`.
 
-- [ ] **Step 1: Escribir el test que falla**
+- [x] **Step 1: Escribir el test que falla**
 
 `backend/tests/api/test_rutas_seccionado.py`:
 
@@ -714,12 +714,12 @@ def test_una_pieza_nueva_no_esta_seccionada(cliente, tmp_path):
     assert pieza["seccionado"] is None
 ```
 
-- [ ] **Step 2: Correrlo y ver que falla**
+- [x] **Step 2: Correrlo y ver que falla**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/api/test_rutas_seccionado.py`
 Expected: FAIL con `KeyError: 'seccionada_de_id'`.
 
-- [ ] **Step 3: Agregar las columnas al modelo**
+- [x] **Step 3: Agregar las columnas al modelo**
 
 En `backend/app/modelos/trabajo.py`, dentro de `class Pieza`, después de `contorno_recto`:
 
@@ -738,7 +738,7 @@ En `backend/app/modelos/trabajo.py`, dentro de `class Pieza`, después de `conto
     seccionado: Mapped[dict | None] = mapped_column(JSON, default=None)
 ```
 
-- [ ] **Step 4: Escribir la migración**
+- [x] **Step 4: Escribir la migración**
 
 `backend/alembic/versions/5ecc10ad0a5a_pieza_seccionado.py`:
 
@@ -785,7 +785,7 @@ def downgrade() -> None:
         batch_op.drop_column("seccionada_de_id")
 ```
 
-- [ ] **Step 5: Sumar los campos a `PiezaLeer`**
+- [x] **Step 5: Sumar los campos a `PiezaLeer`**
 
 En `backend/app/api/esquemas_trabajos.py`, al final de `class PiezaLeer`:
 
@@ -796,12 +796,12 @@ En `backend/app/api/esquemas_trabajos.py`, al final de `class PiezaLeer`:
     seccionado: dict | None = None
 ```
 
-- [ ] **Step 6: Correr el test y la suite**
+- [x] **Step 6: Correr el test y la suite**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider`
 Expected: todo pasa, con 1 test más que antes.
 
-- [ ] **Step 7: Probar la migración de ida y vuelta en una base aparte**
+- [x] **Step 7: Probar la migración de ida y vuelta en una base aparte**
 
 Run:
 
@@ -813,14 +813,14 @@ cd backend && export DATABASE_URL="sqlite:///local/migracion_prueba.db" \
 
 Expected: termina con `5ecc10ad0a5a (head)` y sin errores.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend/app/modelos/trabajo.py backend/alembic/versions/5ecc10ad0a5a_pieza_seccionado.py backend/app/api/esquemas_trabajos.py backend/tests/api/test_rutas_seccionado.py
 git commit -m "feat(seccionado): guardar en la pieza de dónde salió cada tramo y cómo se seccionó"
 ```
 
-- [ ] **Step 9: Pausa — visto bueno de Enzo.** Recordarle que su base local necesita `python -m alembic upgrade head` antes de levantar el backend.
+- [x] **Step 9: Pausa — visto bueno de Enzo.** Recordarle que su base local necesita `python -m alembic upgrade head` antes de levantar el backend.
 
 ---
 
@@ -836,7 +836,7 @@ git commit -m "feat(seccionado): guardar en la pieza de dónde salió cada tramo
 - Consumes: `Grilla`, `Seccionado`, `celda_util`, `mejor_grilla`, `seccionar_con_grilla` y `tramo_orientado` (Tareas 1 a 4); `Pieza.seccionada_de_id` (Tarea 5); `MotorNestingRectangular.piezas_que_no_entran` (`engine.py`); `poligono_material` (`geometria_material.py`).
 - Produces: `POST /piezas/{id}/seccionado/propuesta`. Los helpers `_pieza_o_404`, `_chapa_y_parametros`, `_forma`, `_validar_que_no_entra`, `_no_es_tramo` y `_a_lista` los usa la Tarea 7.
 
-- [ ] **Step 1: Escribir los tests que fallan**
+- [x] **Step 1: Escribir los tests que fallan**
 
 Agregar al final de `test_rutas_seccionado.py`:
 
@@ -934,12 +934,12 @@ def test_una_pieza_inexistente_da_404(cliente):
     assert _proponer(cliente, 999, formato_id=1).status_code == 404
 ```
 
-- [ ] **Step 2: Correrlos y ver que fallan**
+- [x] **Step 2: Correrlos y ver que fallan**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/api/test_rutas_seccionado.py`
 Expected: los 7 nuevos fallan con 404 (la ruta no existe).
 
-- [ ] **Step 3: Escribir los esquemas**
+- [x] **Step 3: Escribir los esquemas**
 
 `backend/app/api/esquemas_seccionado.py`:
 
@@ -996,7 +996,7 @@ class PropuestaLeer(BaseModel):
     soldadura_mm: float
 ```
 
-- [ ] **Step 4: Escribir las rutas**
+- [x] **Step 4: Escribir las rutas**
 
 `backend/app/api/rutas_seccionado.py`:
 
@@ -1135,7 +1135,7 @@ def proponer_seccionado(
     return _propuesta(resultado, celda)
 ```
 
-- [ ] **Step 5: Registrar el router**
+- [x] **Step 5: Registrar el router**
 
 En `backend/app/api/app.py`, junto a los otros imports de routers:
 
@@ -1149,24 +1149,24 @@ y después de `app.include_router(router_presupuesto)`:
 app.include_router(router_seccionado)
 ```
 
-- [ ] **Step 6: Correr los tests**
+- [x] **Step 6: Correr los tests**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/api/test_rutas_seccionado.py`
 Expected: `8 passed`.
 
-- [ ] **Step 7: Correr la suite completa**
+- [x] **Step 7: Correr la suite completa**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider`
 Expected: todo pasa.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend/app/api/esquemas_seccionado.py backend/app/api/rutas_seccionado.py backend/app/api/app.py backend/tests/api/test_rutas_seccionado.py
 git commit -m "feat(seccionado): proponer los tramos de una pieza sin guardar"
 ```
 
-- [ ] **Step 9: Pausa — visto bueno de Enzo**
+- [x] **Step 9: Pausa — visto bueno de Enzo**
 
 ---
 
@@ -1181,7 +1181,7 @@ git commit -m "feat(seccionado): proponer los tramos de una pieza sin guardar"
 - Consumes: los helpers de la Tarea 6; `Colocacion`, `EjecucionNesting` y `GrupoDeCorte` de `app.modelos.trabajo`.
 - Produces: `POST /piezas/{id}/seccionado` (201, devuelve `list[PiezaLeer]` con los tramos) y `DELETE /piezas/{id}/seccionado` (204).
 
-- [ ] **Step 1: Escribir los tests que fallan**
+- [x] **Step 1: Escribir los tests que fallan**
 
 Agregar al final de `test_rutas_seccionado.py`:
 
@@ -1302,12 +1302,12 @@ def test_reimportar_el_dxf_de_un_trabajo_con_una_pieza_seccionada_funciona(clien
     assert len(_piezas(cliente, trabajo["id"])) == 1
 ```
 
-- [ ] **Step 2: Correrlos y ver que fallan**
+- [x] **Step 2: Correrlos y ver que fallan**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/api/test_rutas_seccionado.py`
 Expected: fallan los 7 nuevos, la mayoría con 404 o 405 (las rutas no existen).
 
-- [ ] **Step 3: Escribir aplicar y deshacer**
+- [x] **Step 3: Escribir aplicar y deshacer**
 
 En `rutas_seccionado.py`, cambiar los imports:
 
@@ -1425,7 +1425,7 @@ def deshacer_seccionado(pieza_id: int, sesion: Session = Depends(obtener_sesion)
 
 y sumar `from decimal import Decimal` al principio de los imports del archivo.
 
-- [ ] **Step 4: Rechazar restaurar una pieza seccionada**
+- [x] **Step 4: Rechazar restaurar una pieza seccionada**
 
 En `backend/app/api/rutas_trabajos.py`, dentro de `actualizar_pieza`, después de `valores = datos.model_dump(exclude_unset=True)`:
 
@@ -1437,24 +1437,24 @@ En `backend/app/api/rutas_trabajos.py`, dentro de `actualizar_pieza`, después d
         )
 ```
 
-- [ ] **Step 5: Correr los tests**
+- [x] **Step 5: Correr los tests**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider tests/api/test_rutas_seccionado.py`
 Expected: `15 passed`.
 
-- [ ] **Step 6: Correr la suite completa**
+- [x] **Step 6: Correr la suite completa**
 
 Run: `cd backend && python -m pytest -q -p no:cacheprovider`
 Expected: todo pasa.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/api/rutas_seccionado.py backend/app/api/rutas_trabajos.py backend/tests/api/test_rutas_seccionado.py
 git commit -m "feat(seccionado): aplicar y deshacer, sin romper anidados guardados"
 ```
 
-- [ ] **Step 8: Pausa — visto bueno de Enzo**
+- [x] **Step 8: Pausa — visto bueno de Enzo**
 
 ---
 
@@ -1474,7 +1474,7 @@ git commit -m "feat(seccionado): aplicar y deshacer, sin romper anidados guardad
   - hooks: `useAplicarSeccionado(trabajoId)`, `useDeshacerSeccionado(trabajoId)`;
   - cuentas: `entraEnAlgunFormato`, `lineasDeGrilla`, `desplazamientoEnGrilla`.
 
-- [ ] **Step 1: Escribir los tests que fallan**
+- [x] **Step 1: Escribir los tests que fallan**
 
 `frontend/src/components/Seccionado/geometria.test.ts`:
 
@@ -1515,12 +1515,12 @@ describe("desplazamientoEnGrilla", () => {
 });
 ```
 
-- [ ] **Step 2: Correrlos y ver que fallan**
+- [x] **Step 2: Correrlos y ver que fallan**
 
 Run: `cd frontend && npx vitest run src/components/Seccionado`
 Expected: FAIL, no encuentra `./geometria`.
 
-- [ ] **Step 3: Escribir las cuentas**
+- [x] **Step 3: Escribir las cuentas**
 
 `frontend/src/components/Seccionado/geometria.ts`:
 
@@ -1597,12 +1597,12 @@ export function desplazamientoEnGrilla(dxMm: number, dyMm: number, anguloGrados:
 }
 ```
 
-- [ ] **Step 4: Correr los tests**
+- [x] **Step 4: Correr los tests**
 
 Run: `cd frontend && npx vitest run src/components/Seccionado`
 Expected: `5 passed`.
 
-- [ ] **Step 5: Tipos y llamadas**
+- [x] **Step 5: Tipos y llamadas**
 
 En `frontend/src/api/piezasYgrupos.ts`, cambiar el import del cliente para sumar `apiDelete`:
 
@@ -1675,7 +1675,7 @@ export function deshacerSeccionado(piezaId: number): Promise<void> {
 }
 ```
 
-- [ ] **Step 6: Hooks**
+- [x] **Step 6: Hooks**
 
 En `frontend/src/hooks/usePiezas.ts`, cambiar el import:
 
@@ -1711,19 +1711,19 @@ export function useDeshacerSeccionado(trabajoId: number) {
 }
 ```
 
-- [ ] **Step 7: Build y tests del frontend**
+- [x] **Step 7: Build y tests del frontend**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: el build termina con código 0, y los tests pasan con 5 más que antes. Si `tsc` marca objetos `Pieza` de prueba sin los campos nuevos, agregarles `seccionada_de_id: null, seccionado: null`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add frontend/src/api/piezasYgrupos.ts frontend/src/hooks/usePiezas.ts frontend/src/components/Seccionado
 git commit -m "feat(seccionado): tipos, llamadas y cuentas de la pantalla"
 ```
 
-- [ ] **Step 9: Pausa — visto bueno de Enzo**
+- [x] **Step 9: Pausa — visto bueno de Enzo**
 
 ---
 
@@ -1737,7 +1737,7 @@ git commit -m "feat(seccionado): tipos, llamadas y cuentas de la pantalla"
 - Consumes: todo lo de la Tarea 8; `useTodosLosFormatos` (`hooks/useCatalogo.ts`), `useGrupos` (`hooks/useGrupos.ts`), `Banner`.
 - Produces: `SeccionarPanel({ pieza, formatoInicial, onCerrar })`.
 
-- [ ] **Step 1: Escribir el panel**
+- [x] **Step 1: Escribir el panel**
 
 `frontend/src/components/Seccionado/SeccionarPanel.tsx`:
 
@@ -1993,7 +1993,7 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
 }
 ```
 
-- [ ] **Step 2: Integrarlo en la pestaña Piezas**
+- [x] **Step 2: Integrarlo en la pestaña Piezas**
 
 En `frontend/src/routes/TrabajoWorkspace/PiezasTab.tsx`:
 
@@ -2119,12 +2119,12 @@ import type { Pieza } from "../../api/piezasYgrupos";
           </tbody>
 ```
 
-- [ ] **Step 3: Build y tests del frontend**
+- [x] **Step 3: Build y tests del frontend**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: el build termina con código 0 y los tests pasan.
 
-- [ ] **Step 4: Prueba en la app**
+- [x] **Step 4: Prueba en la app**
 
 Run:
 
@@ -2145,7 +2145,7 @@ Después levantar el backend (`python -m uvicorn app.api.app:app --port 8000`, s
 5. Aplicar: aparecen `/t1` y `/t2` debajo de la original, que dice «Seccionada en 2 tramos».
 6. Deshacer: la original vuelve a estar activa.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/components/Seccionado/SeccionarPanel.tsx frontend/src/routes/TrabajoWorkspace/PiezasTab.tsx
@@ -2164,11 +2164,11 @@ git commit -m "feat(seccionado): panel para seccionar y ajustar la grilla en la 
 - Modify: `docs/plan/PLAN-MAESTRO.md` (§7)
 - Modify: `docs/BITACORA.md` (entrada nueva arriba)
 
-- [ ] **Step 1: Estado del diseño y del plan**
+- [x] **Step 1: Estado del diseño y del plan**
 
 En el bloque **Estado** de `diseno.md` y de `plan.md`, poner la fecha del día y el número del PR que se abre en el Step 4: «Construido el {fecha} (PR #{número}). Falta la validación con el aro real soldado (`SUP-17`, §7 del diseño).» Si el número todavía no se conoce, completarlo después de abrir el PR, con un commit aparte.
 
-- [ ] **Step 2: Plan maestro**
+- [x] **Step 2: Plan maestro**
 
 En `docs/plan/PLAN-MAESTRO.md` §7, tabla «Lo que no entra en ninguna etapa», cambiar la fila
 
@@ -2178,7 +2178,7 @@ por
 
 `| \`CART-701\` a \`CART-705\` | Son el motor. Carril de Vale. El seccionado (A5) lo tomó Enzo el 2026-10-07: \`plan/A5-seccionado/\` |`
 
-- [ ] **Step 3: Bitácora**
+- [x] **Step 3: Bitácora**
 
 Entrada nueva arriba de todo en `docs/BITACORA.md`, con el formato de las anteriores (Qué se hizo / Qué se decidió / Cambios en el registro / Pendiente). Que diga:
 - qué se construyó;
@@ -2207,3 +2207,44 @@ EOF
 ```
 
 - [ ] **Step 5: Pausa — Enzo revisa el PR**
+
+---
+
+## Desvíos respecto de este plan (2026-10-08)
+
+El código quedó distinto de lo que muestran las tareas de arriba en estos puntos. Cada uno se decidió durante la construcción; los que eran de Enzo se le preguntaron con opciones.
+
+| Tarea | Qué cambió | Por qué |
+|---|---|---|
+| 3 | `_ANGULOS_GRUESOS` va de a 5° y no de a 15°. Test nuevo: `test_la_mejor_grilla_del_aro_no_corta_a_lo_largo_de_los_rayos` | De a 15° la búsqueda solo veía la grilla de 45° (8 tramos, 6,37 m de soldadura, 5 cortes a lo largo de los rayos). De a 5° ve las de 25°, 65°, 115° y 155° (8 tramos, 1,36 m). Decisión de Enzo: `D-19` no cambia y no se suma una regla contra cortes largos |
+| 3 | La búsqueda sobre el aro se calcula una vez, en un fixture de módulo que comparten los dos tests que la usan | No pagar dos veces la búsqueda en cada corrida de la suite |
+| 5 | La migración se probó de ida y vuelta en una base nueva fuera de `backend/local/` | No crear ni borrar archivos al lado de la base real |
+| 6 | `test_una_pieza_inexistente_da_404` mira también el mensaje | Con solo el 404 pasaba antes de escribir la ruta: una ruta que no existe también da 404 |
+| 7 | El test de reimportar exige que el seccionado previo devuelva 201 | Sin tramos guardados la reimportación anda siempre y el test no probaba nada |
+| 7 | El test de reimportar trata el `SAWarning` de SQLAlchemy como error. Se corrigió el comentario de `Pieza.seccionada_de_id` | **«Review Focus» 1 es inexacto:** con `ON DELETE CASCADE` el ORM no falla, solo avisa («expected to delete 1 row(s); 0 were matched») y la reimportación termina bien. `SET NULL` sigue siendo lo correcto, y ahora el test lo defiende: falla con `CASCADE` y pasa con `SET NULL` |
+| 7b (nueva) | `_pegar_pedacitos` mide el borde compartido una sola vez por par y descarta por caja; `_cortes_entre` solo mira tramos cuyas cajas se tocan. Test nuevo de equivalencia contra el pegado original, que quedó en los tests como referencia | La búsqueda tardaba minutos con piezas reales grandes (ver abajo). Decisión de Enzo: solo cambios que no alteren resultados |
+| 9 | El panel muestra «Probando grillas…» mientras busca la mejor grilla | La propuesta de una pieza de 10 a 12 m tarda cerca de un minuto |
+| 9 | La prueba en la app (Step 4) se hizo sobre una copia de los datos, con `CARTELERIA_DATOS` apuntando a otra carpeta | No dejar un trabajo de prueba ni un DXF en los datos reales |
+
+### Tiempo de la búsqueda de la mejor grilla
+
+Medido el 2026-10-08, chapa de 1220 × 2440. El «Expected» de 30 s de la Tarea 3 solo se había comprobado con el aro sintético.
+
+| Forma | Puntos | Como salía del plan | Después de la tarea 7b |
+|---|---|---|---|
+| Aro sintético de los tests | — | 9,4 s | 4,4 s |
+| Pieza 198 del trabajo 4 (4,6 × 4,6 m, el aro sin soldar) | 545 | 6,4 s | 2,9 s |
+| Pieza 1009 del trabajo 4 (3,6 × 2,8 m) | 2021 | 30,7 s | 15,1 s |
+| Pieza 404 del trabajo 4 (10,0 × 6,4 m) | 5489 | 114,5 s | 55,6 s |
+| Pieza 403 del trabajo 4 (12,0 × 9,4 m) | 5660 | 225,2 s | 77,4 s |
+
+Las cuatro piezas reales dan los mismos tramos y la misma soldadura antes y después. Evaluar una grilla ya elegida (aplicar, arrastrar, cambiar el ángulo) tarda entre 0,05 y 0,25 s.
+
+**Medido y sin aplicar:** repartir las grillas en hilos da cerca del doble en las piezas grandes y nada en las chicas, con los mismos resultados. Enzo decidió pasar al frontend sin sumarlo.
+
+### Lo que se vio en el panel y quedó sin tocar
+
+1. La fila de la original seccionada queda atenuada entera, con sus enlaces «Volver a seccionar» y «Deshacer», que parecen deshabilitados aunque funcionan.
+2. Los dos colores se alternan por orden de tramo: tramos vecinos pueden quedar del mismo color y solo los separa el corte rojo.
+3. Arrastrar deja corrimientos no redondos y tramos de medidas como 321.428571 mm. Falta decidir si la grilla se ajusta a milímetros enteros.
+4. La pieza 1009 del trabajo 4 parece un plano de referencia y no una pieza a cortar.

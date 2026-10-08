@@ -1,6 +1,6 @@
 # A5 · Seccionado — diseño
 
-> **Estado:** diseño aprobado por partes en la conversación del 2026-10-07; falta la revisión de Enzo sobre este documento. Después sigue el plan de implementación (`plan.md`, en esta misma carpeta).
+> **Estado:** construido el 2026-10-08 en la rama `feat/seccionado` (PR pendiente de abrir). Falta la validación con el aro real soldado (`SUP-17`, §7). Lo que cambió al construirlo está marcado en §5.2 y §8, y en detalle en la sección «Desvíos» de [`plan.md`](plan.md).
 >
 > **Cambio de reparto.** El plan maestro dejaba el seccionado (paso A5 de [`motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`](../../motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md)) en el carril de Vale. Enzo decidió tomarlo el 2026-10-07 porque sin él el aro de Belgrano no se puede cotizar. Hay que avisarle a Vale, y [`PLAN-MAESTRO.md`](../PLAN-MAESTRO.md) se actualiza en el paso de documentación.
 >
@@ -89,6 +89,8 @@ Por eso la entrada del seccionado es **la forma ya soldada en Corel** (`SUP-17`)
 1. la que deja **menos tramos**;
 2. la que **suelda menos**: la suma del largo de metal que cruza cada línea de la grilla.
 
+Los pasos gruesos de ángulo son de 5° (medido el 2026-10-08). De a 15°, la búsqueda del aro solo veía la grilla de 45°, cuyas líneas corren a lo largo de los rayos: 8 tramos y 6,37 m de soldadura. De a 5° encuentra las de 25°, 65°, 115° y 155°: los mismos 8 tramos con 1,36 m. El orden de prioridad de `D-19` alcanza; no hizo falta una regla contra cortes largos.
+
 **Pedacitos sueltos.** En una red calada, una línea de la grilla puede separar la punta de una banda y dejarla sola. Después de cortar, cada tramo se intenta pegar a un vecino con el que comparte un corte, si la unión sigue cabiendo en la celda. Se empieza por los más chicos. Cada unión borra un corte: una soldadura menos y un tramo menos.
 
 **Orientación de cada tramo.** Se gira lo necesario para que su celda quede derecha sobre la chapa. Si el material tiene veta (`PAR-04`), todos los tramos quedan con la veta en el mismo sentido. Un tramo que salió de pegar pedacitos conserva la orientación de la grilla.
@@ -170,13 +172,14 @@ Por eso la entrada del seccionado es **la forma ya soldada en Corel** (`SUP-17`)
 |---|---|---|
 | La grilla no repite la simetría (criterio de `P-21`) | Tramos distintos entre sí donde el diseñador los haría iguales | Lo corrige el diseñador al ajustar la grilla. Si molesta, se suma un patrón simétrico para formas radiales |
 | `P-28` sin responder | Más tramos que el diseñador en chapas de 1220 | Se valida con los dos valores de margen y se reporta |
-| La búsqueda es lenta con formas de cientos de puntos | La pantalla espera | Pasos gruesos y después finos. La grilla fija corta una sola vez |
+| La búsqueda es lenta con formas grandes | La pantalla espera | **Se confirmó (2026-10-08).** Manda la cantidad de tramos, no la de puntos: 3 s el aro del trabajo 4, 15 s una pieza de 3,6 m, cerca de un minuto las de 10 a 12 m (tabla en `plan.md`, «Desvíos»). El panel avisa que está buscando. La grilla fija corta una sola vez (menos de 0,3 s). Repartir las grillas en hilos da el doble en las grandes: está medido y sin aplicar |
 | `SUP-17` es falso: el diseñador no puede soldar en Corel | No hay entrada para el seccionado | Se reabre la reconstrucción desde la vista armada, empezando por averiguar si el DXF trae el grosor de los trazos |
 
 ---
 
 ## 9. Qué sigue
 
-1. Enzo revisa este documento.
-2. Plan de implementación en `plan.md`, por pasos chicos: cálculo, después rutas y migración, después pantalla.
-3. Pedirle al diseñador el aro de Complejo exportado soldado. No frena el desarrollo (§7).
+1. ~~Enzo revisa este documento.~~ ~~Plan de implementación en `plan.md`.~~ Hecho: construido el 2026-10-08.
+2. Enzo lo prueba en la app y se abre el PR contra `main`.
+3. Pedirle al diseñador el aro de Complejo exportado soldado, para la validación del §7.
+4. Decidir sobre lo que se vio en el panel (`plan.md`, «Desvíos»): la fila atenuada de la original, los colores de los tramos y si la grilla se ajusta a milímetros enteros.
