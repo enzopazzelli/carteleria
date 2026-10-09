@@ -1,6 +1,6 @@
 # A6 · Reparto por chapa — diseño
 
-> **Estado:** propuesto el 2026-10-08. Sin construir: el código del plan se probó sobre una copia del backend, fuera del repositorio (§2). **Antes de empezar hay que hablarlo con Vale**, que hizo la integración de Sparrow (PR #14): este cambio toca su código (`CONVENCIONES.md §3`).
+> **Estado:** propuesto el 2026-10-08. Sin construir: el código del plan se probó sobre una copia del backend, fuera del repositorio (§2). **Antes de empezar hay que hablarlo con Vale**, que hizo la integración de Sparrow (PR #14): este cambio toca su código (`CONVENCIONES.md §3`). El 2026-10-09 se midió con más tiempo máximo (§2) y Enzo decidió subir `PAR-09` (§4).
 >
 > **De dónde sale.** Enzo anidó `Complejo.dxf` y preguntó si más pasadas dan mejores anidados. Se midió, y la respuesta es que no: el límite está en cómo se reparten las piezas en chapas. Bitácora del 2026-10-08, addendum.
 >
@@ -54,10 +54,28 @@ En «vaciar», las dos corridas partieron de 7 chapas, bajaron a 6 a los 33 s y 
 
 Con la etapa prendida siempre dio menos chapas, y **usó todo el tiempo**: una corrida llegó a 5 y la otra se quedó en 6 porque se le acabó. El tiempo de `PAR-09` es lo que limita (§6).
 
+**Con más tiempo llega siempre (2026-10-09).** La misma medición, solo con la etapa prendida, con 180 y 240 s de tiempo máximo y anotando en qué segundo se llega a cada cantidad de chapas. Notebook enchufada y sin suspensiones:
+
+| Tiempo máximo | Semilla | Chapas | Llegó a 5 a los | Terminó a los |
+|---|---|---|---|---|
+| 240 s | 42 | 5 | 136 s | 240 s |
+| 240 s | 43 | 5 | 117 s | 239 s |
+| 240 s | 44 | 5 | 124 s | 239 s |
+| 180 s | 42 | 5 | 96 s | 164 s |
+| 180 s | 43 | 5 | 121 s | 180 s |
+| 180 s | 44 | 5 | 169 s | 177 s |
+
+Las seis dieron 38,6 %. Con el tope del 2026-10-08 habrían llegado a 5 una o dos de las seis. Con 180 s llegaron las tres, una con 8 s de margen. Con 240 s, la más lenta de las seis deja 70 s.
+
+- **La semilla no explica la diferencia:** la 42 llegó a los 136 s una vez y a los 96 s otra; la 44, a los 124 y a los 169.
+- **A batería llega más tarde.** Ese mismo día, antes de enchufar la notebook, dos corridas de 240 s llegaron a 5 a los 162 y 172 s.
+
+Los guiones y las salidas están en `backend/local/herramientas-anidado-2026-10-09/`, fuera del repositorio.
+
 **Tres límites de estas mediciones:**
 
 - Es un solo trabajo, con una sola medida de chapa.
-- Los tiempos de las pruebas de concepto se tomaron con dos y tres corridas a la vez en la misma máquina, así que están inflados. Los de la tabla de arriba, no.
+- Los tiempos de las pruebas de concepto se tomaron con dos y tres corridas a la vez en la misma máquina, así que están inflados. Los de las dos tablas de punta a punta, no.
 - La búsqueda de Sparrow corta por tiempo, y por eso el resultado depende de cuán ocupada está la máquina: la misma semilla dio 6 chapas una vez y 7 otra.
 
 ---
@@ -87,6 +105,7 @@ Con la etapa prendida siempre dio menos chapas, y **usó todo el tiempo**: una c
 |---|---|---|
 | Qué variante | **Vaciar chapas.** Llega al mismo resultado que «llenar» en un tercio del tiempo, y como parte del anidado de hoy nunca queda peor | — |
 | Cuánto tiempo tiene | El que sobra del tiempo máximo de la ejecución. No se suma un tiempo propio | `PAR-09` |
+| Cuánto vale el tiempo máximo | **240 s** (Enzo, 2026-10-09), por la medición del §2. Se cambia en el registro y en el código junto con este sub-proyecto, no antes: sin la etapa nueva el valor no hace diferencia | `PAR-09` |
 | Cuántas pasadas | Sigue el tope de 3. Con la etapa prendida, cada pasada es «franja cortada en chapas + vaciar»; en la práctica entra una sola en el tiempo de `PAR-09` | — |
 | Prendida o apagada | Prendida por defecto, con una casilla para apagarla | — |
 | En la comparación de formatos | Igual que en Anidado. Si la comparación diera más chapas que el anidado final, recomendaría mal el formato | — |
@@ -132,7 +151,8 @@ Etapa de hoy                      Etapa nueva
 ## 6. Tiempo y pantalla
 
 - Cada consulta tarda lo mismo que una búsqueda («Búsqueda por chapa (s)») más un poco: con 2 s por búsqueda, entre 3,5 y 4 s por consulta.
-- **Con el tiempo máximo de `PAR-09`, en el trabajo medido la etapa llega a 5 chapas justo sobre el límite:** una corrida de dos llegó y la otra no (§2). El criterio de éxito del §1 está en riesgo con ese valor. La Tarea 6 del plan mide a partir de cuánto tiempo llega siempre. Con ese número Enzo decide si se revisa `PAR-09`, que sigue provisorio.
+- **Con el valor que `PAR-09` tenía el 2026-10-08, en el trabajo medido la etapa llega a 5 chapas justo sobre el límite:** una corrida de dos llegó y la otra no (§2). Medido el 2026-10-09 con más tiempo, llega siempre, y Enzo decidió subir `PAR-09` (§4). El parámetro sigue provisorio.
+- **Con el valor nuevo, quien espera frente a la pantalla espera el triple:** el anidado del trabajo medido pasa de unos 80 s a 240 s. Es un argumento más para `D-12` (anidar en segundo plano con aviso).
 - Otra salida, **sin medir**: consultar con menos segundos que la búsqueda de la franja. Una consulta trabaja con las piezas de una sola chapa, no con todas.
 - El anidado va a usar casi siempre todo el tiempo máximo. Hoy termina antes: unos 80 s de 120 en el trabajo medido.
 - En Anidado y en la comparación de Grupos se suma una casilla **«Vaciar chapas»**, prendida. El texto de ayuda deja de decir «prueba hasta 3 semillas» como si eso fuera lo que mejora.
@@ -156,3 +176,4 @@ Etapa de hoy                      Etapa nueva
 | La comparación de formatos tarda más | Con varios formatos, cada uno usa su tiempo máximo entero | La pantalla ya avisa «puede demorar hasta N × límite». La casilla permite apagarlo |
 | El resultado depende de la carga de la máquina | Dos corridas iguales pueden dar una chapa de diferencia | Ya pasa hoy. Las pruebas automáticas no comparan cantidades exactas con Sparrow real, salvo en casos triviales |
 | Se pisa con trabajo en curso de Vale | Conflictos en `sparrow_worker.py` | Es la primera pregunta del §4 |
+| La máquina se suspende durante un anidado | El reloj del tiempo máximo sigue y el worker no: al despertar se corta con lo que haya, o da error si no había nada. Pasó en la medición del 2026-10-09 | Ya pasa hoy; con anidados más largos es más probable. Sin resolver: queda anotado |

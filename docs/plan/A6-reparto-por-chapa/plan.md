@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** escrito el 2026-10-08. **Sin empezar.** La Tarea 0 (hablarlo con Vale) frena todo lo demás.
+> **Estado:** escrito el 2026-10-08. **Sin empezar.** La Tarea 0 (hablarlo con Vale) frena todo lo demás. El 2026-10-09 se midió con 180 y 240 s (§2 del diseño) y Enzo decidió subir `PAR-09`: es la Tarea 5 bis, agregada ese día.
 >
 > **El código de este plan está probado.** El 2026-10-08 los bloques de las Tareas 1 a 4 y el script de la Tarea 6 se aplicaron, tal como están escritos acá, sobre una copia del backend fuera del repositorio. Cada test falló y pasó donde el plan dice, las dos roturas a propósito de la Tarea 3 hicieron fallar los tests que corresponden, y la suite completa dio 405 en verde (388 antes). La Tarea 5 (pantalla) no se probó. La medición de punta a punta está en el §2 del diseño.
 
@@ -19,7 +19,7 @@
 - Rama `feat/reparto-por-chapa`, que sale de `main`. Al final se abre un PR contra `main` con **review pedido a Vale** (`CONVENCIONES.md §3`: es código de su carril).
 - Commits **sin** la línea `Co-Authored-By` (regla del proyecto).
 - El CI corre con Python 3.11: nada que exista solo en 3.12 o 3.13. Los módulos nuevos empiezan con `from __future__ import annotations`.
-- Valores de negocio por ID de `REGISTRO.md`, nunca copiados. El tiempo máximo es `PAR-09`; este plan no agrega parámetros.
+- Valores de negocio por ID de `REGISTRO.md`, nunca copiados. El tiempo máximo es `PAR-09`; este plan no agrega parámetros, y a ese le cambia el valor (Tarea 5 bis).
 - `sparrow_worker.py` y `test_sparrow.py` están escritos en un estilo compacto. Lo que se agrega ahí sigue ese estilo; el módulo nuevo sigue el del resto del backend.
 - **Sparrow corta por tiempo y su resultado depende de la carga de la máquina.** Ninguna prueba automática compara cantidades de chapas de una corrida real, salvo en casos triviales (cuadrados que entran de a cuatro).
 - En Windows, **no editar con `sed -i`**: pasa los archivos de CRLF a LF. Editar con el editor.
@@ -52,6 +52,7 @@
 | `frontend/src/routes/TrabajoWorkspace/GruposTab.tsx` | La casilla en la comparación de formatos |
 | `backend/scripts/medir_sparrow_de_un_grupo.py` | **Nuevo.** La medición del criterio de éxito |
 | `docs/INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md` | La etapa y la opción nuevas |
+| `docs/REGISTRO.md` | El valor nuevo de `PAR-09` (Tarea 5 bis) |
 
 ---
 
@@ -823,6 +824,47 @@ git commit -m "feat(nesting): casilla para vaciar chapas en Anidado y en la comp
 
 ---
 
+### Task 5 bis: Subir `PAR-09`
+
+Agregada el 2026-10-09, después de medir con 180 y 240 s (§2 del diseño). El valor nuevo es el de la fila «Cuánto vale el tiempo máximo» del §4 del diseño. A diferencia de las Tareas 1 a 4, **esta no se probó sobre la copia**; ningún test de hoy depende del valor por defecto (todos pasan el suyo).
+
+**Files:**
+- Modify: `docs/REGISTRO.md` (fila de `PAR-09`)
+- Modify: `backend/app/services/nesting/sparrow.py` (`OpcionesSparrow.tiempo_maximo_s`)
+- Modify: `backend/app/api/esquemas_nesting.py` (`AnidarCrear.tiempo_maximo_s`, el valor por defecto; el tope que acepta no cambia)
+- Modify: `frontend/src/routes/TrabajoWorkspace/AnidadoTab.tsx` y `GruposTab.tsx` (el valor inicial de `limite`)
+
+- [ ] **Step 1: Cambiar el valor en los cuatro lugares del código**
+
+Son los cuatro que hoy tienen el valor viejo. Comprobar que no quede otro:
+
+```bash
+grep -rn "tiempo_maximo_s" backend/app frontend/src
+grep -n "setLimite" frontend/src/routes/TrabajoWorkspace/*.tsx
+```
+
+- [ ] **Step 2: Cambiar la fila de `PAR-09` en `docs/REGISTRO.md`**
+
+Solo el valor. Sigue provisorio: salió de un solo trabajo en una sola máquina.
+
+- [ ] **Step 3: Correr las pruebas**
+
+Run: `cd backend && python -m pytest -q` y `cd frontend && npm run build && npm test`
+Expected: todo en verde, con la misma cantidad de tests que al terminar la Tarea 5.
+
+- [ ] **Step 4: Si `docs/cliente/GUIA-PARAMETROS-ANIDADO.md` ya está en `main`, corregir su tabla del §10**
+
+Es el único lugar de esa guía donde figura el valor.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add docs/REGISTRO.md backend/app/services/nesting/sparrow.py backend/app/api/esquemas_nesting.py frontend/src/routes/TrabajoWorkspace/AnidadoTab.tsx frontend/src/routes/TrabajoWorkspace/GruposTab.tsx
+git commit -m "feat(nesting): PAR-09 sube para que la etapa de vaciar chapas llegue"
+```
+
+---
+
 ### Task 6: Medir el criterio de éxito y documentar
 
 **Files:**
@@ -922,7 +964,7 @@ Expected, según el §7 del diseño:
 - Con «vaciar chapas: no», lo de hoy: 6 o 7 planchas.
 - Ninguna corrida con «sí» da más planchas que la corrida de la misma semilla con «no».
 
-Si con «sí» no se llega a 5 dentro de `PAR-09`, repetir con `--tiempo-maximo-s 180` y `--tiempo-maximo-s 240` y anotar a partir de cuánto llega. **No cambiar `PAR-09` en este plan:** llevar el número a Enzo, que decide si se revisa el parámetro.
+Esta medición ya se repitió el 2026-10-09 con 180 y 240 s (§2 del diseño), y de ahí salió el valor nuevo de `PAR-09` (Tarea 5 bis). Si con ese valor no se llega a 5 en al menos 2 de las 3 corridas, **no seguir subiéndolo:** anotar a partir de cuánto llega y llevarle el número a Enzo.
 
 - [ ] **Step 3: Medir un trabajo más grande**
 
@@ -956,7 +998,7 @@ Si este documento ya se movió a `docs/motor/`, hacer los cambios allá y correg
 
 - [ ] **Step 5: Cerrar la documentación del sub-proyecto**
 
-- `docs/BITACORA.md`: entrada del día con lo construido, los números de los Steps 2 y 3 y «Cambios en el registro: sin cambios» (o el cambio de `PAR-09`, si Enzo lo decidió).
+- `docs/BITACORA.md`: entrada del día con lo construido, los números de los Steps 2 y 3 y, en «Cambios en el registro», el valor nuevo de `PAR-09` (Tarea 5 bis).
 - Este plan y `diseno.md`: actualizar el bloque **Estado**; si el código se apartó del plan, agregar al final una sección «Desvíos».
 - `docs/plan/PLAN-MAESTRO.md`: en la fila de `CART-701` a `CART-705`, cambiar «planificado» por «construido» para A6.
 - Cuando el PR se mergee, mover `docs/plan/A6-reparto-por-chapa/` a `docs/historico/` y corregir las rutas que la citan (`CONVENCIONES.md §8 bis`, reglas 2 y 3): el docstring de `sparrow_reparto.py`, el del test, el de `medir_sparrow_de_un_grupo.py`, el comentario de `AnidarCrear` y el enlace del Step 4.

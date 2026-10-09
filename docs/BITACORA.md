@@ -58,6 +58,34 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-09 — A6 medido con más tiempo: `PAR-09` sube a 240 s cuando se construya
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A6, sin construir)
+
+### Qué se hizo
+
+- **Medición del plan A6 con 180 y 240 s de tiempo máximo**, sobre una copia del backend con el código del plan y una copia de la base. Seis corridas (semillas 42 a 44, tres con cada tiempo), con la notebook enchufada: todas dieron 5 chapas y 38,6 %, y llegaron a 5 a los 96, 117, 121, 124, 136 y 169 s. La tabla está en el §2 de [`plan/A6-reparto-por-chapa/diseno.md`](plan/A6-reparto-por-chapa/diseno.md).
+- **Dos tropiezos que quedan como dato.** A batería, dos corridas llegaron a 5 recién a los 162 y 172 s. Y una corrida se perdió porque Windows suspendió la máquina: el reloj del tiempo máximo sigue y el worker no, así que al despertar se corta. El medidor usa la misma función que la app, así que ahí pasaría lo mismo.
+- **El medidor anota el recorrido,** no solo cómo termina: en qué segundo llega a cada cantidad de chapas. Lo hace envolviendo el worker desde afuera, sin cambiarlo. Guiones y salidas en `backend/local/herramientas-anidado-2026-10-09/`, fuera del repositorio.
+
+### Qué se decidió
+
+- **`PAR-09` pasa de 120 a 240 s** (Enzo). Con 120 s la etapa de vaciar chapas llega a 5 en una o dos corridas de seis. Con 180 s llegaron las tres, una con 8 s de margen. Con 240 s, la más lenta de las seis deja 70 s.
+- **Se cambia junto con A6, no antes.** Hoy el anidado termina solo cerca de los 80 s, así que el valor no hace diferencia. Quedó como Tarea 5 bis del plan.
+
+### Cambios en el registro
+
+Sin cambios. El valor nuevo de `PAR-09` entra al registro cuando se construya A6.
+
+### Pendiente
+
+- **La respuesta de Vale** a las tres preguntas del plan A6 (su Tarea 0) y su revisión del PR #16.
+- **Medir un trabajo más grande** (`Muestra Vectores.dxf`), que sigue sin hacer: es el Step 3 de la Tarea 6.
+- **`D-12` pesa más:** con A6 y el valor nuevo, el anidado de Complejo pasa de unos 80 s a 240 s para quien espera frente a la pantalla.
+- **La suspensión de la máquina durante un anidado** quedó anotada como riesgo en el §8 del diseño, sin resolver.
+
+---
+
 ## 2026-10-08 — Seccionado (A5) construido: grilla de chapas, rutas y panel en la pestaña Piezas
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A5, que Enzo tomó del carril del motor el 2026-10-07)
