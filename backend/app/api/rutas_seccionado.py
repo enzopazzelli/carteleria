@@ -158,23 +158,27 @@ def _tramos_de(sesion: Session, original: Pieza) -> list[Pieza]:
 def _borrar_tramos(sesion: Session, original: Pieza) -> None:
     """Rechaza si algún tramo está en un anidado guardado: las
     colocaciones apuntan a los tramos, y borrarlos dejaría ese plano sin
-    piezas (§5.3). Un anidado solo se borra con su grupo."""
+    piezas (§5.3). El mensaje dice cuáles son, para borrarlos desde la
+    pestaña Anidado (`DELETE /ejecuciones/{id}`)."""
     tramos = _tramos_de(sesion, original)
     ids = [tramo.id for tramo in tramos]
     if ids:
-        grupo = sesion.execute(
-            select(GrupoDeCorte.nombre)
+        anidados = sesion.execute(
+            select(GrupoDeCorte.nombre, EjecucionNesting.id)
             .join(EjecucionNesting, EjecucionNesting.grupo_id == GrupoDeCorte.id)
             .join(Colocacion, Colocacion.ejecucion_id == EjecucionNesting.id)
             .where(Colocacion.pieza_id.in_(ids))
-            .limit(1)
-        ).scalar()
-        if grupo is not None:
+            .distinct()
+            .order_by(EjecucionNesting.id)
+        ).all()
+        if anidados:
+            grupo = anidados[0][0]
+            numeros = ", ".join(f"#{ejecucion_id}" for _, ejecucion_id in anidados)
             raise HTTPException(
                 status.HTTP_409_CONFLICT,
-                f"Algún tramo de «{original.id_origen}» está en un anidado guardado del grupo «{grupo}». "
-                "Volver a seccionar o deshacer dejaría ese plano sin sus piezas: primero borrá ese grupo "
-                "(se borran sus anidados) y armalo de nuevo.",
+                f"Hay tramos de «{original.id_origen}» en anidados guardados del grupo «{grupo}» ({numeros}). "
+                "Volver a seccionar o deshacer dejaría esos planos sin sus piezas: primero borralos, en la "
+                "pestaña Anidado.",
             )
     for tramo in tramos:
         sesion.delete(tramo)

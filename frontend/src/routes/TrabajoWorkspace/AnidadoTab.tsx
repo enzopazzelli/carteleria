@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useActualizarParametrosGrupo, useGrupos } from "../../hooks/useGrupos";
 import {
   useAnidar,
+  useBorrarEjecucion,
   useColocaciones,
   useEjecucion,
   useEjecucionesDeGrupo,
@@ -12,7 +13,7 @@ import {
 import { useFormato, useParametrosCorteMaterial } from "../../hooks/useCatalogo";
 import EstadoBadge from "../../components/EstadoBadge";
 import Banner from "../../components/Banner";
-import { cancelarEjecucion } from "../../api/nesting";
+import { cancelarEjecucion, type Ejecucion } from "../../api/nesting";
 import { ApiError } from "../../api/client";
 import type { GrupoDeCorte, ParametrosCorteOverride } from "../../api/piezasYgrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
@@ -148,6 +149,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const anidar = useAnidar(grupo.id);
   const actualizarParametros = useActualizarParametrosGrupo(trabajoId);
   const marcarDefinitiva = useMarcarDefinitiva(grupo.id);
+  const borrarEjecucion = useBorrarEjecucion(grupo.id);
   const { data: historial } = useEjecucionesDeGrupo(grupo.id);
   const [ejecucionEnCurso, setEjecucionEnCurso] = useState<number | null>(null);
   const activa = historial?.find((e) => !ESTADOS_TERMINALES.has(e.estado));
@@ -215,6 +217,25 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
       await marcarDefinitiva.mutateAsync(ejecucionId);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "No se pudo marcar como definitiva.");
+    }
+  }
+
+  // Borrar un anidado es lo que permite volver a seccionar o deshacer el
+  // seccionado de una pieza cuyos tramos ya se anidaron.
+  async function alBorrar(ejecucion: Ejecucion) {
+    const confirma = window.confirm(
+      ejecucion.es_definitiva
+        ? `El anidado #${ejecucion.id} es el definitivo de este grupo. Si lo borrás, el costeo va a usar el más reciente que quede, o va a quedar pendiente si no queda ninguno. ¿Borrarlo?`
+        : `¿Borrar el anidado #${ejecucion.id}? No se puede deshacer.`
+    );
+    if (!confirma) return;
+    setError(null);
+    try {
+      await borrarEjecucion.mutateAsync(ejecucion.id);
+      if (verEjecucion === ejecucion.id) setVerEjecucion(undefined);
+      if (ejecucionEnCurso === ejecucion.id) setEjecucionEnCurso(null);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "No se pudo borrar el anidado.");
     }
   }
 
@@ -296,6 +317,15 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
                   </button>
                 )}
                 {ejecucion.es_definitiva && <span className="text-xs text-bronze">definitiva</span>}
+                {ESTADOS_TERMINALES.has(ejecucion.estado) && (
+                  <button
+                    className="text-xs underline ml-3 disabled:opacity-50"
+                    disabled={borrarEjecucion.isPending}
+                    onClick={() => void alBorrar(ejecucion)}
+                  >
+                    Borrar
+                  </button>
+                )}
               </td>
             </tr>
           ))}

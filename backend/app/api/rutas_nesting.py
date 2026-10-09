@@ -439,6 +439,31 @@ def marcar_definitiva(
     return ejecucion
 
 
+@router.delete("/ejecuciones/{ejecucion_id}", status_code=status.HTTP_204_NO_CONTENT)
+def borrar_ejecucion(ejecucion_id: int, sesion: Session = Depends(obtener_sesion)) -> None:
+    """Borra un anidado guardado, con sus colocaciones. Hace falta para
+    volver a seccionar o deshacer el seccionado de una pieza cuyos tramos
+    ya se anidaron (`rutas_seccionado._borrar_tramos`): antes la única
+    forma era borrar el grupo entero.
+
+    También se puede borrar el definitivo: el costeo pasa a usar el más
+    reciente que quede en estado `lista`, con su aviso, o queda pendiente
+    (`costeo._ejecucion_para_costear`). Una línea de presupuesto que salió
+    de este anidado conserva sus números y pierde la referencia
+    (`LineaCosto.ejecucion_id`, `SET NULL`), igual que al borrar el grupo.
+
+    Uno que todavía se está calculando no se borra: la tarea de la cola
+    terminaría y querría guardar su resultado en una fila que ya no existe."""
+    ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
+    if ejecucion.estado in (EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"La ejecución {ejecucion_id} todavía se está calculando: cancelala antes de borrarla.",
+        )
+    sesion.delete(ejecucion)
+    sesion.commit()
+
+
 @router.get("/trabajos/{trabajo_id}/costeo", response_model=ResumenMaterialesLeer)
 def obtener_costeo(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -> ResumenMaterialesLeer:
     """Envuelve `app/costeo.py::resumen_materiales` — el cálculo no

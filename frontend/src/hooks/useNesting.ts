@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ajustarColocacion,
   anidar,
+  borrarEjecucion,
   listarColocaciones,
   listarEjecucionesDeGrupo,
   marcarDefinitiva,
@@ -46,6 +47,14 @@ export function useMarcarDefinitiva(grupoId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (ejecucionId: number) => marcarDefinitiva(ejecucionId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ejecuciones", grupoId] }),
+  });
+}
+
+export function useBorrarEjecucion(grupoId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ejecucionId: number) => borrarEjecucion(ejecucionId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ejecuciones", grupoId] }),
   });
 }

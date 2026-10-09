@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from "./client";
+import { apiDelete, apiGet, apiPatch, apiPost } from "./client";
 
 export interface Ejecucion {
   id: number;
@@ -84,4 +84,8 @@ export function urlDxf(ejecucionId: number, plancha: number): string {
 
 export function cancelarEjecucion(id: number): Promise<Ejecucion> {
   return apiPost<Ejecucion>(`/ejecuciones/${id}/cancelar`);
+}
+
+export function borrarEjecucion(id: number): Promise<void> {
+  return apiDelete(`/ejecuciones/${id}`);
 }

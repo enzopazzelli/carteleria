@@ -218,7 +218,8 @@ def test_un_tramo_no_se_secciona(cliente, tmp_path):
     assert "es un tramo" in respuesta.json()["detail"]
 
 
-def _guardar_anidado_con(cliente, trabajo_id: int, pieza_id: int) -> None:
+def _guardar_anidado_con(cliente, trabajo_id: int, pieza_id: int) -> int:
+    """Devuelve el id del anidado guardado."""
     grupo = cliente.post(f"/trabajos/{trabajo_id}/grupos", json={"nombre": "Con anidado"}).json()
     with Session(cliente.motor) as sesion:
         ejecucion = EjecucionNesting(grupo_id=grupo["id"], motor="rectpack", estado="lista")
@@ -229,18 +230,34 @@ def _guardar_anidado_con(cliente, trabajo_id: int, pieza_id: int) -> None:
             centro_x_mm=Decimal(0), centro_y_mm=Decimal(0), angulo_grados=Decimal(0),
         ))
         sesion.commit()
+        return ejecucion.id
 
 
 def test_con_un_tramo_en_un_anidado_guardado_no_se_deshace_ni_se_vuelve_a_seccionar(cliente, tmp_path):
     trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
     tramo = _aplicar(cliente, pieza["id"], formato["id"]).json()[0]
-    _guardar_anidado_con(cliente, trabajo["id"], tramo["id"])
+    anidado_id = _guardar_anidado_con(cliente, trabajo["id"], tramo["id"])
 
     deshacer = cliente.delete(f"/piezas/{pieza['id']}/seccionado")
     rehacer = _aplicar(cliente, pieza["id"], formato["id"], dx=200)
 
     assert deshacer.status_code == 409 and "Con anidado" in deshacer.json()["detail"]
     assert rehacer.status_code == 409
+    # Dice cuál hay que borrar y dónde, no «borrá el grupo».
+    assert f"#{anidado_id}" in rehacer.json()["detail"]
+    assert "pestaña Anidado" in rehacer.json()["detail"]
+
+
+def test_borrado_el_anidado_se_puede_volver_a_seccionar_y_deshacer(cliente, tmp_path):
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    tramo = _aplicar(cliente, pieza["id"], formato["id"]).json()[0]
+    anidado_id = _guardar_anidado_con(cliente, trabajo["id"], tramo["id"])
+    assert _aplicar(cliente, pieza["id"], formato["id"], dx=200).status_code == 409
+
+    assert cliente.delete(f"/ejecuciones/{anidado_id}").status_code == 204
+
+    assert _aplicar(cliente, pieza["id"], formato["id"], dx=200).status_code == 201
+    assert cliente.delete(f"/piezas/{pieza['id']}/seccionado").status_code == 204
 
 
 def test_restaurar_una_pieza_seccionada_se_rechaza(cliente, tmp_path):
