@@ -58,7 +58,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
-## 2026-10-09 — A6 medido con más tiempo: `PAR-09` sube a 240 s cuando se construya
+## 2026-10-09 — A6 medido con más tiempo (`PAR-09` sube a 240 s cuando se construya) y un arreglo del seccionado
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A6, sin construir)
 
@@ -67,6 +67,7 @@ Qué queda abierto y cuál es el próximo paso.
 - **Medición del plan A6 con 180 y 240 s de tiempo máximo**, sobre una copia del backend con el código del plan y una copia de la base. Seis corridas (semillas 42 a 44, tres con cada tiempo), con la notebook enchufada: todas dieron 5 chapas y 38,6 %, y llegaron a 5 a los 96, 117, 121, 124, 136 y 169 s. La tabla está en el §2 de [`plan/A6-reparto-por-chapa/diseno.md`](plan/A6-reparto-por-chapa/diseno.md).
 - **Dos tropiezos que quedan como dato.** A batería, dos corridas llegaron a 5 recién a los 162 y 172 s. Y una corrida se perdió porque Windows suspendió la máquina: el reloj del tiempo máximo sigue y el worker no, así que al despertar se corta. El medidor usa la misma función que la app, así que ahí pasaría lo mismo.
 - **El medidor anota el recorrido,** no solo cómo termina: en qué segundo llega a cada cantidad de chapas. Lo hace envolviendo el worker desde afuera, sin cambiarlo. Guiones y salidas en `backend/local/herramientas-anidado-2026-10-09/`, fuera del repositorio.
+- **El seccionado corta con los parámetros propios del grupo** (`d5dff4d`). Era el primer punto de lo que la revisión del 2026-10-08 había dejado sin tocar: cortaba con los del material, y con un margen mayor en el grupo los tramos no entraban al anidar. Ahora el seccionado y el anidado sacan los parámetros de la misma función. Tres tests nuevos, que se vieron fallar antes del arreglo; backend 405 en verde (402 antes).
 
 ### Qué se decidió
 
@@ -83,6 +84,7 @@ Sin cambios. El valor nuevo de `PAR-09` entra al registro cuando se construya A6
 - **Medir un trabajo más grande** (`Muestra Vectores.dxf`), que sigue sin hacer: es el Step 3 de la Tarea 6.
 - **`D-12` pesa más:** con A6 y el valor nuevo, el anidado de Complejo pasa de unos 80 s a 240 s para quien espera frente a la pantalla.
 - **La suspensión de la máquina durante un anidado** quedó anotada como riesgo en el §8 del diseño, sin resolver.
+- **La comparación de formatos de Grupos sigue usando los parámetros del material** aunque el grupo tenga propios: puede decir «hay que seccionar» o «entra» distinto de lo que después hacen el seccionado y el anidado. Es anterior; se vio al arreglar el seccionado.
 
 ---
 

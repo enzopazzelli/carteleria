@@ -82,7 +82,7 @@ Por eso la entrada del seccionado es **la forma ya soldada en Corel** (`SUP-17`)
 
 ### 5.2 Cómo se elige la grilla
 
-**Celda.** Es la chapa menos lo que reservan los dos motores, el más exigente de cada lado: el margen de borde (`PAR-02`), el kerf (`PAR-01`) y la separación (`PAR-03`). Es el mismo criterio de `piezas_que_no_entran` en `engine.py`. Así, todo tramo que cabe en una celda entra en cualquiera de los dos motores.
+**Celda.** Es la chapa menos lo que reservan los dos motores, el más exigente de cada lado: el margen de borde (`PAR-02`), el kerf (`PAR-01`) y la separación (`PAR-03`). Es el mismo criterio de `piezas_que_no_entran` en `engine.py`. Así, todo tramo que cabe en una celda entra en cualquiera de los dos motores. Los parámetros son los del grupo de la pieza si tiene propios (`CART-210`), y si no los del material de la chapa: la misma regla que usa el anidado.
 
 **Posición y ángulo.** Se prueban grillas con distintos desplazamientos y ángulos: primero con pasos gruesos en todo el rango, después más finos alrededor de la mejor. Entre todas se elige, en este orden:
 
@@ -140,7 +140,7 @@ Los pasos gruesos de ángulo son de 5° (medido el 2026-10-08). De a 15°, la b�
 | Caso | Respuesta |
 |---|---|
 | La pieza entra entera en el formato | 400: «entra entera en {formato}: no hace falta seccionar» |
-| El material del formato no tiene parámetros de corte | 400, con el mismo mensaje que la comparación |
+| El material del formato no tiene parámetros de corte, y el grupo de la pieza tampoco tiene propios | 400, con el mismo mensaje que la comparación |
 | La pieza tiene un contorno inválido | 400 con su id, como la comparación con Sparrow |
 | Un pedacito no se puede pegar a un vecino sin pasarse de la celda | Queda como tramo propio. No es un error |
 | Volver a seccionar o deshacer con tramos en un anidado guardado | 409: «primero borrá ese anidado» |

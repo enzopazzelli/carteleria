@@ -2265,7 +2265,7 @@ Un revisor aparte leyó toda la rama antes del PR. Veredicto: se puede mergear c
 
 ### Lo que señaló la revisión y quedó sin tocar
 
-1. El seccionado usa los parámetros de corte del material, no los propios del grupo (`CART-210`): con un margen mayor en el grupo, los tramos pueden no entrar al anidar.
+1. ~~El seccionado usa los parámetros de corte del material, no los propios del grupo (`CART-210`): con un margen mayor en el grupo, los tramos pueden no entrar al anidar.~~ **Resuelto el 2026-10-09** (`d5dff4d`): el seccionado y el anidado sacan los parámetros de la misma función, `_parametros_de_corte`. Vale también al seccionar para una chapa que no es la del grupo. Queda otro caso de lo mismo, sin tocar: la comparación de formatos de Grupos sigue usando los parámetros del material aunque el grupo tenga propios.
 2. «Volver a seccionar» abre el panel vacío: no parte de la grilla guardada en `Pieza.seccionado`.
 3. Los ángulos «finos» de la búsqueda son múltiplos de 5°, que ya se probaron: la segunda pasada solo afina el corrimiento.
 4. `NaN` o infinito en el ángulo o el corrimiento dan 500. Por la API se puede seccionar una pieza descartada a mano.
