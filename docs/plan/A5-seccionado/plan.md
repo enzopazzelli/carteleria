@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** construido el 2026-10-08 en la rama `feat/seccionado` (PR pendiente de abrir). Tareas 0 a 9 hechas, más dos que no estaban en el plan: 7b (rendimiento) y 9b (conectar Grupos con Piezas). Faltan dos pasos: que Enzo lo pruebe en la app (Tarea 9, Step 6) y abrir el PR (Tarea 10, Step 4). Falta también la validación con el aro real soldado (`SUP-17`, §7 del diseño). **El código se aparta de las tareas de abajo en los puntos de la sección [«Desvíos»](#desvíos-respecto-de-este-plan-2026-10-08), al final.**
+> **Estado:** construido el 2026-10-08 en la rama `feat/seccionado` ([PR #16](https://github.com/enzopazzelli/carteleria/pull/16), abierto el 2026-10-08). Tareas 0 a 9 hechas, más dos que no estaban en el plan: 7b (rendimiento) y 9b (conectar Grupos con Piezas). Enzo lo probó en la app ese día con `Complejo.dxf` (Tarea 9, Step 6) y la rama pasó una revisión completa antes del PR. Falta la validación con el aro real soldado (`SUP-17`, §7 del diseño). **El código se aparta de las tareas de abajo en los puntos de la sección [«Desvíos»](#desvíos-respecto-de-este-plan-2026-10-08), al final.**
 
 **Goal:** Que una pieza más grande que la chapa se pueda partir en tramos con una grilla del tamaño de la chapa, ajustable por el diseñador, y que los tramos queden como piezas comunes para anidar y cotizar.
 
