@@ -1,0 +1,734 @@
+<!doctype html>
+<!-- Generado a partir de GUIA-PARAMETROS-ANIDADO.md: los cambios de texto van en ese archivo. -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guía de uso: los parámetros del anidado</title>
+<style>
+:root {
+  --papel: #FFFDF8;
+  --fondo: #F5F1E8;
+  --tinta: #2B2420;
+  --gris: #6E645B;
+  --linea: #E3D9C6;
+  --verde: #2E8074;
+  --verde-oscuro: #256B61;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font: 17px/1.65 "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+}
+.pagina { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; box-sizing: content-box; }
+
+h1 { font-size: 1.75rem; line-height: 1.25; letter-spacing: .02em; margin: 0 0 1.25rem; }
+h2 {
+  font-size: 1.45rem; line-height: 1.3;
+  margin: 3.25rem 0 1rem; padding-top: 1.75rem;
+  border-top: 1px solid var(--linea);
+  scroll-margin-top: .5rem;
+}
+h3 { font-size: 1.12rem; margin: 2.25rem 0 .5rem; scroll-margin-top: 1.5rem; }
+h2, h3, strong, th { font-weight: 650; }
+.num { color: var(--verde); font-variant-numeric: tabular-nums; }
+
+p { margin: .9rem 0; }
+ul, ol { padding-left: 1.4rem; margin: .9rem 0; }
+li + li { margin-top: .4rem; }
+a { color: var(--verde-oscuro); text-underline-offset: .18em; }
+a:hover { color: var(--tinta); }
+code {
+  font: .88em Consolas, "Cascadia Mono", Menlo, monospace;
+  background: var(--fondo); padding: .1em .35em; border-radius: 4px;
+}
+
+main > blockquote {
+  margin: 0; padding: .6rem 1.25rem;
+  background: var(--fondo); border-left: 4px solid var(--verde); border-radius: 0 8px 8px 0;
+  font-size: .96rem;
+}
+main > blockquote p { margin: .55rem 0; }
+
+figure { margin: 1.75rem 0; }
+figure svg { display: block; max-width: 100%; height: auto; }
+figcaption { margin-top: .5rem; font-size: .88rem; color: var(--gris); }
+
+.tabla { margin: 1.5rem 0; overflow-x: auto; border: 1px solid var(--linea); border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: .94rem; line-height: 1.45; }
+th, td { padding: .6rem .8rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--linea); }
+th { background: var(--fondo); }
+tbody tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; }
+td:empty::after { content: "\00a0"; }
+.ancha table { font-size: .84rem; }
+.ancha th, .ancha td { padding: .55rem .5rem; }
+
+nav { margin: 1.75rem 0 0; padding: 1rem 1.25rem; border: 1px solid var(--linea); border-radius: 8px; font-size: .95rem; }
+nav ul { list-style: none; margin: 0; padding: 0; }
+nav a { display: block; padding: .15rem 0; color: var(--tinta); text-decoration: none; }
+nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
+.nav-titulo {
+  margin: 0 0 .5rem; font-size: .78rem; font-weight: 650;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--gris);
+}
+
+/* Con lugar de sobra, el índice pasa a una columna fija a la izquierda. */
+@media (min-width: 1100px) {
+  .pagina { max-width: 1010px; }
+  main { margin-left: 290px; }
+  nav {
+    position: fixed; top: 2.75rem; left: max(1.25rem, calc(50% - 505px)); width: 250px;
+    max-height: calc(100vh - 5.5rem); overflow-y: auto;
+    margin: 0; padding: 0; border: 0;
+  }
+}
+
+@media print {
+  @page { margin: 18mm; }
+  body { font-size: 10.5pt; background: #fff; }
+  .pagina { max-width: none; padding: 0; }
+  main { margin: 0; }
+  nav { display: none; }
+  h2, h3 { break-after: avoid; }
+  figure, tr { break-inside: avoid; }
+  .tabla { overflow: visible; }
+  a { color: inherit; text-decoration: none; }
+}
+</style>
+</head>
+<body>
+<div class="pagina">
+<main>
+<h1>GUÍA DE USO: LOS PARÁMETROS DEL ANIDADO</h1>
+<blockquote>
+<p>Qué significa cada campo de la pestaña <strong>Anidado</strong>, cuándo conviene tocarlo y qué pasa si lo cambiás. Está escrita para quien usa la pantalla, no para quien programa.</p>
+<p>Describe la aplicación como está hoy. El motor Sparrow figura en la pantalla como «prueba»: lo que esta guía dice sobre él puede cambiar.</p>
+<p>Índice del proyecto: <a href="../../README.md"><code>README.md</code></a> · <a href="../REGISTRO.md"><code>REGISTRO.md</code></a> · la versión técnica de este tema: <a href="../GUIA-SPARROW-PRUEBAS.md"><code>GUIA-SPARROW-PRUEBAS.md</code></a></p>
+<p><strong>Versión:</strong> 1.0 · <strong>Fecha:</strong> 2026-10-09</p>
+</blockquote>
+<nav aria-label="Contenido">
+<p class="nav-titulo">Contenido</p>
+<ul>
+<li><a href="#s1"><span class="num">1.</span> Lo mínimo para empezar</a></li>
+<li><a href="#s2"><span class="num">2.</span> Cómo trabaja el anidado</a></li>
+<li><a href="#s3"><span class="num">3.</span> Los parámetros de corte</a></li>
+<li><a href="#s4"><span class="num">4.</span> El motor</a></li>
+<li><a href="#s5"><span class="num">5.</span> Los cuatro campos de Sparrow</a></li>
+<li><a href="#s6"><span class="num">6.</span> Aprovechar huecos</a></li>
+<li><a href="#s7"><span class="num">7.</span> Qué hago si…</a></li>
+<li><a href="#s8"><span class="num">8.</span> Cómo probar un cambio sin perderse</a></li>
+<li><a href="#s9"><span class="num">9.</span> Lo que hoy no se toca desde la pantalla</a></li>
+<li><a href="#s10"><span class="num">10.</span> Los valores con los que viene la pantalla</a></li>
+</ul>
+</nav>
+<h2 id="s1"><span class="num">1.</span> Lo mínimo para empezar</h2>
+<p>Si no querés leer todo, con esto alcanza para sacar un anidado:</p>
+<ol>
+<li><strong>Elegí el motor.</strong> «Sparrow irregular» si las piezas tienen forma (letras, curvas, aros). «Rectangular» si son paneles rectos o si querés una respuesta al instante.</li>
+<li><strong>Dejá los cuatro campos de Sparrow como vienen.</strong> Están pensados para un primer intento.</li>
+<li><strong>Revisá kerf, margen de borde y separación.</strong> Tienen que ser los de la máquina y el material que vas a cortar.</li>
+<li><strong>Apretá «Anidar» y esperá.</strong> Con Sparrow puede tardar hasta el tiempo máximo que figura en la pantalla.</li>
+<li><strong>Mirá el resultado en el historial:</strong> cuántas chapas usó y qué porcentaje aprovechó.</li>
+</ol>
+<p>Para probar otra cosa, cambiá <strong>una sola cosa por vez</strong> y volvé a anidar. Cada intento queda guardado en el historial y no pisa al anterior.</p>
+<h2 id="s2"><span class="num">2.</span> Cómo trabaja el anidado</h2>
+<p>Unas pocas palabras que se repiten en toda la guía:</p>
+<ul>
+<li><strong>Chapa:</strong> la plancha de material que se va a cortar. La pantalla a veces dice «plancha»; es lo mismo.</li>
+<li><strong>Anidado:</strong> el acomodo de todas las piezas de un grupo sobre una o más chapas.</li>
+<li><strong>Búsqueda:</strong> cada vez que el programa le pide a Sparrow que acomode un conjunto de piezas.</li>
+<li><strong>Pasada:</strong> el recorrido completo, de la primera chapa a la última.</li>
+</ul>
+<p>Sparrow no acomoda chapa por chapa. Acomoda las piezas en una <strong>franja</strong>: una tira del alto de la chapa y del largo que haga falta, que intenta dejar lo más corta posible. Después el programa mira esa tira y se queda con el tramo, del ancho de una chapa, que mejor se llenó. Esas piezas van a la primera chapa. Las que quedaron afuera se vuelven a acomodar desde cero, y así hasta que no queda ninguna.</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" width="720" height="320" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="f1-t f1-d">
+  <title id="f1-t">Cómo se arma el anidado</title>
+  <desc id="f1-d">En la primera búsqueda Sparrow acomoda todas las piezas en una franja. Las que quedaron enteras dentro del ancho de una chapa van a la chapa 1. Las demás se vuelven a acomodar en la búsqueda siguiente, y así hasta que no quedan piezas.</desc>
+  <rect width="720" height="320" rx="8" fill="#F5F1E8"/>
+
+  <text x="30" y="34" font-weight="600">Búsqueda 1: todas las piezas</text>
+  <rect x="30" y="50" width="280" height="160" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <rect x="30" y="50" width="80" height="160" fill="#2E8074" fill-opacity="0.10" stroke="#2E8074" stroke-width="2.5" stroke-dasharray="7 4"/>
+  <g fill="#2E8074">
+    <rect x="36" y="58" width="26" height="64"/>
+    <rect x="68" y="58" width="20" height="40"/>
+    <rect x="68" y="104" width="20" height="30"/>
+    <circle cx="60" cy="166" r="22"/>
+  </g>
+  <g fill="#B9B1A3">
+    <rect x="94" y="58" width="36" height="90"/>
+    <rect x="90" y="156" width="44" height="44"/>
+    <circle cx="160" cy="90" r="26"/>
+    <rect x="140" y="130" width="50" height="24"/>
+    <rect x="144" y="164" width="60" height="36"/>
+    <polygon points="196,58 236,58 236,150 212,150 212,84 196,84"/>
+    <rect x="244" y="58" width="30" height="60"/>
+    <circle cx="252" cy="172" r="22"/>
+  </g>
+  <path d="M30 218v8h80v-8" fill="none" stroke="#2E8074" stroke-width="1.5"/>
+  <text x="30" y="244" font-size="12.5">va a la chapa 1</text>
+
+  <path d="M325 130h58" stroke="#2B2420" stroke-width="2"/>
+  <path d="M383 123l14 7-14 7z"/>
+
+  <text x="410" y="34" font-weight="600">Búsqueda 2: las que quedaron</text>
+  <rect x="410" y="50" width="200" height="160" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <rect x="410" y="50" width="80" height="160" fill="#2E8074" fill-opacity="0.10" stroke="#2E8074" stroke-width="2.5" stroke-dasharray="7 4"/>
+  <g fill="#2E8074">
+    <rect x="416" y="58" width="36" height="90"/>
+    <rect x="456" y="58" width="30" height="60"/>
+    <rect x="416" y="156" width="50" height="24"/>
+  </g>
+  <g fill="#B9B1A3">
+    <rect x="496" y="58" width="44" height="44"/>
+    <circle cx="524" cy="136" r="26"/>
+    <polygon points="548,58 588,58 588,150 564,150 564,84 548,84"/>
+    <rect x="496" y="170" width="60" height="36"/>
+    <circle cx="584" cy="182" r="22"/>
+  </g>
+  <path d="M410 218v8h80v-8" fill="none" stroke="#2E8074" stroke-width="1.5"/>
+  <text x="410" y="244" font-size="12.5">va a la chapa 2</text>
+  <text x="632" y="140" font-size="30">…</text>
+
+  <rect x="30" y="266" width="14" height="14" fill="#2E8074"/>
+  <text x="52" y="278" font-size="12.5">Quedó entera dentro del ancho de una chapa: va a esa chapa.</text>
+  <rect x="30" y="290" width="14" height="14" fill="#B9B1A3"/>
+  <text x="52" y="302" font-size="12.5">Quedó afuera o pisa el borde: se vuelve a acomodar en la búsqueda siguiente.</text>
+</svg>
+<figcaption>Cómo se arma el anidado: una búsqueda por chapa</figcaption>
+</figure>
+<p>De acá salen tres cosas que explican el resto de la guía:</p>
+<ul>
+<li><strong>Hay una búsqueda por cada chapa.</strong> Por eso el campo se llama «Búsqueda por chapa».</li>
+<li><strong>El programa hace hasta tres pasadas</strong> y se queda con la mejor. Cada pasada usa una semilla distinta.</li>
+<li><strong>«La mejor» es la que usa menos chapas.</strong> Si empatan, gana la que deja los retazos más grandes.</li>
+</ul>
+<p>Sparrow busca probando, y corta cuando se le acaba el tiempo. No garantiza el mejor acomodo posible: da el mejor que encontró.</p>
+<h2 id="s3"><span class="num">3.</span> Los parámetros de corte</h2>
+<p>Son los cuatro campos que están debajo del motor. Vienen cargados con los valores del material del grupo.</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 330" width="720" height="330" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="f2-t f2-d">
+  <title id="f2-t">Kerf, margen de borde y separación</title>
+  <desc id="f2-d">Una chapa con dos piezas. El margen de borde es la franja del contorno de la chapa que no se usa. El kerf es el material que se come el corte, medio kerf de cada lado de la pieza. La separación es el aire extra entre piezas, además del kerf.</desc>
+  <rect width="720" height="330" rx="8" fill="#F5F1E8"/>
+
+  <rect x="40" y="40" width="400" height="260" fill="#E3D9C6" stroke="#2B2420" stroke-width="1.5"/>
+  <rect x="68" y="68" width="344" height="204" fill="#FFFDF8" stroke="#C9922E" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <rect x="68" y="84" width="136" height="146" fill="#C4432A" fill-opacity="0.28"/>
+  <rect x="76" y="92" width="120" height="130" fill="#2E8074"/>
+  <text x="136" y="162" text-anchor="middle" fill="#FFFDF8">pieza</text>
+  <rect x="238" y="84" width="136" height="146" fill="#C4432A" fill-opacity="0.28"/>
+  <rect x="246" y="92" width="120" height="130" fill="#2E8074"/>
+  <text x="306" y="162" text-anchor="middle" fill="#FFFDF8">pieza</text>
+
+  <path d="M204 238v12M238 238v12M204 244h34" fill="none" stroke="#2B2420" stroke-width="1.5"/>
+  <text x="221" y="264" text-anchor="middle" font-size="12.5">separación</text>
+  <path d="M294 40h12M294 68h12M300 40v28" fill="none" stroke="#2B2420" stroke-width="1.5"/>
+  <text x="312" y="59" font-size="12.5">margen de borde</text>
+
+  <rect x="462" y="60" width="16" height="16" fill="#E3D9C6" stroke="#2B2420"/>
+  <text x="488" y="73" font-weight="600">Margen de borde</text>
+  <text x="488" y="92" font-size="12.5">La franja del contorno de la</text>
+  <text x="488" y="108" font-size="12.5">chapa que no se usa.</text>
+
+  <rect x="462" y="134" width="16" height="16" fill="#C4432A" fill-opacity="0.28" stroke="#2B2420"/>
+  <text x="488" y="147" font-weight="600">Kerf</text>
+  <text x="488" y="166" font-size="12.5">Lo que se come el corte:</text>
+  <text x="488" y="182" font-size="12.5">medio kerf de cada lado.</text>
+
+  <path d="M462 208v14M478 208v14M462 215h16" fill="none" stroke="#2B2420" stroke-width="1.5"/>
+  <text x="488" y="221" font-weight="600">Separación</text>
+  <text x="488" y="240" font-size="12.5">Aire extra entre piezas,</text>
+  <text x="488" y="256" font-size="12.5">además del kerf.</text>
+
+  <path d="M462 289h16" stroke="#C9922E" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="488" y="293" font-size="12.5">Hasta acá llega el área útil.</text>
+</svg>
+<figcaption>Kerf, margen de borde y separación sobre una chapa</figcaption>
+</figure>
+<h3 id="kerf-mm">Kerf (mm)</h3>
+<p>Es el ancho de material que se come el corte. El programa lo usa para que el corte de una pieza no muerda a la de al lado.</p>
+<ul>
+<li><strong>Si lo subís,</strong> las piezas quedan más separadas y entran menos por chapa.</li>
+<li><strong>Si lo ponés más bajo que el real,</strong> el anidado se ve mejor en pantalla pero las piezas pueden salir comidas.</li>
+<li><strong>Cuándo tocarlo:</strong> solo cuando cambia la máquina, el material o el espesor. No sirve para ganar lugar.</li>
+</ul>
+<h3 id="margen-de-borde-mm">Margen de borde (mm)</h3>
+<p>Es la franja de todo el contorno de la chapa que no se usa. Lo que queda adentro es el <strong>área útil</strong>.</p>
+<ul>
+<li><strong>Si lo subís,</strong> el área útil se achica. Una pieza que entraba justa puede dejar de entrar.</li>
+<li><strong>Si lo bajás,</strong> las piezas llegan más cerca del borde de la chapa.</li>
+<li><strong>Cuándo tocarlo:</strong> cuando el borde de la chapa no se puede cortar bien o hace falta lugar para sujetarla.</li>
+</ul>
+<h3 id="separacion-mm">Separación (mm)</h3>
+<p>Es el aire extra que se deja entre piezas, <strong>además</strong> del kerf. En cero, lo único que separa dos piezas es el corte.</p>
+<ul>
+<li><strong>Si la subís,</strong> hay más distancia entre piezas y entran menos por chapa.</li>
+<li><strong>Cuándo tocarla:</strong> cuando las piezas salen demasiado pegadas para trabajarlas cómodo.</li>
+</ul>
+<p>Con los tres juntos, el programa garantiza dos distancias: entre dos piezas queda como mínimo el kerf más la separación, y entre una pieza y el borde de la chapa queda el margen más medio kerf.</p>
+<h3 id="rotacion">Rotación</h3>
+<p>Dice de cuántas maneras puede girar el programa cada pieza.</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 240" width="720" height="240" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="f3-t f3-d">
+  <title id="f3-t">Rotación: libre o con veta</title>
+  <desc id="f3-d">Con rotación libre el programa puede poner la pieza de cuatro maneras: a 0, 90, 180 y 270 grados. Con veta solo puede ponerla a 0 y a 180 grados, para que la veta del material quede siempre en el mismo sentido.</desc>
+  <rect width="720" height="240" rx="8" fill="#F5F1E8"/>
+
+  <text x="20" y="34" font-weight="600">Libre (0°/90°)</text>
+  <text x="20" y="54" font-size="12.5">La pieza se puede poner de cuatro maneras.</text>
+  <rect x="20" y="70" width="320" height="120" fill="#FFFDF8" stroke="#E3D9C6" stroke-width="1.5"/>
+  <g fill="#2E8074">
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(35,95)"/>
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(115,95) rotate(90 25 35)"/>
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(195,95) rotate(180 25 35)"/>
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(270,95) rotate(270 25 35)"/>
+  </g>
+  <g font-size="12.5" text-anchor="middle">
+    <text x="60" y="212">0°</text>
+    <text x="140" y="212">90°</text>
+    <text x="220" y="212">180°</text>
+    <text x="295" y="212">270°</text>
+  </g>
+
+  <text x="380" y="34" font-weight="600">Solo 0°/180° (con veta)</text>
+  <text x="380" y="54" font-size="12.5">La veta del material queda siempre igual.</text>
+  <rect x="380" y="70" width="320" height="120" fill="#FFFDF8" stroke="#E3D9C6" stroke-width="1.5"/>
+  <path d="M380 80h320M380 90h320M380 100h320M380 110h320M380 120h320M380 130h320M380 140h320M380 150h320M380 160h320M380 170h320M380 180h320" stroke="#D8CBAF" stroke-width="1"/>
+  <g fill="#2E8074">
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(415,95)"/>
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(505,95) rotate(180 25 35)"/>
+  </g>
+  <path d="M0 0h20v50h30v20h-50z" transform="translate(605,95) rotate(90 25 35)" fill="#B9B1A3"/>
+  <path d="M598 98l64 64M662 98l-64 64" stroke="#C4432A" stroke-width="3.5" stroke-linecap="round"/>
+  <g font-size="12.5" text-anchor="middle">
+    <text x="440" y="212">0°</text>
+    <text x="530" y="212">180°</text>
+    <text x="630" y="212" fill="#C4432A">90°: no se usa</text>
+  </g>
+</svg>
+<figcaption>Rotación libre y rotación con veta</figcaption>
+</figure>
+<ul>
+<li><strong>Libre (0°/90°):</strong> el programa puede poner la pieza de cuatro maneras. Es lo que más lugar ahorra.</li>
+<li><strong>Solo 0°/180° (con veta):</strong> para materiales que tienen una dirección (veta, cepillado, dibujo). La pieza solo se puede dar vuelta, nunca acostar.</li>
+</ul>
+<h3 id="como-se-aplican-los-cambios">Cómo se aplican los cambios</h3>
+<p>Cambiar uno de estos cuatro campos no hace nada hasta que apretás <strong>«Aplicar y recalcular»</strong>. Ese botón guarda los valores y anida de nuevo.</p>
+<ul>
+<li><strong>El cambio vale solo para ese grupo.</strong> La pantalla lo avisa con el texto «override de este grupo» y ofrece «volver a los valores del material».</li>
+<li><strong>Si el anidado definitivo tiene piezas movidas a mano,</strong> el programa pregunta antes, porque el anidado nuevo no conserva esos ajustes. El anterior queda en el historial.</li>
+</ul>
+<p>Los valores con los que viene cada material son provisorios hasta confirmarlos con el taller (<code>PAR-01</code> a <code>PAR-04</code> del <a href="../REGISTRO.md">registro</a>).</p>
+<h2 id="s4"><span class="num">4.</span> El motor</h2>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 270" width="720" height="270" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="f4-t f4-d">
+  <title id="f4-t">Los dos motores: Rectangular y Sparrow</title>
+  <desc id="f4-d">Las mismas cuatro piezas triangulares en una chapa. El motor Rectangular le reserva a cada una su rectángulo entero y ocupa casi todo el ancho. Sparrow mira la forma real, las encastra de a dos y deja libre buena parte de la chapa.</desc>
+  <rect width="720" height="270" rx="8" fill="#F5F1E8"/>
+
+  <text x="30" y="34" font-weight="600">Rectangular</text>
+  <text x="30" y="54" font-size="12.5">Cada pieza reserva su rectángulo entero.</text>
+  <rect x="30" y="70" width="310" height="180" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <g fill="none" stroke="#2B2420" stroke-opacity="0.55" stroke-dasharray="4 3">
+    <rect x="44" y="84" width="62" height="86"/>
+    <rect x="114" y="84" width="62" height="86"/>
+    <rect x="184" y="84" width="62" height="86"/>
+    <rect x="254" y="84" width="62" height="86"/>
+  </g>
+  <g fill="#2E8074">
+    <polygon points="44,170 44,84 106,170"/>
+    <polygon points="114,170 114,84 176,170"/>
+    <polygon points="184,170 184,84 246,170"/>
+    <polygon points="254,170 254,84 316,170"/>
+  </g>
+
+  <text x="380" y="34" font-weight="600">Sparrow</text>
+  <text x="380" y="54" font-size="12.5">Mira la forma real y encastra las piezas.</text>
+  <rect x="380" y="70" width="310" height="180" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <g fill="#2E8074">
+    <polygon points="394,170 394,84 456,170"/>
+    <polygon points="402,84 464,84 464,170"/>
+    <polygon points="474,170 474,84 536,170"/>
+    <polygon points="482,84 544,84 544,170"/>
+  </g>
+  <rect x="556" y="84" width="122" height="86" fill="none" stroke="#C9922E" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="617" y="132" text-anchor="middle" fill="#8A6216" font-weight="600">queda libre</text>
+</svg>
+<figcaption>Las mismas piezas con el motor Rectangular y con Sparrow</figcaption>
+</figure>
+<div class="tabla"><table>
+<thead>
+<tr>
+<th></th>
+<th>Rectangular</th>
+<th>Sparrow irregular (prueba)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cómo ve cada pieza</td>
+<td>Como el rectángulo que la contiene</td>
+<td>Con su forma real</td>
+</tr>
+<tr>
+<td>Cuánto tarda</td>
+<td>Un instante</td>
+<td>Desde unos segundos hasta el tiempo máximo</td>
+</tr>
+<tr>
+<td>Da siempre lo mismo</td>
+<td>Sí</td>
+<td>No siempre: ver «Semilla»</td>
+</tr>
+<tr>
+<td>Para qué conviene</td>
+<td>Paneles rectos, o una primera idea rápida</td>
+<td>Letras, curvas y formas que encastran</td>
+</tr>
+</tbody>
+</table></div>
+<p>Cuando elegís Rectangular, los cuatro campos de Sparrow desaparecen de la pantalla: no se usan.</p>
+<p>Ninguno de los dos motores mete piezas adentro de los agujeros de otras por su cuenta. Para eso está la casilla «Aprovechar huecos» (sección 6).</p>
+<h2 id="s5"><span class="num">5.</span> Los cuatro campos de Sparrow</h2>
+<h3 id="semilla">Semilla</h3>
+<p>Sparrow acomoda probando, y esas pruebas las elige con azar. La semilla es el número que fija ese azar: con la misma semilla recorre el mismo camino, y con otra semilla recorre uno distinto.</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" width="720" height="280" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="f5-t f5-d">
+  <title id="f5-t">La semilla: las mismas piezas por dos caminos</title>
+  <desc id="f5-d">Dos franjas con las mismas seis piezas. Con una semilla las piezas quedan acomodadas de una manera; con otra semilla quedan de otra manera y la franja termina más corta, lo que puede ahorrar una chapa.</desc>
+  <rect width="720" height="280" rx="8" fill="#F5F1E8"/>
+
+  <text x="30" y="36" font-weight="600">Semilla 42</text>
+  <rect x="30" y="46" width="660" height="80" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <g fill="#2E8074">
+    <rect x="36" y="51" width="60" height="70"/>
+    <polygon points="102,121 102,51 172,121"/>
+    <rect x="178" y="51" width="100" height="32"/>
+    <rect x="178" y="89" width="80" height="32"/>
+    <rect x="284" y="51" width="40" height="70"/>
+    <polygon points="330,121 330,51 400,121"/>
+  </g>
+  <path d="M404 38v96" stroke="#C9922E" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="414" y="91" font-size="12.5">la franja llega hasta acá</text>
+
+  <text x="30" y="166" font-weight="600">Semilla 7</text>
+  <rect x="30" y="176" width="660" height="80" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <g fill="#2E8074">
+    <rect x="36" y="181" width="60" height="70"/>
+    <rect x="102" y="181" width="40" height="70"/>
+    <polygon points="148,251 148,181 218,251"/>
+    <polygon points="156,181 226,181 226,251"/>
+    <rect x="232" y="181" width="100" height="32"/>
+    <rect x="232" y="219" width="80" height="32"/>
+  </g>
+  <path d="M336 168v96" stroke="#C9922E" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="346" y="221" font-size="12.5">esta quedó más corta: puede ahorrar una chapa</text>
+</svg>
+<figcaption>Las mismas piezas acomodadas con dos semillas</figcaption>
+</figure>
+<ul>
+<li><strong>No hay semillas mejores que otras.</strong> No se puede saber de antemano cuál va a dar el mejor acomodo: hay que probar.</li>
+<li><strong>La misma semilla no asegura el mismo resultado.</strong> Sparrow corta por tiempo. Si la computadora está ocupada, llega menos lejos por el mismo camino.</li>
+<li><strong>El programa ya prueba tres por su cuenta:</strong> la que pusiste y dos más que calcula a partir de esa.</li>
+<li><strong>Cuándo tocarla:</strong> cuando el resultado quedó cerca de ahorrar una chapa, por ejemplo con una chapa casi vacía. Probá dos o tres números distintos y compará en el historial.</li>
+</ul>
+<h3 id="busqueda-por-chapa-s">Búsqueda por chapa (s)</h3>
+<p>Son los segundos que tiene Sparrow en cada búsqueda. Como hay una búsqueda por chapa, un trabajo que ocupa muchas chapas hace muchas búsquedas.</p>
+<ul>
+<li><strong>Si lo subís,</strong> cada búsqueda es más cuidadosa, pero el tiempo total se gasta más rápido y entran menos pasadas.</li>
+<li><strong>Si lo bajás,</strong> entran más pasadas en el mismo tiempo, cada una menos trabajada.</li>
+<li><strong>Cuándo tocarlo:</strong> casi nunca. En el trabajo en que lo medimos, con 2, 10 y 30 segundos salió la misma cantidad de chapas.</li>
+</ul>
+<h3 id="tiempo-maximo-total-s">Tiempo máximo total (s)</h3>
+<p>Es el tope de todo el anidado. Cuando se cumple, el programa corta y se queda con el mejor resultado completo que tenga.</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" width="720" height="300" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="f6-t f6-d">
+  <title id="f6-t">Búsqueda por chapa y tiempo máximo total</title>
+  <desc id="f6-d">Dos líneas de tiempo del mismo largo, que es el tiempo máximo total. Con una búsqueda corta por chapa entran las tres pasadas y sobra tiempo. Con una búsqueda larga entra una sola pasada completa y la segunda queda cortada por el tiempo máximo.</desc>
+  <defs>
+    <pattern id="f6-corta" x="42" y="0" width="24" height="40" patternUnits="userSpaceOnUse">
+      <rect width="22" height="40" fill="#2E8074"/>
+    </pattern>
+    <pattern id="f6-larga" x="42" y="0" width="72" height="40" patternUnits="userSpaceOnUse">
+      <rect width="70" height="40" fill="#2E8074"/>
+    </pattern>
+  </defs>
+  <rect width="720" height="300" rx="8" fill="#F5F1E8"/>
+
+  <text x="40" y="34" font-weight="600">Búsqueda corta: entran las tres pasadas</text>
+  <rect x="40" y="58" width="640" height="36" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <rect x="42" y="62" width="166" height="28" fill="url(#f6-corta)"/>
+  <rect x="234" y="62" width="166" height="28" fill="url(#f6-corta)"/>
+  <rect x="426" y="62" width="166" height="28" fill="url(#f6-corta)"/>
+  <g font-size="12.5" text-anchor="middle">
+    <text x="125" y="112">pasada 1</text>
+    <text x="317" y="112">pasada 2</text>
+    <text x="509" y="112">pasada 3</text>
+    <text x="632" y="112" fill="#8A6216">sobra tiempo</text>
+  </g>
+
+  <text x="40" y="164" font-weight="600">Búsqueda larga: el tiempo se acaba en la segunda pasada</text>
+  <rect x="40" y="188" width="640" height="36" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <rect x="42" y="192" width="502" height="28" fill="url(#f6-larga)"/>
+  <rect x="546" y="192" width="70" height="28" fill="#7FB5AC"/>
+  <rect x="618" y="192" width="60" height="28" fill="#C4432A" fill-opacity="0.45"/>
+  <g font-size="12.5" text-anchor="middle">
+    <text x="293" y="242">pasada 1</text>
+    <text x="612" y="242" fill="#C4432A">pasada 2, cortada</text>
+  </g>
+
+  <path d="M680 46v186" stroke="#2B2420" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="40" y="270" font-size="12.5">0 s</text>
+  <text x="680" y="270" font-size="12.5" text-anchor="end" font-weight="600">Tiempo máximo total</text>
+  <rect x="40" y="280" width="12" height="12" fill="#2E8074"/>
+  <text x="60" y="291" font-size="12.5">Cada bloque es una búsqueda: una por chapa.</text>
+</svg>
+<figcaption>Cómo se reparte el tiempo máximo según la búsqueda por chapa</figcaption>
+</figure>
+<p>Una cuenta gruesa para saber si alcanza: los segundos de búsqueda, por las chapas que esperás usar, por las tres pasadas. La cuenta real da un poco más, porque comprobar cada resultado también lleva tiempo.</p>
+<ul>
+<li><strong>Si lo subís,</strong> el programa tiene más margen para terminar sus pasadas. Hoy, si termina antes, no espera al tope.</li>
+<li><strong>Si lo bajás demasiado,</strong> puede no alcanzar ni para una pasada. En ese caso el programa da error y no guarda nada.</li>
+<li><strong>Cuándo tocarlo:</strong> cuando el trabajo tiene muchas piezas o muchas chapas y aparece el aviso de que se alcanzó el límite.</li>
+</ul>
+<h3 id="simplificacion-mm">Simplificación (mm)</h3>
+<p>Antes de buscar, el programa puede suavizar el contorno de cada pieza: le saca puntos y lo deja apenas más grande, nunca más chico. La idea es que con contornos más simples Sparrow pruebe más acomodos en el mismo tiempo.</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 270" width="720" height="270" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="f7-t f7-d">
+  <title id="f7-t">Simplificación del contorno</title>
+  <desc id="f7-d">A la izquierda, una pieza con un borde dentado de muchos puntos: con la simplificación en cero se busca con ese contorno tal cual. A la derecha, la misma pieza rodeada por un contorno de búsqueda con menos puntos y apenas más grande. La pieza se corta siempre con el contorno real.</desc>
+  <rect width="720" height="270" rx="8" fill="#F5F1E8"/>
+
+  <text x="40" y="34" font-weight="600">Simplificación en 0</text>
+  <text x="40" y="54" font-size="12.5">Se busca con el contorno tal cual: muchos puntos.</text>
+  <path d="M60 210V100L75 90L90 102L105 88L120 102L135 90L150 102L165 88L180 102L195 90L210 100V210Z" fill="#2E8074" stroke="#2B2420" stroke-width="1.5" stroke-linejoin="round"/>
+  <g fill="#2B2420">
+    <circle cx="60" cy="210" r="3"/><circle cx="60" cy="100" r="3"/><circle cx="75" cy="90" r="3"/>
+    <circle cx="90" cy="102" r="3"/><circle cx="105" cy="88" r="3"/><circle cx="120" cy="102" r="3"/>
+    <circle cx="135" cy="90" r="3"/><circle cx="150" cy="102" r="3"/><circle cx="165" cy="88" r="3"/>
+    <circle cx="180" cy="102" r="3"/><circle cx="195" cy="90" r="3"/><circle cx="210" cy="100" r="3"/>
+    <circle cx="210" cy="210" r="3"/>
+  </g>
+  <text x="226" y="158" font-size="12.5">contorno real</text>
+
+  <text x="380" y="34" font-weight="600">Simplificación más alta</text>
+  <text x="380" y="54" font-size="12.5">Se busca con menos puntos y apenas más grande.</text>
+  <path d="M400 210V100L415 90L430 102L445 88L460 102L475 90L490 102L505 88L520 102L535 90L550 100V210Z" fill="#2E8074" fill-opacity="0.40"/>
+  <path d="M392 218V94L404 80H546L558 94V218Z" fill="none" stroke="#2B2420" stroke-width="2" stroke-dasharray="7 4" stroke-linejoin="round"/>
+  <g fill="#2B2420">
+    <circle cx="392" cy="218" r="3"/><circle cx="392" cy="94" r="3"/><circle cx="404" cy="80" r="3"/>
+    <circle cx="546" cy="80" r="3"/><circle cx="558" cy="94" r="3"/><circle cx="558" cy="218" r="3"/>
+  </g>
+  <text x="572" y="158" font-size="12.5">contorno de búsqueda</text>
+
+  <text x="40" y="252" font-size="12.5">Dibujo exagerado: en la pantalla son décimas de milímetro. La pieza se corta siempre con el contorno real.</text>
+</svg>
+<figcaption>Contorno real y contorno de búsqueda</figcaption>
+</figure>
+<ul>
+<li><strong>En cero,</strong> busca con el contorno exacto.</li>
+<li><strong>Si la subís,</strong> la búsqueda es más liviana, pero cada pieza reserva un poco más de lugar del que necesita.</li>
+<li><strong>Lo que no cambia:</strong> el resultado se comprueba con el contorno real y el archivo de corte sale con el contorno real. Si la pieza suavizada no entrara en la chapa, el programa usa la original.</li>
+<li><strong>Cuándo tocarla:</strong> con piezas de curvas muy detalladas, si la búsqueda rinde poco. Todavía no medimos cuánto ayuda en trabajos reales: si la cambiás, anotá qué pasó.</li>
+</ul>
+<h2 id="s6"><span class="num">6.</span> Aprovechar huecos</h2>
+<p>Es la casilla que está al lado del botón «Anidar». Funciona con los dos motores.</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" width="720" height="260" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="f8-t f8-d">
+  <title id="f8-t">Aprovechar huecos</title>
+  <desc id="f8-d">Una chapa con una pieza en forma de aro y una pieza chica. Sin aprovechar huecos, la pieza chica ocupa lugar propio al lado del aro. Con aprovechar huecos, la pieza chica va adentro del agujero del aro y queda libre el lugar que ocupaba.</desc>
+  <rect width="720" height="260" rx="8" fill="#F5F1E8"/>
+
+  <text x="30" y="34" font-weight="600">Sin aprovechar huecos</text>
+  <text x="30" y="54" font-size="12.5">La pieza chica ocupa lugar propio en la chapa.</text>
+  <rect x="30" y="70" width="310" height="170" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <path d="M115 85a70 70 0 1 0 0 140a70 70 0 1 0 0-140zM115 113a42 42 0 1 1 0 84a42 42 0 1 1 0-84z" fill="#2E8074" fill-rule="evenodd"/>
+  <rect x="215" y="135" width="40" height="40" rx="4" fill="#C9922E"/>
+
+  <text x="380" y="34" font-weight="600">Con aprovechar huecos</text>
+  <text x="380" y="54" font-size="12.5">La pieza chica va adentro del agujero.</text>
+  <rect x="380" y="70" width="310" height="170" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <path d="M465 85a70 70 0 1 0 0 140a70 70 0 1 0 0-140zM465 113a42 42 0 1 1 0 84a42 42 0 1 1 0-84z" fill="#2E8074" fill-rule="evenodd"/>
+  <rect x="445" y="135" width="40" height="40" rx="4" fill="#C9922E"/>
+  <rect x="556" y="95" width="116" height="120" fill="none" stroke="#C9922E" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="614" y="160" text-anchor="middle" fill="#8A6216" font-weight="600">queda libre</text>
+</svg>
+<figcaption>Una pieza chica adentro del agujero de un aro</figcaption>
+</figure>
+<p>Cuando está marcada, el programa hace un paso más al terminar el anidado: busca piezas chicas y las mete adentro de los agujeros de piezas más grandes, para que no ocupen lugar propio. El resultado se vuelve a comprobar entero.</p>
+<ul>
+<li><strong>Cuándo marcarla:</strong> cuando el trabajo tiene piezas con agujeros grandes (aros, marcos, letras huecas) y piezas chicas que podrían entrar ahí.</li>
+<li><strong>Qué no promete:</strong> ahorrar una chapa. Libera lugar, y a veces ese lugar no alcanza para sacar una chapa entera.</li>
+</ul>
+<h2 id="s7"><span class="num">7.</span> Qué hago si…</h2>
+<div class="tabla"><table>
+<thead>
+<tr>
+<th>Lo que pasa</th>
+<th>Qué probar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Necesito una respuesta ya</td>
+<td>Motor Rectangular.</td>
+</tr>
+<tr>
+<td>Quiero ver si baja una chapa</td>
+<td>Motor Sparrow, dos o tres semillas distintas, y «Aprovechar huecos» si hay piezas con agujeros.</td>
+</tr>
+<tr>
+<td>Aparece «Se alcanzó el límite de búsqueda»</td>
+<td>El resultado está completo y vale. Si querés darle más margen, subí el tiempo máximo total.</td>
+</tr>
+<tr>
+<td>Aparece «Sparrow excedió el tiempo máximo; no se guardó un plano parcial»</td>
+<td>No alcanzó el tiempo ni para una pasada. Subí el tiempo máximo total o bajá la búsqueda por chapa.</td>
+</tr>
+<tr>
+<td>Aparece «Piezas que no entran con el kerf y margen actuales»</td>
+<td>Esa pieza no entra en el área útil de la chapa. Usá una chapa más grande, seccioná la pieza o revisá el margen de borde.</td>
+</tr>
+<tr>
+<td>Anidé dos veces igual y dio distinto</td>
+<td>Es normal con Sparrow. Comparalos en el historial y marcá como definitivo el que prefieras.</td>
+</tr>
+<tr>
+<td>Tarda demasiado</td>
+<td>Apretá «Cancelar» y bajá el tiempo máximo total.</td>
+</tr>
+</tbody>
+</table></div>
+<p>El programa nunca deja piezas afuera en silencio. Si algo no entra o no se pudo comprobar, avisa y no guarda un anidado a medias.</p>
+<h2 id="s8"><span class="num">8.</span> Cómo probar un cambio sin perderse</h2>
+<p>El historial de cada grupo guarda todos los anidados, con el motor, la semilla, el tiempo que tardó, las chapas y el aprovechamiento. Desde ahí se puede ver cada uno, marcar uno como definitivo o borrarlo.</p>
+<p>El historial <strong>no muestra</strong> la búsqueda por chapa, el tiempo máximo, la simplificación ni si estaba marcado «Aprovechar huecos». Si vas a comparar, anotalos aparte. Esta tabla sirve:</p>
+<div class="tabla ancha"><table>
+<thead>
+<tr>
+<th>Anidado</th>
+<th>Motor</th>
+<th>Semilla</th>
+<th>Búsqueda</th>
+<th>Tiempo máx.</th>
+<th>Simplif.</th>
+<th>Huecos</th>
+<th>Chapas</th>
+<th>Aprov.</th>
+<th>Tardó</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>#…</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>Tres cuidados para que la comparación valga:</p>
+<ul>
+<li><strong>Cambiá una sola cosa por vez.</strong> Si cambiás dos, no vas a saber cuál hizo la diferencia.</li>
+<li><strong>Repetí antes de sacar una conclusión.</strong> Con Sparrow, una sola corrida puede ser suerte.</li>
+<li><strong>Cuidá la computadora mientras anida.</strong> Sparrow aprovecha el tiempo que tiene: con la máquina ocupada o en ahorro de energía llega menos lejos, y si la máquina se suspende, el tiempo sigue corriendo y la búsqueda no.</li>
+</ul>
+<h2 id="s9"><span class="num">9.</span> Lo que hoy no se toca desde la pantalla</h2>
+<ul>
+<li><strong>Las tres pasadas.</strong> La cantidad está fija.</li>
+<li><strong>Los hilos del procesador</strong> que usa Sparrow. Están fijos en dos.</li>
+<li><strong>La comparación de formatos</strong>, en la pestaña Grupos, tiene los mismos cuatro campos de Sparrow. Ahí el tiempo máximo vale para cada formato que se compara, no para el total.</li>
+</ul>
+<p>Está planificada una etapa nueva que usa el tiempo que sobra para intentar vaciar la chapa menos cargada, repartiendo sus piezas en las demás. Todavía no está en la aplicación. Cuando esté, esta guía se actualiza.</p>
+<h2 id="s10"><span class="num">10.</span> Los valores con los que viene la pantalla</h2>
+<p>Este es el único lugar de la guía donde están los números. Si cambian en la aplicación, se corrigen acá.</p>
+<div class="tabla"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Viene en</th>
+<th>Acepta</th>
+<th>Registro</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Motor</td>
+<td>Sparrow irregular (prueba)</td>
+<td>Rectangular o Sparrow</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Semilla</td>
+<td>42</td>
+<td>0 en adelante</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Búsqueda por chapa</td>
+<td>2 s</td>
+<td>1 a 30 s</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Tiempo máximo total</td>
+<td>120 s</td>
+<td>5 a 300 s</td>
+<td><code>PAR-09</code></td>
+</tr>
+<tr>
+<td>Simplificación</td>
+<td>0,3 mm</td>
+<td>0 a 2 mm</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Aprovechar huecos</td>
+<td>sin marcar</td>
+<td>marcada o sin marcar</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Kerf</td>
+<td>el del material</td>
+<td>—</td>
+<td><code>PAR-01</code></td>
+</tr>
+<tr>
+<td>Margen de borde</td>
+<td>el del material</td>
+<td>—</td>
+<td><code>PAR-02</code></td>
+</tr>
+<tr>
+<td>Separación</td>
+<td>la del material</td>
+<td>—</td>
+<td><code>PAR-03</code></td>
+</tr>
+<tr>
+<td>Rotación</td>
+<td>la del material</td>
+<td>Libre o con veta</td>
+<td><code>PAR-04</code></td>
+</tr>
+</tbody>
+</table></div>
+</main>
+</div>
+</body>
+</html>
