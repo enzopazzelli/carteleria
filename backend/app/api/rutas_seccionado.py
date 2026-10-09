@@ -60,6 +60,21 @@ def _chapa_y_parametros(sesion: Session, formato_id: int) -> tuple[Plancha, Para
     )
 
 
+def _celda(plancha: Plancha, params: ParametrosCorte) -> tuple[float, float]:
+    """La celda de la grilla para esa chapa, o un 400 si el margen, el
+    kerf y la separación no le dejan superficie: una chapa así (un
+    retazo angosto, un material que no es una chapa) no se puede usar
+    para seccionar."""
+    celda = celda_util(plancha, params)
+    if min(celda) <= 0:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"La chapa de {plancha.ancho_mm}×{plancha.alto_mm} no deja superficie útil: el margen, el kerf y la "
+            "separación de su material ocupan todo el ancho o el alto. Elegí otra chapa.",
+        )
+    return celda
+
+
 def _forma(pieza: Pieza) -> Polygon:
     """La forma de metal de la pieza. Si los agujeros se pisan, se
     normaliza como en la comparación con Sparrow (`poligono_material`)."""
@@ -126,8 +141,8 @@ def proponer_seccionado(
     _no_es_tramo(pieza)
     plancha, params = _chapa_y_parametros(sesion, datos.formato_id)
     _validar_que_no_entra(pieza, plancha, params)
+    celda = _celda(plancha, params)
     forma = _forma(pieza)
-    celda = celda_util(plancha, params)
     if datos.angulo_grados is None:
         resultado = mejor_grilla(forma, celda)
     else:
@@ -215,8 +230,9 @@ def aplicar_seccionado(
     _no_es_tramo(pieza)
     plancha, params = _chapa_y_parametros(sesion, datos.formato_id)
     _validar_que_no_entra(pieza, plancha, params)
+    celda = _celda(plancha, params)
     grilla = Grilla(datos.angulo_grados, datos.desplazamiento_x_mm, datos.desplazamiento_y_mm)
-    resultado = seccionar_con_grilla(_forma(pieza), celda_util(plancha, params), grilla)
+    resultado = seccionar_con_grilla(_forma(pieza), celda, grilla)
     _borrar_tramos(sesion, pieza)
     tramos = [_tramo_orm(pieza, tramo, grilla, n) for n, tramo in enumerate(_en_orden(resultado.tramos), start=1)]
     sesion.add_all(tramos)

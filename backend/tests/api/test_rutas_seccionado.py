@@ -91,6 +91,27 @@ def test_un_formato_sin_parametros_de_corte_da_400(cliente, tmp_path):
     assert "parámetros de corte" in respuesta.json()["detail"]
 
 
+@pytest.mark.parametrize("ancho_de_la_chapa", ["27", "20"])
+def test_una_chapa_que_no_deja_superficie_util_da_400(cliente, tmp_path, ancho_de_la_chapa):
+    """Con kerf 2, margen 10 y separación 5 se reservan 27 mm. A una chapa
+    de 27 le queda una celda de 0 (antes, una división por cero) y a una
+    de 20, una celda negativa (antes, la grilla no terminaba nunca de
+    armarse y el pedido quedaba colgado)."""
+    _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    angosta = cliente.post(f"/materiales/{formato['material_id']}/formatos", json={
+        "ancho_mm": ancho_de_la_chapa, "alto_mm": "1000", "unidad_venta": "M2", "costo_unidad_venta": "10",
+    }).json()
+
+    propuesta = _proponer(cliente, pieza["id"], formato_id=angosta["id"])
+    aplicado = cliente.post(f"/piezas/{pieza['id']}/seccionado", json={
+        "formato_id": angosta["id"], "angulo_grados": 0, "desplazamiento_x_mm": 0, "desplazamiento_y_mm": 0,
+    })
+
+    assert propuesta.status_code == 400, propuesta.text
+    assert "superficie útil" in propuesta.json()["detail"]
+    assert aplicado.status_code == 400, aplicado.text
+
+
 def _insertar_pieza(cliente, trabajo_id: int, contorno, agujeros=()) -> int:
     with Session(cliente.motor) as sesion:
         pieza = Pieza(

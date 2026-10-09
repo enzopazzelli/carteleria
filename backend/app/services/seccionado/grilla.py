@@ -190,6 +190,10 @@ def _pegar_pedacitos(pedazos: list[Polygon], ancho: float, alto: float) -> list[
 def seccionar_con_grilla(forma: Polygon, celda: tuple[float, float], grilla: Grilla) -> Seccionado:
     """Corta `forma` con una grilla de celdas `celda` (ancho, alto)."""
     ancho, alto = celda
+    if ancho <= 0 or alto <= 0:
+        # Sin esto, una celda de 0 divide por cero y una negativa deja a
+        # `_lineas` sumando pasos hacia atrás, sin terminar nunca.
+        raise ValueError(f"La celda de la grilla tiene que tener ancho y alto mayores que cero: {ancho} × {alto}.")
     girada = affinity.rotate(forma, -grilla.angulo_grados, origin=(0, 0))
     x0, y0, x1, y1 = girada.bounds
     xs = _lineas(x0, x1, grilla.desplazamiento_x_mm, ancho)

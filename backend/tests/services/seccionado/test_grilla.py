@@ -81,6 +81,15 @@ def test_un_angulo_o_desplazamiento_fuera_de_rango_no_pierde_metal():
     assert _area_total(resultado.tramos) == pytest.approx(aro.area, rel=1e-6)
 
 
+@pytest.mark.parametrize("celda", [(0.0, 973.0), (973.0, 0.0), (-7.0, 973.0), (973.0, -7.0)])
+def test_una_celda_sin_ancho_o_sin_alto_se_rechaza(celda):
+    # Una chapa más angosta que lo que reservan el margen, el kerf y la
+    # separación. Con 0 era una división por cero; con una medida
+    # negativa, la grilla no terminaba nunca de armarse.
+    with pytest.raises(ValueError, match="celda"):
+        seccionar_con_grilla(box(0, 0, 3000, 1000), celda, Grilla(0))
+
+
 def test_la_misma_grilla_da_siempre_el_mismo_resultado():
     aro = _aro_calado()
     celda = celda_util(_CHAPA, _PARAMS)
