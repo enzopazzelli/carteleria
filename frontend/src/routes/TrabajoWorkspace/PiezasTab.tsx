@@ -6,7 +6,7 @@ import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import PiezaMiniPreview from "../../components/PiezaMiniPreview";
 import Banner from "../../components/Banner";
 import SeccionarPanel from "../../components/Seccionado/SeccionarPanel";
-import { porQueSeccionar } from "../../components/Seccionado/geometria";
+import { originalesASeccionar, porQueSeccionar } from "../../components/Seccionado/geometria";
 import { ApiError } from "../../api/client";
 import type { Pieza } from "../../api/piezasYgrupos";
 import { escalaParaCargar } from "./cargaDxf";
@@ -18,9 +18,14 @@ export default function PiezasTab() {
   const revisar = new Set((busqueda.get("revisar") ?? "").split(",").filter(Boolean).map(Number));
   // Las piezas que la comparación de formatos (pestaña Grupos) mandó a
   // seccionar y contra qué chapa: llegan en el enlace de su aviso.
-  const aSeccionar = new Set((busqueda.get("seccionar") ?? "").split(",").filter(Boolean).map(Number));
+  const pedidas = new Set((busqueda.get("seccionar") ?? "").split(",").filter(Boolean).map(Number));
   const formatoPedido = Number(busqueda.get("formato")) || null;
   const { data: piezas, isLoading } = usePiezas(id);
+  // Si lo que no entra son los tramos de una pieza ya seccionada para
+  // otra chapa, la que hay que mostrar es esa pieza: un tramo no tiene
+  // botón para seccionar.
+  const aSeccionar = originalesASeccionar(pedidas, piezas ?? []);
+  const yaSeccionadas = (piezas ?? []).filter((p) => aSeccionar.has(p.id) && p.seccionado).length;
   const subirDxf = useSubirDxf(id);
   const descartarPieza = useDescartarPieza(id);
   const deshacerSeccionado = useDeshacerSeccionado(id);
@@ -126,6 +131,11 @@ export default function PiezasTab() {
             Seccionada en {pieza.seccionado.tramos} tramos · {(pieza.seccionado.soldadura_mm / 1000).toFixed(2)} m de
             soldadura
           </span>
+          {aSeccionar.has(pieza.id) && (
+            <span className="block text-conflict">
+              Sus tramos no entran en la chapa {chapaPedida ? `de ${medidas(chapaPedida)}` : "elegida"}
+            </span>
+          )}
           <button className="underline mr-2" onClick={() => setSeccionando(pieza.id)}>
             Volver a seccionar
           </button>
@@ -176,9 +186,11 @@ export default function PiezasTab() {
       </div>}
       {aSeccionar.size > 0 && <div className="mb-4">
         <Banner variante="aviso">
-          {aSeccionar.size === 1
-            ? `Esta pieza no entra en la chapa ${chapaPedida ? `de ${medidas(chapaPedida)}` : "elegida"} ni rotándola. Tocá «Seccionar» para partirla en tramos`
-            : `Estas ${aSeccionar.size} piezas no entran en la chapa ${chapaPedida ? `de ${medidas(chapaPedida)}` : "elegida"} ni rotándolas. Tocá «Seccionar» en cada una para partirla en tramos`}
+          {aSeccionar.size === 1 && yaSeccionadas === 1
+            ? `Esta pieza está seccionada para otra chapa y sus tramos no entran en la ${chapaPedida ? `de ${medidas(chapaPedida)}` : "elegida"}. Tocá «Volver a seccionar» para partirla para esta chapa`
+            : aSeccionar.size === 1
+              ? `Esta pieza no entra en la chapa ${chapaPedida ? `de ${medidas(chapaPedida)}` : "elegida"} ni rotándola. Tocá «Seccionar» para partirla en tramos`
+              : `Estas ${aSeccionar.size} piezas no entran en la chapa ${chapaPedida ? `de ${medidas(chapaPedida)}` : "elegida"} ni rotándolas. Tocá «Seccionar» en cada una para partirla en tramos${yaSeccionadas > 0 ? " («Volver a seccionar» en las que ya están seccionadas para otra chapa)" : ""}`}
           , o volvé a Grupos y elegí una chapa más grande.
         </Banner>
         <Link className="underline text-sm" to={`/trabajos/${id}/piezas`}>Mostrar todas las piezas</Link>
@@ -282,8 +294,10 @@ export default function PiezasTab() {
                       <SeccionarPanel
                         pieza={pieza}
                         formatoInicial={
-                          pieza.seccionado?.formato_id ??
+                          // La chapa que pidió Grupos va primero: si la pieza
+                          // ya está seccionada, es para otra.
                           (aSeccionar.has(pieza.id) ? formatoPedido : null) ??
+                          pieza.seccionado?.formato_id ??
                           formatoDelGrupo(pieza)
                         }
                         onCerrar={() => setSeccionando(null)}

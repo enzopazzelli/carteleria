@@ -1,5 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { desplazamientoEnGrilla, entraEnAlgunFormato, lineasDeGrilla, porQueSeccionar } from "./geometria";
+import {
+  desplazamientoEnGrilla,
+  entraEnAlgunFormato,
+  lineasDeGrilla,
+  originalesASeccionar,
+  porQueSeccionar,
+} from "./geometria";
+
+describe("originalesASeccionar", () => {
+  // La 1 está entera; la 2 ya se seccionó en los tramos 3 y 4.
+  const piezas = [
+    { id: 1, seccionada_de_id: null },
+    { id: 2, seccionada_de_id: null },
+    { id: 3, seccionada_de_id: 2 },
+    { id: 4, seccionada_de_id: 2 },
+  ];
+
+  it("deja como están las piezas que no son tramos", () => {
+    expect([...originalesASeccionar(new Set([1]), piezas)]).toEqual([1]);
+  });
+
+  it("cambia un tramo por la pieza de la que salió: es la que se puede volver a seccionar", () => {
+    expect([...originalesASeccionar(new Set([3]), piezas)]).toEqual([2]);
+  });
+
+  it("dos tramos de la misma pieza cuentan como una sola", () => {
+    expect([...originalesASeccionar(new Set([3, 4, 1]), piezas)].sort()).toEqual([1, 2]);
+  });
+
+  it("mientras las piezas no cargaron, deja la lista como vino", () => {
+    expect([...originalesASeccionar(new Set([3, 4]), [])].sort()).toEqual([3, 4]);
+  });
+});
 
 describe("entraEnAlgunFormato", () => {
   const formatos = [{ ancho_mm: "1220.00", alto_mm: "2440.00" }];

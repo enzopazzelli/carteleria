@@ -40,6 +40,18 @@ export function porQueSeccionar(
   return null;
 }
 
+/** Las piezas donde hay que tocar «Seccionar» cuando Grupos manda una
+ * lista de las que no entran en una chapa. Un tramo no se secciona: en
+ * su lugar va la pieza de la que salió, que es la que se puede volver a
+ * seccionar para esa chapa. Sin repetidos. */
+export function originalesASeccionar(
+  pedidas: Set<number>,
+  piezas: { id: number; seccionada_de_id: number | null }[],
+): Set<number> {
+  const originalDe = new Map(piezas.map((pieza) => [pieza.id, pieza.seccionada_de_id]));
+  return new Set([...pedidas].map((id) => originalDe.get(id) ?? id));
+}
+
 function girar(x: number, y: number, radianes: number): [number, number] {
   return [x * Math.cos(radianes) - y * Math.sin(radianes), x * Math.sin(radianes) + y * Math.cos(radianes)];
 }
