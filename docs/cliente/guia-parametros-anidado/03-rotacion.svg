@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 240" width="720" height="240" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="t d">
+  <title id="t">Rotación: libre o con veta</title>
+  <desc id="d">Con rotación libre el programa puede poner la pieza de cuatro maneras: a 0, 90, 180 y 270 grados. Con veta solo puede ponerla a 0 y a 180 grados, para que la veta del material quede siempre en el mismo sentido.</desc>
+  <rect width="720" height="240" rx="8" fill="#F5F1E8"/>
+
+  <text x="20" y="34" font-weight="600">Libre (0°/90°)</text>
+  <text x="20" y="54" font-size="12.5">La pieza se puede poner de cuatro maneras.</text>
+  <rect x="20" y="70" width="320" height="120" fill="#FFFDF8" stroke="#E3D9C6" stroke-width="1.5"/>
+  <g fill="#2E8074">
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(35,95)"/>
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(115,95) rotate(90 25 35)"/>
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(195,95) rotate(180 25 35)"/>
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(270,95) rotate(270 25 35)"/>
+  </g>
+  <g font-size="12.5" text-anchor="middle">
+    <text x="60" y="212">0°</text>
+    <text x="140" y="212">90°</text>
+    <text x="220" y="212">180°</text>
+    <text x="295" y="212">270°</text>
+  </g>
+
+  <text x="380" y="34" font-weight="600">Solo 0°/180° (con veta)</text>
+  <text x="380" y="54" font-size="12.5">La veta del material queda siempre igual.</text>
+  <rect x="380" y="70" width="320" height="120" fill="#FFFDF8" stroke="#E3D9C6" stroke-width="1.5"/>
+  <path d="M380 80h320M380 90h320M380 100h320M380 110h320M380 120h320M380 130h320M380 140h320M380 150h320M380 160h320M380 170h320M380 180h320" stroke="#D8CBAF" stroke-width="1"/>
+  <g fill="#2E8074">
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(415,95)"/>
+    <path d="M0 0h20v50h30v20h-50z" transform="translate(505,95) rotate(180 25 35)"/>
+  </g>
+  <path d="M0 0h20v50h30v20h-50z" transform="translate(605,95) rotate(90 25 35)" fill="#B9B1A3"/>
+  <path d="M598 98l64 64M662 98l-64 64" stroke="#C4432A" stroke-width="3.5" stroke-linecap="round"/>
+  <g font-size="12.5" text-anchor="middle">
+    <text x="440" y="212">0°</text>
+    <text x="530" y="212">180°</text>
+    <text x="630" y="212" fill="#C4432A">90°: no se usa</text>
+  </g>
+</svg>

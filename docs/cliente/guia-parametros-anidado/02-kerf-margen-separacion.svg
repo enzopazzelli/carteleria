@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 330" width="720" height="330" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="t d">
+  <title id="t">Kerf, margen de borde y separación</title>
+  <desc id="d">Una chapa con dos piezas. El margen de borde es la franja del contorno de la chapa que no se usa. El kerf es el material que se come el corte, medio kerf de cada lado de la pieza. La separación es el aire extra entre piezas, además del kerf.</desc>
+  <rect width="720" height="330" rx="8" fill="#F5F1E8"/>
+
+  <rect x="40" y="40" width="400" height="260" fill="#E3D9C6" stroke="#2B2420" stroke-width="1.5"/>
+  <rect x="68" y="68" width="344" height="204" fill="#FFFDF8" stroke="#C9922E" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <rect x="68" y="84" width="136" height="146" fill="#C4432A" fill-opacity="0.28"/>
+  <rect x="76" y="92" width="120" height="130" fill="#2E8074"/>
+  <text x="136" y="162" text-anchor="middle" fill="#FFFDF8">pieza</text>
+  <rect x="238" y="84" width="136" height="146" fill="#C4432A" fill-opacity="0.28"/>
+  <rect x="246" y="92" width="120" height="130" fill="#2E8074"/>
+  <text x="306" y="162" text-anchor="middle" fill="#FFFDF8">pieza</text>
+
+  <path d="M204 238v12M238 238v12M204 244h34" fill="none" stroke="#2B2420" stroke-width="1.5"/>
+  <text x="221" y="264" text-anchor="middle" font-size="12.5">separación</text>
+  <path d="M294 40h12M294 68h12M300 40v28" fill="none" stroke="#2B2420" stroke-width="1.5"/>
+  <text x="312" y="59" font-size="12.5">margen de borde</text>
+
+  <rect x="462" y="60" width="16" height="16" fill="#E3D9C6" stroke="#2B2420"/>
+  <text x="488" y="73" font-weight="600">Margen de borde</text>
+  <text x="488" y="92" font-size="12.5">La franja del contorno de la</text>
+  <text x="488" y="108" font-size="12.5">chapa que no se usa.</text>
+
+  <rect x="462" y="134" width="16" height="16" fill="#C4432A" fill-opacity="0.28" stroke="#2B2420"/>
+  <text x="488" y="147" font-weight="600">Kerf</text>
+  <text x="488" y="166" font-size="12.5">Lo que se come el corte:</text>
+  <text x="488" y="182" font-size="12.5">medio kerf de cada lado.</text>
+
+  <path d="M462 208v14M478 208v14M462 215h16" fill="none" stroke="#2B2420" stroke-width="1.5"/>
+  <text x="488" y="221" font-weight="600">Separación</text>
+  <text x="488" y="240" font-size="12.5">Aire extra entre piezas,</text>
+  <text x="488" y="256" font-size="12.5">además del kerf.</text>
+
+  <path d="M462 289h16" stroke="#C9922E" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="488" y="293" font-size="12.5">Hasta acá llega el área útil.</text>
+</svg>

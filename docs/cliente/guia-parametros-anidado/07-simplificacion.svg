@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 270" width="720" height="270" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="t d">
+  <title id="t">Simplificación del contorno</title>
+  <desc id="d">A la izquierda, una pieza con un borde dentado de muchos puntos: con la simplificación en cero se busca con ese contorno tal cual. A la derecha, la misma pieza rodeada por un contorno de búsqueda con menos puntos y apenas más grande. La pieza se corta siempre con el contorno real.</desc>
+  <rect width="720" height="270" rx="8" fill="#F5F1E8"/>
+
+  <text x="40" y="34" font-weight="600">Simplificación en 0</text>
+  <text x="40" y="54" font-size="12.5">Se busca con el contorno tal cual: muchos puntos.</text>
+  <path d="M60 210V100L75 90L90 102L105 88L120 102L135 90L150 102L165 88L180 102L195 90L210 100V210Z" fill="#2E8074" stroke="#2B2420" stroke-width="1.5" stroke-linejoin="round"/>
+  <g fill="#2B2420">
+    <circle cx="60" cy="210" r="3"/><circle cx="60" cy="100" r="3"/><circle cx="75" cy="90" r="3"/>
+    <circle cx="90" cy="102" r="3"/><circle cx="105" cy="88" r="3"/><circle cx="120" cy="102" r="3"/>
+    <circle cx="135" cy="90" r="3"/><circle cx="150" cy="102" r="3"/><circle cx="165" cy="88" r="3"/>
+    <circle cx="180" cy="102" r="3"/><circle cx="195" cy="90" r="3"/><circle cx="210" cy="100" r="3"/>
+    <circle cx="210" cy="210" r="3"/>
+  </g>
+  <text x="226" y="158" font-size="12.5">contorno real</text>
+
+  <text x="380" y="34" font-weight="600">Simplificación más alta</text>
+  <text x="380" y="54" font-size="12.5">Se busca con menos puntos y apenas más grande.</text>
+  <path d="M400 210V100L415 90L430 102L445 88L460 102L475 90L490 102L505 88L520 102L535 90L550 100V210Z" fill="#2E8074" fill-opacity="0.40"/>
+  <path d="M392 218V94L404 80H546L558 94V218Z" fill="none" stroke="#2B2420" stroke-width="2" stroke-dasharray="7 4" stroke-linejoin="round"/>
+  <g fill="#2B2420">
+    <circle cx="392" cy="218" r="3"/><circle cx="392" cy="94" r="3"/><circle cx="404" cy="80" r="3"/>
+    <circle cx="546" cy="80" r="3"/><circle cx="558" cy="94" r="3"/><circle cx="558" cy="218" r="3"/>
+  </g>
+  <text x="572" y="158" font-size="12.5">contorno de búsqueda</text>
+
+  <text x="40" y="252" font-size="12.5">Dibujo exagerado: en la pantalla son décimas de milímetro. La pieza se corta siempre con el contorno real.</text>
+</svg>

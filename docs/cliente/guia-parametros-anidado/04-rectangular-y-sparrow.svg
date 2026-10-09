@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 270" width="720" height="270" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="t d">
+  <title id="t">Los dos motores: Rectangular y Sparrow</title>
+  <desc id="d">Las mismas cuatro piezas triangulares en una chapa. El motor Rectangular le reserva a cada una su rectángulo entero y ocupa casi todo el ancho. Sparrow mira la forma real, las encastra de a dos y deja libre buena parte de la chapa.</desc>
+  <rect width="720" height="270" rx="8" fill="#F5F1E8"/>
+
+  <text x="30" y="34" font-weight="600">Rectangular</text>
+  <text x="30" y="54" font-size="12.5">Cada pieza reserva su rectángulo entero.</text>
+  <rect x="30" y="70" width="310" height="180" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <g fill="none" stroke="#2B2420" stroke-opacity="0.55" stroke-dasharray="4 3">
+    <rect x="44" y="84" width="62" height="86"/>
+    <rect x="114" y="84" width="62" height="86"/>
+    <rect x="184" y="84" width="62" height="86"/>
+    <rect x="254" y="84" width="62" height="86"/>
+  </g>
+  <g fill="#2E8074">
+    <polygon points="44,170 44,84 106,170"/>
+    <polygon points="114,170 114,84 176,170"/>
+    <polygon points="184,170 184,84 246,170"/>
+    <polygon points="254,170 254,84 316,170"/>
+  </g>
+
+  <text x="380" y="34" font-weight="600">Sparrow</text>
+  <text x="380" y="54" font-size="12.5">Mira la forma real y encastra las piezas.</text>
+  <rect x="380" y="70" width="310" height="180" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <g fill="#2E8074">
+    <polygon points="394,170 394,84 456,170"/>
+    <polygon points="402,84 464,84 464,170"/>
+    <polygon points="474,170 474,84 536,170"/>
+    <polygon points="482,84 544,84 544,170"/>
+  </g>
+  <rect x="556" y="84" width="122" height="86" fill="none" stroke="#C9922E" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="617" y="132" text-anchor="middle" fill="#8A6216" font-weight="600">queda libre</text>
+</svg>

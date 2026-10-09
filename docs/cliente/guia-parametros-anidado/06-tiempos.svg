@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" width="720" height="300" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="t d">
+  <title id="t">Búsqueda por chapa y tiempo máximo total</title>
+  <desc id="d">Dos líneas de tiempo del mismo largo, que es el tiempo máximo total. Con una búsqueda corta por chapa entran las tres pasadas y sobra tiempo. Con una búsqueda larga entra una sola pasada completa y la segunda queda cortada por el tiempo máximo.</desc>
+  <defs>
+    <pattern id="corta" x="42" y="0" width="24" height="40" patternUnits="userSpaceOnUse">
+      <rect width="22" height="40" fill="#2E8074"/>
+    </pattern>
+    <pattern id="larga" x="42" y="0" width="72" height="40" patternUnits="userSpaceOnUse">
+      <rect width="70" height="40" fill="#2E8074"/>
+    </pattern>
+  </defs>
+  <rect width="720" height="300" rx="8" fill="#F5F1E8"/>
+
+  <text x="40" y="34" font-weight="600">Búsqueda corta: entran las tres pasadas</text>
+  <rect x="40" y="58" width="640" height="36" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <rect x="42" y="62" width="166" height="28" fill="url(#corta)"/>
+  <rect x="234" y="62" width="166" height="28" fill="url(#corta)"/>
+  <rect x="426" y="62" width="166" height="28" fill="url(#corta)"/>
+  <g font-size="12.5" text-anchor="middle">
+    <text x="125" y="112">pasada 1</text>
+    <text x="317" y="112">pasada 2</text>
+    <text x="509" y="112">pasada 3</text>
+    <text x="632" y="112" fill="#8A6216">sobra tiempo</text>
+  </g>
+
+  <text x="40" y="164" font-weight="600">Búsqueda larga: el tiempo se acaba en la segunda pasada</text>
+  <rect x="40" y="188" width="640" height="36" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <rect x="42" y="192" width="502" height="28" fill="url(#larga)"/>
+  <rect x="546" y="192" width="70" height="28" fill="#7FB5AC"/>
+  <rect x="618" y="192" width="60" height="28" fill="#C4432A" fill-opacity="0.45"/>
+  <g font-size="12.5" text-anchor="middle">
+    <text x="293" y="242">pasada 1</text>
+    <text x="612" y="242" fill="#C4432A">pasada 2, cortada</text>
+  </g>
+
+  <path d="M680 46v186" stroke="#2B2420" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="40" y="270" font-size="12.5">0 s</text>
+  <text x="680" y="270" font-size="12.5" text-anchor="end" font-weight="600">Tiempo máximo total</text>
+  <rect x="40" y="280" width="12" height="12" fill="#2E8074"/>
+  <text x="60" y="291" font-size="12.5">Cada bloque es una búsqueda: una por chapa.</text>
+</svg>

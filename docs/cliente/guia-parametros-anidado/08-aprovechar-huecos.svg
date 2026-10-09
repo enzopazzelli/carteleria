@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" width="720" height="260" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#2B2420" role="img" aria-labelledby="t d">
+  <title id="t">Aprovechar huecos</title>
+  <desc id="d">Una chapa con una pieza en forma de aro y una pieza chica. Sin aprovechar huecos, la pieza chica ocupa lugar propio al lado del aro. Con aprovechar huecos, la pieza chica va adentro del agujero del aro y queda libre el lugar que ocupaba.</desc>
+  <rect width="720" height="260" rx="8" fill="#F5F1E8"/>
+
+  <text x="30" y="34" font-weight="600">Sin aprovechar huecos</text>
+  <text x="30" y="54" font-size="12.5">La pieza chica ocupa lugar propio en la chapa.</text>
+  <rect x="30" y="70" width="310" height="170" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <path d="M115 85a70 70 0 1 0 0 140a70 70 0 1 0 0-140zM115 113a42 42 0 1 1 0 84a42 42 0 1 1 0-84z" fill="#2E8074" fill-rule="evenodd"/>
+  <rect x="215" y="135" width="40" height="40" rx="4" fill="#C9922E"/>
+
+  <text x="380" y="34" font-weight="600">Con aprovechar huecos</text>
+  <text x="380" y="54" font-size="12.5">La pieza chica va adentro del agujero.</text>
+  <rect x="380" y="70" width="310" height="170" fill="#FFFDF8" stroke="#2B2420" stroke-width="1.5"/>
+  <path d="M465 85a70 70 0 1 0 0 140a70 70 0 1 0 0-140zM465 113a42 42 0 1 1 0 84a42 42 0 1 1 0-84z" fill="#2E8074" fill-rule="evenodd"/>
+  <rect x="445" y="135" width="40" height="40" rx="4" fill="#C9922E"/>
+  <rect x="556" y="95" width="116" height="120" fill="none" stroke="#C9922E" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="614" y="160" text-anchor="middle" fill="#8A6216" font-weight="600">queda libre</text>
+</svg>
