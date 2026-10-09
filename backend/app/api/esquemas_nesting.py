@@ -149,6 +149,6 @@ class OpcionFormatoLeer(BaseModel):
     precio_simulado: bool
     #: Piezas que no entran en este formato con ninguna rotación permitida.
     #: No es un error de la comparación: un diseño más grande que la chapa
-    #: se secciona en tramos que se sueldan después (A5, todavía manual).
-    #: Hasta que exista el seccionado, el formato queda sin anidar.
+    #: se secciona en tramos que se sueldan después (A5, desde la pestaña
+    #: Piezas). Hasta que se seccionen, el formato queda sin anidar.
     piezas_a_seccionar: list[PiezaASeccionarLeer] = Field(default_factory=list)

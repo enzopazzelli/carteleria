@@ -516,8 +516,9 @@ def comparar_formatos_de_grupo(
 
     # Un formato donde alguna pieza no entra ni rotándola no se anida: sale
     # con sus piezas a seccionar y no frena a los demás. Un diseño más
-    # grande que la chapa se parte en tramos que se sueldan (A5); hasta que
-    # el sistema lo haga, ese formato queda sin planchas ni costo.
+    # grande que la chapa se parte en tramos que se sueldan (A5), desde la
+    # pestaña Piezas; hasta que se haga, ese formato queda sin planchas ni
+    # costo.
     geometrias = _geometrias_del_grupo(grupo) if datos.motor == "sparrow" else {}
     if datos.motor == "sparrow":
         no_entran = [piezas_que_no_entran(piezas_dominio, geometrias, o.plancha, o.params) for o in opciones]
