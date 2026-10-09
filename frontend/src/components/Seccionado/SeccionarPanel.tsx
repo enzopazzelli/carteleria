@@ -7,6 +7,7 @@ import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import { useAplicarSeccionado } from "../../hooks/usePiezas";
 import Banner from "../Banner";
 import { desplazamientoEnGrilla, lineasDeGrilla } from "./geometria";
+import { crearTurnos } from "./turnos";
 
 const LADO_DIBUJO_PX = 560;
 const COLORES_TRAMOS = ["#2b6cb0", "#2f855a"];
@@ -33,6 +34,11 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inicioArrastre, setInicioArrastre] = useState<{ x: number; y: number } | null>(null);
+  // La búsqueda puede tardar un minuto. Si mientras tanto se cambia de
+  // chapa o se pide otra grilla, la respuesta que llega tarde no se usa:
+  // quedaría dibujada la propuesta de una chapa con otra elegida, y
+  // «Aplicar» cortaría con la elegida.
+  const [turnos] = useState(crearTurnos);
 
   const ancho = Number(pieza.ancho_mm);
   const alto = Number(pieza.alto_mm);
@@ -51,18 +57,23 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
 
   async function pedir(grilla?: GrillaSeccionado) {
     if (formatoId === null) return;
+    const turno = turnos.tomar();
     setCalculando(true);
     setBuscando(grilla === undefined);
     setError(null);
     try {
       const nueva = await proponerSeccionado(pieza.id, { formato_id: formatoId, ...grilla });
+      if (!turnos.vigente(turno)) return;
       setPropuesta(nueva);
       setAngulo(String(Math.round(nueva.angulo_grados * 10) / 10));
     } catch (e) {
+      if (!turnos.vigente(turno)) return;
       setError(e instanceof ApiError ? e.message : "No se pudo calcular el seccionado.");
     } finally {
-      setCalculando(false);
-      setBuscando(false);
+      if (turnos.vigente(turno)) {
+        setCalculando(false);
+        setBuscando(false);
+      }
     }
   }
 
@@ -136,8 +147,11 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
             className="border border-line rounded p-1"
             value={formatoId ?? ""}
             onChange={(e) => {
+              turnos.anular();
               setFormatoId(e.target.value ? Number(e.target.value) : null);
               setPropuesta(null);
+              setCalculando(false);
+              setBuscando(false);
             }}
           >
             <option value="">Elegí un formato…</option>
