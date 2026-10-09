@@ -107,9 +107,19 @@ Enzo editó `Complejo.dxf` para dejar un solo diseño, lo importó, seccionó, a
 - **El DXF se cargaba apenas se elegía,** con la escala que hubiera en el casillero, y había que cargarlo dos veces. Ahora elegir el archivo no carga nada: se pone la escala y un botón «Cargar» lo confirma. El botón dice el archivo y la escala, se apaga si la escala no es un número mayor que cero, y avisa cuántas piezas del trabajo se reemplazan. Probado en la app, contra una copia de los datos.
 - **Más pasadas no mejoran el anidado.** Medido con las 31 piezas de ese trabajo en chapa de 1220 × 2440 (6 chapas, 32,2 %): con 8 pasadas en vez de 3, con 10 y 30 segundos por búsqueda y con la chapa acostada, el mejor resultado sigue siendo 6. Sparrow sí mejora con tiempo (la franja pasa de 4,95 a 4,34 chapas de largo entre 2 y 60 segundos), pero la integración recorta una chapa de la franja, se queda con las piezas que cayeron enteras y recalcula el resto, y ahí se pierde. Una prueba que llena cada chapa de a una pieza, consultando a Sparrow si el conjunto entra, dio **5 chapas validadas (38,6 %)** en 6 minutos y medio contra 1.
 
-**Qué se decidió.** Descartar los recortes al cargar, en vez de adelantar la pantalla de revisión (2.1). Y escribir un plan para repartir chapa por chapa, sin tocar el motor todavía.
+**Revisión de la rama.** Antes del PR, un revisor aparte leyó los 22 commits. Veredicto: se puede mergear con arreglos, nada crítico. Lo que se arregló, cada cosa con su prueba y vista en la app sobre una copia de los datos:
 
-**Cambios en el registro.** Sin cambios.
+- Una chapa más angosta que sus márgenes colgaba el pedido de seccionado o daba un error interno. Ahora se rechaza con un mensaje (`7b4576a`).
+- El panel de seccionar podía aplicar la grilla de una chapa con otra elegida, si se cambiaba el selector durante la búsqueda (`efcfb65`).
+- El enlace «Hay que seccionar» de Grupos llevaba a una pantalla sin botón cuando lo que no entraba eran los tramos de una pieza ya seccionada (`7c484ec`).
+- Después de anidar, volver a seccionar exigía borrar el grupo entero. Ahora cada anidado del historial se puede borrar, también el definitivo, con aviso (`e6a7948`).
+- Dos triviales: la escala «1.000» se mostraba como si fuera mil (`dee31b7`) y dos comentarios decían que el seccionado no existía (`04f438c`).
+
+Lo que la revisión señaló y no se tocó está en la sección «Desvíos» de [`plan/A5-seccionado/plan.md`](plan/A5-seccionado/plan.md).
+
+**Qué se decidió.** Descartar los recortes al cargar, en vez de adelantar la pantalla de revisión (2.1). Escribir un plan para repartir chapa por chapa, sin tocar el motor todavía. Que un anidado se pueda borrar solo, incluido el definitivo. Y dejar la veta como pregunta abierta, sin tocar el código.
+
+**Cambios en el registro.** Alta de `P-30`: si en un material con veta los tramos de una pieza seccionada pueden cortarse girados respecto del dibujo. Hoy el seccionado los gira, y ningún material del catálogo tiene veta. Va al encuentro 2 del guion, con el taller.
 
 **Pendiente.**
 

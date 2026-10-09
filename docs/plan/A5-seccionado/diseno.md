@@ -1,6 +1,6 @@
 # A5 · Seccionado — diseño
 
-> **Estado:** construido el 2026-10-08 en la rama `feat/seccionado` (PR pendiente de abrir). Falta la validación con el aro real soldado (`SUP-17`, §7). Lo que cambió al construirlo está marcado en §5.2 y §8, y en detalle en la sección «Desvíos» de [`plan.md`](plan.md).
+> **Estado:** construido el 2026-10-08 en la rama `feat/seccionado` (PR pendiente de abrir). La rama pasó una revisión completa ese día; lo que se arregló y lo que quedó anotado está al final de [`plan.md`](plan.md). Falta la validación con el aro real soldado (`SUP-17`, §7). Lo que cambió al construirlo está marcado en §5.2 y §8, y en detalle en la sección «Desvíos» de [`plan.md`](plan.md).
 >
 > **Cambio de reparto.** El plan maestro dejaba el seccionado (paso A5 de [`motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`](../../motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md)) en el carril de Vale. Enzo decidió tomarlo el 2026-10-07 porque sin él el aro de Belgrano no se puede cotizar. Hay que avisarle a Vale, y [`PLAN-MAESTRO.md`](../PLAN-MAESTRO.md) se actualiza en el paso de documentación.
 >
@@ -93,7 +93,7 @@ Los pasos gruesos de ángulo son de 5° (medido el 2026-10-08). De a 15°, la b�
 
 **Pedacitos sueltos.** En una red calada, una línea de la grilla puede separar la punta de una banda y dejarla sola. Después de cortar, cada tramo se intenta pegar a un vecino con el que comparte un corte, si la unión sigue cabiendo en la celda. Se empieza por los más chicos. Cada unión borra un corte: una soldadura menos y un tramo menos.
 
-**Orientación de cada tramo.** Se gira lo necesario para que su celda quede derecha sobre la chapa. Si el material tiene veta (`PAR-04`), todos los tramos quedan con la veta en el mismo sentido. Un tramo que salió de pegar pedacitos conserva la orientación de la grilla.
+**Orientación de cada tramo.** Se gira lo necesario para que su celda quede derecha sobre la chapa. Si el material tiene veta (`PAR-04`), todos los tramos quedan con la veta en el mismo sentido entre sí, pero no en el del dibujo: si eso se acepta es `P-30`. Un tramo que salió de pegar pedacitos conserva la orientación de la grilla.
 
 **Grilla fija.** Si el diseñador da el ángulo y el desplazamiento, se corta una sola vez con esa grilla y se pegan los pedacitos, sin buscar. Tiene que ser rápido, porque se llama en cada arrastre.
 

@@ -234,7 +234,7 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 
 ## 4. Preguntas abiertas — `P-xx`
 
-Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-29`). **29 únicas.**
+Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-30`). **30 únicas.**
 
 ### 🔴 Bloqueantes de Sprint 0
 
@@ -281,6 +281,7 @@ Surgen de la muestra real de Megacarteles (ver [`ANALISIS-MUESTRA-MEGACARTELES.m
 | **P-27** | ¿Usan siempre un color fijo para cotas y rótulos (en la muestra, rojo)? ¿Alguna vez una pieza a cortar va en ese color fuera de una hoja? *Respuesta de Enzo (2026-09-26): no. El rojo lleva textos de referencia para quien lee (rótulos de la chapa y cotas, incluidas las de espesor por parte en los diseños chicos). A confirmar con diseño.* | `PAR-47`, `CART-511` |
 | **P-28** | Un tramo del aro de 2292 × 1220 mm (mide exacto el alto de la chapa) sobre una chapa de 1220 de alto: ¿se corta tal cual, hasta el borde, o el diseñador lo ajusta? *Medido (2026-09-25): 4 tramos así en Belgrano, sin margen en ese borde.* | Si el anidado manual de la muestra se puede cortar como está dibujado: `P-03` (margen de borde), `PAR-02`, `PLAN-RUMBO-ANIDADO-Y-REVISION.md` |
 | **P-29** | Las «islas» (el centro de la O, la B, la P y la isla oscura dentro de la punta de cada tramo, dibujadas como forma aparte que llena el agujero de otra), ¿se usan como pieza o son descarte? *Medido (2026-09-26): 17 de las 48 formas `cortar` de Belgrano, 2,02 m² (22,8 % del área). Si son descarte, el aprovechamiento del diseñador pasa de 37,3 % a 28,8 %.* | Cuánto vale el aprovechamiento de referencia (`PAR-33`), y la regla de contra-piezas de `CART-511` (`PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.5`) |
+| **P-30** | En un material con veta, ¿los tramos de una pieza seccionada pueden cortarse girados respecto del dibujo, siempre que queden todos con la veta en el mismo sentido? ¿O la veta tiene que quedar como en el cartel armado? *Hoy (2026-10-08) el seccionado gira cada tramo lo que gire la grilla: los tramos quedan parejos entre sí, pero no respecto del dibujo. Una pieza que no entra solo porque el material no admite girarla sale «seccionada» en un solo tramo, girada. Ningún material del catálogo cargado tiene veta. Lo señaló la revisión de la rama del seccionado.* | Qué hace el seccionado con un material que no se puede girar: `PAR-04`, `B-04`, `P-04`, `plan/A5-seccionado/diseno.md §5.2` |
 
 ### 🟡 Aprobación y envío
 
@@ -336,7 +337,7 @@ Una sola reunión no alcanza. Tres encuentros, cada uno con sus IDs a cerrar.
 | Encuentro | Con quién | Duración | Preguntas | Insumos a llevarse |
 |---|---|---|---|---|
 | **1 — Negocio y proceso** | Dueño + administración | 90 min | `P-07`, `P-08`, `P-09`, `P-10`, `P-11`, `P-15`, `P-16`, `P-17`, `P-18` | `B-01`, `B-09`, `B-10`, `B-11`, `B-13`, `B-17` |
-| **2 — Taller y materiales** | Encargado de taller / operario de corte | 60 min | `P-01`, `P-02`, `P-03`, `P-04`, `P-05`, `P-23`, `P-26`, `P-28` | `B-02`, `B-03`, `B-04`, `B-05`, `B-06` |
+| **2 — Taller y materiales** | Encargado de taller / operario de corte | 60 min | `P-01`, `P-02`, `P-03`, `P-04`, `P-05`, `P-23`, `P-26`, `P-28`, `P-30` | `B-02`, `B-03`, `B-04`, `B-05`, `B-06` |
 | **3 — Diseño y sistemas** | Diseñadores + autor del dashboard | 60 min | `P-12`, `P-13`, `P-14`, `P-19`, `P-20`, `P-21`, `P-22`, `P-24`, `P-25`, `P-27`, `P-29` | `B-07`, `B-08`, `B-14`, `B-15` |
 
 > **Lo más valioso del encuentro 2 no son las respuestas: es ver cómo anidan hoy.** Media hora mirando a alguien acomodar piezas sobre la chapa va a revelar restricciones que nadie menciona en una reunión — cómo agrupan por espesor, qué recortes guardan para después, qué no se puede rotar y por qué. Eso puede generar `SUP-xx` nuevos que ninguna de las preguntas cubre.
@@ -352,7 +353,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Supuestos (`SUP`) | 17 | 11 | 4 | 2 |
 | Parámetros (`PAR`) | 49 | 12 | 25 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
-| Preguntas (`P`) | 29 | 25 | 4 | 0 |
+| Preguntas (`P`) | 30 | 26 | 4 | 0 |
 | Decisiones (`D`) | 19 | 18 | 0 | 1 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).

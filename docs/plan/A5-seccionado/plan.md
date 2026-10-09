@@ -2250,3 +2250,25 @@ Las cuatro piezas reales dan los mismos tramos y la misma soldadura antes y desp
 3. Arrastrar deja corrimientos no redondos y tramos de medidas como 321.428571 mm. Falta decidir si la grilla se ajusta a milímetros enteros.
 4. La pieza 1009 del trabajo 4 parece un plano de referencia y no una pieza a cortar.
 5. En Piezas, la cuenta que decide si se muestra «Seccionar» es aproximada: compara la caja de la pieza con la chapa entera, sin márgenes ni kerf. Una pieza que mide casi lo mismo que la chapa (el caso de `P-28`) no muestra el botón al entrar directo a Piezas, aunque el servidor diga que no entra. Llegando por el enlace de Grupos sí lo muestra, porque ahí la lista la calculó el servidor.
+
+### Lo que cambió con la revisión de la rama (2026-10-08)
+
+Un revisor aparte leyó toda la rama antes del PR. Veredicto: se puede mergear con arreglos, nada crítico. Enzo decidió por opciones qué se arreglaba.
+
+| Qué encontró | Qué se hizo | Commit |
+|---|---|---|
+| Una chapa más angosta que el margen, el kerf y la separación deja la celda en cero o negativa: división por cero, o una grilla que no termina nunca de armarse | Proponer y aplicar responden 400; `seccionar_con_grilla` rechaza una celda sin ancho o sin alto | `7b4576a` |
+| El panel dibujaba la propuesta de una chapa con otra ya elegida, si se cambiaba el selector durante la búsqueda, y «Aplicar» cortaba con la elegida | Cada pedido toma un turno (`turnos.ts`) y una respuesta que llega tarde no se usa | `efcfb65` |
+| Después de seccionar, el enlace «Hay que seccionar» de Grupos abría Piezas solo con los tramos, que no tienen botón | Se muestra la pieza original, y «Volver a seccionar» abre el panel con la chapa que pidió Grupos | `7c484ec` |
+| Con tramos en un anidado guardado, volver a seccionar o deshacer exigía borrar el grupo: no había cómo borrar un anidado, y el §6 del diseño daba por hecho que sí | `DELETE /ejecuciones/{id}` y «Borrar» en el historial de Anidado, también para el definitivo, con aviso. El 409 nombra los anidados | `e6a7948` |
+| Con veta, el seccionado gira los tramos respecto del dibujo | Sin cambios en el código: quedó como pregunta abierta, `P-30` | — |
+
+### Lo que señaló la revisión y quedó sin tocar
+
+1. El seccionado usa los parámetros de corte del material, no los propios del grupo (`CART-210`): con un margen mayor en el grupo, los tramos pueden no entrar al anidar.
+2. «Volver a seccionar» abre el panel vacío: no parte de la grilla guardada en `Pieza.seccionado`.
+3. Los ángulos «finos» de la búsqueda son múltiplos de 5°, que ya se probaron: la segunda pasada solo afina el corrimiento.
+4. `NaN` o infinito en el ángulo o el corrimiento dan 500. Por la API se puede seccionar una pieza descartada a mano.
+5. No hay tope para chapas chicas pero válidas (un retazo de 300 × 300 con una pieza de 10 m), y el selector de chapa del panel lista todo el catálogo.
+6. Volver a seccionar mientras corre un anidado del mismo grupo puede dejar esa ejecución sin terminar. El mismo riesgo ya existía al reimportar.
+7. Una pieza tiene un solo seccionado, para una chapa: después de seccionar, la comparación de formatos usa los tramos aunque la pieza entraría entera en una chapa más grande.
