@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.modelos.trabajo import Colocacion, EjecucionNesting, Pieza
 
-from .test_rutas_nesting import _material_con_formato_y_parametros, cliente  # noqa: F401
+from .test_rutas_nesting import _esperar_estado, _material_con_formato_y_parametros, cliente  # noqa: F401
 
 
 def _trabajo_con_franja(cliente, tmp_path, *, ancho=1500, alto=500) -> tuple[dict, dict, dict]:
@@ -184,6 +184,64 @@ def test_aplicar_crea_los_tramos_y_descarta_la_original(cliente, tmp_path):
     assert original["descartada"]
     assert original["seccionado"]["tramos"] == 2
     assert original["seccionado"]["soldadura_mm"] == pytest.approx(500)
+
+
+def _grupo_con_margen_propio(cliente, trabajo, formato, pieza) -> dict:
+    """El grupo de la pieza, con la chapa del helper y un margen de borde
+    propio (`CART-210`) mayor que el del material: 50 en vez de 10. Con
+    eso al anidar entra una pieza de hasta 893, no de 973."""
+    grupo = cliente.post(
+        f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Con margen propio", "formato_id": formato["id"]}
+    ).json()
+    cliente.patch(f"/grupos/{grupo['id']}", json={"parametros_usados": {
+        "kerf_mm": "2", "margen_borde_mm": "50", "separacion_piezas_mm": "5", "rotaciones_permitidas": "LIBRE_0_90",
+    }})
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    return grupo
+
+
+def test_la_celda_sale_de_los_parametros_propios_del_grupo(cliente, tmp_path):
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    _grupo_con_margen_propio(cliente, trabajo, formato, pieza)
+
+    respuesta = _proponer(cliente, pieza["id"], formato_id=formato["id"])
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert (respuesta.json()["celda_ancho_mm"], respuesta.json()["celda_alto_mm"]) == (893, 893)
+
+
+def test_los_tramos_entran_al_anidar_con_los_parametros_propios_del_grupo(cliente, tmp_path):
+    """El anidado usa los parámetros del grupo cuando los tiene
+    (`CART-210`). Si el seccionado cortara con los del material, el tramo
+    de 973 no entraría al anidar."""
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    grupo = _grupo_con_margen_propio(cliente, trabajo, formato, pieza)
+
+    tramos = _aplicar(cliente, pieza["id"], formato["id"])
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
+    final = _esperar_estado(cliente, encolada.json()["id"])
+
+    assert tramos.status_code == 201, tramos.text
+    assert final["estado"] == "lista", final["error"]
+
+
+def test_para_otra_chapa_tambien_valen_los_parametros_propios_del_grupo(cliente, tmp_path):
+    """Los parámetros propios no se borran al cambiarle la chapa al
+    grupo, y el anidado los usa igual: valen también al seccionar para
+    una chapa que no es la del grupo."""
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=3000)
+    _grupo_con_margen_propio(cliente, trabajo, formato, pieza)
+    otra = cliente.post(f"/materiales/{formato['material_id']}/formatos", json={
+        "ancho_mm": "2000", "alto_mm": "1000", "unidad_venta": "M2", "costo_unidad_venta": "10",
+    }).json()
+
+    respuesta = _proponer(
+        cliente, pieza["id"], formato_id=otra["id"],
+        angulo_grados=0, desplazamiento_x_mm=0, desplazamiento_y_mm=0,
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert (respuesta.json()["celda_ancho_mm"], respuesta.json()["celda_alto_mm"]) == (1893, 893)
 
 
 def test_volver_a_seccionar_reemplaza_los_tramos(cliente, tmp_path):

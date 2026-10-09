@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
 from ..modelos.base import Sesion
-from ..modelos.catalogo import Formato
+from ..modelos.catalogo import Formato, Material
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
 from ..services.nesting.anidado_huecos import anidar_en_huecos
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
@@ -95,6 +95,33 @@ def _ejecucion_o_404(sesion: Session, ejecucion_id: int) -> EjecucionNesting:
     return ejecucion
 
 
+def _parametros_de_corte(grupo: GrupoDeCorte | None, material: Material) -> ParametrosCorte:
+    """Los parámetros de corte que valen para un grupo sobre un material,
+    o `ValueError` si no hay ninguno. Es la única regla, para el anidado
+    y para el seccionado (`rutas_seccionado`): lo que se secciona con
+    unos parámetros tiene que entrar al anidar con los mismos."""
+    if grupo is not None and grupo.parametros_usados is not None:
+        # Override de `CART-210`: gana por sobre `material.parametros`,
+        # aunque el material no tenga nada configurado.
+        usados = grupo.parametros_usados
+        return ParametrosCorte(
+            kerf_mm=Decimal(usados["kerf_mm"]),
+            margen_borde_mm=Decimal(usados["margen_borde_mm"]),
+            separacion_piezas_mm=Decimal(usados["separacion_piezas_mm"]),
+            rotaciones_permitidas=RotacionPermitida(usados["rotaciones_permitidas"]),
+        )
+    if material.parametros is not None:
+        return ParametrosCorte(
+            kerf_mm=material.parametros.kerf_mm,
+            margen_borde_mm=material.parametros.margen_borde_mm,
+            separacion_piezas_mm=material.parametros.separacion_piezas_mm,
+            rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
+        )
+    raise ValueError(
+        f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105)."
+    )
+
+
 def _datos_para_anidar(
     sesion: Session, grupo: GrupoDeCorte
 ) -> tuple[Plancha, ParametrosCorte, list[PiezaDominio]]:
@@ -104,30 +131,9 @@ def _datos_para_anidar(
     if grupo.formato_id is None:
         raise ValueError(f"El grupo «{grupo.nombre}» no tiene un formato asignado.")
     formato = sesion.get(Formato, grupo.formato_id)
-    material = formato.material
 
     plancha = Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm)
-    if grupo.parametros_usados is not None:
-        # Override de `CART-210`: gana por sobre `material.parametros`,
-        # aunque el material no tenga nada configurado.
-        usados = grupo.parametros_usados
-        params = ParametrosCorte(
-            kerf_mm=Decimal(usados["kerf_mm"]),
-            margen_borde_mm=Decimal(usados["margen_borde_mm"]),
-            separacion_piezas_mm=Decimal(usados["separacion_piezas_mm"]),
-            rotaciones_permitidas=RotacionPermitida(usados["rotaciones_permitidas"]),
-        )
-    elif material.parametros is not None:
-        params = ParametrosCorte(
-            kerf_mm=material.parametros.kerf_mm,
-            margen_borde_mm=material.parametros.margen_borde_mm,
-            separacion_piezas_mm=material.parametros.separacion_piezas_mm,
-            rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
-        )
-    else:
-        raise ValueError(
-            f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105)."
-        )
+    params = _parametros_de_corte(grupo, formato.material)
     piezas = [p for p in grupo.piezas if not p.descartada]
     if not piezas:
         raise ValueError(f"El grupo «{grupo.nombre}» no tiene piezas para anidar.")

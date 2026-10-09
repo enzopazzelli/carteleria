@@ -17,12 +17,13 @@ from ..modelos.catalogo import Formato
 from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza
 from ..services.nesting.engine import MotorNestingRectangular
 from ..services.nesting.geometria_material import poligono_material
-from ..services.nesting.models import ParametrosCorte, Plancha, RotacionPermitida
+from ..services.nesting.models import ParametrosCorte, Plancha
 from ..services.nesting.models import Pieza as PiezaDominio
 from ..services.seccionado import Grilla, Seccionado, celda_util, mejor_grilla, seccionar_con_grilla, tramo_orientado
 from .dependencias import obtener_sesion
 from .esquemas_seccionado import CorteLeer, PropuestaLeer, SeccionadoAplicar, SeccionadoPedido, TramoPropuesto
 from .esquemas_trabajos import PiezaLeer
+from .rutas_nesting import _parametros_de_corte
 
 router = APIRouter(tags=["seccionado"])
 
@@ -42,22 +43,18 @@ def _no_es_tramo(pieza: Pieza) -> None:
         )
 
 
-def _chapa_y_parametros(sesion: Session, formato_id: int) -> tuple[Plancha, ParametrosCorte]:
+def _chapa_y_parametros(sesion: Session, pieza: Pieza, formato_id: int) -> tuple[Plancha, ParametrosCorte]:
+    """La chapa pedida y los parámetros con los que el anidado va a
+    acomodar los tramos, que quedan en el grupo de la pieza: los propios
+    de ese grupo si los tiene, y si no los del material de la chapa."""
     formato = sesion.get(Formato, formato_id)
     if formato is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el formato {formato_id}.")
-    parametros = formato.material.parametros
-    if parametros is None:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            f"El material «{formato.material.nombre}» no tiene parámetros de corte configurados (CART-105).",
-        )
-    return Plancha(formato.ancho_mm, formato.alto_mm), ParametrosCorte(
-        parametros.kerf_mm,
-        parametros.margen_borde_mm,
-        parametros.separacion_piezas_mm,
-        RotacionPermitida(parametros.rotaciones_permitidas),
-    )
+    try:
+        params = _parametros_de_corte(pieza.grupo, formato.material)
+    except ValueError as error:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
+    return Plancha(formato.ancho_mm, formato.alto_mm), params
 
 
 def _celda(plancha: Plancha, params: ParametrosCorte) -> tuple[float, float]:
@@ -70,7 +67,7 @@ def _celda(plancha: Plancha, params: ParametrosCorte) -> tuple[float, float]:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             f"La chapa de {plancha.ancho_mm}×{plancha.alto_mm} no deja superficie útil: el margen, el kerf y la "
-            "separación de su material ocupan todo el ancho o el alto. Elegí otra chapa.",
+            "separación ocupan todo el ancho o el alto. Elegí otra chapa.",
         )
     return celda
 
@@ -139,7 +136,7 @@ def proponer_seccionado(
     pide la pantalla en cada arrastre."""
     pieza = _pieza_o_404(sesion, pieza_id)
     _no_es_tramo(pieza)
-    plancha, params = _chapa_y_parametros(sesion, datos.formato_id)
+    plancha, params = _chapa_y_parametros(sesion, pieza, datos.formato_id)
     _validar_que_no_entra(pieza, plancha, params)
     celda = _celda(plancha, params)
     forma = _forma(pieza)
@@ -232,7 +229,7 @@ def aplicar_seccionado(
     tramos anteriores."""
     pieza = _pieza_o_404(sesion, pieza_id)
     _no_es_tramo(pieza)
-    plancha, params = _chapa_y_parametros(sesion, datos.formato_id)
+    plancha, params = _chapa_y_parametros(sesion, pieza, datos.formato_id)
     _validar_que_no_entra(pieza, plancha, params)
     celda = _celda(plancha, params)
     grilla = Grilla(datos.angulo_grados, datos.desplazamiento_x_mm, datos.desplazamiento_y_mm)
