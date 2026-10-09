@@ -104,6 +104,62 @@ def test_spline_abierta_se_reporta_como_contorno_no_cerrado(tmp_path):
     assert "no se pudieron cerrar" in _texto_de_advertencias(resultado)
 
 
+# --- Splines que `ezdxf` no convierte exactas ----------------------------
+#
+# `make_path` solo convierte exacta una spline cúbica y sin pesos, que
+# es lo que exporta CorelDRAW. Las otras las aproxima con curvas que
+# pasan por puntos de la original, y en las esquinas esa aproximación se
+# pasa de largo: un rectángulo sale más ancho de lo que es. Pasó con un
+# `Complejo.dxf` vuelto a guardar desde otro programa, que le puso a
+# cada curva pesos iguales a 1.
+#
+# Las dos dibujan el mismo rectángulo de 300 × 40 con lados rectos, así
+# que la medida esperada se saca a mano.
+
+_ESQUINAS = [(0, 0), (300, 0), (300, 40), (0, 40)]
+
+
+def _entre(a, b, fraccion):
+    return (a[0] + (b[0] - a[0]) * fraccion, a[1] + (b[1] - a[1]) * fraccion)
+
+
+def _lados():
+    return list(zip(_ESQUINAS, [*_ESQUINAS[1:], _ESQUINAS[0]]))
+
+
+def _rectangulo_con_pesos(msp):
+    puntos = [_ESQUINAS[0]]
+    for a, b in _lados():
+        puntos += [_entre(a, b, 1 / 3), _entre(a, b, 2 / 3), b]
+    nudos = [0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4]
+    msp.add_rational_spline(puntos, [1.0] * len(puntos), degree=3, knots=nudos)
+
+
+def _rectangulo_de_grado_2(msp):
+    puntos = [_ESQUINAS[0]]
+    for a, b in _lados():
+        puntos += [_entre(a, b, 1 / 2), b]
+    msp.add_open_spline(puntos, degree=2, knots=[0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4])
+
+
+@pytest.mark.parametrize(
+    "dibujar",
+    [_rectangulo_con_pesos, _rectangulo_de_grado_2],
+    ids=["con pesos", "de grado 2"],
+)
+def test_una_spline_que_ezdxf_solo_aproxima_se_lee_con_su_medida_real(tmp_path, dibujar):
+    ruta = _guardar_dxf(tmp_path, "rectangulo.dxf", lambda doc, msp: dibujar(msp))
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert resultado.contornos_que_se_cruzan == []
+    assert len(resultado.piezas) == 1
+    pieza = resultado.piezas[0]
+    assert _cerca(pieza.ancho_mm, 300, 0.0001)
+    assert _cerca(pieza.alto_mm, 40, 0.0001)
+    assert _cerca(pieza.area_real_mm2, 300 * 40, 0.0001)
+
+
 def test_lwpolyline_con_bulge_respeta_el_arco(tmp_path):
     # Dos tramos con bulge=1 (semicircunferencias) forman un círculo de
     # diámetro 100. Ignorar el bulge dejaba un segmento de recta sin área.

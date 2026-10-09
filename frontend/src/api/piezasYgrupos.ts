@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost, apiPostForm } from "./client";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPostForm } from "./client";
 
 export interface Pieza {
   id: number;
@@ -15,6 +15,9 @@ export interface Pieza {
   agujeros_mm: string[][][];
   descartada: boolean;
   contorno_recto: boolean;
+  /** Seccionado (A5): en un tramo, la pieza de la que salió; en la original, cómo se seccionó. */
+  seccionada_de_id: number | null;
+  seccionado: SeccionadoGuardado | null;
 }
 
 export interface GrupoDeCorte {
@@ -108,4 +111,57 @@ export function actualizarParametrosGrupo(
 
 export function compararFormatos(grupoId: number, formatoIds: number[], opciones: import("./nesting").OpcionesAnidado = {}): Promise<OpcionFormato[]> {
   return apiPost<OpcionFormato[]>(`/grupos/${grupoId}/comparar-formatos`, { formato_ids: formatoIds, ...opciones });
+}
+
+export interface CorteSeccionado {
+  puntos: number[][];
+  largo_mm: number;
+}
+
+export interface SeccionadoGuardado {
+  formato_id: number;
+  angulo_grados: number;
+  desplazamiento_x_mm: number;
+  desplazamiento_y_mm: number;
+  tramos: number;
+  soldadura_mm: number;
+  cortes: CorteSeccionado[];
+}
+
+export interface GrillaSeccionado {
+  angulo_grados: number;
+  desplazamiento_x_mm: number;
+  desplazamiento_y_mm: number;
+}
+
+export type PedidoAplicarSeccionado = { formato_id: number } & GrillaSeccionado;
+
+export interface PropuestaSeccionado extends GrillaSeccionado {
+  celda_ancho_mm: number;
+  celda_alto_mm: number;
+  tramos: {
+    contorno_mm: number[][];
+    agujeros_mm: number[][][];
+    ancho_mm: number;
+    alto_mm: number;
+    area_mm2: number;
+  }[];
+  cortes: CorteSeccionado[];
+  soldadura_mm: number;
+}
+
+/** Sin grilla, el servidor busca la mejor; con grilla, evalúa esa. */
+export function proponerSeccionado(
+  piezaId: number,
+  pedido: { formato_id: number } & Partial<GrillaSeccionado>,
+): Promise<PropuestaSeccionado> {
+  return apiPost<PropuestaSeccionado>(`/piezas/${piezaId}/seccionado/propuesta`, pedido);
+}
+
+export function aplicarSeccionado(piezaId: number, pedido: PedidoAplicarSeccionado): Promise<Pieza[]> {
+  return apiPost<Pieza[]>(`/piezas/${piezaId}/seccionado`, pedido);
+}
+
+export function deshacerSeccionado(piezaId: number): Promise<void> {
+  return apiDelete(`/piezas/${piezaId}/seccionado`);
 }

@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato, Material, ParametrosCorteMaterial
+from ..services.nesting.models import Plancha
 from .dependencias import obtener_sesion
 from .esquemas_catalogo import (
     FormatoActualizar,
@@ -40,6 +41,18 @@ def _formato_o_404(sesion: Session, formato_id: int) -> Formato:
     if formato is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el formato {formato_id}.")
     return formato
+
+
+def _formatos_del_catalogo(sesion: Session) -> list[Plancha]:
+    """Las medidas contra las que se reconocen hojas: formatos
+    disponibles de materiales que se anidan por área (un tubo o una
+    tira de LED no son una chapa)."""
+    filas = sesion.execute(
+        select(Formato.ancho_mm, Formato.alto_mm)
+        .join(Material)
+        .where(Formato.disponible.is_(True), Material.nesteable_por_area.is_(True))
+    ).all()
+    return [Plancha(ancho_mm=ancho, alto_mm=alto) for ancho, alto in filas]
 
 
 def _commit_o_409(sesion: Session, mensaje: str) -> None:

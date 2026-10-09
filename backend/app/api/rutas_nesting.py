@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
 from ..modelos.base import Sesion
-from ..modelos.catalogo import Formato
+from ..modelos.catalogo import Formato, Material
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
 from ..services.nesting.anidado_huecos import anidar_en_huecos
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
@@ -95,6 +95,33 @@ def _ejecucion_o_404(sesion: Session, ejecucion_id: int) -> EjecucionNesting:
     return ejecucion
 
 
+def _parametros_de_corte(grupo: GrupoDeCorte | None, material: Material) -> ParametrosCorte:
+    """Los parámetros de corte que valen para un grupo sobre un material,
+    o `ValueError` si no hay ninguno. Es la única regla, para el anidado
+    y para el seccionado (`rutas_seccionado`): lo que se secciona con
+    unos parámetros tiene que entrar al anidar con los mismos."""
+    if grupo is not None and grupo.parametros_usados is not None:
+        # Override de `CART-210`: gana por sobre `material.parametros`,
+        # aunque el material no tenga nada configurado.
+        usados = grupo.parametros_usados
+        return ParametrosCorte(
+            kerf_mm=Decimal(usados["kerf_mm"]),
+            margen_borde_mm=Decimal(usados["margen_borde_mm"]),
+            separacion_piezas_mm=Decimal(usados["separacion_piezas_mm"]),
+            rotaciones_permitidas=RotacionPermitida(usados["rotaciones_permitidas"]),
+        )
+    if material.parametros is not None:
+        return ParametrosCorte(
+            kerf_mm=material.parametros.kerf_mm,
+            margen_borde_mm=material.parametros.margen_borde_mm,
+            separacion_piezas_mm=material.parametros.separacion_piezas_mm,
+            rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
+        )
+    raise ValueError(
+        f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105)."
+    )
+
+
 def _datos_para_anidar(
     sesion: Session, grupo: GrupoDeCorte
 ) -> tuple[Plancha, ParametrosCorte, list[PiezaDominio]]:
@@ -104,30 +131,9 @@ def _datos_para_anidar(
     if grupo.formato_id is None:
         raise ValueError(f"El grupo «{grupo.nombre}» no tiene un formato asignado.")
     formato = sesion.get(Formato, grupo.formato_id)
-    material = formato.material
 
     plancha = Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm)
-    if grupo.parametros_usados is not None:
-        # Override de `CART-210`: gana por sobre `material.parametros`,
-        # aunque el material no tenga nada configurado.
-        usados = grupo.parametros_usados
-        params = ParametrosCorte(
-            kerf_mm=Decimal(usados["kerf_mm"]),
-            margen_borde_mm=Decimal(usados["margen_borde_mm"]),
-            separacion_piezas_mm=Decimal(usados["separacion_piezas_mm"]),
-            rotaciones_permitidas=RotacionPermitida(usados["rotaciones_permitidas"]),
-        )
-    elif material.parametros is not None:
-        params = ParametrosCorte(
-            kerf_mm=material.parametros.kerf_mm,
-            margen_borde_mm=material.parametros.margen_borde_mm,
-            separacion_piezas_mm=material.parametros.separacion_piezas_mm,
-            rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
-        )
-    else:
-        raise ValueError(
-            f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105)."
-        )
+    params = _parametros_de_corte(grupo, formato.material)
     piezas = [p for p in grupo.piezas if not p.descartada]
     if not piezas:
         raise ValueError(f"El grupo «{grupo.nombre}» no tiene piezas para anidar.")
@@ -439,6 +445,31 @@ def marcar_definitiva(
     return ejecucion
 
 
+@router.delete("/ejecuciones/{ejecucion_id}", status_code=status.HTTP_204_NO_CONTENT)
+def borrar_ejecucion(ejecucion_id: int, sesion: Session = Depends(obtener_sesion)) -> None:
+    """Borra un anidado guardado, con sus colocaciones. Hace falta para
+    volver a seccionar o deshacer el seccionado de una pieza cuyos tramos
+    ya se anidaron (`rutas_seccionado._borrar_tramos`): antes la única
+    forma era borrar el grupo entero.
+
+    También se puede borrar el definitivo: el costeo pasa a usar el más
+    reciente que quede en estado `lista`, con su aviso, o queda pendiente
+    (`costeo._ejecucion_para_costear`). Una línea de presupuesto que salió
+    de este anidado conserva sus números y pierde la referencia
+    (`LineaCosto.ejecucion_id`, `SET NULL`), igual que al borrar el grupo.
+
+    Uno que todavía se está calculando no se borra: la tarea de la cola
+    terminaría y querría guardar su resultado en una fila que ya no existe."""
+    ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
+    if ejecucion.estado in (EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"La ejecución {ejecucion_id} todavía se está calculando: cancelala antes de borrarla.",
+        )
+    sesion.delete(ejecucion)
+    sesion.commit()
+
+
 @router.get("/trabajos/{trabajo_id}/costeo", response_model=ResumenMaterialesLeer)
 def obtener_costeo(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -> ResumenMaterialesLeer:
     """Envuelve `app/costeo.py::resumen_materiales` — el cálculo no
@@ -516,8 +547,9 @@ def comparar_formatos_de_grupo(
 
     # Un formato donde alguna pieza no entra ni rotándola no se anida: sale
     # con sus piezas a seccionar y no frena a los demás. Un diseño más
-    # grande que la chapa se parte en tramos que se sueldan (A5); hasta que
-    # el sistema lo haga, ese formato queda sin planchas ni costo.
+    # grande que la chapa se parte en tramos que se sueldan (A5), desde la
+    # pestaña Piezas; hasta que se haga, ese formato queda sin planchas ni
+    # costo.
     geometrias = _geometrias_del_grupo(grupo) if datos.motor == "sparrow" else {}
     if datos.motor == "sparrow":
         no_entran = [piezas_que_no_entran(piezas_dominio, geometrias, o.plancha, o.params) for o in opciones]

@@ -45,6 +45,10 @@ class PiezaLeer(BaseModel):
     agujeros_mm: list
     descartada: bool
     contorno_recto: bool
+    #: Seccionado (A5): en un tramo, la pieza de la que salió; en la
+    #: original, cómo se seccionó.
+    seccionada_de_id: int | None = None
+    seccionado: dict | None = None
 
 
 class PiezaActualizar(BaseModel):

@@ -14,12 +14,14 @@ from decimal import Decimal
 import ezdxf
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.app import app
 from app.api.dependencias import obtener_sesion
 from app.modelos import Base, EjecucionNesting, EstadoEjecucion
 from app.modelos.base import Sesion, crear_motor
+from app.modelos.trabajo import Colocacion
 
 
 @pytest.fixture
@@ -291,6 +293,68 @@ def test_marcar_definitiva_desmarca_la_anterior_del_mismo_grupo(cliente, tmp_pat
     assert respuesta.status_code == 200
     assert respuesta.json()["es_definitiva"] is True
     assert cliente.get(f"/ejecuciones/{primera_id}").json()["es_definitiva"] is False
+
+
+# --- Borrar un anidado -----------------------------------------------------
+
+
+def _anidar_y_esperar(cliente, grupo_id: int) -> int:
+    ejecucion_id = cliente.post(f"/grupos/{grupo_id}/anidar", json={}).json()["id"]
+    assert _esperar_estado(cliente, ejecucion_id)["estado"] == "lista"
+    return ejecucion_id
+
+
+def test_borrar_un_anidado_lo_saca_del_historial_con_sus_colocaciones(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    assert len(cliente.get(f"/ejecuciones/{ejecucion_id}/colocaciones").json()) == 1
+
+    respuesta = cliente.delete(f"/ejecuciones/{ejecucion_id}")
+
+    assert respuesta.status_code == 204, respuesta.text
+    assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json() == []
+    with Session(cliente.motor) as sesion:
+        assert sesion.execute(select(func.count()).select_from(Colocacion)).scalar() == 0
+
+
+def test_borrar_un_anidado_inexistente_da_404(cliente):
+    respuesta = cliente.delete("/ejecuciones/999")
+
+    # El mensaje, y no solo el 404: una ruta que no existe también da 404.
+    assert respuesta.status_code == 404
+    assert "No existe la ejecución 999" in respuesta.json()["detail"]
+
+
+@pytest.mark.parametrize("estado", [EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value])
+def test_un_anidado_en_curso_no_se_borra(cliente, tmp_path, estado):
+    """El cálculo terminaría y querría guardar su resultado en una fila que
+    ya no existe: primero se cancela."""
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    with Session(cliente.motor) as sesion:
+        ejecucion = EjecucionNesting(grupo_id=grupo["id"], motor="rectpack", estado=estado)
+        sesion.add(ejecucion)
+        sesion.commit()
+        ejecucion_id = ejecucion.id
+
+    respuesta = cliente.delete(f"/ejecuciones/{ejecucion_id}")
+
+    assert respuesta.status_code == 409
+    assert "cancel" in respuesta.json()["detail"].lower()
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}").status_code == 200
+
+
+def test_borrar_el_anidado_definitivo_deja_al_costeo_con_el_mas_reciente_que_quede(cliente, tmp_path):
+    trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    primera_id = _anidar_y_esperar(cliente, grupo["id"])
+    definitiva_id = _anidar_y_esperar(cliente, grupo["id"])
+    cliente.post(f"/ejecuciones/{definitiva_id}/marcar-definitiva")
+    assert cliente.get(f"/trabajos/{trabajo['id']}/costeo").json()["lineas"][0]["ejecucion_id"] == definitiva_id
+
+    assert cliente.delete(f"/ejecuciones/{definitiva_id}").status_code == 204
+
+    linea = cliente.get(f"/trabajos/{trabajo['id']}/costeo").json()["lineas"][0]
+    assert linea["ejecucion_id"] == primera_id
+    assert linea["planchas_usadas"] == 1
 
 
 # --- Costeo (integración de punta a punta) --------------------------------

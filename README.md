@@ -90,7 +90,7 @@ Abrí **exactamente** `http://localhost:5173` (no `127.0.0.1`, no otro puerto): 
 ### Probar con tus propios DXF
 
 - Exportá desde CorelDRAW con *Archivo → Exportar → DXF*. Se leen curvas (splines, círculos, elipses), polilíneas con arcos, líneas y arcos sueltos que cierran una figura, y bloques. **No se leen** el texto (convertilo a curvas antes de exportar), las imágenes ni los rellenos (`HATCH`): el aviso de la pestaña Piezas te dice cuántas entidades ignoró.
-- **La escala:** el sistema nunca la adivina. Corel suele exportar en centímetros: probá `10` (mm por unidad del dibujo) y comprobá el ancho de una pieza que conozcas. Después de cambiar la escala, el botón "Reimportar «archivo» con esta escala" vuelve a leer el mismo archivo sin reabrir el explorador.
+- **La escala:** el sistema nunca la adivina. Corel suele exportar en centímetros: probá `10` (mm por unidad del dibujo) y comprobá el ancho de una pieza que conozcas. Elegir el archivo no lo carga: primero ponés la escala y después tocás "Cargar «archivo» a escala N". Si la escala no era, la cambiás y volvés a tocar el mismo botón, sin reabrir el explorador. Cada carga reemplaza las piezas que el trabajo ya tenía.
 - Si un contorno no llega a cerrar (los empalmes del dibujo tienen huecos de más de 0,1 mm), aparece como *"N contorno(s) no se pudieron cerrar"*.
 
 ### Si algo falla

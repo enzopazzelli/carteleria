@@ -358,16 +358,20 @@ export default function GruposTab() {
                         <td>{opcion.material_nombre}</td>
                         <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
                         <td>{opcion.formato_descripcion}</td>
-                        <td
-                          colSpan={5}
-                          title="No entra en este formato ni rotándola: hay que partirla en tramos que se sueldan después (seccionado). El sistema todavía no lo hace solo."
-                        >
-                          Hay que seccionar {opcion.piezas_a_seccionar.length} pieza(s):{" "}
-                          {opcion.piezas_a_seccionar
-                            .slice(0, 3)
-                            .map((p) => `${Math.round(Number(p.ancho_mm))}×${Math.round(Number(p.alto_mm))} mm`)
-                            .join(", ")}
-                          {opcion.piezas_a_seccionar.length > 3 && "…"}
+                        <td colSpan={5}>
+                          {/* El seccionado se hace en Piezas: el enlace lleva esas piezas y esta chapa. */}
+                          <Link
+                            className="underline"
+                            to={`/trabajos/${id}/piezas?seccionar=${opcion.piezas_a_seccionar.map((p) => p.id).join(",")}&formato=${opcion.formato_id}`}
+                            title="No entra en este formato ni rotándola: hay que partirla en tramos que se sueldan después (seccionado). Tocá para seccionarlas en la pestaña Piezas."
+                          >
+                            Hay que seccionar {opcion.piezas_a_seccionar.length} pieza(s):{" "}
+                            {opcion.piezas_a_seccionar
+                              .slice(0, 3)
+                              .map((p) => `${Math.round(Number(p.ancho_mm))}×${Math.round(Number(p.alto_mm))} mm`)
+                              .join(", ")}
+                            {opcion.piezas_a_seccionar.length > 3 && "…"}
+                          </Link>
                         </td>
                       </tr>
                     ) : (

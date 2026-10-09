@@ -215,6 +215,57 @@ def test_subir_dxf_con_contorno_abierto_lo_reporta_sin_crear_pieza(cliente, tmp_
     assert cuerpo["advertencias"]
 
 
+def _chapa_en_el_catalogo(cliente) -> None:
+    material = cliente.post("/materiales", json={"nombre": "Chapa negra", "espesor": "cal. 20"}).json()
+    respuesta = cliente.post(f"/materiales/{material['id']}/formatos", json={"ancho_mm": "1220", "alto_mm": "2440"})
+    assert respuesta.status_code == 201, respuesta.text
+
+
+def _forma_con_otra_adentro(msp, lado_de_afuera):
+    """Una «O» cuadrada: el contorno de afuera y, adentro, uno de
+    200 x 300."""
+    msp.add_lwpolyline(
+        [(0, 0), (lado_de_afuera, 0), (lado_de_afuera, lado_de_afuera), (0, lado_de_afuera)], close=True
+    )
+    msp.add_lwpolyline([(100, 100), (300, 100), (300, 400), (100, 400)], close=True)
+
+
+def test_subir_dxf_deja_descartado_el_centro_de_una_letra_que_se_corta(cliente, tmp_path):
+    """El lector devuelve el hueco de una «O» dos veces: como agujero de
+    la letra y como pieza propia. Esa pieza es el recorte que se tira:
+    entra descartada, a la vista, y la letra conserva su agujero."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "o.dxf", lambda msp: _forma_con_otra_adentro(msp, 600))
+
+    respuesta = _subir(cliente, trabajo["id"], contenido)
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["piezas_creadas"] == 2
+    assert any("1 forma" in aviso and "hueco" in aviso for aviso in cuerpo["advertencias"])
+    piezas = {round(Decimal(p["ancho_mm"])): p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()}
+    assert piezas[600]["descartada"] is False
+    assert len(piezas[600]["agujeros_mm"]) == 1
+    assert piezas[200]["descartada"] is True
+
+
+def test_subir_dxf_no_descarta_lo_de_adentro_de_una_forma_que_no_entra_en_ninguna_chapa(cliente, tmp_path):
+    """Adentro de una forma que no se corta tal cual (un emblema de 3 m
+    que hay que seccionar, un tablero de presentación) puede haber piezas
+    de verdad: lo decide quien revisa las piezas, no la carga."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "emblema.dxf", lambda msp: _forma_con_otra_adentro(msp, 3000))
+
+    respuesta = _subir(cliente, trabajo["id"], contenido)
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert not any("hueco" in aviso for aviso in respuesta.json()["advertencias"])
+    piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    assert [p["descartada"] for p in piezas] == [False, False]
+
+
 # --- Piezas ------------------------------------------------------------
 
 

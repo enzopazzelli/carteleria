@@ -68,7 +68,7 @@ from pathlib import Path
 import ezdxf
 from ezdxf import DXFError
 from ezdxf.path import make_path
-from shapely import is_valid_reason, make_valid
+from shapely import is_valid_reason, make_valid, set_precision
 from shapely.geometry import Polygon
 
 from .models import ContornoAbierto, ContornoQueSeCruza, PiezaImportada, ResultadoImportacionDXF
@@ -165,16 +165,38 @@ def _entidades_geometricas(entidades, ignoradas: Counter, profundidad: int = 0):
             ignoradas[tipo] += 1
 
 
-def _puntos_en_mm(
-    entidad, escala_a_mm: Decimal, distancia_aplanado: float
-) -> list[list[tuple[Decimal, Decimal]]]:
-    """Cada sub-trazado de la entidad, aplanado a puntos y pasado a mm.
+def _aplanada(entidad, distancia_aplanado: float) -> list[list]:
+    """Cada sub-trazado de la entidad, aplanado a puntos, todavía en
+    unidades del dibujo.
 
     `make_path` unifica `LINE`, `ARC`, `CIRCLE`, `ELLIPSE`, `SPLINE`,
     `POLYLINE` (el R12 de los archivos reales de `modelos/`) y
     `LWPOLYLINE`, con sus arcos `bulge`, en una sola representación: no
     hace falta un `if` por tipo de entidad, ni un `bulge` ignorado que
     deje un arco convertido en una recta.
+
+    La excepción son las `SPLINE` con pesos o que no son cúbicas. A esas
+    `make_path` no las convierte: las aproxima con curvas que pasan por
+    puntos de la original, y en las esquinas la aproximación se pasa de
+    largo (un rectángulo de 300 mm salía de 302,7) y llega a cruzarse a
+    sí misma. Se evalúan directo sobre la curva. Las cúbicas sin pesos,
+    que es lo que exporta CorelDRAW, siguen por `make_path`, que las
+    convierte exactas.
+
+    Una spline que no está anclada en las puntas se lee mal por los dos
+    caminos (`ezdxf` la evalúa fuera de su rango). No apareció en ningún
+    archivo real y no está resuelta."""
+    if entidad.dxftype() == "SPLINE":
+        curva = entidad.construction_tool()
+        if curva.is_rational or curva.degree != 3:
+            return [list(curva.flattening(distancia_aplanado))]
+    return [list(trazado.flattening(distancia_aplanado)) for trazado in make_path(entidad).sub_paths()]
+
+
+def _puntos_en_mm(
+    entidad, escala_a_mm: Decimal, distancia_aplanado: float
+) -> list[list[tuple[Decimal, Decimal]]]:
+    """Cada sub-trazado de la entidad, aplanado a puntos y pasado a mm.
 
     Se redondea a `_RESOLUCION_MM`: con el ruido de float, el cierre de
     un contorno agregaba un tramo de 1e-12 mm en cualquier dirección y
@@ -185,9 +207,9 @@ def _puntos_en_mm(
                 (Decimal(str(float(v.x))) * escala_a_mm).quantize(_RESOLUCION_MM),
                 (Decimal(str(float(v.y))) * escala_a_mm).quantize(_RESOLUCION_MM),
             )
-            for v in trazado.flattening(distancia_aplanado)
+            for v in puntos
         ]
-        for trazado in make_path(entidad).sub_paths()
+        for puntos in _aplanada(entidad, distancia_aplanado)
     ]
 
 
@@ -330,12 +352,32 @@ def _donde_se_cruza(poligono: Polygon) -> tuple[Decimal, Decimal]:
     return _en_mm((x0 + x1) / 2), _en_mm((y0 + y1) / 2)
 
 
+def _en_la_grilla(poligono: Polygon) -> Polygon | None:
+    """El polígono con sus vértices en la grilla de `_RESOLUCION_MM`, que
+    es como se guardan, o `None` si ahí deja de ser un solo polígono
+    válido.
+
+    No alcanza con redondear cada vértice por separado. Los que crea
+    `make_valid` al resolver un cruce quedan casi alineados con sus
+    vecinos, y redondeados de a uno cambian de lado: el contorno se vuelve
+    a cruzar (23 de los 37 contornos reparados de un `Complejo.dxf` con
+    las curvas mal aproximadas). `set_precision` los lleva a la grilla sin
+    romper la forma, y lo que se devuelve se valida igual: es exactamente
+    lo que queda guardado."""
+    partes = _partes_con_area(set_precision(poligono, float(_RESOLUCION_MM)))
+    if len(partes) != 1:
+        return None
+    guardado = Polygon([(float(_en_mm(x)), float(_en_mm(y))) for x, y in partes[0].exterior.coords])
+    return guardado if guardado.is_valid else None
+
+
 def _reparar(poligono: Polygon) -> tuple[Polygon | None, Decimal]:
     """El contorno exterior de la parte más grande de un contorno que se
-    cruza a sí mismo, y cuánta área cambia al quedarse con eso: lo que se
-    tira (púas, lóbulos) más lo que se rellena (los rulitos que el cruce
-    encerraba como agujero). `None` si eso pasa `PAR-49`: un "8" de
-    verdad, o un nudo que encierra algo grande, no se inventa."""
+    cruza a sí mismo, ya en la grilla en que se guarda, y cuánta área
+    cambia al quedarse con eso: lo que se tira (púas, lóbulos) más lo que
+    se rellena (los rulitos que el cruce encerraba como agujero). `None`
+    si eso pasa `PAR-49` (un "8" de verdad, o un nudo que encierra algo
+    grande, no se inventa) o si lo reparado no llega válido a la grilla."""
     partes = _partes_con_area(make_valid(poligono))
     if not partes:
         return None, Decimal(0)
@@ -344,7 +386,7 @@ def _reparar(poligono: Polygon) -> tuple[Polygon | None, Decimal]:
     corregida = _en_mm(sum(parte.area for parte in partes) - mayor.area + sin_rulitos.area - mayor.area)
     if corregida > _AREA_MAXIMA_REPARABLE_MM2:
         return None, corregida
-    return sin_rulitos, corregida
+    return _en_la_grilla(sin_rulitos), corregida
 
 
 def _bbox_contiene(exterior: tuple, interior: tuple) -> bool:

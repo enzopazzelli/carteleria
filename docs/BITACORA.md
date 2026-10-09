@@ -58,6 +58,107 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-09 — A6 medido con más tiempo (`PAR-09` sube a 240 s cuando se construya) y un arreglo del seccionado
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A6, sin construir)
+
+### Qué se hizo
+
+- **Medición del plan A6 con 180 y 240 s de tiempo máximo**, sobre una copia del backend con el código del plan y una copia de la base. Seis corridas (semillas 42 a 44, tres con cada tiempo), con la notebook enchufada: todas dieron 5 chapas y 38,6 %, y llegaron a 5 a los 96, 117, 121, 124, 136 y 169 s. La tabla está en el §2 de [`plan/A6-reparto-por-chapa/diseno.md`](plan/A6-reparto-por-chapa/diseno.md).
+- **Dos tropiezos que quedan como dato.** A batería, dos corridas llegaron a 5 recién a los 162 y 172 s. Y una corrida se perdió porque Windows suspendió la máquina: el reloj del tiempo máximo sigue y el worker no, así que al despertar se corta. El medidor usa la misma función que la app, así que ahí pasaría lo mismo.
+- **El medidor anota el recorrido,** no solo cómo termina: en qué segundo llega a cada cantidad de chapas. Lo hace envolviendo el worker desde afuera, sin cambiarlo. Guiones y salidas en `backend/local/herramientas-anidado-2026-10-09/`, fuera del repositorio.
+- **El seccionado corta con los parámetros propios del grupo** (`d5dff4d`). Era el primer punto de lo que la revisión del 2026-10-08 había dejado sin tocar: cortaba con los del material, y con un margen mayor en el grupo los tramos no entraban al anidar. Ahora el seccionado y el anidado sacan los parámetros de la misma función. Tres tests nuevos, que se vieron fallar antes del arreglo; backend 405 en verde (402 antes).
+
+### Qué se decidió
+
+- **`PAR-09` pasa de 120 a 240 s** (Enzo). Con 120 s la etapa de vaciar chapas llega a 5 en una o dos corridas de seis. Con 180 s llegaron las tres, una con 8 s de margen. Con 240 s, la más lenta de las seis deja 70 s.
+- **Se cambia junto con A6, no antes.** Hoy el anidado termina solo cerca de los 80 s, así que el valor no hace diferencia. Quedó como Tarea 5 bis del plan.
+
+### Cambios en el registro
+
+Sin cambios. El valor nuevo de `PAR-09` entra al registro cuando se construya A6.
+
+### Pendiente
+
+- **La respuesta de Vale** a las tres preguntas del plan A6 (su Tarea 0) y su revisión del PR #16.
+- **Medir un trabajo más grande** (`Muestra Vectores.dxf`), que sigue sin hacer: es el Step 3 de la Tarea 6.
+- **`D-12` pesa más:** con A6 y el valor nuevo, el anidado de Complejo pasa de unos 80 s a 240 s para quien espera frente a la pantalla.
+- **La suspensión de la máquina durante un anidado** quedó anotada como riesgo en el §8 del diseño, sin resolver.
+- **La comparación de formatos de Grupos sigue usando los parámetros del material** aunque el grupo tenga propios: puede decir «hay que seccionar» o «entra» distinto de lo que después hacen el seccionado y el anidado. Es anterior; se vio al arreglar el seccionado.
+
+---
+
+## 2026-10-08 — Seccionado (A5) construido: grilla de chapas, rutas y panel en la pestaña Piezas
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A5, que Enzo tomó del carril del motor el 2026-10-07)
+
+### Qué se hizo
+
+- **Seccionado construido** en la rama `feat/seccionado`, siguiendo [`plan/A5-seccionado/plan.md`](plan/A5-seccionado/plan.md) tarea por tarea y con el visto bueno de Enzo al final de cada una. Una pieza que no entra en la chapa se parte en tramos con una grilla del tamaño de la chapa, que el diseñador corre y gira antes de aplicar (`D-19`).
+  - **Cálculo** (`backend/app/services/seccionado/`): cortar con una grilla fija, pegar los pedacitos que entran juntos, buscar la mejor grilla y orientar cada tramo derecho sobre la chapa. Geometría pura, sin base.
+  - **Modelo y migración** `5ecc10ad0a5a`: `Pieza.seccionada_de_id` (en un tramo, su original) y `Pieza.seccionado` (en la original, cómo se cortó). La original queda `descartada` y la reemplazan sus tramos, así el anidado y el costeo no cambian.
+  - **Rutas:** `POST /piezas/{id}/seccionado/propuesta` (calcula sin guardar), `POST /piezas/{id}/seccionado` (aplica) y `DELETE /piezas/{id}/seccionado` (deshace). Un tramo no se vuelve a seccionar, un anidado guardado no pierde sus piezas, una pieza seccionada no se restaura a mano y reimportar el DXF sigue funcionando.
+  - **Pantalla:** panel en la pestaña Piezas que dibuja la propuesta, deja correr la grilla arrastrando y cambiar el ángulo, y lista los tramos debajo de su original. Desde Grupos, el aviso «Hay que seccionar N pieza(s)» de la comparación de formatos lleva a Piezas con esas piezas y esa chapa ya elegida.
+- **Tests:** backend 384 en verde (355 antes de empezar); frontend 18 (8 antes). Cada test nuevo se vio fallar antes de escribir el código.
+- **Números del aro sintético** (el de los tests, con las medidas del real): 8 tramos y 1,36 m de soldadura, con el corte más largo de 96 mm. La búsqueda tarda 4,4 s.
+- **Rendimiento con piezas reales**, medido sobre el trabajo 4: la búsqueda de la mejor grilla tardaba 225 s en una pieza de 12,0 × 9,4 m y 115 s en una de 10,0 × 6,4 m. Con una tarea que no estaba en el plan (medir cada borde compartido una sola vez al pegar) bajó a 77 s y 56 s, y el aro sin soldar a 2,9 s, con los mismos resultados. Tabla completa en la sección «Desvíos» del plan.
+- **Prueba en la app** sobre una copia de los datos: el panel de 3000 × 1000 da 2 tramos y 1,00 m de soldadura; arrastrar, aplicar y deshacer funcionan.
+- **Migración aplicada en la base local de Enzo**, con respaldo previo en `backend/local/`.
+
+### Qué se decidió
+
+- **La búsqueda prueba ángulos de a 5°, no de a 15°.** Los 6,4 m de soldadura que le salían al aro no eran culpa del orden de prioridad de `D-19`, sino de que la búsqueda no llegaba a ver las grillas buenas. `D-19` queda como está y **no** se suma una regla contra cortes largos.
+- **Rendimiento:** primero solo cambios que no alteran resultados; con esos números, pasar a la pantalla. Repartir las grillas en hilos da cerca del doble en las piezas grandes: quedó medido y sin aplicar.
+- **«Seccionar» se ofrece también cuando la pieza no entra en la chapa de su grupo,** no solo cuando no entra en ninguna del catálogo. Salió de probarlo: Grupos avisaba «hay que seccionar» formato por formato, sin decir dónde, y en Piezas el botón podía no estar.
+- **Tres correcciones al plan,** anotadas en su sección «Desvíos». Dos tests pasaban antes de escribir el código que decían probar. Y el plan afirmaba que con `ON DELETE CASCADE` la reimportación fallaría: no falla, SQLAlchemy solo avisa. `SET NULL` sigue siendo lo correcto y ahora un test lo defiende.
+
+### Cambios en el registro
+
+Sin cambios. Lo que el diseño llevó al registro (`D-19` cerrada, `P-21` y `P-22` respondidas el 2026-10-07, y `SUP-17`) ya estaba cargado.
+
+### Pendiente
+
+- **Que Enzo lo pruebe en la app** y, con su visto bueno, **abrir el PR** contra `main`. Antes del PR falta la revisión de toda la rama.
+- **Avisarle a Vale** que Enzo tomó el seccionado.
+- **El aro real soldado** (`SUP-17`): pedírselo al diseñador. Sin él no se puede hacer la validación del §7 del diseño. La pieza 198 del trabajo 4 es el aro sin el calado.
+- **`P-28`** sigue abierta: decide si los tramos que miden exacto el alto de la chapa entran.
+- **Sugerir «seccionar» al importar** (2.1) y **cotizar la soldadura** (2.3): el largo de cada corte ya queda guardado.
+- **Las piezas de 10 a 12 m tardan cerca de un minuto en proponer.** Además, no se revisó si lo que propone para ellas sirve (28 y 44 tramos), y la pieza 1009 del trabajo 4 parece un plano de referencia y no una pieza a cortar.
+- **Lo que se vio en el panel y no se tocó:** la fila de la original seccionada queda atenuada con sus enlaces, dos colores no distinguen tramos vecinos, y arrastrar deja medidas no redondas. Además, al entrar directo a Piezas el botón «Seccionar» se decide con una cuenta sin márgenes ni kerf: una pieza que mide casi lo mismo que la chapa (el caso de `P-28`) no lo muestra; llegando por el enlace de Grupos, sí.
+- **Documentación que viene del 2026-10-07 y sigue sin hacer:** ese día no tiene entrada en esta bitácora (diseño y plan del seccionado, y el PR #15 de la importación de `Complejo.dxf`); el plan maestro sigue tratando la llegada del motor como pendiente (`D-14`, E1), y la integración de Sparrow ya está en `main`; y dos documentos sobre Sparrow están sueltos en `docs/`, fuera de `docs/motor/` (`GUIA-SPARROW-PRUEBAS.md` e `INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md`).
+
+### Addendum — mismo día: lo que salió de probarlo con `Complejo.dxf`
+
+Enzo editó `Complejo.dxf` para dejar un solo diseño, lo importó, seccionó, agrupó y anidó. De esa prueba salieron tres cosas.
+
+- **Curvas con pesos** (`308e402`). El programa con que lo editó guardó las 40 curvas «con pesos». `ezdxf.make_path` solo convierte exacta la curva cúbica sin pesos; a las demás las aproxima, y la aproximación deforma (un rectángulo de 300 mm salía de 302,7) y se cruza a sí misma. El lector ahora evalúa esas curvas directo. El archivo pasó de 39 piezas con 16 válidas a 40 válidas.
+- **Lo reparado se guardaba sin volver a validar.** Era la segunda mitad de la misma falla: al reparar un contorno que se cruza aparecen vértices casi alineados con sus vecinos, y el lector los redondeaba de a uno a la resolución con que se guardan. Algunos cambiaban de lado y el contorno guardado se volvía a cruzar (23 de los 37 reparados de ese archivo, leído sin el arreglo de las curvas). Ahora lo reparado se lleva a esa grilla con `set_precision` y se valida lo que se guarda; si no queda válido, se excluye con aviso. En los demás DXF reales no cambia la geometría de ninguna pieza.
+- **Los huecos entraban como piezas a cortar.** El lector devuelve todo hueco de más de 25 mm como agujero de su pieza y además como pieza propia, y la carga de la pantalla (`POST /trabajos/{id}/dxf`) guardaba todo. Ahora consulta el análisis de `CART-511` y deja **descartadas** las formas que son el recorte del hueco de otra pieza que se corta, con un aviso. Siguen a la vista y se restauran con un clic. En `Complejo.dxf` son los 9 centros de letras, los mismos que Enzo había descartado a mano.
+- **El DXF se cargaba apenas se elegía,** con la escala que hubiera en el casillero, y había que cargarlo dos veces. Ahora elegir el archivo no carga nada: se pone la escala y un botón «Cargar» lo confirma. El botón dice el archivo y la escala, se apaga si la escala no es un número mayor que cero, y avisa cuántas piezas del trabajo se reemplazan. Probado en la app, contra una copia de los datos.
+- **Más pasadas no mejoran el anidado.** Medido con las 31 piezas de ese trabajo en chapa de 1220 × 2440 (6 chapas, 32,2 %): con 8 pasadas en vez de 3, con 10 y 30 segundos por búsqueda y con la chapa acostada, el mejor resultado sigue siendo 6. Sparrow sí mejora con tiempo (la franja pasa de 4,95 a 4,34 chapas de largo entre 2 y 60 segundos), pero la integración recorta una chapa de la franja, se queda con las piezas que cayeron enteras y recalcula el resto, y ahí se pierde. Una prueba que llena cada chapa de a una pieza, consultando a Sparrow si el conjunto entra, dio **5 chapas validadas (38,6 %)** en 6 minutos y medio contra 1.
+
+**Revisión de la rama.** Antes del PR, un revisor aparte leyó los 22 commits. Veredicto: se puede mergear con arreglos, nada crítico. Lo que se arregló, cada cosa con su prueba y vista en la app sobre una copia de los datos:
+
+- Una chapa más angosta que sus márgenes colgaba el pedido de seccionado o daba un error interno. Ahora se rechaza con un mensaje (`7b4576a`).
+- El panel de seccionar podía aplicar la grilla de una chapa con otra elegida, si se cambiaba el selector durante la búsqueda (`efcfb65`).
+- El enlace «Hay que seccionar» de Grupos llevaba a una pantalla sin botón cuando lo que no entraba eran los tramos de una pieza ya seccionada (`7c484ec`).
+- Después de anidar, volver a seccionar exigía borrar el grupo entero. Ahora cada anidado del historial se puede borrar, también el definitivo, con aviso (`e6a7948`).
+- Dos triviales: la escala «1.000» se mostraba como si fuera mil (`dee31b7`) y dos comentarios decían que el seccionado no existía (`04f438c`).
+
+Lo que la revisión señaló y no se tocó está en la sección «Desvíos» de [`plan/A5-seccionado/plan.md`](plan/A5-seccionado/plan.md).
+
+**Qué se decidió.** Descartar los recortes al cargar, en vez de adelantar la pantalla de revisión (2.1). Escribir un plan para repartir chapa por chapa, sin tocar el motor todavía. Que un anidado se pueda borrar solo, incluido el definitivo. Y dejar la veta como pregunta abierta, sin tocar el código.
+
+**Cambios en el registro.** Alta de `P-30`: si en un material con veta los tramos de una pieza seccionada pueden cortarse girados respecto del dibujo. Hoy el seccionado los gira, y ningún material del catálogo tiene veta. Va al encuentro 2 del guion, con el taller.
+
+**Pendiente.**
+
+- **Las formas del emblema** (6 en `Complejo.dxf`) no siguen una regla: de dos formas del mismo nivel, una se corta y la otra no. Eso lo resuelve la pantalla de revisión (2.1).
+- **Las miniaturas de la tabla de Piezas salen dadas vuelta de arriba abajo** (la M se ve como una W). Se vio al probar el botón de carga; es anterior y no se tocó.
+- **El reparto por chapa (A6)** quedó diseñado y planificado en [`plan/A6-reparto-por-chapa/`](plan/A6-reparto-por-chapa/diseno.md), con el código del plan probado sobre una copia del backend. Sin empezar: primero hay que hablarlo con Vale, que hizo la integración de Sparrow.
+
+---
+
 ## 2026-10-05 — Plan maestro del ciclo de cotización, `docs/` ordenada por estado y etapa 0
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (desde hoy se avanza por etapas del plan maestro)
