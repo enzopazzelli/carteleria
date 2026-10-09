@@ -1,4 +1,4 @@
-"""Pedidos y respuestas del seccionado (`docs/plan/A5-seccionado/diseno.md §5.4`).
+"""Pedidos y respuestas del seccionado (`docs/historico/A5-seccionado/diseno.md §5.4`).
 
 Las coordenadas de la propuesta van como números y no como strings: es
 una vista previa para dibujar, no se guarda. Los tramos guardados sí

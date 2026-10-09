@@ -21,7 +21,7 @@ interface SeccionarPanelProps {
 }
 
 /** Proponer, ajustar y aplicar el seccionado de una pieza
- * (`docs/plan/A5-seccionado/diseno.md §5.5`). */
+ * (`docs/historico/A5-seccionado/diseno.md §5.5`). */
 export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: SeccionarPanelProps) {
   const { formatos, materiales } = useTodosLosFormatos();
   const aplicar = useAplicarSeccionado(pieza.trabajo_id);

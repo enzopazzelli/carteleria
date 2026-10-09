@@ -1,6 +1,6 @@
 """Seccionado: partir una pieza más grande que la chapa en tramos (A5).
 
-Diseño en `docs/plan/A5-seccionado/diseno.md`. El cálculo vive en
+Diseño en `docs/historico/A5-seccionado/diseno.md`. El cálculo vive en
 `services/seccionado/` y no conoce la base: acá se leen la pieza y el
 formato, y se guardan los tramos.
 """

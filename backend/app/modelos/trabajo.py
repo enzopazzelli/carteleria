@@ -143,7 +143,7 @@ class Pieza(Base):
     #: líneas compartidas — el motor ignora toda arista sin esta marca.
     contorno_recto: Mapped[bool] = mapped_column(Boolean, default=False)
     #: En un tramo: la pieza de la que salió al seccionarla (A5,
-    #: `docs/plan/A5-seccionado/`). `SET NULL` y no `CASCADE`: reimportar
+    #: `docs/historico/A5-seccionado/`). `SET NULL` y no `CASCADE`: reimportar
     #: un DXF borra todas las piezas con el ORM, y una cascada en la base
     #: borraría los tramos antes que él, que después no los encuentra y
     #: avisa («expected to delete 1 row(s); 0 were matched»).

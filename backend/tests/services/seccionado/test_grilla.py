@@ -1,4 +1,4 @@
-"""Tests del seccionado por grilla (`docs/plan/A5-seccionado/diseno.md`).
+"""Tests del seccionado por grilla (`docs/historico/A5-seccionado/diseno.md`).
 
 Formas sintéticas con shapely, sin base de datos. Las medidas del aro
 son las del aro de Belgrano medido el 2026-10-07 (§2 del diseño)."""

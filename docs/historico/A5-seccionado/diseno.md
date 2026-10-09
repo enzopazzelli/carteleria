@@ -1,8 +1,8 @@
 # A5 · Seccionado — diseño
 
-> **Estado:** construido el 2026-10-08 en la rama `feat/seccionado` ([PR #16](https://github.com/enzopazzelli/carteleria/pull/16), abierto el 2026-10-08). La rama pasó una revisión completa ese día; lo que se arregló y lo que quedó anotado está al final de [`plan.md`](plan.md). Falta la validación con el aro real soldado (`SUP-17`, §7). Lo que cambió al construirlo está marcado en §5.2 y §8, y en detalle en la sección «Desvíos» de [`plan.md`](plan.md).
+> **Estado:** **cerrado el 2026-10-09.** Construido el 2026-10-08 y en `main` desde el 2026-10-09 ([PR #16](https://github.com/enzopazzelli/carteleria/pull/16)). Ese día esta carpeta pasó de `docs/plan/` a `docs/historico/`; lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). La rama pasó una revisión completa ese día; lo que se arregló y lo que quedó anotado está al final de [`plan.md`](plan.md). Falta la validación con el aro real soldado (`SUP-17`, §7). Lo que cambió al construirlo está marcado en §5.2 y §8, y en detalle en la sección «Desvíos» de [`plan.md`](plan.md).
 >
-> **Cambio de reparto.** El plan maestro dejaba el seccionado (paso A5 de [`motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`](../../motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md)) en el carril de Vale. Enzo decidió tomarlo el 2026-10-07 porque sin él el aro de Belgrano no se puede cotizar. Hay que avisarle a Vale, y [`PLAN-MAESTRO.md`](../PLAN-MAESTRO.md) se actualiza en el paso de documentación.
+> **Cambio de reparto.** El plan maestro dejaba el seccionado (paso A5 de [`motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`](../../motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md)) en el carril de Vale. Enzo decidió tomarlo el 2026-10-07 porque sin él el aro de Belgrano no se puede cotizar. Hay que avisarle a Vale, y [`PLAN-MAESTRO.md`](../../plan/PLAN-MAESTRO.md) se actualiza en el paso de documentación.
 >
 > **Sobre los valores.** Los parámetros, supuestos y preguntas se citan por ID y viven en [`REGISTRO.md`](../../REGISTRO.md). Las medidas de esta página son mediciones sobre los DXF reales, no parámetros.
 

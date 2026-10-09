@@ -1,4 +1,4 @@
-"""Rutas del seccionado (`docs/plan/A5-seccionado/diseno.md §5.4`)."""
+"""Rutas del seccionado (`docs/historico/A5-seccionado/diseno.md §5.4`)."""
 from __future__ import annotations
 
 from decimal import Decimal

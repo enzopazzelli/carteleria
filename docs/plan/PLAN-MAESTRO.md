@@ -224,11 +224,30 @@ Se detallan cuando les toque, cada una con su diseño.
 
 | Historias | Motivo |
 |---|---|
-| `CART-701` a `CART-705` | Son el motor. Carril de Vale. El seccionado (A5) lo tomó Enzo el 2026-10-07: `plan/A5-seccionado/`. El reparto por chapa (A6), que baja las chapas que usa Sparrow, está planificado desde el 2026-10-08 y sin empezar, a la espera de hablarlo con Vale: `plan/A6-reparto-por-chapa/` |
+| `CART-701` a `CART-705` | Son el motor. Carril de Vale. El seccionado (A5) lo tomó Enzo el 2026-10-07, y está construido y en `main` desde el 2026-10-09: `historico/A5-seccionado/`. Sus pendientes están al pie de esta tabla. El reparto por chapa (A6), que baja las chapas que usa Sparrow, está planificado desde el 2026-10-08 y sin empezar, a la espera de hablarlo con Vale: `plan/A6-reparto-por-chapa/` |
 | `CART-205`, `CART-207`, `CART-208`, `CART-210` | Dependen de que haya un resultado de anidado. Se retoman después de E2 |
 | `CART-201` | La carga manual de piezas existe como servicio, sin ruta propia. Si hace falta se decide en el diseño de 2.1 |
 | `CART-501`, `CART-502`, `CART-504` | Dependen de acordar una convención de capas con diseño (`SUP-05`, `B-15`, `D-11`) |
 | `CART-209`, `CART-508` | Plegado. Dependen de `D-03` |
+
+**Pendientes del seccionado.** El seccionado se cerró el 2026-10-09 y su carpeta pasó a [`historico/A5-seccionado/`](../historico/A5-seccionado/). Esto es lo que quedó vivo y se sigue desde acá. El detalle de cada punto está al final de su [`plan.md`](../historico/A5-seccionado/plan.md).
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| Validar con el aro real exportado soldado | §7 de su diseño | `SUP-17`: que el diseñador lo mande |
+| «Volver a seccionar» abre el panel vacío, sin la grilla guardada | Revisión del 2026-10-08 | — |
+| La segunda pasada de la búsqueda repite ángulos ya probados: solo afina el corrimiento | Revisión | — |
+| Un ángulo o un corrimiento que no es un número da error 500, y por la API se puede seccionar una pieza descartada a mano | Revisión | — |
+| No hay tope para chapas chicas pero válidas, y el selector de chapa del panel lista todo el catálogo | Revisión | — |
+| Volver a seccionar mientras corre un anidado del mismo grupo puede dejar esa ejecución sin terminar | Revisión | — |
+| Una pieza tiene un solo seccionado, para una chapa: la comparación de formatos usa los tramos aunque la pieza entraría entera en una chapa más grande | Revisión | — |
+| Con veta, los tramos quedan girados respecto del dibujo | Revisión | `P-30` |
+| La comparación de formatos usa los parámetros de corte del material aunque el grupo tenga propios | Arreglo del 2026-10-09 | `CART-210` |
+| La fila de la pieza seccionada queda atenuada y sus enlaces parecen deshabilitados | Panel | — |
+| Dos colores no alcanzan para distinguir tramos vecinos | Panel | — |
+| Arrastrar la grilla deja medidas no redondas: falta decidir si se ajusta a milímetros enteros | Panel | Decisión de Enzo |
+| El botón «Seccionar» se decide con una cuenta sin márgenes ni kerf: una pieza casi del tamaño de la chapa no lo muestra | Panel | `P-28` |
+| La pieza 1009 del trabajo 4 parece un plano de referencia y no una pieza a cortar | Panel | 2.1, la revisión de la importación |
 
 ---
 

@@ -58,7 +58,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
-## 2026-10-09 — A6 medido con más tiempo (`PAR-09` sube a 240 s cuando se construya) y un arreglo del seccionado
+## 2026-10-09 — Seccionado en `main` y cerrado; A6 medido con más tiempo (`PAR-09` sube a 240 s cuando se construya)
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A6, sin construir)
 
@@ -68,19 +68,24 @@ Qué queda abierto y cuál es el próximo paso.
 - **Dos tropiezos que quedan como dato.** A batería, dos corridas llegaron a 5 recién a los 162 y 172 s. Y una corrida se perdió porque Windows suspendió la máquina: el reloj del tiempo máximo sigue y el worker no, así que al despertar se corta. El medidor usa la misma función que la app, así que ahí pasaría lo mismo.
 - **El medidor anota el recorrido,** no solo cómo termina: en qué segundo llega a cada cantidad de chapas. Lo hace envolviendo el worker desde afuera, sin cambiarlo. Guiones y salidas en `backend/local/herramientas-anidado-2026-10-09/`, fuera del repositorio.
 - **El seccionado corta con los parámetros propios del grupo** (`d5dff4d`). Era el primer punto de lo que la revisión del 2026-10-08 había dejado sin tocar: cortaba con los del material, y con un margen mayor en el grupo los tramos no entraban al anidar. Ahora el seccionado y el anidado sacan los parámetros de la misma función. Tres tests nuevos, que se vieron fallar antes del arreglo; backend 405 en verde (402 antes).
+- **El PR #16 se fusionó en `main`** (`749460f`): el seccionado, los arreglos del lector de DXF, la carga con confirmación, borrar un anidado y los documentos de A6.
+- **Guía de uso de los parámetros del anidado,** para el cliente y para probar: [`cliente/GUIA-PARAMETROS-ANIDADO.md`](cliente/GUIA-PARAMETROS-ANIDADO.md), con ocho dibujos. Explica cada campo de la pestaña Anidado en lenguaje llano. Los valores con los que viene la pantalla están en una sola tabla, al final.
+- **El seccionado quedó cerrado:** su carpeta pasó de `plan/` a [`historico/A5-seccionado/`](historico/A5-seccionado/), se corrigieron las rutas que la citaban (nueve comentarios en el código y los enlaces de esta bitácora y del registro) y sus pendientes pasaron al §7 de [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md).
 
 ### Qué se decidió
 
 - **`PAR-09` pasa de 120 a 240 s** (Enzo). Con 120 s la etapa de vaciar chapas llega a 5 en una o dos corridas de seis. Con 180 s llegaron las tres, una con 8 s de margen. Con 240 s, la más lenta de las seis deja 70 s.
 - **Se cambia junto con A6, no antes.** Hoy el anidado termina solo cerca de los 80 s, así que el valor no hace diferencia. Quedó como Tarea 5 bis del plan.
+- **Enzo fusionó el PR #16 sin esperar la revisión de Vale** y dio el seccionado por cerrado aunque falte la prueba con el aro real soldado (`SUP-17`), que queda como pendiente en el plan maestro.
 
 ### Cambios en el registro
 
-Sin cambios. El valor nuevo de `PAR-09` entra al registro cuando se construya A6.
+Sin cambios de contenido. El valor nuevo de `PAR-09` entra al registro cuando se construya A6. Solo se corrigieron las rutas que citaban la carpeta del seccionado.
 
 ### Pendiente
 
-- **La respuesta de Vale** a las tres preguntas del plan A6 (su Tarea 0) y su revisión del PR #16.
+- **La respuesta de Vale** a las tres preguntas del plan A6 (su Tarea 0). Y avisarle que el PR #16 ya está en `main`.
+- **Tres valores de la pantalla de Anidado no tienen ID en el registro:** la semilla, la búsqueda por chapa y la simplificación. `PAR-08` dice 0,2 mm y la pantalla viene en 0,3: falta saber si son el mismo parámetro.
 - **Medir un trabajo más grande** (`Muestra Vectores.dxf`), que sigue sin hacer: es el Step 3 de la Tarea 6.
 - **`D-12` pesa más:** con A6 y el valor nuevo, el anidado de Complejo pasa de unos 80 s a 240 s para quien espera frente a la pantalla.
 - **La suspensión de la máquina durante un anidado** quedó anotada como riesgo en el §8 del diseño, sin resolver.
@@ -94,7 +99,7 @@ Sin cambios. El valor nuevo de `PAR-09` entra al registro cuando se construya A6
 
 ### Qué se hizo
 
-- **Seccionado construido** en la rama `feat/seccionado`, siguiendo [`plan/A5-seccionado/plan.md`](plan/A5-seccionado/plan.md) tarea por tarea y con el visto bueno de Enzo al final de cada una. Una pieza que no entra en la chapa se parte en tramos con una grilla del tamaño de la chapa, que el diseñador corre y gira antes de aplicar (`D-19`).
+- **Seccionado construido** en la rama `feat/seccionado`, siguiendo [`historico/A5-seccionado/plan.md`](historico/A5-seccionado/plan.md) tarea por tarea y con el visto bueno de Enzo al final de cada una. Una pieza que no entra en la chapa se parte en tramos con una grilla del tamaño de la chapa, que el diseñador corre y gira antes de aplicar (`D-19`).
   - **Cálculo** (`backend/app/services/seccionado/`): cortar con una grilla fija, pegar los pedacitos que entran juntos, buscar la mejor grilla y orientar cada tramo derecho sobre la chapa. Geometría pura, sin base.
   - **Modelo y migración** `5ecc10ad0a5a`: `Pieza.seccionada_de_id` (en un tramo, su original) y `Pieza.seccionado` (en la original, cómo se cortó). La original queda `descartada` y la reemplazan sus tramos, así el anidado y el costeo no cambian.
   - **Rutas:** `POST /piezas/{id}/seccionado/propuesta` (calcula sin guardar), `POST /piezas/{id}/seccionado` (aplica) y `DELETE /piezas/{id}/seccionado` (deshace). Un tramo no se vuelve a seccionar, un anidado guardado no pierde sus piezas, una pieza seccionada no se restaura a mano y reimportar el DXF sigue funcionando.
@@ -145,7 +150,7 @@ Enzo editó `Complejo.dxf` para dejar un solo diseño, lo importó, seccionó, a
 - Después de anidar, volver a seccionar exigía borrar el grupo entero. Ahora cada anidado del historial se puede borrar, también el definitivo, con aviso (`e6a7948`).
 - Dos triviales: la escala «1.000» se mostraba como si fuera mil (`dee31b7`) y dos comentarios decían que el seccionado no existía (`04f438c`).
 
-Lo que la revisión señaló y no se tocó está en la sección «Desvíos» de [`plan/A5-seccionado/plan.md`](plan/A5-seccionado/plan.md).
+Lo que la revisión señaló y no se tocó está en la sección «Desvíos» de [`historico/A5-seccionado/plan.md`](historico/A5-seccionado/plan.md).
 
 **Qué se decidió.** Descartar los recortes al cargar, en vez de adelantar la pantalla de revisión (2.1). Escribir un plan para repartir chapa por chapa, sin tocar el motor todavía. Que un anidado se pueda borrar solo, incluido el definitivo. Y dejar la veta como pregunta abierta, sin tocar el código.
 

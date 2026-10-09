@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** construido el 2026-10-08 en la rama `feat/seccionado` ([PR #16](https://github.com/enzopazzelli/carteleria/pull/16), abierto el 2026-10-08). Tareas 0 a 9 hechas, más dos que no estaban en el plan: 7b (rendimiento) y 9b (conectar Grupos con Piezas). Enzo lo probó en la app ese día con `Complejo.dxf` (Tarea 9, Step 6) y la rama pasó una revisión completa antes del PR. Falta la validación con el aro real soldado (`SUP-17`, §7 del diseño). **El código se aparta de las tareas de abajo en los puntos de la sección [«Desvíos»](#desvíos-respecto-de-este-plan-2026-10-08), al final.**
+> **Estado:** **cerrado el 2026-10-09.** Construido el 2026-10-08 y en `main` desde el 2026-10-09 ([PR #16](https://github.com/enzopazzelli/carteleria/pull/16)). Ese día esta carpeta pasó de `docs/plan/` a `docs/historico/`; lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). Las rutas `docs/plan/A5-seccionado/` que aparecen más abajo son las de cuando se escribió el plan. Tareas 0 a 9 hechas, más dos que no estaban en el plan: 7b (rendimiento) y 9b (conectar Grupos con Piezas). Enzo lo probó en la app ese día con `Complejo.dxf` (Tarea 9, Step 6) y la rama pasó una revisión completa antes del PR. Falta la validación con el aro real soldado (`SUP-17`, §7 del diseño). **El código se aparta de las tareas de abajo en los puntos de la sección [«Desvíos»](#desvíos-respecto-de-este-plan-2026-10-08), al final.**
 
 **Goal:** Que una pieza más grande que la chapa se pueda partir en tramos con una grilla del tamaño de la chapa, ajustable por el diseñador, y que los tramos queden como piezas comunes para anidar y cotizar.
 
@@ -2245,6 +2245,8 @@ Las cuatro piezas reales dan los mismos tramos y la misma soldadura antes y desp
 
 ### Lo que se vio en el panel y quedó sin tocar
 
+> Desde el 2026-10-09 estos puntos se siguen en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). Esta lista queda como estaba ese día.
+
 1. La fila de la original seccionada queda atenuada entera, con sus enlaces «Volver a seccionar» y «Deshacer», que parecen deshabilitados aunque funcionan.
 2. Los dos colores se alternan por orden de tramo: tramos vecinos pueden quedar del mismo color y solo los separa el corte rojo.
 3. Arrastrar deja corrimientos no redondos y tramos de medidas como 321.428571 mm. Falta decidir si la grilla se ajusta a milímetros enteros.
@@ -2264,6 +2266,8 @@ Un revisor aparte leyó toda la rama antes del PR. Veredicto: se puede mergear c
 | Con veta, el seccionado gira los tramos respecto del dibujo | Sin cambios en el código: quedó como pregunta abierta, `P-30` | — |
 
 ### Lo que señaló la revisión y quedó sin tocar
+
+> Desde el 2026-10-09 estos puntos se siguen en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). Esta lista queda como estaba ese día.
 
 1. ~~El seccionado usa los parámetros de corte del material, no los propios del grupo (`CART-210`): con un margen mayor en el grupo, los tramos pueden no entrar al anidar.~~ **Resuelto el 2026-10-09** (`d5dff4d`): el seccionado y el anidado sacan los parámetros de la misma función, `_parametros_de_corte`. Vale también al seccionar para una chapa que no es la del grupo. Queda otro caso de lo mismo, sin tocar: la comparación de formatos de Grupos sigue usando los parámetros del material aunque el grupo tenga propios.
 2. «Volver a seccionar» abre el panel vacío: no parte de la grilla guardada en `Pieza.seccionado`.

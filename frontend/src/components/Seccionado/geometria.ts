@@ -1,4 +1,4 @@
-/** Cuentas de la pantalla del seccionado (`docs/plan/A5-seccionado/diseno.md §5.5`).
+/** Cuentas de la pantalla del seccionado (`docs/historico/A5-seccionado/diseno.md §5.5`).
  * Sin React, para poder probarlas solas. */
 
 export interface Segmento {

@@ -1,4 +1,4 @@
-"""Seccionado por grilla de chapas — `docs/plan/A5-seccionado/diseno.md §5.2`.
+"""Seccionado por grilla de chapas — `docs/historico/A5-seccionado/diseno.md §5.2`.
 
 Solo geometría: recibe la forma de una pieza (un polígono de shapely en
 el marco de la pieza) y el tamaño de la celda, y devuelve los tramos y
