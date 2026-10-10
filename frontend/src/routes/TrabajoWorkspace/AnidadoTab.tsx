@@ -162,8 +162,10 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const [busqueda, setBusqueda] = useState(2);
   const [limite, setLimite] = useState(120);
   const [simplificacion, setSimplificacion] = useState(0.3);
+  const [vaciarChapas, setVaciarChapas] = useState(true);
   const opciones = { motor, usar_anidado_en_huecos: usarHuecos, semilla,
-    segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion };
+    segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion,
+    vaciar_chapas: vaciarChapas };
 
   const definitiva = historial?.find((e) => e.es_definitiva) ?? null;
   const { data: colocacionesDefinitiva } = useColocaciones(definitiva?.id ?? null);
@@ -270,7 +272,14 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
           <label>Búsqueda por chapa (s) <input type="number" min="1" max="30" value={busqueda} onChange={(e) => setBusqueda(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
           <label>Tiempo máximo total (s) <input type="number" min="5" max="300" value={limite} onChange={(e) => setLimite(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
           <label>Simplificación (mm) <input type="number" min="0" max="2" step="0.1" value={simplificacion} onChange={(e) => setSimplificacion(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
-          <p>Prueba hasta 3 semillas y conserva el anidado validado con menos planchas; en empate, busca dejar retazos más grandes. El tiempo máximo limita la búsqueda. No se garantiza el óptimo global.</p>
+          <label
+            className="flex items-center gap-1 cursor-pointer"
+            title="Después de repartir en chapas, intenta vaciar las que quedaron a medio llenar pasando sus piezas a las demás. Usa el tiempo que sobra del máximo."
+          >
+            <input type="checkbox" checked={vaciarChapas} onChange={(e) => setVaciarChapas(e.target.checked)} />
+            Vaciar chapas
+          </label>
+          <p>Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que quedaron a medio llenar. Conserva el anidado validado con menos planchas. Más búsqueda por chapa no da menos planchas. No se garantiza el óptimo global.</p>
         </>}
       </div>
       <ParametrosCorteForm grupo={grupo} onCambio={alCambiarParametros} />
