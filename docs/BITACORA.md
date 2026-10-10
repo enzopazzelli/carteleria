@@ -58,25 +58,27 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
-## 2026-10-10 — Reparto por chapa (A6) construido: Sparrow vacía chapas con el tiempo que sobra, y `PAR-09` sube a 240 s
+## 2026-10-10 — Reparto por chapa (A6) construido, en `main` y cerrado: Sparrow vacía chapas con el tiempo que sobra, y `PAR-09` sube a 240 s
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A6)
 
 ### Qué se hizo
 
-- **La etapa de vaciar chapas,** en la rama `feat/reparto-por-chapa`, con el código del plan [`plan/A6-reparto-por-chapa/`](plan/A6-reparto-por-chapa/). Después de cortar la franja en chapas, el anidado con Sparrow toma la chapa con menos material e intenta repartir sus piezas en las demás; si todas encuentran lugar, hay una chapa menos. La lógica vive en un módulo nuevo que no conoce a Sparrow (`sparrow_reparto.py`), y el worker se reordenó para exponer la búsqueda que antes hacía adentro de una sola función.
+- **La etapa de vaciar chapas,** en la rama `feat/reparto-por-chapa`, con el código del plan [`historico/A6-reparto-por-chapa/`](historico/A6-reparto-por-chapa/). Después de cortar la franja en chapas, el anidado con Sparrow toma la chapa con menos material e intenta repartir sus piezas en las demás; si todas encuentran lugar, hay una chapa menos. La lógica vive en un módulo nuevo que no conoce a Sparrow (`sparrow_reparto.py`), y el worker se reordenó para exponer la búsqueda que antes hacía adentro de una sola función.
 - **La opción para apagarla,** `vaciar_chapas`, prendida por defecto: en la API (anidar y comparar formatos), guardada con cada ejecución, y como casilla en Anidado y en la comparación de Grupos.
 - **Cada paso con su prueba que falla primero.** 18 tests nuevos; backend 423 en verde (405 antes), frontend 40. Tres tests del worker pasaban antes de escribir el código: se comprobaron rompiéndolo a propósito y viendo que fallaran.
 - **La casilla se comprobó en pantalla,** con Chrome sin ventana contra una copia de la base: viene marcada, manda y guarda lo que dice, y en Grupos llega a la comparación.
-- **Medido sobre el trabajo de hoy, que ya no es el de 31 piezas.** El 2026-10-09 a la tarde Enzo seccionó cinco piezas y el grupo quedó con 45, 22 de ellas tramos. Con 240 s y tres semillas: sin la etapa, 19 chapas en las tres corridas; con la etapa, 19, 18 y 18. Con 120 s, 19 con y sin. La tabla y lo que se puede afirmar están en el §2 de [`plan/A6-reparto-por-chapa/diseno.md`](plan/A6-reparto-por-chapa/diseno.md).
+- **Medido sobre el trabajo de hoy, que ya no es el de 31 piezas.** El 2026-10-09 a la tarde Enzo seccionó cinco piezas y el grupo quedó con 45, 22 de ellas tramos. Con 240 s y tres semillas: sin la etapa, 19 chapas en las tres corridas; con la etapa, 19, 18 y 18. Con 120 s, 19 con y sin. La tabla y lo que se puede afirmar están en el §2 de [`historico/A6-reparto-por-chapa/diseno.md`](historico/A6-reparto-por-chapa/diseno.md).
 - **Un dato que cambia cómo leer las mediciones:** con la misma semilla, la primera pasada dio 21 chapas una vez y 19 otra. Una diferencia de una chapa entre dos corridas sueltas no prueba nada.
 - **Documentos al día:** la guía de parámetros del anidado, en Markdown y en su página, con una sección para la casilla y las frases que la etapa volvía falsas; y `INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md`, con la etapa, la opción y el valor nuevo del tiempo máximo. El medidor quedó en `backend/scripts/medir_sparrow_de_un_grupo.py`.
 - **Revisión independiente de la rama,** antes del PR. Encontró que la etapa no atajaba las fallas internas de Sparrow, que spyrrow avisa con una excepción que no desciende de `Exception`: el worker terminaba con error y se perdía el anidado ya guardado. Arreglado, con su test. También marcó frases de los documentos que los datos no sostenían, que se corrigieron, y un límite del diseño que queda en «Pendiente». El detalle está al final de los «Desvíos» del plan.
+- **El PR #17 se fusionó en `main`** (`3240d42`) ese mismo día, y el reparto por chapa quedó cerrado: su carpeta pasó de `plan/` a [`historico/A6-reparto-por-chapa/`](historico/A6-reparto-por-chapa/), se corrigieron las rutas que la citaban (tres comentarios en el código y los enlaces de esta bitácora y del documento de Sparrow) y sus pendientes pasaron al §7 de [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md).
 
 ### Qué se decidió
 
 - **Construirlo sin esperar la respuesta de Vale** (Enzo). Sus tres preguntas, la Tarea 0 del plan, siguen abiertas.
 - **Medir con 240 s antes de cambiar el valor,** porque con 120 s la etapa no bajó chapas en el trabajo de hoy. Con el resultado, Enzo mantuvo la decisión del 2026-10-09.
+- **Enzo fusionó el PR #17 sin esperar la revisión de Vale** y dio el reparto por chapa por cerrado, con sus pendientes en el plan maestro.
 
 ### Cambios en el registro
 
@@ -84,14 +86,13 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Pendiente
 
-- **La revisión de Vale** y sus tres preguntas. El PR todavía no está abierto.
+- **Avisarle a Vale** que el PR #17 ya está en `main`. Sus tres preguntas quedaron al final de la descripción del PR.
 - **Cómo repartir el tiempo entre las pasadas y la etapa.** Con la casilla marcada, la etapa usa el tiempo en que correrían la segunda y la tercera pasada. Si la primera sale mala, el resultado puede tener más chapas que con la casilla apagada. No se vio en las cuatro comparaciones de hoy; quedó como riesgo en el §8 del diseño. Se decide midiendo un trabajo grande.
-- **Lo que la revisión dejó anotado y no se tocó:** nueve puntos, al final de los «Desvíos» del plan.
+- **Lo que la revisión dejó anotado y no se tocó:** nueve puntos, que pasaron a la tabla de pendientes del §7 del plan maestro.
 - **El criterio de éxito del diseño no se pudo repetir:** hablaba de las 31 piezas, que ya no están en la base. Lo respaldan las mediciones del 2026-10-08 y del 2026-10-09, hechas con este mismo código.
 - **Medir un trabajo con muchas más piezas** sigue sin hacer. `Muestra Vectores` no tiene grupos armados en el respaldo, y el otro trabajo que se probó está a escala diez veces menor y entra en una chapa.
 - **`D-12` pesa más:** con la etapa prendida el anidado usa casi siempre todo el tiempo máximo, que ahora son 4 minutos frente a la pantalla.
 - **`GUIA-SPARROW-PRUEBAS.md` sigue sugiriendo 120 s** como punto de partida.
-- **Al fusionar,** la carpeta `plan/A6-reparto-por-chapa/` pasa a `historico/` y se corrigen las rutas que la citan (Step 5 de la Tarea 6 del plan).
 
 ---
 
@@ -101,7 +102,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Qué se hizo
 
-- **Medición del plan A6 con 180 y 240 s de tiempo máximo**, sobre una copia del backend con el código del plan y una copia de la base. Seis corridas (semillas 42 a 44, tres con cada tiempo), con la notebook enchufada: todas dieron 5 chapas y 38,6 %, y llegaron a 5 a los 96, 117, 121, 124, 136 y 169 s. La tabla está en el §2 de [`plan/A6-reparto-por-chapa/diseno.md`](plan/A6-reparto-por-chapa/diseno.md).
+- **Medición del plan A6 con 180 y 240 s de tiempo máximo**, sobre una copia del backend con el código del plan y una copia de la base. Seis corridas (semillas 42 a 44, tres con cada tiempo), con la notebook enchufada: todas dieron 5 chapas y 38,6 %, y llegaron a 5 a los 96, 117, 121, 124, 136 y 169 s. La tabla está en el §2 de [`historico/A6-reparto-por-chapa/diseno.md`](historico/A6-reparto-por-chapa/diseno.md).
 - **Dos tropiezos que quedan como dato.** A batería, dos corridas llegaron a 5 recién a los 162 y 172 s. Y una corrida se perdió porque Windows suspendió la máquina: el reloj del tiempo máximo sigue y el worker no, así que al despertar se corta. El medidor usa la misma función que la app, así que ahí pasaría lo mismo.
 - **El medidor anota el recorrido,** no solo cómo termina: en qué segundo llega a cada cantidad de chapas. Lo hace envolviendo el worker desde afuera, sin cambiarlo. Guiones y salidas en `backend/local/herramientas-anidado-2026-10-09/`, fuera del repositorio.
 - **El seccionado corta con los parámetros propios del grupo** (`d5dff4d`). Era el primer punto de lo que la revisión del 2026-10-08 había dejado sin tocar: cortaba con los del material, y con un margen mayor en el grupo los tramos no entraban al anidar. Ahora el seccionado y el anidado sacan los parámetros de la misma función. Tres tests nuevos, que se vieron fallar antes del arreglo; backend 405 en verde (402 antes).
@@ -197,7 +198,7 @@ Lo que la revisión señaló y no se tocó está en la sección «Desvíos» de 
 
 - **Las formas del emblema** (6 en `Complejo.dxf`) no siguen una regla: de dos formas del mismo nivel, una se corta y la otra no. Eso lo resuelve la pantalla de revisión (2.1).
 - **Las miniaturas de la tabla de Piezas salen dadas vuelta de arriba abajo** (la M se ve como una W). Se vio al probar el botón de carga; es anterior y no se tocó.
-- **El reparto por chapa (A6)** quedó diseñado y planificado en [`plan/A6-reparto-por-chapa/`](plan/A6-reparto-por-chapa/diseno.md), con el código del plan probado sobre una copia del backend. Sin empezar: primero hay que hablarlo con Vale, que hizo la integración de Sparrow.
+- **El reparto por chapa (A6)** quedó diseñado y planificado en [`historico/A6-reparto-por-chapa/`](historico/A6-reparto-por-chapa/diseno.md), con el código del plan probado sobre una copia del backend. Sin empezar: primero hay que hablarlo con Vale, que hizo la integración de Sparrow.
 
 ---
 

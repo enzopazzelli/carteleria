@@ -1,6 +1,6 @@
 # A6 · Reparto por chapa — diseño
 
-> **Estado:** construido el 2026-10-10 en la rama `feat/reparto-por-chapa`, con el código del plan; lo que se apartó está en los «Desvíos» de [`plan.md`](plan.md). **Se empezó sin la respuesta de Vale** a las tres preguntas del §4, por decisión de Enzo: el cambio toca el código que ella integró (PR #14, `CONVENCIONES.md §3`) y falta que lo revise. `PAR-09` ya tiene el valor nuevo (§4). Ese día se midió sobre otros dos trabajos (§2): el de 31 piezas del criterio de éxito ya no está en la base.
+> **Estado:** **cerrado el 2026-10-10.** Construido ese día con el código del plan y en `main` desde entonces ([PR #17](https://github.com/enzopazzelli/carteleria/pull/17)); lo que se apartó está en los «Desvíos» de [`plan.md`](plan.md). Esta carpeta pasó de `docs/plan/` a `docs/historico/`, y lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). **Se construyó y se fusionó sin la respuesta de Vale** a las tres preguntas del §4, por decisión de Enzo: el cambio toca el código que ella integró (PR #14, `CONVENCIONES.md §3`). `PAR-09` ya tiene el valor nuevo (§4). Ese día se midió sobre otros dos trabajos (§2): el de 31 piezas del criterio de éxito ya no está en la base.
 >
 > **De dónde sale.** Enzo anidó `Complejo.dxf` y preguntó si más pasadas dan mejores anidados. Se midió, y la respuesta es que no: el límite está en cómo se reparten las piezas en chapas. Bitácora del 2026-10-08, addendum.
 >

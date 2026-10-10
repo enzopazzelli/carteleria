@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** ejecutado el 2026-10-10, de la Tarea 1 a la 6, en la rama `feat/reparto-por-chapa`. De la Tarea 0 quedó sin hacer el Step 1: Enzo decidió empezar sin la respuesta de Vale. Falta abrir el PR (Step 6 de la Tarea 6). Lo que se apartó del plan está en «Desvíos», al final. La Tarea 5 bis se agregó el 2026-10-09, después de medir con 180 y 240 s (§2 del diseño).
+> **Estado:** **cerrado el 2026-10-10.** Ejecutado ese día, de la Tarea 1 a la 6, y en `main` desde entonces ([PR #17](https://github.com/enzopazzelli/carteleria/pull/17)). Esta carpeta pasó de `docs/plan/` a `docs/historico/`; lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). Las rutas `docs/plan/A6-reparto-por-chapa/` que aparecen más abajo son las de cuando se escribió el plan. Quedaron sin hacer el Step 1 de la Tarea 0 (Enzo decidió empezar sin la respuesta de Vale) y el Step 3 de la Tarea 6 (medir un trabajo más grande). Lo que se apartó del plan está en «Desvíos», al final. La Tarea 5 bis se agregó el 2026-10-09, después de medir con 180 y 240 s (§2 del diseño).
 >
 > **El código de este plan está probado.** El 2026-10-08 los bloques de las Tareas 1 a 4 y el script de la Tarea 6 se aplicaron, tal como están escritos acá, sobre una copia del backend fuera del repositorio. Cada test falló y pasó donde el plan dice, las dos roturas a propósito de la Tarea 3 hicieron fallar los tests que corresponden, y la suite completa dio 405 en verde (388 antes). La Tarea 5 (pantalla) no se probó. La medición de punta a punta está en el §2 del diseño.
 
@@ -1003,7 +1003,7 @@ Si este documento ya se movió a `docs/motor/`, hacer los cambios allá y correg
 - `docs/plan/PLAN-MAESTRO.md`: en la fila de `CART-701` a `CART-705`, cambiar «planificado» por «construido» para A6.
 - Cuando el PR se mergee, mover `docs/plan/A6-reparto-por-chapa/` a `docs/historico/` y corregir las rutas que la citan (`CONVENCIONES.md §8 bis`, reglas 2 y 3): el docstring de `sparrow_reparto.py`, el del test, el de `medir_sparrow_de_un_grupo.py`, el comentario de `AnidarCrear` y el enlace del Step 4.
 
-- [ ] **Step 6: Commit y PR**
+- [x] **Step 6: Commit y PR**
 
 ```bash
 git add backend/scripts/medir_sparrow_de_un_grupo.py docs/

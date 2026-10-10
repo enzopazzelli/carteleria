@@ -224,7 +224,7 @@ Se detallan cuando les toque, cada una con su diseño.
 
 | Historias | Motivo |
 |---|---|
-| `CART-701` a `CART-705` | Son el motor. Carril de Vale. El seccionado (A5) lo tomó Enzo el 2026-10-07, y está construido y en `main` desde el 2026-10-09: `historico/A5-seccionado/`. Sus pendientes están al pie de esta tabla. El reparto por chapa (A6), que usa el tiempo que sobra del anidado con Sparrow para vaciar las chapas a medio llenar, está construido desde el 2026-10-10. Se empezó sin esperar la respuesta de Vale, por decisión de Enzo: `plan/A6-reparto-por-chapa/` |
+| `CART-701` a `CART-705` | Son el motor. Carril de Vale. El seccionado (A5) lo tomó Enzo el 2026-10-07, y está construido y en `main` desde el 2026-10-09: `historico/A5-seccionado/`. Sus pendientes están al pie de esta tabla. El reparto por chapa (A6), que usa el tiempo que sobra del anidado con Sparrow para vaciar las chapas a medio llenar, lo construyó Enzo sin esperar la respuesta de Vale, y está en `main` desde el 2026-10-10: `historico/A6-reparto-por-chapa/`. Sus pendientes también están al pie de esta tabla |
 | `CART-205`, `CART-207`, `CART-208`, `CART-210` | Dependen de que haya un resultado de anidado. Se retoman después de E2 |
 | `CART-201` | La carga manual de piezas existe como servicio, sin ruta propia. Si hace falta se decide en el diseño de 2.1 |
 | `CART-501`, `CART-502`, `CART-504` | Dependen de acordar una convención de capas con diseño (`SUP-05`, `B-15`, `D-11`) |
@@ -248,6 +248,23 @@ Se detallan cuando les toque, cada una con su diseño.
 | Arrastrar la grilla deja medidas no redondas: falta decidir si se ajusta a milímetros enteros | Panel | Decisión de Enzo |
 | El botón «Seccionar» se decide con una cuenta sin márgenes ni kerf: una pieza casi del tamaño de la chapa no lo muestra | Panel | `P-28` |
 | La pieza 1009 del trabajo 4 parece un plano de referencia y no una pieza a cortar | Panel | 2.1, la revisión de la importación |
+
+**Pendientes del reparto por chapa.** El reparto por chapa se cerró el 2026-10-10 y su carpeta pasó a [`historico/A6-reparto-por-chapa/`](../historico/A6-reparto-por-chapa/). Esto es lo que quedó vivo y se sigue desde acá. El detalle de cada punto está al final de su [`plan.md`](../historico/A6-reparto-por-chapa/plan.md), en «Desvíos».
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| Decidir cómo repartir el tiempo entre las pasadas y la etapa de vaciar chapas: con la casilla marcada suele correr una sola pasada, y si sale mala el resultado puede tener más chapas que con la casilla apagada | Revisión del 2026-10-10; §8 de su diseño | Medir un trabajo grande; hablarlo con Vale |
+| Medir un trabajo con muchas más piezas | Tarea 6 de su plan | Un trabajo con grupos armados: `Muestra Vectores` no los tiene en el respaldo |
+| Las preguntas a Vale: si tiene cambios en curso sobre `sparrow_worker.py` y si ya había probado otro reparto | Tarea 0 de su plan | Vale |
+| El aviso «Se alcanzó el límite de búsqueda» sale en buena parte de las corridas con la etapa prendida: el worker estima corto lo que dura una consulta | Revisión | — |
+| Si la etapa falla, queda escrito solo en el registro del worker, que se borra | Revisión | — |
+| El filtro por área puede saltear, por redondeo, una consulta de piezas que llenan la chapa exacta | Revisión | — |
+| Ningún test corre la etapa por el camino del worker aparte y su archivo de salida | Revisión | — |
+| `considerar` actualiza el mejor resultado antes de escribirlo | Revisión | — |
+| El texto de ayuda de Anidado dice «Más búsqueda por chapa no da menos planchas» como si fuera una regla | Revisión | Decisión de Enzo |
+| Una comparación de formatos es un solo pedido que puede durar varias veces `PAR-09`; no se probó si el navegador lo corta | Revisión | `D-12` |
+| Si el worker falla en una segunda pasada, el supervisor descarta el anidado de la primera | Revisión; es anterior a este sub-proyecto | — |
+| `GUIA-SPARROW-PRUEBAS.md` sugiere 120 s como punto de partida y `motor/PLAN-VALIDACION-CORTE-MANUAL.md` nombra `PAR-09` con su valor anterior | Tarea 5 bis de su plan | — |
 
 ---
 

@@ -1,4 +1,4 @@
-"""Vaciar chapas (`docs/plan/A6-reparto-por-chapa/`), sin Sparrow: quien
+"""Vaciar chapas (`docs/historico/A6-reparto-por-chapa/`), sin Sparrow: quien
 dice si un conjunto entra en una chapa es una cuenta de una dimensión."""
 from __future__ import annotations
 

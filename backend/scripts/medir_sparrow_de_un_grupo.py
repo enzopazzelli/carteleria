@@ -1,7 +1,7 @@
 """Anida con Sparrow un grupo ya cargado, varias veces, con y sin la etapa
 de vaciar chapas, y muestra planchas, aprovechamiento y tiempo.
 
-Es la medición del criterio de éxito de `docs/plan/A6-reparto-por-chapa/`.
+Es la medición del criterio de éxito de `docs/historico/A6-reparto-por-chapa/`.
 Corre por el mismo camino que la app (`anidar_sparrow`: worker aparte,
 tiempo máximo y validación) y no guarda nada.
 

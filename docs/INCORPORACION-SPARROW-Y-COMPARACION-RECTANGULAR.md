@@ -34,7 +34,7 @@ Rectpack usa **MaxRectsBssf** en el anidado habitual. Para comparar grupos de m�
 2. Se expanden las cantidades: cada unidad de cada pieza debe tener una colocación propia.
 3. Sparrow se ejecuta en un proceso Python aislado. El supervisor puede terminarlo al cancelar o alcanzar el tiempo máximo.
 4. La integración resuelve una franja de altura fija, selecciona las piezas completas que caben en el ancho de una plancha y vuelve a calcular con las restantes. No corta piezas para hacerlas entrar.
-5. Con el tiempo que sobra del máximo, intenta **vaciar chapas**: elige la que tiene menos área de piezas y reparte sus piezas en las demás, de a una, preguntándole a Sparrow si «las piezas de esa chapa, más esta» entran en una sola chapa. Si todas encontraron lugar, hay una chapa menos; si alguna no, esa chapa queda como estaba. Se apaga con `vaciar_chapas`. Mediciones en [`plan/A6-reparto-por-chapa/diseno.md`](plan/A6-reparto-por-chapa/diseno.md).
+5. Con el tiempo que sobra del máximo, intenta **vaciar chapas**: elige la que tiene menos área de piezas y reparte sus piezas en las demás, de a una, preguntándole a Sparrow si «las piezas de esa chapa, más esta» entran en una sola chapa. Si todas encontraron lugar, hay una chapa menos; si alguna no, esa chapa queda como estaba. Se apaga con `vaciar_chapas`. Mediciones en [`historico/A6-reparto-por-chapa/diseno.md`](historico/A6-reparto-por-chapa/diseno.md).
 6. Se prueban distintas semillas. Entre resultados completos y válidos se priorizan menos planchas; en empate, menor suma de áreas de los rectángulos que delimitan las piezas de cada plancha.
 7. Se validan todas las colocaciones y se guardan mediante el mismo contrato utilizado por Rectpack. El resultado llega al historial, Ajuste, SVG, DXF y Costeo.
 

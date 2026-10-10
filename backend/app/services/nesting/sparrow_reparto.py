@@ -10,7 +10,7 @@ sola chapa.
 
 Es lógica pura: no conoce a Sparrow. La pregunta la responde
 `entra_en_una_chapa`, que el worker arma con Sparrow y los tests con una
-cuenta simple. Mediciones y diseño: `docs/plan/A6-reparto-por-chapa/`.
+cuenta simple. Mediciones y diseño: `docs/historico/A6-reparto-por-chapa/`.
 """
 from __future__ import annotations
 
