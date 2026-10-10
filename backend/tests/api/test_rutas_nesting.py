@@ -743,3 +743,38 @@ def test_sparrow_preflight_no_encola_piezas_que_no_entran(cliente,tmp_path):
     assert r.status_code==400
     assert 'no entran' in r.json()['detail']
     assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json()==[]
+
+
+@pytest.mark.parametrize("enviado, esperado", [({}, True), ({"vaciar_chapas": False}, False)])
+def test_comparar_formatos_sparrow_pasa_la_opcion_de_vaciar_chapas(cliente, tmp_path, monkeypatch, enviado, esperado):
+    from app.api import rutas_nesting
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    _material, formato = _material_con_formato_y_parametros(cliente)
+    recibidas = []
+    original = rutas_nesting.anidar_sparrow
+
+    def registrar(piezas, geometrias, plancha, params, opciones):
+        recibidas.append(opciones)
+        return original(piezas, geometrias, plancha, params, opciones)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
+        "formato_ids": [formato["id"]], "motor": "sparrow",
+        "segundos_por_busqueda": 1, "tiempo_maximo_s": 30, **enviado,
+    })
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert [o.vaciar_chapas for o in recibidas] == [esperado]
+
+
+def test_sparrow_por_api_guarda_la_opcion_de_vaciar_chapas(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={
+        "motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20, "vaciar_chapas": False,
+    })
+
+    assert respuesta.status_code == 202
+    resultado = _esperar_estado(cliente, respuesta.json()["id"], timeout=20)
+    assert resultado["estado"] == "lista", resultado.get("error")
+    assert resultado["opciones"].get("vaciar_chapas") is False
