@@ -124,9 +124,12 @@ def resolver(data, salida=None):
                 ):
                     considerar([{**q,'sheet':s} for s,chapa in enumerate(chapas) for q in chapa])
                     if score[0]==minimo: break
-            except Exception as error:
+            except (KeyboardInterrupt,SystemExit):raise
+            except BaseException as error:
                 # La etapa es una mejora: si falla o entrega algo que no
-                # valida, vale el mejor resultado ya guardado.
+                # valida, vale el mejor resultado ya guardado. Se ataja
+                # `BaseException` porque spyrrow avisa sus fallas internas
+                # con `PanicException`, que no desciende de `Exception`.
                 print('vaciar_chapas:',error,file=sys.stderr)
             if score[0]==minimo: break
     return best

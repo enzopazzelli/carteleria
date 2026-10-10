@@ -131,7 +131,14 @@ def encimadas(ids,originals,shapes,data):
 def rota(ids,originals,shapes,data):
     raise RuntimeError('falla de prueba')
 
-@pytest.mark.parametrize('consulta',[encimadas,rota])
+class Panico(BaseException):
+    """Como `pyo3_runtime.PanicException`, con la que spyrrow avisa sus
+    fallas internas: no desciende de `Exception`."""
+
+def panico(ids,originals,shapes,data):
+    raise Panico('pánico de prueba')
+
+@pytest.mark.parametrize('consulta',[encimadas,rota,panico])
 def test_un_reparto_que_falla_no_pierde_la_primera_etapa(monkeypatch,consulta):
     entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
     monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
