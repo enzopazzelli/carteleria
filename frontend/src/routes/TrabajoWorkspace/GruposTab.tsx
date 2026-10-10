@@ -32,8 +32,9 @@ export default function GruposTab() {
   const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
   const [semilla, setSemilla] = useState(42);
   const [busqueda, setBusqueda] = useState(2);
-  const [limite, setLimite] = useState(120);
+  const [limite, setLimite] = useState(240);
   const [simplificacion, setSimplificacion] = useState(0.3);
+  const [vaciarChapas, setVaciarChapas] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [piezasInvalidas, setPiezasInvalidas] = useState<number[]>([]);
   const [seleccionadas, setSeleccionadas] = useState<Set<number>>(new Set());
@@ -126,7 +127,7 @@ export default function GruposTab() {
     setResultado(null);
     try {
       const opciones = await compararFormatos.mutateAsync({ grupoId, formatoIds: candidatos,
-        opciones: { motor, semilla, segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion, criterio: "material" } });
+        opciones: { motor, semilla, segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion, vaciar_chapas: vaciarChapas, criterio: "material" } });
       setResultado(opciones);
     } catch (e) {
       setError(mensajeDeError(e, "No se pudo comparar."));
@@ -285,6 +286,13 @@ export default function GruposTab() {
                   <label>Búsqueda por chapa (s) <input type="number" min="1" max="30" value={busqueda} onChange={(e) => setBusqueda(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
                   <label>Máximo por formato (s) <input type="number" min="5" max="300" value={limite} onChange={(e) => setLimite(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
                   <label>Simplificación (mm) <input type="number" min="0" max="2" step="0.1" value={simplificacion} onChange={(e) => setSimplificacion(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
+                  <label
+                    className="flex items-center gap-1 cursor-pointer"
+                    title="Intenta vaciar las chapas que quedaron a medio llenar. Cada formato usa su tiempo máximo entero."
+                  >
+                    <input type="checkbox" checked={vaciarChapas} onChange={(e) => setVaciarChapas(e.target.checked)} />
+                    Vaciar chapas
+                  </label>
                 </>}
               </fieldset>
               <p className="text-sm mb-3">Se usan los parámetros de corte de cada material. La comparación no guarda un plano; luego ejecutá el mismo motor en Anidado.</p>

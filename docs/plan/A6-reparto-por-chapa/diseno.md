@@ -1,6 +1,6 @@
 # A6 · Reparto por chapa — diseño
 
-> **Estado:** propuesto el 2026-10-08. Sin construir: el código del plan se probó sobre una copia del backend, fuera del repositorio (§2). **Antes de empezar hay que hablarlo con Vale**, que hizo la integración de Sparrow (PR #14): este cambio toca su código (`CONVENCIONES.md §3`). El 2026-10-09 se midió con más tiempo máximo (§2) y Enzo decidió subir `PAR-09` (§4).
+> **Estado:** construido el 2026-10-10 en la rama `feat/reparto-por-chapa`, con el código del plan; lo que se apartó está en los «Desvíos» de [`plan.md`](plan.md). **Se empezó sin la respuesta de Vale** a las tres preguntas del §4, por decisión de Enzo: el cambio toca el código que ella integró (PR #14, `CONVENCIONES.md §3`) y falta que lo revise. `PAR-09` ya tiene el valor nuevo (§4). Ese día se midió sobre otros dos trabajos (§2): el de 31 piezas del criterio de éxito ya no está en la base.
 >
 > **De dónde sale.** Enzo anidó `Complejo.dxf` y preguntó si más pasadas dan mejores anidados. Se midió, y la respuesta es que no: el límite está en cómo se reparten las piezas en chapas. Bitácora del 2026-10-08, addendum.
 >
@@ -72,9 +72,32 @@ Las seis dieron 38,6 %. Con el tope del 2026-10-08 habrían llegado a 5 una o do
 
 Los guiones y las salidas están en `backend/local/herramientas-anidado-2026-10-09/`, fuera del repositorio.
 
+**Construido, sobre otros dos trabajos (2026-10-10).** El trabajo de 31 piezas ya no está en la base: el 2026-10-09 a la tarde Enzo seccionó cinco piezas y el grupo quedó con 45, 22 de ellas tramos. Se midió ese, con el código ya en la rama y por el camino de la app, con la notebook enchufada y sin suspensiones. Chapa de 1220 × 2440, kerf 2, margen 10, separación 5, giros de a 90° y 2 s por búsqueda:
+
+| Tiempo máximo | Vaciar chapas | Semilla | Chapas | Aprovechamiento | Tiempo |
+|---|---|---|---|---|---|
+| 120 s | no | 42 | 19 | 41,9 % | 72 s |
+| 120 s | sí | 42 | 19 | 41,9 % | 118 s |
+| 240 s | no | 42 | 19 | 41,9 % | 204 s |
+| 240 s | no | 43 | 19 | 41,9 % | 206 s |
+| 240 s | no | 44 | 19 | 41,9 % | 240 s |
+| 240 s | sí | 42 | 19 | 41,9 % | 239 s |
+| 240 s | sí | 43 | 18 | 44,2 % | 238 s |
+| 240 s | sí | 44 | 18 | 44,2 % | 240 s |
+
+Las dos filas de 120 s salieron de la pantalla de Anidado, al comprobar la casilla. Las de 240 s, de `backend/scripts/medir_sparrow_de_un_grupo.py`. Hubo una corrida más de cada lado, con 240 s y la semilla 42, anotando el recorrido: sin la etapa, 21 chapas a los 72 s y 19 a los 139 s; con la etapa, 19 a los 72 s y 18 a los 99 s.
+
+- **Con 240 s la etapa ahorró una chapa en tres corridas de cuatro,** y en ninguna dio más chapas que sin ella. Con 120 s no ahorró ninguna.
+- **El efecto es del tamaño de la variación entre corridas:** la primera pasada, con la misma semilla, dio 21 chapas una vez y 19 otra.
+- **Sin la etapa, una segunda pasada también puede bajar chapas** (de 21 a 19 en la corrida con recorrido). En el trabajo de 31 piezas eso no pasaba.
+
+El otro trabajo es el 5 del respaldo del 2026-10-08, «Belgrano - prueba Sparrow», que resultó estar a escala diez veces menor: 66 piezas que entran en una chapa de 1250 × 2500 (una más, de contorno inválido, se descartó en la copia). Dio 1 chapa en 4 s en las seis corridas, con y sin la etapa: con una sola chapa la etapa no consulta nada. **`Muestra Vectores` no se pudo medir:** en ese respaldo no tiene ningún grupo armado.
+
+Guiones y salidas en `backend/local/herramientas-anidado-2026-10-10/`, fuera del repositorio.
+
 **Tres límites de estas mediciones:**
 
-- Es un solo trabajo, con una sola medida de chapa.
+- Son dos armados del mismo cartel, con una sola medida de chapa.
 - Los tiempos de las pruebas de concepto se tomaron con dos y tres corridas a la vez en la misma máquina, así que están inflados. Los de las dos tablas de punta a punta, no.
 - La búsqueda de Sparrow corta por tiempo, y por eso el resultado depende de cuán ocupada está la máquina: la misma semilla dio 6 chapas una vez y 7 otra.
 
@@ -103,7 +126,7 @@ Los guiones y las salidas están en `backend/local/herramientas-anidado-2026-10-
 
 | Decisión | Valor | Registro |
 |---|---|---|
-| Qué variante | **Vaciar chapas.** Llega al mismo resultado que «llenar» en un tercio del tiempo, y como parte del anidado de hoy nunca queda peor | — |
+| Qué variante | **Vaciar chapas.** Llega al mismo resultado que «llenar» en un tercio del tiempo, y como parte del anidado de hoy nunca queda peor que la pasada de la que parte (el límite de esto está en el §8) | — |
 | Cuánto tiempo tiene | El que sobra del tiempo máximo de la ejecución. No se suma un tiempo propio | `PAR-09` |
 | Cuánto vale el tiempo máximo | **240 s** (Enzo, 2026-10-09), por la medición del §2. Se cambia en el registro y en el código junto con este sub-proyecto, no antes: sin la etapa nueva el valor no hace diferencia | `PAR-09` |
 | Cuántas pasadas | Sigue el tope de 3. Con la etapa prendida, cada pasada es «franja cortada en chapas + vaciar»; en la práctica entra una sola en el tiempo de `PAR-09` | — |
@@ -177,3 +200,4 @@ Etapa de hoy                      Etapa nueva
 | El resultado depende de la carga de la máquina | Dos corridas iguales pueden dar una chapa de diferencia | Ya pasa hoy. Las pruebas automáticas no comparan cantidades exactas con Sparrow real, salvo en casos triviales |
 | Se pisa con trabajo en curso de Vale | Conflictos en `sparrow_worker.py` | Es la primera pregunta del §4 |
 | La máquina se suspende durante un anidado | El reloj del tiempo máximo sigue y el worker no: al despertar se corta con lo que haya, o da error si no había nada. Pasó en la medición del 2026-10-09 | Ya pasa hoy; con anidados más largos es más probable. Sin resolver: queda anotado |
+| La etapa usa el tiempo de las otras pasadas | Con la casilla marcada suele correr una sola pasada. Si esa sale mala y otra semilla hubiera dado menos chapas, el resultado puede tener más chapas que con la casilla apagada, contra lo que pide el §1. No se vio en las cuatro comparaciones del 2026-10-10; lo marcó la revisión de la rama | Sin resolver. Falta decidir cómo repartir el tiempo entre las pasadas y la etapa, y medirlo con un trabajo grande |
