@@ -16,7 +16,7 @@ Esto vale para los tres planos del proyecto:
 
 | Plano | Qué significa "no hardcode" |
 |---|---|
-| **Documentación** | Un default (`120 s`, `7 días`, `5 mm`) se escribe en la tabla de `PAR-xx` de este archivo. En `EPICA.md`, `BACKLOG.md` y cualquier otro lado se cita como `PAR-xx`, no como el número. |
+| **Documentación** | Un default (`240 s`, `7 días`, `5 mm`) se escribe en la tabla de `PAR-xx` de este archivo. En `EPICA.md`, `BACKLOG.md` y cualquier otro lado se cita como `PAR-xx`, no como el número. |
 | **Código** | Todo `PAR-xx` vive en configuración o base de datos, jamás como literal en la lógica. El literal solo puede aparecer en el *seed* / migración inicial que carga el default, con el `PAR-xx` en el comentario. |
 | **Conversación con el cliente** | Cada duda es una `P-xx` y cada supuesto un `SUP-xx`. En una reunión se recorren por ID; nadie tiene que recordar qué se preguntó. |
 

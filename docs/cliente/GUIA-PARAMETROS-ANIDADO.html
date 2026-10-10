@@ -209,7 +209,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <li><strong>El programa hace hasta tres pasadas</strong> y se queda con la mejor. Cada pasada usa una semilla distinta.</li>
 <li><strong>«La mejor» es la que usa menos chapas.</strong> Si empatan, gana la que deja los retazos más grandes.</li>
 </ul>
-<p>Al terminar cada pasada, si la casilla «Vaciar chapas» está marcada, el programa usa el tiempo que sobra para intentar vaciar las chapas que quedaron a medio llenar (sección 5).</p>
+<p>Al terminar cada pasada, si la casilla «Vaciar chapas» está marcada, el programa usa el tiempo que sobra para intentar vaciar las chapas que quedaron a medio llenar (sección 5). Ese paso suele gastar el tiempo en que se harían las otras pasadas: con la casilla marcada, en un trabajo de varias chapas muchas veces corre una sola.</p>
 <p>Sparrow busca probando, y corta cuando se le acaba el tiempo. No garantiza el mejor acomodo posible: da el mejor que encontró.</p>
 <h2 id="s3"><span class="num">3.</span> Los parámetros de corte</h2>
 <p>Son los cuatro campos que están debajo del motor. Vienen cargados con los valores del material del grupo.</p>
@@ -446,7 +446,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <ul>
 <li><strong>Si lo subís,</strong> cada búsqueda es más cuidadosa, pero el tiempo total se gasta más rápido y entran menos pasadas.</li>
 <li><strong>Si lo bajás,</strong> entran más pasadas en el mismo tiempo, cada una menos trabajada.</li>
-<li><strong>Cuándo tocarlo:</strong> casi nunca. En el trabajo en que lo medimos, con 2, 10 y 30 segundos salió la misma cantidad de chapas.</li>
+<li><strong>Cuándo tocarlo:</strong> casi nunca. En el trabajo en que lo medimos, con 10 y con 30 segundos no salieron menos chapas que con 2.</li>
 </ul>
 <h3 id="tiempo-maximo-total-s">Tiempo máximo total (s)</h3>
 <p>Es el tope de todo el anidado. Cuando se cumple, el programa corta y se queda con el mejor resultado completo que tenga.</p>
@@ -494,7 +494,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 </svg>
 <figcaption>Cómo se reparte el tiempo máximo según la búsqueda por chapa</figcaption>
 </figure>
-<p>Una cuenta gruesa para saber si alcanza: los segundos de búsqueda, por las chapas que esperás usar, por las tres pasadas. La cuenta real da un poco más, porque comprobar cada resultado también lleva tiempo.</p>
+<p>Una cuenta gruesa para saber si alcanza para las tres pasadas: los segundos de búsqueda, por las chapas que esperás usar, por tres. La cuenta real da un poco más, porque comprobar cada resultado también lleva tiempo. El dibujo y esta cuenta valen con «Vaciar chapas» sin marcar: con la casilla marcada, el tiempo que queda después de la primera pasada se usa en vaciar chapas.</p>
 <ul>
 <li><strong>Si lo subís,</strong> el programa tiene más margen para terminar sus pasadas y para vaciar chapas. Con «Vaciar chapas» marcada usa casi siempre todo el tiempo; sin marcar, si termina antes, no espera al tope.</li>
 <li><strong>Si lo bajás demasiado,</strong> puede no alcanzar ni para una pasada. En ese caso el programa da error y no guarda nada.</li>
@@ -544,10 +544,10 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <p>Es la casilla que está al lado de «Simplificación». Viene marcada.</p>
 <p>Cuando el programa corta la franja en chapas, las últimas suelen quedar a medio llenar. Con la casilla marcada, usa el tiempo que sobra del máximo para intentar vaciarlas: toma la chapa con menos material y prueba pasar sus piezas a las otras, de a una. Si todas encuentran lugar, hay una chapa menos y lo intenta con la siguiente. Si alguna no entra, esa chapa queda como estaba.</p>
 <ul>
-<li><strong>Lo que no cambia:</strong> parte del anidado que ya estaba y solo lo reemplaza por uno con menos chapas, comprobado entero. No puede dejarlo peor.</li>
-<li><strong>Lo que cuesta:</strong> tiempo. Con la casilla marcada el anidado usa casi siempre todo el tiempo máximo.</li>
-<li><strong>Cuándo ayuda:</strong> cuando las últimas chapas quedan con pocas piezas sueltas. En los dos trabajos en que lo medimos ahorró una chapa en la mayoría de las corridas (de 6 a 5 en uno, de 19 a 18 en el otro) y nunca dio más chapas que sin marcar.</li>
-<li><strong>Cuándo desmarcarla:</strong> cuando necesitás el resultado antes, o para comparar contra el reparto sin este paso.</li>
+<li><strong>Lo que no cambia:</strong> parte del anidado de esa pasada y solo lo reemplaza por uno con menos chapas, comprobado entero. No puede dejar peor el anidado del que parte.</li>
+<li><strong>Lo que cuesta:</strong> tiempo. Con la casilla marcada el anidado usa casi siempre todo el tiempo máximo, incluido el que sin la casilla se usaría en probar otras semillas. Si la primera pasada sale mala, eso puede pesar más que la chapa que se ahorra. En lo que medimos no pasó.</li>
+<li><strong>Cuándo ayuda:</strong> cuando las últimas chapas quedan con pocas piezas sueltas. En los dos armados del mismo cartel en que lo medimos ahorró una chapa en la mayoría de las corridas (de 6 a 5 en uno, de 19 a 18 en el otro) y no dio más chapas que sin marcar. Son pocas corridas, y dos corridas iguales de Sparrow pueden diferir en una chapa: tomalo como una orientación.</li>
+<li><strong>Cuándo desmarcarla:</strong> para que ese tiempo se use en probar otras semillas, o para comparar contra el reparto sin este paso. Si lo que querés es que termine antes, bajá el tiempo máximo: es lo único que lo asegura.</li>
 </ul>
 <h2 id="s6"><span class="num">6.</span> Aprovechar huecos</h2>
 <p>Es la casilla que está al lado del botón «Anidar». Funciona con los dos motores.</p>
@@ -597,7 +597,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 </tr>
 <tr>
 <td>Aparece «Se alcanzó el límite de búsqueda»</td>
-<td>El resultado está completo y vale. Si querés darle más margen, subí el tiempo máximo total.</td>
+<td>El resultado está completo y vale. Con «Vaciar chapas» marcada es esperable, porque el programa usa el tiempo hasta el final. Sin marcar, si querés darle más margen, subí el tiempo máximo total.</td>
 </tr>
 <tr>
 <td>Aparece «Sparrow excedió el tiempo máximo; no se guardó un plano parcial»</td>
@@ -613,7 +613,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 </tr>
 <tr>
 <td>Tarda demasiado</td>
-<td>Apretá «Cancelar» y bajá el tiempo máximo total, o desmarcá «Vaciar chapas».</td>
+<td>Apretá «Cancelar» y bajá el tiempo máximo total.</td>
 </tr>
 </tbody>
 </table></div>

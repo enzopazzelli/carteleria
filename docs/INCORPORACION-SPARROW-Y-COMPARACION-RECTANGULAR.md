@@ -54,7 +54,7 @@ Los mejores resultados completos se escriben de forma atómica. Si se agota el t
 | `intentos` | 3 | 1–8 |
 | `vaciar_chapas` | sí | sí / no |
 
-La interfaz expone las opciones principales; `workers` e `intentos` también pueden configurarse mediante la API. Puede hacer menos intentos si alcanza la cota inferior por área exterior o se agota el tiempo. En el trabajo de 31 piezas medido el 2026-10-08, más segundos por búsqueda o más intentos no dieron menos planchas (6 planchas con 3 intentos y con 8, y con 2, 10 y 30 segundos); lo que las bajó fue la etapa de vaciar chapas. No es una regla: Sparrow corta por tiempo, y dos corridas del mismo pedido pueden diferir en una o dos planchas (el 2026-10-10, la primera pasada de un trabajo de 45 piezas dio 21 planchas una vez y 19 otra, con la misma semilla).
+La interfaz expone las opciones principales; `workers` e `intentos` también pueden configurarse mediante la API. Puede hacer menos intentos si alcanza la cota inferior por área exterior o se agota el tiempo. En el trabajo de 31 piezas medido el 2026-10-08, más segundos por búsqueda o más intentos no dieron menos planchas (6 planchas con 3 intentos y con 8; con 10 segundos por búsqueda, también 6, y con 30, 7); lo que las bajó fue la etapa de vaciar chapas. No es una regla: Sparrow corta por tiempo, y dos corridas del mismo pedido pueden diferir en una o dos planchas (el 2026-10-10, la primera pasada de un trabajo de 45 piezas dio 21 planchas una vez y 19 otra, con la misma semilla).
 
 Ambos motores consideran tres valores independientes: kerf o ancho del corte, margen de borde y separación adicional. Sparrow reserva medio kerf en el borde y medio `kerf + separación` por lado entre piezas. Antes de aceptar el resultado comprueba:
 

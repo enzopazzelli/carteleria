@@ -966,7 +966,7 @@ Expected, según el §7 del diseño:
 
 Esta medición ya se repitió el 2026-10-09 con 180 y 240 s (§2 del diseño), y de ahí salió el valor nuevo de `PAR-09` (Tarea 5 bis). Si con ese valor no se llega a 5 en al menos 2 de las 3 corridas, **no seguir subiéndolo:** anotar a partir de cuánto llega y llevarle el número a Enzo.
 
-- [x] **Step 3: Medir un trabajo más grande**
+- [ ] **Step 3: Medir un trabajo más grande**
 
 Restaurar en la carpeta de prueba el respaldo `backend/local/respaldo-2026-10-08-antes-de-borrar-trabajos/` (ahí el trabajo 4 es `Muestra Vectores.dxf`), elegir un grupo de ese trabajo que anide con Sparrow y correr el mismo comando. Anotar planchas y tiempo con y sin la etapa. No tiene valor esperado: es para saber cómo se comporta con muchas piezas.
 
@@ -1027,4 +1027,24 @@ El código de las Tareas 1 a 5 se aplicó como está escrito. Lo que cambió:
 - **Tarea 6, Step 4.** La oración sobre los intentos quedó más acotada que la del plan: la medición del 2026-10-10 mostró que, en otro trabajo, una segunda pasada sí baja planchas.
 - **Fuera del plan.** La guía de parámetros del anidado (`docs/cliente/GUIA-PARAMETROS-ANIDADO.md` y su página HTML) se actualizó con la casilla «Vaciar chapas». El plan es anterior a la guía.
 - **Comprobaciones a mano.** Las dos roturas a propósito del Step 5 de la Tarea 3 y la comprobación en pantalla del Step 5 de la Tarea 5 se hicieron con guiones que quedaron en `backend/local/herramientas-anidado-2026-10-10/`, fuera del repositorio.
-- **Tests.** Backend: 422 en verde (405 antes de empezar). Frontend: 40, sin cambios.
+- **Tests.** Backend: 423 en verde (405 antes de empezar). Frontend: 40, sin cambios.
+
+**Revisión de la rama (2026-10-10).** Un revisor independiente leyó los siete commits contra este plan y el diseño. Veredicto: se puede fusionar con arreglos.
+
+Arreglado después de la revisión:
+
+- **La etapa no atajaba las fallas internas de Sparrow.** spyrrow las avisa con `PanicException`, que desciende de `BaseException`. El `except Exception` de la Tarea 3 las dejaba pasar: el worker terminaba con error y el supervisor descartaba el anidado ya guardado. Ahora se ataja `BaseException`, menos `KeyboardInterrupt` y `SystemExit`, con un caso más en `test_un_reparto_que_falla_no_pierde_la_primera_etapa`. Era un defecto del código de este plan.
+- **Frases que los datos no sostenían,** en la guía de parámetros, en el documento de Sparrow y en un comentario de `AnidarCrear`: «no puede dejarlo peor», «con 2, 10 y 30 segundos» (con 30 dio 7 planchas) y «desmarcarla para terminar antes».
+- El Step 3 de la Tarea 6 había quedado tildado; no está hecho.
+
+Sin resolver, para decidir:
+
+- **La etapa usa el tiempo de las otras pasadas** (§8 del diseño). «En ningún trabajo da más chapas que hoy», del §1 del diseño, no está garantizado.
+- El worker estima que una consulta dura `segundos_por_busqueda`, y dura más. La última suele pasar el corte del supervisor, y el resultado sale con el aviso «Se alcanzó el límite de búsqueda».
+- Si la etapa falla, queda escrito solo en el registro del worker, que se borra.
+- El filtro por área puede saltear, por redondeo, una consulta de piezas que llenan la chapa exacta.
+- Ningún test corre la etapa por el camino del worker aparte y su archivo de salida.
+- `considerar` actualiza el mejor resultado antes de escribirlo.
+- El texto de ayuda de Anidado dice «Más búsqueda por chapa no da menos planchas» como si fuera una regla.
+- Una comparación de formatos es un solo pedido que puede durar varias veces el tiempo máximo. No se probó si el navegador lo corta.
+- Si el worker falla en una segunda pasada, el supervisor descarta el anidado de la primera. Ya pasaba antes de este plan.

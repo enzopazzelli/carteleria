@@ -126,7 +126,7 @@ Guiones y salidas en `backend/local/herramientas-anidado-2026-10-10/`, fuera del
 
 | Decisión | Valor | Registro |
 |---|---|---|
-| Qué variante | **Vaciar chapas.** Llega al mismo resultado que «llenar» en un tercio del tiempo, y como parte del anidado de hoy nunca queda peor | — |
+| Qué variante | **Vaciar chapas.** Llega al mismo resultado que «llenar» en un tercio del tiempo, y como parte del anidado de hoy nunca queda peor que la pasada de la que parte (el límite de esto está en el §8) | — |
 | Cuánto tiempo tiene | El que sobra del tiempo máximo de la ejecución. No se suma un tiempo propio | `PAR-09` |
 | Cuánto vale el tiempo máximo | **240 s** (Enzo, 2026-10-09), por la medición del §2. Se cambia en el registro y en el código junto con este sub-proyecto, no antes: sin la etapa nueva el valor no hace diferencia | `PAR-09` |
 | Cuántas pasadas | Sigue el tope de 3. Con la etapa prendida, cada pasada es «franja cortada en chapas + vaciar»; en la práctica entra una sola en el tiempo de `PAR-09` | — |
@@ -200,3 +200,4 @@ Etapa de hoy                      Etapa nueva
 | El resultado depende de la carga de la máquina | Dos corridas iguales pueden dar una chapa de diferencia | Ya pasa hoy. Las pruebas automáticas no comparan cantidades exactas con Sparrow real, salvo en casos triviales |
 | Se pisa con trabajo en curso de Vale | Conflictos en `sparrow_worker.py` | Es la primera pregunta del §4 |
 | La máquina se suspende durante un anidado | El reloj del tiempo máximo sigue y el worker no: al despertar se corta con lo que haya, o da error si no había nada. Pasó en la medición del 2026-10-09 | Ya pasa hoy; con anidados más largos es más probable. Sin resolver: queda anotado |
+| La etapa usa el tiempo de las otras pasadas | Con la casilla marcada suele correr una sola pasada. Si esa sale mala y otra semilla hubiera dado menos chapas, el resultado puede tener más chapas que con la casilla apagada, contra lo que pide el §1. No se vio en las cuatro comparaciones del 2026-10-10; lo marcó la revisión de la rama | Sin resolver. Falta decidir cómo repartir el tiempo entre las pasadas y la etapa, y medirlo con un trabajo grande |

@@ -21,7 +21,8 @@ class AnidarCrear(BaseModel):
     intentos: int = Field(default=3, ge=1, le=8)
     #: Segunda etapa de Sparrow (`sparrow_reparto.py`): vaciar chapas
     #: repartiendo sus piezas en las demás. Prendida por defecto; se apaga
-    #: para comparar contra el reparto de antes o para terminar antes.
+    #: para comparar contra el reparto de antes o para que ese tiempo se
+    #: use en probar otras semillas.
     vaciar_chapas: bool = True
     #: Segunda pasada opcional (`anidado_huecos.py`, Capa 2 de
     #: `docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`): reubica piezas ya

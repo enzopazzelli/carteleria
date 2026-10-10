@@ -43,7 +43,7 @@ De acá salen tres cosas que explican el resto de la guía:
 - **El programa hace hasta tres pasadas** y se queda con la mejor. Cada pasada usa una semilla distinta.
 - **«La mejor» es la que usa menos chapas.** Si empatan, gana la que deja los retazos más grandes.
 
-Al terminar cada pasada, si la casilla «Vaciar chapas» está marcada, el programa usa el tiempo que sobra para intentar vaciar las chapas que quedaron a medio llenar (sección 5).
+Al terminar cada pasada, si la casilla «Vaciar chapas» está marcada, el programa usa el tiempo que sobra para intentar vaciar las chapas que quedaron a medio llenar (sección 5). Ese paso suele gastar el tiempo en que se harían las otras pasadas: con la casilla marcada, en un trabajo de varias chapas muchas veces corre una sola.
 
 Sparrow busca probando, y corta cuando se le acaba el tiempo. No garantiza el mejor acomodo posible: da el mejor que encontró.
 
@@ -136,7 +136,7 @@ Son los segundos que tiene Sparrow en cada búsqueda. Como hay una búsqueda por
 
 - **Si lo subís,** cada búsqueda es más cuidadosa, pero el tiempo total se gasta más rápido y entran menos pasadas.
 - **Si lo bajás,** entran más pasadas en el mismo tiempo, cada una menos trabajada.
-- **Cuándo tocarlo:** casi nunca. En el trabajo en que lo medimos, con 2, 10 y 30 segundos salió la misma cantidad de chapas.
+- **Cuándo tocarlo:** casi nunca. En el trabajo en que lo medimos, con 10 y con 30 segundos no salieron menos chapas que con 2.
 
 ### Tiempo máximo total (s)
 
@@ -144,7 +144,7 @@ Es el tope de todo el anidado. Cuando se cumple, el programa corta y se queda co
 
 ![Cómo se reparte el tiempo máximo según la búsqueda por chapa](guia-parametros-anidado/06-tiempos.svg)
 
-Una cuenta gruesa para saber si alcanza: los segundos de búsqueda, por las chapas que esperás usar, por las tres pasadas. La cuenta real da un poco más, porque comprobar cada resultado también lleva tiempo.
+Una cuenta gruesa para saber si alcanza para las tres pasadas: los segundos de búsqueda, por las chapas que esperás usar, por tres. La cuenta real da un poco más, porque comprobar cada resultado también lleva tiempo. El dibujo y esta cuenta valen con «Vaciar chapas» sin marcar: con la casilla marcada, el tiempo que queda después de la primera pasada se usa en vaciar chapas.
 
 - **Si lo subís,** el programa tiene más margen para terminar sus pasadas y para vaciar chapas. Con «Vaciar chapas» marcada usa casi siempre todo el tiempo; sin marcar, si termina antes, no espera al tope.
 - **Si lo bajás demasiado,** puede no alcanzar ni para una pasada. En ese caso el programa da error y no guarda nada.
@@ -167,10 +167,10 @@ Es la casilla que está al lado de «Simplificación». Viene marcada.
 
 Cuando el programa corta la franja en chapas, las últimas suelen quedar a medio llenar. Con la casilla marcada, usa el tiempo que sobra del máximo para intentar vaciarlas: toma la chapa con menos material y prueba pasar sus piezas a las otras, de a una. Si todas encuentran lugar, hay una chapa menos y lo intenta con la siguiente. Si alguna no entra, esa chapa queda como estaba.
 
-- **Lo que no cambia:** parte del anidado que ya estaba y solo lo reemplaza por uno con menos chapas, comprobado entero. No puede dejarlo peor.
-- **Lo que cuesta:** tiempo. Con la casilla marcada el anidado usa casi siempre todo el tiempo máximo.
-- **Cuándo ayuda:** cuando las últimas chapas quedan con pocas piezas sueltas. En los dos trabajos en que lo medimos ahorró una chapa en la mayoría de las corridas (de 6 a 5 en uno, de 19 a 18 en el otro) y nunca dio más chapas que sin marcar.
-- **Cuándo desmarcarla:** cuando necesitás el resultado antes, o para comparar contra el reparto sin este paso.
+- **Lo que no cambia:** parte del anidado de esa pasada y solo lo reemplaza por uno con menos chapas, comprobado entero. No puede dejar peor el anidado del que parte.
+- **Lo que cuesta:** tiempo. Con la casilla marcada el anidado usa casi siempre todo el tiempo máximo, incluido el que sin la casilla se usaría en probar otras semillas. Si la primera pasada sale mala, eso puede pesar más que la chapa que se ahorra. En lo que medimos no pasó.
+- **Cuándo ayuda:** cuando las últimas chapas quedan con pocas piezas sueltas. En los dos armados del mismo cartel en que lo medimos ahorró una chapa en la mayoría de las corridas (de 6 a 5 en uno, de 19 a 18 en el otro) y no dio más chapas que sin marcar. Son pocas corridas, y dos corridas iguales de Sparrow pueden diferir en una chapa: tomalo como una orientación.
+- **Cuándo desmarcarla:** para que ese tiempo se use en probar otras semillas, o para comparar contra el reparto sin este paso. Si lo que querés es que termine antes, bajá el tiempo máximo: es lo único que lo asegura.
 
 ---
 
@@ -193,11 +193,11 @@ Cuando está marcada, el programa hace un paso más al terminar el anidado: busc
 |---|---|
 | Necesito una respuesta ya | Motor Rectangular. |
 | Quiero ver si baja una chapa | Motor Sparrow con «Vaciar chapas» marcada, dos o tres semillas distintas, y «Aprovechar huecos» si hay piezas con agujeros. |
-| Aparece «Se alcanzó el límite de búsqueda» | El resultado está completo y vale. Si querés darle más margen, subí el tiempo máximo total. |
+| Aparece «Se alcanzó el límite de búsqueda» | El resultado está completo y vale. Con «Vaciar chapas» marcada es esperable, porque el programa usa el tiempo hasta el final. Sin marcar, si querés darle más margen, subí el tiempo máximo total. |
 | Aparece «Sparrow excedió el tiempo máximo; no se guardó un plano parcial» | No alcanzó el tiempo ni para una pasada. Subí el tiempo máximo total o bajá la búsqueda por chapa. |
 | Aparece «Piezas que no entran con el kerf y margen actuales» | Esa pieza no entra en el área útil de la chapa. Usá una chapa más grande, seccioná la pieza o revisá el margen de borde. |
 | Anidé dos veces igual y dio distinto | Es normal con Sparrow. Comparalos en el historial y marcá como definitivo el que prefieras. |
-| Tarda demasiado | Apretá «Cancelar» y bajá el tiempo máximo total, o desmarcá «Vaciar chapas». |
+| Tarda demasiado | Apretá «Cancelar» y bajá el tiempo máximo total. |
 
 El programa nunca deja piezas afuera en silencio. Si algo no entra o no se pudo comprobar, avisa y no guarda un anidado a medias.
 
