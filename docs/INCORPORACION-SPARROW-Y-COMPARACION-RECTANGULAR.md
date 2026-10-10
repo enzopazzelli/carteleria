@@ -34,8 +34,9 @@ Rectpack usa **MaxRectsBssf** en el anidado habitual. Para comparar grupos de m�
 2. Se expanden las cantidades: cada unidad de cada pieza debe tener una colocación propia.
 3. Sparrow se ejecuta en un proceso Python aislado. El supervisor puede terminarlo al cancelar o alcanzar el tiempo máximo.
 4. La integración resuelve una franja de altura fija, selecciona las piezas completas que caben en el ancho de una plancha y vuelve a calcular con las restantes. No corta piezas para hacerlas entrar.
-5. Se prueban distintas semillas. Entre resultados completos y válidos se priorizan menos planchas; en empate, menor suma de áreas de los rectángulos que delimitan las piezas de cada plancha.
-6. Se validan todas las colocaciones y se guardan mediante el mismo contrato utilizado por Rectpack. El resultado llega al historial, Ajuste, SVG, DXF y Costeo.
+5. Con el tiempo que sobra del máximo, intenta **vaciar chapas**: elige la que tiene menos área de piezas y reparte sus piezas en las demás, de a una, preguntándole a Sparrow si «las piezas de esa chapa, más esta» entran en una sola chapa. Si todas encontraron lugar, hay una chapa menos; si alguna no, esa chapa queda como estaba. Se apaga con `vaciar_chapas`. Mediciones en [`plan/A6-reparto-por-chapa/diseno.md`](plan/A6-reparto-por-chapa/diseno.md).
+6. Se prueban distintas semillas. Entre resultados completos y válidos se priorizan menos planchas; en empate, menor suma de áreas de los rectángulos que delimitan las piezas de cada plancha.
+7. Se validan todas las colocaciones y se guardan mediante el mismo contrato utilizado por Rectpack. El resultado llega al historial, Ajuste, SVG, DXF y Costeo.
 
 El desempate busca una distribución más compacta; **no mide directamente la calidad ni el valor de los retazos reutilizables**. La extracción por planchas tampoco equivale a una optimización conjunta de todas las planchas.
 
@@ -47,12 +48,13 @@ Los mejores resultados completos se escriben de forma atómica. Si se agota el t
 |---|---:|---:|
 | `semilla` | 42 | 0–2147483647 |
 | `segundos_por_busqueda` | 2 | 1–30 s |
-| `tiempo_maximo_s` | 120 | 5–300 s |
+| `tiempo_maximo_s` | 240 | 5–300 s |
 | `workers` | 2 | 1–2 |
 | `simplificacion_mm` | 0,3 | 0–2 mm |
 | `intentos` | 3 | 1–8 |
+| `vaciar_chapas` | sí | sí / no |
 
-La interfaz expone las opciones principales; `workers` e `intentos` también pueden configurarse mediante la API. Puede hacer menos intentos si alcanza la cota inferior por área exterior o se agota el tiempo. Más tiempo puede mejorar la búsqueda, sin asegurar menos planchas.
+La interfaz expone las opciones principales; `workers` e `intentos` también pueden configurarse mediante la API. Puede hacer menos intentos si alcanza la cota inferior por área exterior o se agota el tiempo. En el trabajo de 31 piezas medido el 2026-10-08, más segundos por búsqueda o más intentos no dieron menos planchas (6 planchas con 3 intentos y con 8, y con 2, 10 y 30 segundos); lo que las bajó fue la etapa de vaciar chapas. No es una regla: Sparrow corta por tiempo, y dos corridas del mismo pedido pueden diferir en una o dos planchas (el 2026-10-10, la primera pasada de un trabajo de 45 piezas dio 21 planchas una vez y 19 otra, con la misma semilla).
 
 Ambos motores consideran tres valores independientes: kerf o ancho del corte, margen de borde y separación adicional. Sparrow reserva medio kerf en el borde y medio `kerf + separación` por lado entre piezas. Antes de aceptar el resultado comprueba:
 

@@ -58,6 +58,40 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-10 — Reparto por chapa (A6) construido: Sparrow vacía chapas con el tiempo que sobra, y `PAR-09` sube a 240 s
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A6)
+
+### Qué se hizo
+
+- **La etapa de vaciar chapas,** en la rama `feat/reparto-por-chapa`, con el código del plan [`plan/A6-reparto-por-chapa/`](plan/A6-reparto-por-chapa/). Después de cortar la franja en chapas, el anidado con Sparrow toma la chapa con menos material e intenta repartir sus piezas en las demás; si todas encuentran lugar, hay una chapa menos. La lógica vive en un módulo nuevo que no conoce a Sparrow (`sparrow_reparto.py`), y el worker se reordenó para exponer la búsqueda que antes hacía adentro de una sola función.
+- **La opción para apagarla,** `vaciar_chapas`, prendida por defecto: en la API (anidar y comparar formatos), guardada con cada ejecución, y como casilla en Anidado y en la comparación de Grupos.
+- **Cada paso con su prueba que falla primero.** 17 tests nuevos; backend 422 en verde (405 antes), frontend 40. Tres tests del worker pasaban antes de escribir el código: se comprobaron rompiéndolo a propósito y viendo que fallaran.
+- **La casilla se comprobó en pantalla,** con Chrome sin ventana contra una copia de la base: viene marcada, manda y guarda lo que dice, y en Grupos llega a la comparación.
+- **Medido sobre el trabajo de hoy, que ya no es el de 31 piezas.** El 2026-10-09 a la tarde Enzo seccionó cinco piezas y el grupo quedó con 45, 22 de ellas tramos. Con 240 s y tres semillas: sin la etapa, 19 chapas en las tres corridas; con la etapa, 19, 18 y 18. Con 120 s, 19 con y sin. La tabla y lo que se puede afirmar están en el §2 de [`plan/A6-reparto-por-chapa/diseno.md`](plan/A6-reparto-por-chapa/diseno.md).
+- **Un dato que cambia cómo leer las mediciones:** con la misma semilla, la primera pasada dio 21 chapas una vez y 19 otra. Una diferencia de una chapa entre dos corridas sueltas no prueba nada.
+- **Documentos al día:** la guía de parámetros del anidado, en Markdown y en su página, con una sección para la casilla y las frases que la etapa volvía falsas; y `INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md`, con la etapa, la opción y el valor nuevo del tiempo máximo. El medidor quedó en `backend/scripts/medir_sparrow_de_un_grupo.py`.
+
+### Qué se decidió
+
+- **Construirlo sin esperar la respuesta de Vale** (Enzo). Sus tres preguntas, la Tarea 0 del plan, siguen abiertas.
+- **Medir con 240 s antes de cambiar el valor,** porque con 120 s la etapa no bajó chapas en el trabajo de hoy. Con el resultado, Enzo mantuvo la decisión del 2026-10-09.
+
+### Cambios en el registro
+
+- **`PAR-09` pasa de 120 a 240 s.** Sigue provisorio: salió de dos armados del mismo cartel, en una sola máquina.
+
+### Pendiente
+
+- **La revisión de Vale** y sus tres preguntas. El PR todavía no está abierto.
+- **El criterio de éxito del diseño no se pudo repetir:** hablaba de las 31 piezas, que ya no están en la base. Lo respaldan las mediciones del 2026-10-08 y del 2026-10-09, hechas con este mismo código.
+- **Medir un trabajo con muchas más piezas** sigue sin hacer. `Muestra Vectores` no tiene grupos armados en el respaldo, y el otro trabajo que se probó está a escala diez veces menor y entra en una chapa.
+- **`D-12` pesa más:** con la etapa prendida el anidado usa casi siempre todo el tiempo máximo, que ahora son 4 minutos frente a la pantalla.
+- **`GUIA-SPARROW-PRUEBAS.md` sigue sugiriendo 120 s** como punto de partida.
+- **Al fusionar,** la carpeta `plan/A6-reparto-por-chapa/` pasa a `historico/` y se corrigen las rutas que la citan (Step 5 de la Tarea 6 del plan).
+
+---
+
 ## 2026-10-09 — Seccionado en `main` y cerrado; A6 medido con más tiempo (`PAR-09` sube a 240 s cuando se construya)
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A6, sin construir)

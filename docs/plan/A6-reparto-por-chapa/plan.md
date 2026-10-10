@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** escrito el 2026-10-08. **Sin empezar.** La Tarea 0 (hablarlo con Vale) frena todo lo demás. El 2026-10-09 se midió con 180 y 240 s (§2 del diseño) y Enzo decidió subir `PAR-09`: es la Tarea 5 bis, agregada ese día.
+> **Estado:** ejecutado el 2026-10-10, de la Tarea 1 a la 6, en la rama `feat/reparto-por-chapa`. De la Tarea 0 quedó sin hacer el Step 1: Enzo decidió empezar sin la respuesta de Vale. Falta abrir el PR (Step 6 de la Tarea 6). Lo que se apartó del plan está en «Desvíos», al final. La Tarea 5 bis se agregó el 2026-10-09, después de medir con 180 y 240 s (§2 del diseño).
 >
 > **El código de este plan está probado.** El 2026-10-08 los bloques de las Tareas 1 a 4 y el script de la Tarea 6 se aplicaron, tal como están escritos acá, sobre una copia del backend fuera del repositorio. Cada test falló y pasó donde el plan dice, las dos roturas a propósito de la Tarea 3 hicieron fallar los tests que corresponden, y la suite completa dio 405 en verde (388 antes). La Tarea 5 (pantalla) no se probó. La medición de punta a punta está en el §2 del diseño.
 
@@ -75,7 +75,7 @@ El diseño y las mediciones están en docs/plan/A6-reparto-por-chapa/diseno.md.
 
 No seguir hasta tener su respuesta. Si la construye ella, este plan es suyo; si aparece algo que cambia el diseño, se corrige `diseno.md` antes de la Tarea 1.
 
-- [ ] **Step 2: Abrir la rama desde `main` al día**
+- [x] **Step 2: Abrir la rama desde `main` al día**
 
 ```bash
 git checkout main
@@ -83,7 +83,7 @@ git pull --rebase origin main
 git checkout -b feat/reparto-por-chapa
 ```
 
-- [ ] **Step 3: Confirmar que la base está en verde**
+- [x] **Step 3: Confirmar que la base está en verde**
 
 Run: `cd backend && python -m pytest -q`
 Expected: todas pasan. Anotar la cantidad: las tareas siguientes suman tests sobre ese número.
@@ -106,7 +106,7 @@ Expected: todas pasan. Anotar la cantidad: las tareas siguientes suman tests sob
   - `hay_tiempo: Callable[[], bool]`: se consulta antes de cada pregunta.
   - Entrega (`yield`) cada reparto con una chapa menos, con la misma forma que `chapas`.
 
-- [ ] **Step 1: Escribir los tests**
+- [x] **Step 1: Escribir los tests**
 
 `backend/tests/services/nesting/test_sparrow_reparto.py`:
 
@@ -220,12 +220,12 @@ def test_cada_unidad_de_una_pieza_se_reparte_por_separado():
     assert [[sorted(q["id"] for q in chapa) for chapa in reparto] for reparto in repartos] == [[["7#0", "7#1"]]]
 ```
 
-- [ ] **Step 2: Correrlos y verlos fallar**
+- [x] **Step 2: Correrlos y verlos fallar**
 
 Run: `cd backend && python -m pytest -q tests/services/nesting/test_sparrow_reparto.py`
 Expected: FAIL al importar, con `ModuleNotFoundError: No module named 'app.services.nesting.sparrow_reparto'`.
 
-- [ ] **Step 3: Escribir el módulo**
+- [x] **Step 3: Escribir el módulo**
 
 `backend/app/services/nesting/sparrow_reparto.py`:
 
@@ -310,12 +310,12 @@ def vaciar_chapas(
             yield [list(chapa) for chapa in actuales]
 ```
 
-- [ ] **Step 4: Correr los tests y verlos pasar**
+- [x] **Step 4: Correr los tests y verlos pasar**
 
 Run: `cd backend && python -m pytest -q tests/services/nesting/test_sparrow_reparto.py`
 Expected: `7 passed`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/nesting/sparrow_reparto.py backend/tests/services/nesting/test_sparrow_reparto.py
@@ -339,7 +339,7 @@ git commit -m "feat(nesting): vaciar chapas repartiendo sus piezas en las demas"
   - `entra_en_una_chapa(ids, originales, de_busqueda, data) -> list[dict] | None`.
   - `resolver_una_pasada(data)` sigue devolviendo lo mismo que hoy.
 
-- [ ] **Step 1: Escribir los tests**
+- [x] **Step 1: Escribir los tests**
 
 Agregar al final de `backend/tests/services/nesting/test_sparrow.py`:
 
@@ -372,12 +372,12 @@ def test_entra_en_una_chapa_dice_que_no_si_no_caben():
     assert sparrow_worker.entra_en_una_chapa(['1#0','1#1'],originales,de_busqueda,entrada) is None
 ```
 
-- [ ] **Step 2: Correrlos y verlos fallar**
+- [x] **Step 2: Correrlos y verlos fallar**
 
 Run: `cd backend && python -m pytest -q tests/services/nesting/test_sparrow.py -k entra_en_una_chapa`
 Expected: 2 FAIL con `AttributeError: module 'app.services.nesting.sparrow_worker' has no attribute 'formas'`.
 
-- [ ] **Step 3: Reordenar el worker**
+- [x] **Step 3: Reordenar el worker**
 
 En `backend/app/services/nesting/sparrow_worker.py`, reemplazar la función `resolver_una_pasada` entera por estas cinco. `puntaje`, `resolver` y el bloque `if __name__=='__main__'` quedan como están.
 
@@ -447,12 +447,12 @@ def resolver_una_pasada(data):
 
 Es el mismo cálculo de antes, repartido en funciones: `formas` es el bloque que armaba `originals` y `shapes`, `franja` es la llamada a Sparrow, y `colocacion` es el diccionario que se agregaba a `placed`.
 
-- [ ] **Step 4: Correr los tests del worker y de las rutas que usan Sparrow**
+- [x] **Step 4: Correr los tests del worker y de las rutas que usan Sparrow**
 
 Run: `cd backend && python -m pytest -q tests/services/nesting/test_sparrow.py tests/api/test_rutas_nesting.py`
 Expected: todos pasan, incluidos los 2 nuevos. Los que ya existían prueban que `resolver_una_pasada` sigue dando lo mismo.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services/nesting/sparrow_worker.py backend/tests/services/nesting/test_sparrow.py
@@ -472,7 +472,7 @@ git commit -m "refactor(nesting): exponer la busqueda de Sparrow y la consulta d
 - Consumes: `vaciar_chapas` (Tarea 1); `formas`, `entra_en_una_chapa` y `entrada_de_cuadrados` (Tarea 2).
 - Produces: `OpcionesSparrow.vaciar_chapas: bool = True`, que llega al worker como `data['options']['vaciar_chapas']`. `resolver(data, salida=None)` sigue devolviendo la lista de colocaciones con `sheet`.
 
-- [ ] **Step 1: Escribir los tests**
+- [x] **Step 1: Escribir los tests**
 
 Agregar al final de `backend/tests/services/nesting/test_sparrow.py`:
 
@@ -523,7 +523,7 @@ def test_un_reparto_que_falla_no_pierde_la_primera_etapa(monkeypatch,consulta):
 
 `resolver_una_pasada` se reemplaza para controlar el punto de partida. Lo que se comprueba es la etapa nueva con Sparrow real y con la validación real.
 
-- [ ] **Step 2: Correrlos y ver cuáles fallan**
+- [x] **Step 2: Correrlos y ver cuáles fallan**
 
 Run: `cd backend && python -m pytest -q tests/services/nesting/test_sparrow.py -k "resolver or reparto_que_falla"`
 Expected:
@@ -531,7 +531,7 @@ Expected:
 - `test_resolver_con_la_etapa_apagada_devuelve_la_primera`: FAIL con `TypeError: OpcionesSparrow.__init__() got an unexpected keyword argument 'vaciar_chapas'`.
 - Los otros tres **pasan**: todavía no hay etapa que pueda romperlos. Se comprueban en el Step 5.
 
-- [ ] **Step 3: Sumar la opción**
+- [x] **Step 3: Sumar la opción**
 
 En `backend/app/services/nesting/sparrow.py`, en `OpcionesSparrow`, después de `intentos: int = 3`:
 
@@ -542,7 +542,7 @@ En `backend/app/services/nesting/sparrow.py`, en `OpcionesSparrow`, después de 
     vaciar_chapas: bool = True
 ```
 
-- [ ] **Step 4: Llamar a la etapa desde `resolver`**
+- [x] **Step 4: Llamar a la etapa desde `resolver`**
 
 En `backend/app/services/nesting/sparrow_worker.py`, reemplazar la función `resolver` entera por estas dos:
 
@@ -605,7 +605,7 @@ Qué cambia respecto del `resolver` de hoy:
 - `limite` es el mismo corte de antes (`tiempo_maximo_s - 1`). La etapa deja de consultar cuando no queda tiempo para una búsqueda más.
 - Antes, una pasada podía empezar un segundo antes del límite y la mataba el supervisor. Ahora no empieza si la anterior tardó más que lo que queda.
 
-- [ ] **Step 5: Correr los tests y comprobar los tres que ya pasaban**
+- [x] **Step 5: Correr los tests y comprobar los tres que ya pasaban**
 
 Run: `cd backend && python -m pytest -q tests/services/nesting/test_sparrow.py`
 Expected: todos pasan.
@@ -619,12 +619,12 @@ Los tres tests que pasaban antes de escribir el código se comprueban rompiéndo
 
 Después de deshacer los dos cambios, correr de nuevo y ver todo en verde.
 
-- [ ] **Step 6: Correr toda la suite**
+- [x] **Step 6: Correr toda la suite**
 
 Run: `cd backend && python -m pytest -q`
 Expected: todo en verde. Comparar el tiempo total con el de la Tarea 0: si creció más de unos 15 segundos, algún test que ya existía está entrando en la etapa nueva. Buscarlo con `--durations=10` y anotarlo en la sección «Desvíos» antes de seguir.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add backend/app/services/nesting/sparrow_worker.py backend/app/services/nesting/sparrow.py backend/tests/services/nesting/test_sparrow.py
@@ -643,7 +643,7 @@ git commit -m "feat(nesting): Sparrow vacia chapas con el tiempo que sobra"
 - Consumes: `OpcionesSparrow.vaciar_chapas` (Tarea 3).
 - Produces: el campo `vaciar_chapas` (booleano, `true` por defecto) en el cuerpo de `POST /grupos/{id}/anidar` y de `POST /grupos/{id}/comparar-formatos`. Queda guardado en `EjecucionNesting.opciones`.
 
-- [ ] **Step 1: Escribir los tests**
+- [x] **Step 1: Escribir los tests**
 
 Agregar al final de `backend/tests/api/test_rutas_nesting.py`:
 
@@ -683,12 +683,12 @@ def test_sparrow_por_api_guarda_la_opcion_de_vaciar_chapas(cliente, tmp_path):
     assert resultado["opciones"].get("vaciar_chapas") is False
 ```
 
-- [ ] **Step 2: Correrlos y verlos fallar**
+- [x] **Step 2: Correrlos y verlos fallar**
 
 Run: `cd backend && python -m pytest -q tests/api/test_rutas_nesting.py -k vaciar_chapas`
 Expected: 2 FAIL y 1 pasa. Fallan el caso `{"vaciar_chapas": False}` de la comparación (llega `True`, porque la API todavía ignora el campo) y el de guardar la opción (`None is False`). El caso `{}` pasa: el valor por defecto ya viene de la Tarea 3.
 
-- [ ] **Step 3: Sumar el campo**
+- [x] **Step 3: Sumar el campo**
 
 En `backend/app/api/esquemas_nesting.py`, en `AnidarCrear`, después de `intentos`:
 
@@ -702,12 +702,12 @@ En `backend/app/api/esquemas_nesting.py`, en `AnidarCrear`, después de `intento
 
 `ComparacionFormatosCrear` hereda de `AnidarCrear`, así que la comparación lo recibe sin más cambios.
 
-- [ ] **Step 4: Correr los tests**
+- [x] **Step 4: Correr los tests**
 
 Run: `cd backend && python -m pytest -q tests/api/test_rutas_nesting.py`
 Expected: todos pasan.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/api/esquemas_nesting.py backend/tests/api/test_rutas_nesting.py
@@ -729,7 +729,7 @@ git commit -m "feat(nesting): opcion para apagar el vaciado de chapas desde la A
 
 No lleva test automático: es una casilla que agrega un campo al pedido. Se comprueba con el compilador y a mano.
 
-- [ ] **Step 1: El tipo**
+- [x] **Step 1: El tipo**
 
 En `frontend/src/api/nesting.ts`, en `OpcionesAnidado`, después de `simplificacion_mm`:
 
@@ -738,7 +738,7 @@ En `frontend/src/api/nesting.ts`, en `OpcionesAnidado`, después de `simplificac
   vaciar_chapas?: boolean;
 ```
 
-- [ ] **Step 2: Anidado**
+- [x] **Step 2: Anidado**
 
 En `frontend/src/routes/TrabajoWorkspace/AnidadoTab.tsx`:
 
@@ -769,7 +769,7 @@ Dentro de `{motor === "sparrow" && <>`, después de la etiqueta «Simplificació
           <p>Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que quedaron a medio llenar. Conserva el anidado validado con menos planchas. Más búsqueda por chapa no da menos planchas. No se garantiza el óptimo global.</p>
 ```
 
-- [ ] **Step 3: Comparación de formatos**
+- [x] **Step 3: Comparación de formatos**
 
 En `frontend/src/routes/TrabajoWorkspace/GruposTab.tsx`:
 
@@ -797,12 +797,12 @@ Dentro de `{motor === "sparrow" && <>`, después de la etiqueta «Simplificació
                   </label>
 ```
 
-- [ ] **Step 4: Compilar y correr los tests del frontend**
+- [x] **Step 4: Compilar y correr los tests del frontend**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: compila sin errores de tipos y los tests existentes pasan.
 
-- [ ] **Step 5: Verlo en la app, contra una copia de los datos**
+- [x] **Step 5: Verlo en la app, contra una copia de los datos**
 
 Con los puertos 8000 y 5173 libres (si están ocupados, son los servidores de Enzo contra su base real: no usarlos ni cerrarlos):
 
@@ -815,7 +815,7 @@ cd frontend && npm run dev
 
 Comprobar, en un grupo con Sparrow: la casilla aparece marcada en Anidado y en la comparación de Grupos; con la casilla desmarcada el anidado termina antes; el historial muestra las dos ejecuciones.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/src/api/nesting.ts frontend/src/routes/TrabajoWorkspace/AnidadoTab.tsx frontend/src/routes/TrabajoWorkspace/GruposTab.tsx
@@ -834,7 +834,7 @@ Agregada el 2026-10-09, después de medir con 180 y 240 s (§2 del diseño). El 
 - Modify: `backend/app/api/esquemas_nesting.py` (`AnidarCrear.tiempo_maximo_s`, el valor por defecto; el tope que acepta no cambia)
 - Modify: `frontend/src/routes/TrabajoWorkspace/AnidadoTab.tsx` y `GruposTab.tsx` (el valor inicial de `limite`)
 
-- [ ] **Step 1: Cambiar el valor en los cuatro lugares del código**
+- [x] **Step 1: Cambiar el valor en los cuatro lugares del código**
 
 Son los cuatro que hoy tienen el valor viejo. Comprobar que no quede otro:
 
@@ -843,20 +843,20 @@ grep -rn "tiempo_maximo_s" backend/app frontend/src
 grep -n "setLimite" frontend/src/routes/TrabajoWorkspace/*.tsx
 ```
 
-- [ ] **Step 2: Cambiar la fila de `PAR-09` en `docs/REGISTRO.md`**
+- [x] **Step 2: Cambiar la fila de `PAR-09` en `docs/REGISTRO.md`**
 
 Solo el valor. Sigue provisorio: salió de un solo trabajo en una sola máquina.
 
-- [ ] **Step 3: Correr las pruebas**
+- [x] **Step 3: Correr las pruebas**
 
 Run: `cd backend && python -m pytest -q` y `cd frontend && npm run build && npm test`
 Expected: todo en verde, con la misma cantidad de tests que al terminar la Tarea 5.
 
-- [ ] **Step 4: Si `docs/cliente/GUIA-PARAMETROS-ANIDADO.md` ya está en `main`, corregir su tabla del §10**
+- [x] **Step 4: Si `docs/cliente/GUIA-PARAMETROS-ANIDADO.md` ya está en `main`, corregir su tabla del §10**
 
 Es el único lugar de esa guía donde figura el valor.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/REGISTRO.md backend/app/services/nesting/sparrow.py backend/app/api/esquemas_nesting.py frontend/src/routes/TrabajoWorkspace/AnidadoTab.tsx frontend/src/routes/TrabajoWorkspace/GruposTab.tsx
@@ -876,7 +876,7 @@ git commit -m "feat(nesting): PAR-09 sube para que la etapa de vaciar chapas lle
 - Consumes: todo lo anterior.
 - Produces: los números que cierran el criterio de éxito del §1 del diseño.
 
-- [ ] **Step 1: El script de medición**
+- [x] **Step 1: El script de medición**
 
 `backend/scripts/medir_sparrow_de_un_grupo.py`:
 
@@ -950,7 +950,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 2: Medir «Complejo», con la máquina libre**
+- [x] **Step 2: Medir «Complejo», con la máquina libre**
 
 Copiar `backend/local/carteleria.db` a una carpeta de prueba y correr:
 
@@ -966,11 +966,11 @@ Expected, según el §7 del diseño:
 
 Esta medición ya se repitió el 2026-10-09 con 180 y 240 s (§2 del diseño), y de ahí salió el valor nuevo de `PAR-09` (Tarea 5 bis). Si con ese valor no se llega a 5 en al menos 2 de las 3 corridas, **no seguir subiéndolo:** anotar a partir de cuánto llega y llevarle el número a Enzo.
 
-- [ ] **Step 3: Medir un trabajo más grande**
+- [x] **Step 3: Medir un trabajo más grande**
 
 Restaurar en la carpeta de prueba el respaldo `backend/local/respaldo-2026-10-08-antes-de-borrar-trabajos/` (ahí el trabajo 4 es `Muestra Vectores.dxf`), elegir un grupo de ese trabajo que anide con Sparrow y correr el mismo comando. Anotar planchas y tiempo con y sin la etapa. No tiene valor esperado: es para saber cómo se comporta con muchas piezas.
 
-- [ ] **Step 4: Documentar Sparrow**
+- [x] **Step 4: Documentar Sparrow**
 
 En `docs/INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md`:
 
@@ -996,7 +996,7 @@ Más segundos por búsqueda o más intentos no dan menos planchas (medido el 202
 
 Si este documento ya se movió a `docs/motor/`, hacer los cambios allá y corregir el enlace relativo del punto 5.
 
-- [ ] **Step 5: Cerrar la documentación del sub-proyecto**
+- [x] **Step 5: Cerrar la documentación del sub-proyecto**
 
 - `docs/BITACORA.md`: entrada del día con lo construido, los números de los Steps 2 y 3 y, en «Cambios en el registro», el valor nuevo de `PAR-09` (Tarea 5 bis).
 - Este plan y `diseno.md`: actualizar el bloque **Estado**; si el código se apartó del plan, agregar al final una sección «Desvíos».
@@ -1012,3 +1012,19 @@ git push -u origin feat/reparto-por-chapa
 ```
 
 Abrir el PR contra `main`, **con el ok explícito de Enzo**, pidiendo review a Vale y diciendo en la descripción que toca `sparrow_worker.py`. En la descripción van los números de los Steps 2 y 3.
+
+---
+
+## Desvíos respecto de este plan (2026-10-10)
+
+El código de las Tareas 1 a 5 se aplicó como está escrito. Lo que cambió:
+
+- **Tarea 0, Step 1.** No se esperó la respuesta de Vale: Enzo decidió empezar el 2026-10-10. Las tres preguntas siguen abiertas.
+- **Orden.** Antes de la Tarea 5 bis se midió el trabajo de hoy con 240 s. Lo pidió Enzo después de ver que, con el valor anterior, la etapa no bajaba chapas en ese trabajo. Para eso el script de la Tarea 6 se escribió antes.
+- **Tarea 5 bis.** El valor estaba en tres lugares más que los que listan sus Steps 1 y 4: el ejemplo de `docs/CONVENCIONES.md`, la tabla «Parámetros y validaciones» de `INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md` y la página HTML de la guía de parámetros.
+- **Tarea 6, Step 2.** El trabajo de 31 piezas ya no existe: el 2026-10-09 a la tarde Enzo seccionó cinco piezas y el grupo quedó con 45. Se midió ese (§2 del diseño). El criterio de éxito del §1 del diseño queda respaldado por las mediciones del 2026-10-08 y del 2026-10-09, hechas con este mismo código sobre una copia. No se pudo repetir.
+- **Tarea 6, Step 3.** `Muestra Vectores` no tiene grupos en el respaldo, así que no se puede anidar. Se probó el trabajo 5 del respaldo, que resultó estar a escala diez veces menor y entra en una chapa. **Medir un trabajo con muchas más piezas sigue pendiente.**
+- **Tarea 6, Step 4.** La oración sobre los intentos quedó más acotada que la del plan: la medición del 2026-10-10 mostró que, en otro trabajo, una segunda pasada sí baja planchas.
+- **Fuera del plan.** La guía de parámetros del anidado (`docs/cliente/GUIA-PARAMETROS-ANIDADO.md` y su página HTML) se actualizó con la casilla «Vaciar chapas». El plan es anterior a la guía.
+- **Comprobaciones a mano.** Las dos roturas a propósito del Step 5 de la Tarea 3 y la comprobación en pantalla del Step 5 de la Tarea 5 se hicieron con guiones que quedaron en `backend/local/herramientas-anidado-2026-10-10/`, fuera del repositorio.
+- **Tests.** Backend: 422 en verde (405 antes de empezar). Frontend: 40, sin cambios.

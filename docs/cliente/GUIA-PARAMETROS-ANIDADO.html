@@ -110,7 +110,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <p>Qué significa cada campo de la pestaña <strong>Anidado</strong>, cuándo conviene tocarlo y qué pasa si lo cambiás. Está escrita para quien usa la pantalla, no para quien programa.</p>
 <p>Describe la aplicación como está hoy. El motor Sparrow figura en la pantalla como «prueba»: lo que esta guía dice sobre él puede cambiar.</p>
 <p>Índice del proyecto: <a href="../../README.md"><code>README.md</code></a> · <a href="../REGISTRO.md"><code>REGISTRO.md</code></a> · la versión técnica de este tema: <a href="../GUIA-SPARROW-PRUEBAS.md"><code>GUIA-SPARROW-PRUEBAS.md</code></a></p>
-<p><strong>Versión:</strong> 1.0 · <strong>Fecha:</strong> 2026-10-09</p>
+<p><strong>Versión:</strong> 1.1 · <strong>Fecha:</strong> 2026-10-10</p>
 </blockquote>
 <nav aria-label="Contenido">
 <p class="nav-titulo">Contenido</p>
@@ -119,7 +119,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <li><a href="#s2"><span class="num">2.</span> Cómo trabaja el anidado</a></li>
 <li><a href="#s3"><span class="num">3.</span> Los parámetros de corte</a></li>
 <li><a href="#s4"><span class="num">4.</span> El motor</a></li>
-<li><a href="#s5"><span class="num">5.</span> Los cuatro campos de Sparrow</a></li>
+<li><a href="#s5"><span class="num">5.</span> Los campos de Sparrow</a></li>
 <li><a href="#s6"><span class="num">6.</span> Aprovechar huecos</a></li>
 <li><a href="#s7"><span class="num">7.</span> Qué hago si…</a></li>
 <li><a href="#s8"><span class="num">8.</span> Cómo probar un cambio sin perderse</a></li>
@@ -131,7 +131,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <p>Si no querés leer todo, con esto alcanza para sacar un anidado:</p>
 <ol>
 <li><strong>Elegí el motor.</strong> «Sparrow irregular» si las piezas tienen forma (letras, curvas, aros). «Rectangular» si son paneles rectos o si querés una respuesta al instante.</li>
-<li><strong>Dejá los cuatro campos de Sparrow como vienen.</strong> Están pensados para un primer intento.</li>
+<li><strong>Dejá los campos de Sparrow como vienen.</strong> Están pensados para un primer intento.</li>
 <li><strong>Revisá kerf, margen de borde y separación.</strong> Tienen que ser los de la máquina y el material que vas a cortar.</li>
 <li><strong>Apretá «Anidar» y esperá.</strong> Con Sparrow puede tardar hasta el tiempo máximo que figura en la pantalla.</li>
 <li><strong>Mirá el resultado en el historial:</strong> cuántas chapas usó y qué porcentaje aprovechó.</li>
@@ -209,6 +209,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <li><strong>El programa hace hasta tres pasadas</strong> y se queda con la mejor. Cada pasada usa una semilla distinta.</li>
 <li><strong>«La mejor» es la que usa menos chapas.</strong> Si empatan, gana la que deja los retazos más grandes.</li>
 </ul>
+<p>Al terminar cada pasada, si la casilla «Vaciar chapas» está marcada, el programa usa el tiempo que sobra para intentar vaciar las chapas que quedaron a medio llenar (sección 5).</p>
 <p>Sparrow busca probando, y corta cuando se le acaba el tiempo. No garantiza el mejor acomodo posible: da el mejor que encontró.</p>
 <h2 id="s3"><span class="num">3.</span> Los parámetros de corte</h2>
 <p>Son los cuatro campos que están debajo del motor. Vienen cargados con los valores del material del grupo.</p>
@@ -395,9 +396,9 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 </tr>
 </tbody>
 </table></div>
-<p>Cuando elegís Rectangular, los cuatro campos de Sparrow desaparecen de la pantalla: no se usan.</p>
+<p>Cuando elegís Rectangular, los campos de Sparrow desaparecen de la pantalla: no se usan.</p>
 <p>Ninguno de los dos motores mete piezas adentro de los agujeros de otras por su cuenta. Para eso está la casilla «Aprovechar huecos» (sección 6).</p>
-<h2 id="s5"><span class="num">5.</span> Los cuatro campos de Sparrow</h2>
+<h2 id="s5"><span class="num">5.</span> Los campos de Sparrow</h2>
 <h3 id="semilla">Semilla</h3>
 <p>Sparrow acomoda probando, y esas pruebas las elige con azar. La semilla es el número que fija ese azar: con la misma semilla recorre el mismo camino, y con otra semilla recorre uno distinto.</p>
 <figure>
@@ -437,7 +438,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <ul>
 <li><strong>No hay semillas mejores que otras.</strong> No se puede saber de antemano cuál va a dar el mejor acomodo: hay que probar.</li>
 <li><strong>La misma semilla no asegura el mismo resultado.</strong> Sparrow corta por tiempo. Si la computadora está ocupada, llega menos lejos por el mismo camino.</li>
-<li><strong>El programa ya prueba tres por su cuenta:</strong> la que pusiste y dos más que calcula a partir de esa.</li>
+<li><strong>El programa prueba hasta tres por su cuenta:</strong> la que pusiste y dos más que calcula a partir de esa, mientras le quede tiempo.</li>
 <li><strong>Cuándo tocarla:</strong> cuando el resultado quedó cerca de ahorrar una chapa, por ejemplo con una chapa casi vacía. Probá dos o tres números distintos y compará en el historial.</li>
 </ul>
 <h3 id="busqueda-por-chapa-s">Búsqueda por chapa (s)</h3>
@@ -495,7 +496,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 </figure>
 <p>Una cuenta gruesa para saber si alcanza: los segundos de búsqueda, por las chapas que esperás usar, por las tres pasadas. La cuenta real da un poco más, porque comprobar cada resultado también lleva tiempo.</p>
 <ul>
-<li><strong>Si lo subís,</strong> el programa tiene más margen para terminar sus pasadas. Hoy, si termina antes, no espera al tope.</li>
+<li><strong>Si lo subís,</strong> el programa tiene más margen para terminar sus pasadas y para vaciar chapas. Con «Vaciar chapas» marcada usa casi siempre todo el tiempo; sin marcar, si termina antes, no espera al tope.</li>
 <li><strong>Si lo bajás demasiado,</strong> puede no alcanzar ni para una pasada. En ese caso el programa da error y no guarda nada.</li>
 <li><strong>Cuándo tocarlo:</strong> cuando el trabajo tiene muchas piezas o muchas chapas y aparece el aviso de que se alcanzó el límite.</li>
 </ul>
@@ -538,6 +539,15 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <li><strong>Si la subís,</strong> la búsqueda es más liviana, pero cada pieza reserva un poco más de lugar del que necesita.</li>
 <li><strong>Lo que no cambia:</strong> el resultado se comprueba con el contorno real y el archivo de corte sale con el contorno real. Si la pieza suavizada no entrara en la chapa, el programa usa la original.</li>
 <li><strong>Cuándo tocarla:</strong> con piezas de curvas muy detalladas, si la búsqueda rinde poco. Todavía no medimos cuánto ayuda en trabajos reales: si la cambiás, anotá qué pasó.</li>
+</ul>
+<h3 id="vaciar-chapas">Vaciar chapas</h3>
+<p>Es la casilla que está al lado de «Simplificación». Viene marcada.</p>
+<p>Cuando el programa corta la franja en chapas, las últimas suelen quedar a medio llenar. Con la casilla marcada, usa el tiempo que sobra del máximo para intentar vaciarlas: toma la chapa con menos material y prueba pasar sus piezas a las otras, de a una. Si todas encuentran lugar, hay una chapa menos y lo intenta con la siguiente. Si alguna no entra, esa chapa queda como estaba.</p>
+<ul>
+<li><strong>Lo que no cambia:</strong> parte del anidado que ya estaba y solo lo reemplaza por uno con menos chapas, comprobado entero. No puede dejarlo peor.</li>
+<li><strong>Lo que cuesta:</strong> tiempo. Con la casilla marcada el anidado usa casi siempre todo el tiempo máximo.</li>
+<li><strong>Cuándo ayuda:</strong> cuando las últimas chapas quedan con pocas piezas sueltas. En los dos trabajos en que lo medimos ahorró una chapa en la mayoría de las corridas (de 6 a 5 en uno, de 19 a 18 en el otro) y nunca dio más chapas que sin marcar.</li>
+<li><strong>Cuándo desmarcarla:</strong> cuando necesitás el resultado antes, o para comparar contra el reparto sin este paso.</li>
 </ul>
 <h2 id="s6"><span class="num">6.</span> Aprovechar huecos</h2>
 <p>Es la casilla que está al lado del botón «Anidar». Funciona con los dos motores.</p>
@@ -583,7 +593,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 </tr>
 <tr>
 <td>Quiero ver si baja una chapa</td>
-<td>Motor Sparrow, dos o tres semillas distintas, y «Aprovechar huecos» si hay piezas con agujeros.</td>
+<td>Motor Sparrow con «Vaciar chapas» marcada, dos o tres semillas distintas, y «Aprovechar huecos» si hay piezas con agujeros.</td>
 </tr>
 <tr>
 <td>Aparece «Se alcanzó el límite de búsqueda»</td>
@@ -603,14 +613,14 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 </tr>
 <tr>
 <td>Tarda demasiado</td>
-<td>Apretá «Cancelar» y bajá el tiempo máximo total.</td>
+<td>Apretá «Cancelar» y bajá el tiempo máximo total, o desmarcá «Vaciar chapas».</td>
 </tr>
 </tbody>
 </table></div>
 <p>El programa nunca deja piezas afuera en silencio. Si algo no entra o no se pudo comprobar, avisa y no guarda un anidado a medias.</p>
 <h2 id="s8"><span class="num">8.</span> Cómo probar un cambio sin perderse</h2>
 <p>El historial de cada grupo guarda todos los anidados, con el motor, la semilla, el tiempo que tardó, las chapas y el aprovechamiento. Desde ahí se puede ver cada uno, marcar uno como definitivo o borrarlo.</p>
-<p>El historial <strong>no muestra</strong> la búsqueda por chapa, el tiempo máximo, la simplificación ni si estaba marcado «Aprovechar huecos». Si vas a comparar, anotalos aparte. Esta tabla sirve:</p>
+<p>El historial <strong>no muestra</strong> la búsqueda por chapa, el tiempo máximo, la simplificación ni si estaban marcadas «Vaciar chapas» y «Aprovechar huecos». Si vas a comparar, anotalos aparte. Esta tabla sirve:</p>
 <div class="tabla ancha"><table>
 <thead>
 <tr>
@@ -620,6 +630,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <th>Búsqueda</th>
 <th>Tiempo máx.</th>
 <th>Simplif.</th>
+<th>Vaciar</th>
 <th>Huecos</th>
 <th>Chapas</th>
 <th>Aprov.</th>
@@ -629,6 +640,7 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <tbody>
 <tr>
 <td>#…</td>
+<td></td>
 <td></td>
 <td></td>
 <td></td>
@@ -651,9 +663,8 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <ul>
 <li><strong>Las tres pasadas.</strong> La cantidad está fija.</li>
 <li><strong>Los hilos del procesador</strong> que usa Sparrow. Están fijos en dos.</li>
-<li><strong>La comparación de formatos</strong>, en la pestaña Grupos, tiene los mismos cuatro campos de Sparrow. Ahí el tiempo máximo vale para cada formato que se compara, no para el total.</li>
+<li><strong>La comparación de formatos</strong>, en la pestaña Grupos, tiene los mismos campos de Sparrow, con su casilla «Vaciar chapas». Ahí el tiempo máximo vale para cada formato que se compara, no para el total.</li>
 </ul>
-<p>Está planificada una etapa nueva que usa el tiempo que sobra para intentar vaciar la chapa menos cargada, repartiendo sus piezas en las demás. Todavía no está en la aplicación. Cuando esté, esta guía se actualiza.</p>
 <h2 id="s10"><span class="num">10.</span> Los valores con los que viene la pantalla</h2>
 <p>Este es el único lugar de la guía donde están los números. Si cambian en la aplicación, se corrigen acá.</p>
 <div class="tabla"><table>
@@ -694,6 +705,12 @@ nav a:hover { color: var(--verde-oscuro); text-decoration: underline; }
 <td>Simplificación</td>
 <td>0,3 mm</td>
 <td>0 a 2 mm</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Vaciar chapas</td>
+<td>marcada</td>
+<td>marcada o sin marcar</td>
 <td>—</td>
 </tr>
 <tr>

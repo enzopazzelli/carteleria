@@ -6,7 +6,7 @@
 >
 > Índice del proyecto: [`README.md`](../../README.md) · [`REGISTRO.md`](../REGISTRO.md) · la versión técnica de este tema: [`GUIA-SPARROW-PRUEBAS.md`](../GUIA-SPARROW-PRUEBAS.md)
 >
-> **Versión:** 1.0 · **Fecha:** 2026-10-09
+> **Versión:** 1.1 · **Fecha:** 2026-10-10
 
 ---
 
@@ -15,7 +15,7 @@
 Si no querés leer todo, con esto alcanza para sacar un anidado:
 
 1. **Elegí el motor.** «Sparrow irregular» si las piezas tienen forma (letras, curvas, aros). «Rectangular» si son paneles rectos o si querés una respuesta al instante.
-2. **Dejá los cuatro campos de Sparrow como vienen.** Están pensados para un primer intento.
+2. **Dejá los campos de Sparrow como vienen.** Están pensados para un primer intento.
 3. **Revisá kerf, margen de borde y separación.** Tienen que ser los de la máquina y el material que vas a cortar.
 4. **Apretá «Anidar» y esperá.** Con Sparrow puede tardar hasta el tiempo máximo que figura en la pantalla.
 5. **Mirá el resultado en el historial:** cuántas chapas usó y qué porcentaje aprovechó.
@@ -42,6 +42,8 @@ De acá salen tres cosas que explican el resto de la guía:
 - **Hay una búsqueda por cada chapa.** Por eso el campo se llama «Búsqueda por chapa».
 - **El programa hace hasta tres pasadas** y se queda con la mejor. Cada pasada usa una semilla distinta.
 - **«La mejor» es la que usa menos chapas.** Si empatan, gana la que deja los retazos más grandes.
+
+Al terminar cada pasada, si la casilla «Vaciar chapas» está marcada, el programa usa el tiempo que sobra para intentar vaciar las chapas que quedaron a medio llenar (sección 5).
 
 Sparrow busca probando, y corta cuando se le acaba el tiempo. No garantiza el mejor acomodo posible: da el mejor que encontró.
 
@@ -109,13 +111,13 @@ Los valores con los que viene cada material son provisorios hasta confirmarlos c
 | Da siempre lo mismo | Sí | No siempre: ver «Semilla» |
 | Para qué conviene | Paneles rectos, o una primera idea rápida | Letras, curvas y formas que encastran |
 
-Cuando elegís Rectangular, los cuatro campos de Sparrow desaparecen de la pantalla: no se usan.
+Cuando elegís Rectangular, los campos de Sparrow desaparecen de la pantalla: no se usan.
 
 Ninguno de los dos motores mete piezas adentro de los agujeros de otras por su cuenta. Para eso está la casilla «Aprovechar huecos» (sección 6).
 
 ---
 
-## 5. Los cuatro campos de Sparrow
+## 5. Los campos de Sparrow
 
 ### Semilla
 
@@ -125,7 +127,7 @@ Sparrow acomoda probando, y esas pruebas las elige con azar. La semilla es el n�
 
 - **No hay semillas mejores que otras.** No se puede saber de antemano cuál va a dar el mejor acomodo: hay que probar.
 - **La misma semilla no asegura el mismo resultado.** Sparrow corta por tiempo. Si la computadora está ocupada, llega menos lejos por el mismo camino.
-- **El programa ya prueba tres por su cuenta:** la que pusiste y dos más que calcula a partir de esa.
+- **El programa prueba hasta tres por su cuenta:** la que pusiste y dos más que calcula a partir de esa, mientras le quede tiempo.
 - **Cuándo tocarla:** cuando el resultado quedó cerca de ahorrar una chapa, por ejemplo con una chapa casi vacía. Probá dos o tres números distintos y compará en el historial.
 
 ### Búsqueda por chapa (s)
@@ -144,7 +146,7 @@ Es el tope de todo el anidado. Cuando se cumple, el programa corta y se queda co
 
 Una cuenta gruesa para saber si alcanza: los segundos de búsqueda, por las chapas que esperás usar, por las tres pasadas. La cuenta real da un poco más, porque comprobar cada resultado también lleva tiempo.
 
-- **Si lo subís,** el programa tiene más margen para terminar sus pasadas. Hoy, si termina antes, no espera al tope.
+- **Si lo subís,** el programa tiene más margen para terminar sus pasadas y para vaciar chapas. Con «Vaciar chapas» marcada usa casi siempre todo el tiempo; sin marcar, si termina antes, no espera al tope.
 - **Si lo bajás demasiado,** puede no alcanzar ni para una pasada. En ese caso el programa da error y no guarda nada.
 - **Cuándo tocarlo:** cuando el trabajo tiene muchas piezas o muchas chapas y aparece el aviso de que se alcanzó el límite.
 
@@ -158,6 +160,17 @@ Antes de buscar, el programa puede suavizar el contorno de cada pieza: le saca p
 - **Si la subís,** la búsqueda es más liviana, pero cada pieza reserva un poco más de lugar del que necesita.
 - **Lo que no cambia:** el resultado se comprueba con el contorno real y el archivo de corte sale con el contorno real. Si la pieza suavizada no entrara en la chapa, el programa usa la original.
 - **Cuándo tocarla:** con piezas de curvas muy detalladas, si la búsqueda rinde poco. Todavía no medimos cuánto ayuda en trabajos reales: si la cambiás, anotá qué pasó.
+
+### Vaciar chapas
+
+Es la casilla que está al lado de «Simplificación». Viene marcada.
+
+Cuando el programa corta la franja en chapas, las últimas suelen quedar a medio llenar. Con la casilla marcada, usa el tiempo que sobra del máximo para intentar vaciarlas: toma la chapa con menos material y prueba pasar sus piezas a las otras, de a una. Si todas encuentran lugar, hay una chapa menos y lo intenta con la siguiente. Si alguna no entra, esa chapa queda como estaba.
+
+- **Lo que no cambia:** parte del anidado que ya estaba y solo lo reemplaza por uno con menos chapas, comprobado entero. No puede dejarlo peor.
+- **Lo que cuesta:** tiempo. Con la casilla marcada el anidado usa casi siempre todo el tiempo máximo.
+- **Cuándo ayuda:** cuando las últimas chapas quedan con pocas piezas sueltas. En los dos trabajos en que lo medimos ahorró una chapa en la mayoría de las corridas (de 6 a 5 en uno, de 19 a 18 en el otro) y nunca dio más chapas que sin marcar.
+- **Cuándo desmarcarla:** cuando necesitás el resultado antes, o para comparar contra el reparto sin este paso.
 
 ---
 
@@ -179,12 +192,12 @@ Cuando está marcada, el programa hace un paso más al terminar el anidado: busc
 | Lo que pasa | Qué probar |
 |---|---|
 | Necesito una respuesta ya | Motor Rectangular. |
-| Quiero ver si baja una chapa | Motor Sparrow, dos o tres semillas distintas, y «Aprovechar huecos» si hay piezas con agujeros. |
+| Quiero ver si baja una chapa | Motor Sparrow con «Vaciar chapas» marcada, dos o tres semillas distintas, y «Aprovechar huecos» si hay piezas con agujeros. |
 | Aparece «Se alcanzó el límite de búsqueda» | El resultado está completo y vale. Si querés darle más margen, subí el tiempo máximo total. |
 | Aparece «Sparrow excedió el tiempo máximo; no se guardó un plano parcial» | No alcanzó el tiempo ni para una pasada. Subí el tiempo máximo total o bajá la búsqueda por chapa. |
 | Aparece «Piezas que no entran con el kerf y margen actuales» | Esa pieza no entra en el área útil de la chapa. Usá una chapa más grande, seccioná la pieza o revisá el margen de borde. |
 | Anidé dos veces igual y dio distinto | Es normal con Sparrow. Comparalos en el historial y marcá como definitivo el que prefieras. |
-| Tarda demasiado | Apretá «Cancelar» y bajá el tiempo máximo total. |
+| Tarda demasiado | Apretá «Cancelar» y bajá el tiempo máximo total, o desmarcá «Vaciar chapas». |
 
 El programa nunca deja piezas afuera en silencio. Si algo no entra o no se pudo comprobar, avisa y no guarda un anidado a medias.
 
@@ -194,11 +207,11 @@ El programa nunca deja piezas afuera en silencio. Si algo no entra o no se pudo 
 
 El historial de cada grupo guarda todos los anidados, con el motor, la semilla, el tiempo que tardó, las chapas y el aprovechamiento. Desde ahí se puede ver cada uno, marcar uno como definitivo o borrarlo.
 
-El historial **no muestra** la búsqueda por chapa, el tiempo máximo, la simplificación ni si estaba marcado «Aprovechar huecos». Si vas a comparar, anotalos aparte. Esta tabla sirve:
+El historial **no muestra** la búsqueda por chapa, el tiempo máximo, la simplificación ni si estaban marcadas «Vaciar chapas» y «Aprovechar huecos». Si vas a comparar, anotalos aparte. Esta tabla sirve:
 
-| Anidado | Motor | Semilla | Búsqueda | Tiempo máx. | Simplif. | Huecos | Chapas | Aprov. | Tardó |
-|---|---|---|---|---|---|---|---|---|---|
-| #… | | | | | | | | | |
+| Anidado | Motor | Semilla | Búsqueda | Tiempo máx. | Simplif. | Vaciar | Huecos | Chapas | Aprov. | Tardó |
+|---|---|---|---|---|---|---|---|---|---|---|
+| #… | | | | | | | | | | |
 
 Tres cuidados para que la comparación valga:
 
@@ -212,9 +225,7 @@ Tres cuidados para que la comparación valga:
 
 - **Las tres pasadas.** La cantidad está fija.
 - **Los hilos del procesador** que usa Sparrow. Están fijos en dos.
-- **La comparación de formatos**, en la pestaña Grupos, tiene los mismos cuatro campos de Sparrow. Ahí el tiempo máximo vale para cada formato que se compara, no para el total.
-
-Está planificada una etapa nueva que usa el tiempo que sobra para intentar vaciar la chapa menos cargada, repartiendo sus piezas en las demás. Todavía no está en la aplicación. Cuando esté, esta guía se actualiza.
+- **La comparación de formatos**, en la pestaña Grupos, tiene los mismos campos de Sparrow, con su casilla «Vaciar chapas». Ahí el tiempo máximo vale para cada formato que se compara, no para el total.
 
 ---
 
@@ -229,6 +240,7 @@ Este es el único lugar de la guía donde están los números. Si cambian en la 
 | Búsqueda por chapa | 2 s | 1 a 30 s | — |
 | Tiempo máximo total | 240 s | 5 a 300 s | `PAR-09` |
 | Simplificación | 0,3 mm | 0 a 2 mm | — |
+| Vaciar chapas | marcada | marcada o sin marcar | — |
 | Aprovechar huecos | sin marcar | marcada o sin marcar | — |
 | Kerf | el del material | — | `PAR-01` |
 | Margen de borde | el del material | — | `PAR-02` |
