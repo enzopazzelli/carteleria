@@ -67,3 +67,31 @@ def test_huecos_superpuestos_se_normalizan_sin_omitir_piezas():
     assert entry['normalizadas']==['1']
     assert len(entry['items'])==2
     assert len(g['1'].agujeros_local_mm)==2
+
+
+from app.services.nesting import sparrow_worker
+
+
+def entrada_de_cuadrados(cantidad,lado=40,**opciones):
+    """`cantidad` cuadrados iguales para una chapa de 100 x 100 con kerf 2:
+    de 40 entran cuatro por chapa; de 60, uno."""
+    piezas=[Pieza('1',D(lado),D(lado),cantidad)]
+    g={'1':GeometriaPieza(D(lado),D(lado),[(D(0),D(0)),(D(lado),D(0)),(D(lado),D(lado)),(D(0),D(lado))])}
+    params=ParametrosCorte(D(2),D(0),D(0),RotacionPermitida.LIBRE_0_90)
+    return preparar_entrada(piezas,g,Plancha(D(100),D(100)),params,OpcionesSparrow(segundos_por_busqueda=1,simplificacion_mm=0,**opciones))
+
+
+def test_entra_en_una_chapa_devuelve_posiciones_que_validan():
+    entrada=entrada_de_cuadrados(4)
+    originales,de_busqueda=sparrow_worker.formas(entrada)
+    colocadas=sparrow_worker.entra_en_una_chapa(['1#0','1#1','1#2','1#3'],originales,de_busqueda,entrada)
+    assert colocadas is not None
+    result=convertir_y_validar(entrada,[{**q,'sheet':0} for q in colocadas])
+    assert result.planchas_usadas==1
+    assert len(result.posiciones)==4
+
+
+def test_entra_en_una_chapa_dice_que_no_si_no_caben():
+    entrada=entrada_de_cuadrados(2,lado=60)
+    originales,de_busqueda=sparrow_worker.formas(entrada)
+    assert sparrow_worker.entra_en_una_chapa(['1#0','1#1'],originales,de_busqueda,entrada) is None
