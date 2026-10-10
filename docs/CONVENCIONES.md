@@ -58,7 +58,7 @@ op.bulk_insert(parametros_corte, [
 
 ### Lo mismo aplica a la documentación
 
-Si `EPICA.md` dice "timeout de 120 s" y `BACKLOG.md` también, el día que cambie hay que acordarse de los dos. Por eso los documentos citan **`PAR-09`**, no el número. El único lugar donde está el `120` es la tabla de `REGISTRO.md`.
+Si `EPICA.md` dice "timeout de 240 s" y `BACKLOG.md` también, el día que cambie hay que acordarse de los dos. Por eso los documentos citan **`PAR-09`**, no el número. El único lugar donde está el `240` es la tabla de `REGISTRO.md`.
 
 ### Y a las dudas y supuestos
 

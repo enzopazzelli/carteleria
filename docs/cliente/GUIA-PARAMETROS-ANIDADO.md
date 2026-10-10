@@ -227,7 +227,7 @@ Este es el único lugar de la guía donde están los números. Si cambian en la 
 | Motor | Sparrow irregular (prueba) | Rectangular o Sparrow | — |
 | Semilla | 42 | 0 en adelante | — |
 | Búsqueda por chapa | 2 s | 1 a 30 s | — |
-| Tiempo máximo total | 120 s | 5 a 300 s | `PAR-09` |
+| Tiempo máximo total | 240 s | 5 a 300 s | `PAR-09` |
 | Simplificación | 0,3 mm | 0 a 2 mm | — |
 | Aprovechar huecos | sin marcar | marcada o sin marcar | — |
 | Kerf | el del material | — | `PAR-01` |

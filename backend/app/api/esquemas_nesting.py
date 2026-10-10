@@ -15,7 +15,7 @@ class AnidarCrear(BaseModel):
     motor: Literal["rectpack", "sparrow"] = "rectpack"
     semilla: int = Field(default=42, ge=0, le=2147483647)
     segundos_por_busqueda: int = Field(default=2, ge=1, le=30)
-    tiempo_maximo_s: int = Field(default=120, ge=5, le=300)
+    tiempo_maximo_s: int = Field(default=240, ge=5, le=300)
     workers: int = Field(default=2, ge=1, le=2)
     simplificacion_mm: float = Field(default=0.3, ge=0, le=2)
     intentos: int = Field(default=3, ge=1, le=8)

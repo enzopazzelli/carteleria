@@ -160,7 +160,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const [verEjecucion, setVerEjecucion] = useState<number | undefined>();
   const [semilla, setSemilla] = useState(42);
   const [busqueda, setBusqueda] = useState(2);
-  const [limite, setLimite] = useState(120);
+  const [limite, setLimite] = useState(240);
   const [simplificacion, setSimplificacion] = useState(0.3);
   const [vaciarChapas, setVaciarChapas] = useState(true);
   const opciones = { motor, usar_anidado_en_huecos: usarHuecos, semilla,

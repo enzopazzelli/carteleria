@@ -18,7 +18,7 @@ class ErrorGeometriaSparrow(ValueError):
 class OpcionesSparrow:
     semilla: int = 42
     segundos_por_busqueda: int = 2
-    tiempo_maximo_s: int = 120
+    tiempo_maximo_s: int = 240
     workers: int = 2
     simplificacion_mm: float = 0.3
     intentos: int = 3

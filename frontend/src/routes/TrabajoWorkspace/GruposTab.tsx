@@ -32,7 +32,7 @@ export default function GruposTab() {
   const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
   const [semilla, setSemilla] = useState(42);
   const [busqueda, setBusqueda] = useState(2);
-  const [limite, setLimite] = useState(120);
+  const [limite, setLimite] = useState(240);
   const [simplificacion, setSimplificacion] = useState(0.3);
   const [vaciarChapas, setVaciarChapas] = useState(true);
   const [error, setError] = useState<string | null>(null);
