@@ -80,16 +80,24 @@ def puntaje(placed, data):
     return len(bounds),sum((b[2]-b[0])*(b[3]-b[1]) for b in bounds.values())
 
 
+def por_chapa(placed):
+    """Las colocaciones agrupadas por chapa y sin `sheet`, como las recibe
+    `vaciar_chapas`."""
+    chapas={}
+    for q in placed:chapas.setdefault(q['sheet'],[]).append({k:v for k,v in q.items() if k!='sheet'})
+    return [chapas[s] for s in sorted(chapas)]
+
 def resolver(data, salida=None):
     from .sparrow import convertir_y_validar
-    inicio=time.monotonic(); best=None; score=None
+    from .sparrow_reparto import vaciar_chapas
+    opts=data['options']
+    inicio=time.monotonic(); best=None; score=None; duracion=0
+    limite=inicio+opts['tiempo_maximo_s']-1
     # Cota física por área exterior: Sparrow reserva las siluetas completas.
     area=sum(Polygon(p['shell']).area for p in data['items'])
     minimo=max(1,math.ceil(area/(data['width']*data['height'])))
-    for intento in range(data['options'].get('intentos',3)):
-        if intento and time.monotonic()-inicio >= data['options']['tiempo_maximo_s']-1: break
-        prueba={**data,'options':{**data['options'],'semilla':(data['options']['semilla']+104729*intento)%2147483648}}
-        candidato=resolver_una_pasada(prueba)
+    def considerar(candidato):
+        nonlocal best,score
         convertir_y_validar(data,candidato)  # Nunca guardar demanda parcial o colocaciones inválidas.
         rank=puntaje(candidato,data)
         if score is None or rank<score:
@@ -97,7 +105,30 @@ def resolver(data, salida=None):
             if salida:
                 temporal=salida.with_suffix('.tmp')
                 temporal.write_text(json.dumps(best),encoding='utf8');temporal.replace(salida)
+    for intento in range(opts.get('intentos',3)):
+        # No empezar una pasada que no va a terminar antes del límite.
+        if intento and time.monotonic()+duracion>=limite: break
+        prueba={**data,'options':{**opts,'semilla':(opts['semilla']+104729*intento)%2147483648}}
+        t0=time.monotonic();candidato=resolver_una_pasada(prueba);duracion=time.monotonic()-t0
+        considerar(candidato)
         if score[0]==minimo: break
+        if opts.get('vaciar_chapas',True):
+            originals,shapes=formas(prueba);reserva=data['gap']/2
+            try:
+                for chapas in vaciar_chapas(
+                    por_chapa(candidato),
+                    lambda k:shapes[k].area,
+                    (data['width']+2*reserva)*(data['height']+2*reserva),
+                    lambda ids:entra_en_una_chapa(ids,originals,shapes,prueba),
+                    lambda:time.monotonic()+opts['segundos_por_busqueda']<limite,
+                ):
+                    considerar([{**q,'sheet':s} for s,chapa in enumerate(chapas) for q in chapa])
+                    if score[0]==minimo: break
+            except Exception as error:
+                # La etapa es una mejora: si falla o entrega algo que no
+                # valida, vale el mejor resultado ya guardado.
+                print('vaciar_chapas:',error,file=sys.stderr)
+            if score[0]==minimo: break
     return best
 
 if __name__=='__main__':

@@ -95,3 +95,47 @@ def test_entra_en_una_chapa_dice_que_no_si_no_caben():
     entrada=entrada_de_cuadrados(2,lado=60)
     originales,de_busqueda=sparrow_worker.formas(entrada)
     assert sparrow_worker.entra_en_una_chapa(['1#0','1#1'],originales,de_busqueda,entrada) is None
+
+
+def una_por_chapa(data):
+    """Un punto de partida malo a propósito: cada pieza sola en su chapa."""
+    return [{'id':p['id'],'sheet':n,'rotation':0,'tx':data['borde'],'ty':data['borde']} for n,p in enumerate(data['items'])]
+
+def chapas_usadas(colocadas):
+    return len({q['sheet'] for q in colocadas})
+
+
+def test_resolver_vacia_las_chapas_que_dejo_la_primera_etapa(monkeypatch):
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    colocadas=sparrow_worker.resolver(entrada)
+    assert convertir_y_validar(entrada,colocadas).planchas_usadas==1
+
+
+def test_resolver_con_la_etapa_apagada_devuelve_la_primera(monkeypatch):
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60,vaciar_chapas=False)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    assert chapas_usadas(sparrow_worker.resolver(entrada))==4
+
+
+def test_resolver_sin_tiempo_para_consultar_devuelve_la_primera(monkeypatch):
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=1)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    assert chapas_usadas(sparrow_worker.resolver(entrada))==4
+
+
+def encimadas(ids,originals,shapes,data):
+    """Todas las piezas en el mismo lugar: no valida."""
+    return [{'id':k,'rotation':0,'tx':data['borde'],'ty':data['borde']} for k in ids]
+
+def rota(ids,originals,shapes,data):
+    raise RuntimeError('falla de prueba')
+
+@pytest.mark.parametrize('consulta',[encimadas,rota])
+def test_un_reparto_que_falla_no_pierde_la_primera_etapa(monkeypatch,consulta):
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    monkeypatch.setattr(sparrow_worker,'entra_en_una_chapa',consulta)
+    colocadas=sparrow_worker.resolver(entrada)
+    assert chapas_usadas(colocadas)==4
+    convertir_y_validar(entrada,colocadas)

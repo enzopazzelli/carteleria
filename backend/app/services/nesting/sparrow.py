@@ -22,6 +22,9 @@ class OpcionesSparrow:
     workers: int = 2
     simplificacion_mm: float = 0.3
     intentos: int = 3
+    #: Segunda etapa (`sparrow_reparto.py`): vaciar chapas repartiendo sus
+    #: piezas en las demás, con el tiempo que sobra de `tiempo_maximo_s`.
+    vaciar_chapas: bool = True
 
 def _area_util(plancha, params):
     borde = float(params.margen_borde_mm + params.kerf_mm / 2)
