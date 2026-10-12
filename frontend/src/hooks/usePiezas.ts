@@ -16,8 +16,8 @@ export function usePiezas(trabajoId: number) {
 export function useSubirDxf(trabajoId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ archivo, escalaAMm }: { archivo: File; escalaAMm: string }) =>
-      subirDxf(trabajoId, archivo, escalaAMm),
+    mutationFn: ({ archivo, escalaAMm, unir }: { archivo: File; escalaAMm: string; unir: boolean }) =>
+      subirDxf(trabajoId, archivo, escalaAMm, unir),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
   });
 }

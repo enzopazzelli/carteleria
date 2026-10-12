@@ -37,7 +37,9 @@ export function listarGrupos(trabajoId: number): Promise<GrupoDeCorte[]> {
   return apiGet<GrupoDeCorte[]>(`/trabajos/${trabajoId}/grupos`);
 }
 
-export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string): Promise<{
+/** `unir`: cargar con las formas que se pisan vueltas una sola pieza,
+ * como se vio en la lectura (`leerDxf`). */
+export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string, unir: boolean): Promise<{
   trabajo: unknown;
   piezas_creadas: number;
   contornos_no_cerrados: number;
@@ -47,6 +49,7 @@ export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string): P
   const formData = new FormData();
   formData.append("archivo", archivo);
   formData.append("escala_a_mm", escalaAMm);
+  formData.append("unir", unir ? "true" : "false");
   return apiPostForm(`/trabajos/${trabajoId}/dxf`, formData);
 }
 
