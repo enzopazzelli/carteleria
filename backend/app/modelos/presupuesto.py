@@ -84,6 +84,11 @@ class Presupuesto(Base):
     #: del margen, este default es un parámetro de sistema ya acordado,
     #: no un número inventado.
     iva_pct: Mapped[Decimal | None] = mapped_column(Milimetros(), default=Decimal("21"))
+    #: El total final, con IVA, escrito a mano (`docs/plan/1.3-pdf-del-
+    #: presupuesto/diseno.md §5`). `None` = el total sale de la suma de
+    #: los ítems más IVA. Con un valor, todos los ítems se ajustan para
+    #: sumar ese total; lo que se escribió a mano en cada línea no se pisa.
+    total_fijado: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
 
     cliente: Mapped[Cliente] = relationship(back_populates="presupuestos")
     lineas: Mapped[list[LineaCosto]] = relationship(
@@ -151,5 +156,12 @@ class LineaCosto(Base):
     valor_override: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
     override_por: Mapped[str | None] = mapped_column(String(120), default=None)
     override_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    #: Lo que lee el cliente en el presupuesto (`diseno.md §5` de 1.3).
+    #: Son una capa encima del costo, igual que el override: `None` usa
+    #: la descripción de la línea y el costo más el margen. El costo de
+    #: la línea no cambia por ninguno de los dos.
+    texto_cliente: Mapped[str | None] = mapped_column(String(300), default=None)
+    #: Sin IVA, en la moneda del presupuesto.
+    precio_cliente: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
 
     presupuesto: Mapped[Presupuesto] = relationship(back_populates="lineas")

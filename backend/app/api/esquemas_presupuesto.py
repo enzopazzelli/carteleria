@@ -71,6 +71,7 @@ class PresupuestoLeer(BaseModel):
     moneda: str
     margen_pct: Decimal | None
     iva_pct: Decimal | None
+    total_fijado: Decimal | None
     creado_en: datetime
     actualizado_en: datetime
 
@@ -97,6 +98,8 @@ class LineaCostoLeer(BaseModel):
     valor_override: Decimal | None
     override_por: str | None
     override_en: datetime | None
+    texto_cliente: str | None
+    precio_cliente: Decimal | None
 
 
 class LineaCostoOverride(BaseModel):
