@@ -8,7 +8,6 @@ API puede todo, igual que el resto de las rutas de este proyecto.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -17,12 +16,14 @@ from sqlalchemy.orm import Session
 
 from ..costeo import resumen_materiales
 from ..modelos.presupuesto import Cliente, LineaCosto, Presupuesto, RubroLineaCosto
+from ..services.presupuesto.totales import Cuenta, calcular
 from .dependencias import obtener_sesion
 from .esquemas_presupuesto import (
     ClienteActualizar,
     ClienteCrear,
     ClienteLeer,
     DesgloseLeer,
+    LineaClienteActualizar,
     LineaCostoActualizar,
     LineaCostoCrear,
     LineaCostoLeer,
@@ -152,6 +153,8 @@ def actualizar_presupuesto(
 ) -> Presupuesto:
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
     valores = datos.model_dump(exclude_unset=True)
+    if "cliente_id" in valores:
+        _cliente_o_404(sesion, valores["cliente_id"])
     if "trabajo_id" in valores and valores["trabajo_id"] is not None:
         _trabajo_o_404(sesion, valores["trabajo_id"])
     for campo, valor in valores.items():
@@ -186,6 +189,7 @@ def duplicar_presupuesto(
         moneda=original.moneda,
         margen_pct=original.margen_pct,
         iva_pct=original.iva_pct,
+        total_fijado=original.total_fijado,
     )
     sesion.add(copia)
     sesion.flush()  # necesita copia.id para las líneas
@@ -206,6 +210,8 @@ def duplicar_presupuesto(
                 valor_override=linea.valor_override,
                 override_por=linea.override_por,
                 override_en=linea.override_en,
+                texto_cliente=linea.texto_cliente,
+                precio_cliente=linea.precio_cliente,
             )
         )
     sesion.commit()
@@ -360,6 +366,21 @@ def aplicar_override(
     return linea
 
 
+@router.patch("/lineas-costo/{linea_id}/cliente", response_model=LineaCostoLeer)
+def actualizar_linea_para_el_cliente(
+    linea_id: int, datos: LineaClienteActualizar, sesion: Session = Depends(obtener_sesion)
+) -> LineaCosto:
+    """El texto y el precio que lee el cliente en esta línea
+    (`docs/plan/1.3-pdf-del-presupuesto/diseno.md §5`) — de cualquier
+    rubro, incluido `MATERIAL`. Son una capa encima del costo, como el
+    override: `valor_calculado` y `valor_override` no se tocan."""
+    linea = _linea_costo_o_404(sesion, linea_id)
+    for campo, valor in datos.model_dump(exclude_unset=True).items():
+        setattr(linea, campo, valor)
+    sesion.commit()
+    return linea
+
+
 # --- Líneas libres (paso 4: `CART-304`/`305`/`306`) -----------------------
 
 
@@ -416,71 +437,33 @@ def eliminar_linea_libre(linea_id: int, sesion: Session = Depends(obtener_sesion
     sesion.commit()
 
 
-# --- Totales: margen, IVA, redondeo único (paso 5: `CART-307`) ------------
-
-#: PAR-16: precisión de redondeo del total. Se aplica una sola vez, al
-#: final — nunca sobre un resultado intermedio que alimente el
-#: siguiente cálculo (3er criterio de CART-307).
-_DOS_DECIMALES = Decimal("0.01")
+# --- Totales (paso 5: `CART-307`) -----------------------------------------
+# La cuenta vive en `services/presupuesto/totales.py`: es la misma para
+# la pantalla y para el PDF.
 
 
-def _redondear(valor: Decimal | None) -> Decimal | None:
-    return valor.quantize(_DOS_DECIMALES) if valor is not None else None
+def _lineas_del_presupuesto(sesion: Session, presupuesto_id: int) -> list[LineaCosto]:
+    consulta = (
+        select(LineaCosto).where(LineaCosto.presupuesto_id == presupuesto_id).order_by(LineaCosto.id)
+    )
+    return list(sesion.execute(consulta).scalars().all())
 
 
-def _calcular_totales(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> TotalesLeer:
-    """Suma por rubro, aplica margen (`PAR-12`) e IVA (`PAR-13`) sobre
-    el costo total, y redondea una sola vez al final.
-
-    Nunca mezcla monedas distintas sin una cotización explícita de por
-    medio (`docs/historico/PLAN-SLICE-COTIZADOR.md`, mismo criterio que
-    `costeo.ResumenMateriales.costo_total_por_moneda`): una línea en
-    otra moneda que la del presupuesto queda afuera de la suma, con su
-    propia advertencia — igual que una línea sin costo calculado ni
-    override. Compartida entre `GET .../totales` y `GET .../desglose`
-    para no calcular el mismo número dos veces de dos formas distintas.
-    """
-    advertencias: list[str] = []
-    subtotales_por_rubro: dict[str, Decimal] = {}
-    costo_total = Decimal(0)
-    for linea in lineas:
-        valor = linea.valor_override if linea.valor_override is not None else linea.valor_calculado
-        if valor is None:
-            advertencias.append(f"«{linea.descripcion}» no tiene costo calculado ni override; no se sumó al total.")
-            continue
-        if linea.moneda != presupuesto.moneda:
-            advertencias.append(
-                f"«{linea.descripcion}» está en {linea.moneda}, el presupuesto es en "
-                f"{presupuesto.moneda}; no se sumó al total."
-            )
-            continue
-        subtotales_por_rubro[linea.rubro] = subtotales_por_rubro.get(linea.rubro, Decimal(0)) + valor
-        costo_total += valor
-
-    monto_margen = precio_venta = monto_iva = total = None
-    if presupuesto.margen_pct is None:
-        advertencias.append("El presupuesto no tiene margen configurado (PAR-12); no se calculó el precio de venta.")
-    else:
-        monto_margen = costo_total * presupuesto.margen_pct / 100
-        precio_venta = costo_total + monto_margen
-        if presupuesto.iva_pct is None:
-            advertencias.append("El presupuesto no tiene IVA configurado; no se calculó el total.")
-        else:
-            monto_iva = precio_venta * presupuesto.iva_pct / 100
-            total = precio_venta + monto_iva
-
+def _totales_leer(presupuesto: Presupuesto, cuenta: Cuenta) -> TotalesLeer:
     return TotalesLeer(
         presupuesto_id=presupuesto.id,
-        moneda=presupuesto.moneda,
-        subtotales_por_rubro={rubro: _redondear(valor) for rubro, valor in subtotales_por_rubro.items()},
-        costo_total=_redondear(costo_total),
-        margen_pct=presupuesto.margen_pct,
-        monto_margen=_redondear(monto_margen),
-        precio_venta=_redondear(precio_venta),
-        iva_pct=presupuesto.iva_pct,
-        monto_iva=_redondear(monto_iva),
-        total=_redondear(total),
-        advertencias=advertencias,
+        moneda=cuenta.moneda,
+        subtotales_por_rubro=cuenta.subtotales_por_rubro,
+        costo_total=cuenta.costo_total,
+        margen_pct=cuenta.margen_pct,
+        monto_margen=cuenta.monto_margen,
+        margen_resultante_pct=cuenta.margen_resultante_pct,
+        precio_venta=cuenta.precio_venta,
+        iva_pct=cuenta.iva_pct,
+        monto_iva=cuenta.monto_iva,
+        total=cuenta.total,
+        total_fijado=cuenta.total_fijado,
+        advertencias=cuenta.advertencias,
     )
 
 
@@ -489,10 +472,7 @@ def obtener_totales(
     presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
 ) -> TotalesLeer:
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
-    lineas = sesion.execute(
-        select(LineaCosto).where(LineaCosto.presupuesto_id == presupuesto_id)
-    ).scalars().all()
-    return _calcular_totales(presupuesto, lineas)
+    return _totales_leer(presupuesto, calcular(presupuesto, _lineas_del_presupuesto(sesion, presupuesto_id)))
 
 
 @router.get("/presupuestos/{presupuesto_id}/desglose", response_model=DesgloseLeer)
@@ -501,11 +481,11 @@ def obtener_desglose(
 ) -> DesgloseLeer:
     """`CART-308`: cliente, líneas agrupadas por rubro (con quiénes
     tienen override — se ve directo en cada línea) y los totales, en
-    una sola respuesta."""
+    una sola respuesta. Más lo que va a leer el cliente en cada ítem y
+    lo que falta para poder sacar el PDF (1.3)."""
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
-    lineas = sesion.execute(
-        select(LineaCosto).where(LineaCosto.presupuesto_id == presupuesto_id).order_by(LineaCosto.id)
-    ).scalars().all()
+    lineas = _lineas_del_presupuesto(sesion, presupuesto_id)
+    cuenta = calcular(presupuesto, lineas)
 
     lineas_por_rubro: dict[str, list[LineaCosto]] = {}
     for linea in lineas:
@@ -515,5 +495,7 @@ def obtener_desglose(
         presupuesto=presupuesto,
         cliente=presupuesto.cliente,
         lineas_por_rubro=lineas_por_rubro,
-        totales=_calcular_totales(presupuesto, lineas),
+        totales=_totales_leer(presupuesto, cuenta),
+        items_cliente=cuenta.items,
+        faltantes=cuenta.faltantes,
     )
