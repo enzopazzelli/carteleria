@@ -250,13 +250,15 @@ def test_subir_dxf_deja_descartado_el_centro_de_una_letra_que_se_corta(cliente, 
     assert piezas[200]["descartada"] is True
 
 
-def test_subir_dxf_no_descarta_lo_de_adentro_de_una_forma_que_no_entra_en_ninguna_chapa(cliente, tmp_path):
-    """Adentro de una forma que no se corta tal cual (un emblema de 3 m
-    que hay que seccionar, un tablero de presentación) puede haber piezas
-    de verdad: lo decide quien revisa las piezas, no la carga."""
+def test_subir_dxf_no_descarta_lo_de_adentro_de_un_rectangulo_que_no_entra_en_ninguna_chapa(cliente, tmp_path):
+    """Un rectángulo que no entra en ninguna chapa es un tablero de
+    presentación o un marco, y adentro puede haber piezas de verdad: lo
+    decide quien revisa las piezas, no la carga. Si no es un rectángulo
+    es una pieza que se secciona, y lo de adentro es su hueco: el test
+    del emblema, al final del archivo."""
     _chapa_en_el_catalogo(cliente)
     trabajo = _crear_trabajo(cliente)
-    contenido = _dxf_bytes(tmp_path, "emblema.dxf", lambda msp: _forma_con_otra_adentro(msp, 3000))
+    contenido = _dxf_bytes(tmp_path, "tablero.dxf", lambda msp: _forma_con_otra_adentro(msp, 3000))
 
     respuesta = _subir(cliente, trabajo["id"], contenido)
 
@@ -398,3 +400,37 @@ def test_actualizar_grupo_borra_parametros_usados_con_null(cliente):
 
     assert respuesta.status_code == 200
     assert respuesta.json()["parametros_usados"] is None
+
+
+# --- Recortes en piezas que no entran en ninguna chapa (2.1a) -----------
+
+
+def _octogono(msp, x, y, lado):
+    """Un cuadrado con las esquinas cortadas a un quinto del lado: no es
+    un rectángulo, que es lo que la unión y la regla de los huecos piden."""
+    c = lado / 5
+    msp.add_lwpolyline(
+        [(x + c, y), (x + lado - c, y), (x + lado, y + c), (x + lado, y + lado - c),
+         (x + lado - c, y + lado), (x + c, y + lado), (x, y + lado - c), (x, y + c)],
+        close=True,
+    )
+
+
+def test_subir_dxf_deja_descartado_el_hueco_de_una_forma_grande_que_no_es_un_rectangulo(cliente, tmp_path):
+    """Un emblema de 3 m no entra en ninguna chapa y se corta seccionado:
+    lo que tiene adentro, de su mismo color, es su hueco."""
+
+    def emblema(msp):
+        _octogono(msp, 0, 0, 3000)
+        msp.add_lwpolyline([(1400, 1400), (1600, 1400), (1600, 1700), (1400, 1700)], close=True)
+
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+
+    respuesta = _subir(cliente, trabajo["id"], _dxf_bytes(tmp_path, "emblema.dxf", emblema))
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert any("1 forma" in aviso and "hueco" in aviso for aviso in respuesta.json()["advertencias"])
+    piezas = {round(Decimal(p["ancho_mm"])): p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()}
+    assert piezas[3000]["descartada"] is False
+    assert piezas[200]["descartada"] is True

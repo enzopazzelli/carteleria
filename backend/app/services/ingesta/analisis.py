@@ -239,6 +239,11 @@ class PiezaConRol:
     gemela_id: str | None = None
     #: Solo para `CONTRAPIEZA`: la pieza cuyo agujero llena.
     madre_id: str | None = None
+    #: Solo para `REFERENCIA`: quedó así por no entrar en ninguna chapa.
+    #: Si además no es un rectángulo, es una pieza que se corta
+    #: seccionada, y lo que tiene adentro puede ser su recorte
+    #: (`_marcar_contrapiezas`).
+    no_entra_en_ninguna_chapa: bool = False
 
 
 def _firma(pieza: PiezaImportada) -> tuple[float, float]:
@@ -355,7 +360,16 @@ def sugerir_roles(
                 continue
         dentro_de_hoja = hoja_de[pieza.id] is not None
         if not dentro_de_hoja and not any(_entra_en_formato(pieza.ancho_mm, pieza.alto_mm, f) for f in formatos):
-            roles.append(PiezaConRol(pieza.id, Rol.REFERENCIA, "no entra en ningún formato: no se corta tal cual"))
+            roles.append(
+                PiezaConRol(
+                    pieza.id,
+                    Rol.REFERENCIA,
+                    "no entra en ningún formato: no se corta tal cual",
+                    # Sin formatos en el catálogo no entra nada, y eso no
+                    # dice nada de la pieza.
+                    no_entra_en_ninguna_chapa=bool(formatos),
+                )
+            )
             continue
         roles.append(PiezaConRol(pieza.id, Rol.CORTAR, "sin otra señal"))
     return _marcar_contrapiezas(_heredar_referencia_de_gemelas(roles, por_id), por_id, hoja_de)
@@ -389,6 +403,12 @@ def _marcar_contrapiezas(
     el recorte de su agujero, su contra-pieza: en una hoja armada siempre,
     y fuera de las hojas solo si tiene el color de su madre.
 
+    «Se corta» incluye a la forma que no entra en ninguna chapa y no es un
+    rectángulo: esa se corta seccionada (un aro de 4,6 m), y sus huecos
+    son huecos igual que los de una letra. Un rectángulo que no entra es
+    un tablero o un marco, y lo que tiene adentro son piezas
+    (`docs/plan/2.1a-lectura-con-imagen/diseno.md §5.1`).
+
     No se mide cuánto llena el agujero. El parser dibuja toda forma
     interior como agujero de su contenedora y además como pieza propia
     (`_clasificar_piezas_y_agujeros` en `dxf.py`), así que toda pieza
@@ -417,9 +437,13 @@ def _marcar_contrapiezas(
             profundidad, actual = profundidad + 1, por_id[actual.contenida_en_id]
         return profundidad
 
+    def _se_corta(pieza_id: str) -> bool:
+        rol = rol_de[pieza_id]
+        return rol.rol is Rol.CORTAR or (rol.no_entra_en_ninguna_chapa and not _es_rectangular(por_id[pieza_id]))
+
     for pieza_id in sorted(rol_de, key=_profundidad):
         madre = rol_de.get(por_id[pieza_id].contenida_en_id or "")
-        if madre is None or rol_de[pieza_id].rol is not Rol.CORTAR or madre.rol is not Rol.CORTAR:
+        if madre is None or not _se_corta(pieza_id) or not _se_corta(madre.pieza_id):
             continue
         color = por_id[pieza_id].color_aci
         en_hoja = hoja_de[pieza_id] is not None
