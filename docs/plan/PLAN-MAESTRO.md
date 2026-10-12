@@ -138,7 +138,7 @@ Los incisos de A3 en `PLAN-RUMBO-ANIDADO-Y-REVISION.md §4` se reparten así:
 
 | Tema | Lado | Por qué |
 |---|---|---|
-| Regla de las islas: una forma que llena el agujero de otra viaja con ella (A3, inciso 0) | El resto, en 2.1 | Vive en el análisis y decide qué piezas existen. Quedó a medio hacer en `backend/app/services/ingesta/analisis.py` |
+| Regla de las islas: una forma que llena el agujero de otra viaja con ella (A3, inciso 0) | El resto, en 2.1 | Vive en el análisis y decide qué piezas existen. Para las letras está construida desde el 2026-10-08: el análisis marca el recorte y la carga lo deja descartado. Para las piezas que no entran en ninguna chapa falta, y es parte de [2.1a](2.1a-lectura-con-imagen/diseno.md) |
 | Alcance «se re-anida / queda como está» (A3, inciso b) | El resto, en 2.1 | Lo muestra y lo corrige la pantalla de revisión |
 | Separar piezas grandes de chicas, colocación directa, chapas con obstáculos e híbrido (A3, incisos a, c, d y e) | El motor | Es estrategia de anidado. El producto no necesita saberlo |
 
@@ -207,7 +207,7 @@ Se detallan cuando les toque, cada una con su diseño.
 
 | Sub-proyecto | Alcance | Historias | Depende de |
 |---|---|---|---|
-| **2.1 Importar y revisar** | El carril B de `PLAN-RUMBO-ANIDADO-Y-REVISION.md §5` (pasos B1 a B6): pantalla de importación, visor con roles y confirmación. Más la regla de las islas, el alcance de cada diseño y la asignación de material | `CART-506`, `CART-507` | `D-13` |
+| **2.1 Importar y revisar** | El carril B de `PLAN-RUMBO-ANIDADO-Y-REVISION.md §5` (pasos B1 a B6): pantalla de importación, visor con roles y confirmación. Más la regla de las islas, el alcance de cada diseño y la asignación de material. Se partió en dos el 2026-10-12: **2.1a**, leer mejor y mostrar el dibujo antes de cargar, con diseño en [`2.1a-lectura-con-imagen/`](2.1a-lectura-con-imagen/diseno.md); y **2.1b**, la pantalla para corregir a mano, todavía sin diseño | `CART-506`, `CART-507` | `D-13` |
 | **2.2 Catálogo y precios** | Precios con vigencia, carga desde la planilla de la empresa, insumos que no son chapa, historial. Completa lo que falta de materiales y parámetros de corte | `CART-101`, `CART-103` a `CART-107` | `D-10` |
 | **2.3 Cotizador completo** | Insumos desde catálogo, mano de obra por etapa, documento interno, PDF completo | `CART-304`, `CART-305`, `CART-309`, `CART-310` | 2.2 |
 | **2.4 Aprobación y envío completos** | Reintentos, respuesta del cliente, vencimientos, congelado con versiones de precio | `CART-401`, `CART-405`, `CART-407`, `CART-408` | 2.2, `D-07`, `D-17` |
