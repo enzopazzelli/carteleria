@@ -1,6 +1,6 @@
 # 2.1a · Lectura del DXF con imagen antes de cargar — diseño
 
-> **Estado:** **diseño, a revisar por Enzo (2026-10-12).** Nada construido. Todavía no tiene `plan.md`.
+> **Estado:** **diseño aprobado por Enzo el 2026-10-12; sin construir.** El plan está en [`plan.md`](plan.md), a revisar. Al escribirlo se precisaron cinco puntos de los §5.1 y §5.2, que ya están en este texto.
 >
 > **De dónde sale.** Enzo eligió seguir con la regla de las islas. Al mirarla resultó que para las letras ya estaba construida (2026-10-07 y 2026-10-08), y que en su trabajo «Complejo» el problema era otro: el aro se lee mal. Enzo explicó cómo se lee, pidió que la solución sirva para próximos diseños sin tocar código cada vez y que la carga muestre una imagen antes de confirmar.
 >
@@ -121,6 +121,7 @@ Hoy una forma es el recorte de un hueco si está adentro de otra **que se corta*
 - También cuenta una forma que **no entra en ninguna chapa**: se va a seccionar.
 - **Salvo que sea un rectángulo** (`PAR-43`): eso es un tablero o un marco, y lo que tiene adentro son piezas.
 - Lo mismo vale para la forma de adentro: que no entre en ninguna chapa no le impide ser un recorte.
+- **Sin chapas en el catálogo la regla no actúa:** ahí no entra nada, y eso no dice nada de la pieza.
 
 Sigue yendo de afuera hacia adentro, así que un recorte no es madre de nadie: la cruz, que está adentro de un hueco, se sigue cortando.
 
@@ -128,11 +129,11 @@ Para esto el análisis tiene que saber **por qué** una forma quedó como refere
 
 ### 5.2 Unir las formas que se pisan
 
-1. **Cuáles se pisan.** Dos formas del mismo color se pisan si comparten más área que `PAR-51` y ninguna está limpia adentro de la otra. «Limpia» quiere decir que sus bordes no se acercan a menos de `PAR-50`. Los rectángulos (`PAR-43`) no participan: son hojas, marcos o tableros. Dos formas sin color conocido cuentan como del mismo color: la persona pidió unir y ve el resultado antes de cargar.
+1. **Cuáles se pisan.** Dos formas del mismo color se pisan si comparten más área que `PAR-51` y ninguna está limpia adentro de la otra. «Limpia» quiere decir que sus bordes no se acercan a menos de `PAR-50`. Los rectángulos (`PAR-43`) no se pisan con nadie: son hojas, marcos o tableros. Adentro de una franja, en cambio, un rectángulo es su borde de adentro como cualquier otra forma: una ventana. Dos formas sin color conocido cuentan como del mismo color: la persona pidió unir y ve el resultado antes de cargar.
 2. **El grupo.** Las formas que se pisan entre sí, más las que tienen limpias adentro.
 3. **Cuerpo y hueco.** Dentro del grupo, de afuera hacia adentro: la primera línea es un borde de afuera, la que tiene limpia adentro es su borde de adentro, la siguiente vuelve a ser un borde de afuera. El cuerpo de cada franja es su borde de afuera menos sus bordes de adentro.
 4. **Unir.** Los cuerpos que se pisan pasan a ser una sola pieza. Un cuerpo que no pisa a ningún otro queda como estaba.
-5. **Lo que sale.** La pieza unida reemplaza a las líneas que la formaban. Cada hueco de la pieza unida pasa a ser una forma propia, que la regla del §5.1 deja descartada. Los huecos se numeran de abajo hacia arriba y de izquierda a derecha, como los tramos del seccionado, para que el número no cambie entre una lectura y otra. Lo que estaba adentro de una línea reemplazada pasa a colgar del hueco que lo contiene.
+5. **Lo que sale.** La pieza unida reemplaza a las líneas que la formaban. Cada hueco suyo que no sea chico pasa a ser además una forma propia, que la regla del §5.1 deja descartada; «chico» es lo mismo que para el lector, que a un agujero de tornillo lo deja solo como agujero. Los agujeros chicos de las líneas unidas se conservan. Una forma de otro color que quedó sobre la pieza unida sigue siendo una pieza y no le abre un hueco. Los huecos se numeran de abajo hacia arriba y de izquierda a derecha, como los tramos del seccionado, para que el número no cambie entre una lectura y otra. Lo que estaba adentro de una línea reemplazada pasa a colgar del hueco que lo contiene.
 
 Lo que no se pisa con nada no cambia: sale igual que hoy.
 
@@ -146,7 +147,7 @@ Un pedido nuevo, `POST /trabajos/{id}/dxf/lectura`, recibe el archivo y la escal
 - De cada lectura: las formas con su contorno y sus huecos en la posición del dibujo, si se cortan o entran descartadas y por qué, los totales y los avisos.
 - «Se corta» es todo lo que no entra descartado, igual que en la carga de hoy: incluye lo que después hay que seccionar.
 
-`POST /trabajos/{id}/dxf`, la carga de hoy, acepta además si hay que unir. Las dos rutas usan la misma función para leer, así que lo que se ve es lo que se carga.
+`POST /trabajos/{id}/dxf`, la carga de hoy, acepta además si hay que unir (el campo `unir`). Las dos rutas usan la misma función para leer, así que lo que se ve es lo que se carga.
 
 ### 5.4 La pantalla
 
