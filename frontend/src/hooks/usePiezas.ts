@@ -3,6 +3,7 @@ import {
   aplicarSeccionado,
   deshacerSeccionado,
   descartarPieza,
+  leerDxf,
   listarPiezas,
   subirDxf,
   type PedidoAplicarSeccionado,
@@ -18,6 +19,14 @@ export function useSubirDxf(trabajoId: number) {
     mutationFn: ({ archivo, escalaAMm }: { archivo: File; escalaAMm: string }) =>
       subirDxf(trabajoId, archivo, escalaAMm),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
+  });
+}
+
+/** No guarda nada en el servidor, así que no hay consulta que refrescar. */
+export function useLeerDxf(trabajoId: number) {
+  return useMutation({
+    mutationFn: ({ archivo, escalaAMm }: { archivo: File; escalaAMm: string }) =>
+      leerDxf(trabajoId, archivo, escalaAMm),
   });
 }
 
