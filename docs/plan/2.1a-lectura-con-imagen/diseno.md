@@ -1,6 +1,6 @@
 # 2.1a · Lectura del DXF con imagen antes de cargar — diseño
 
-> **Estado:** **diseño aprobado por Enzo el 2026-10-12; sin construir.** El plan está en [`plan.md`](plan.md), a revisar. Al escribirlo se precisaron cinco puntos de los §5.1 y §5.2, que ya están en este texto.
+> **Estado:** **construido el 2026-10-12, en la rama `feat/lectura-con-imagen`, a la espera de que Enzo lo fusione.** Lo que el código precisó del diseño está al principio de [`plan.md`](plan.md).
 >
 > **De dónde sale.** Enzo eligió seguir con la regla de las islas. Al mirarla resultó que para las letras ya estaba construida (2026-10-07 y 2026-10-08), y que en su trabajo «Complejo» el problema era otro: el aro se lee mal. Enzo explicó cómo se lee, pidió que la solución sirva para próximos diseños sin tocar código cada vez y que la carga muestre una imagen antes de confirmar.
 >
@@ -60,6 +60,8 @@ El borde y los rayos no están en el grupo. **Las mediciones de 19 y 18 chapas d
 - **La regla de los huecos en piezas grandes no cambia nada en cuatro archivos.** En el `Complejo.dxf` anterior lee bien un aro de 1989 × 2000 que ya viene unido: sus 25 huecos pasan a recorte y la cruz, que hoy sale como recorte por error, vuelve a cortarse. En la Muestra cambia dos formas de ese mismo aro, en el mismo sentido.
 - **Sin unir, esa regla sola no arregla el aro de 4,6 m:** lo lee de otra manera igual de mala (marca la cruz como recorte). Hace falta la unión.
 - **Tiempo:** en el archivo más grande, 4,2 s de lectura y 0,5 s de buscar y unir.
+
+**Con el código construido** las cantidades de la tabla de arriba cambian en dos archivos, porque ahora cuentan los bordes de adentro rectangulares: en `Muestra Vectores.dxf` la unión reemplaza 39 líneas y en `strat.dxf`, 13. La tabla que vale es la de la Tarea 7 de [`plan.md`](plan.md).
 
 ---
 
