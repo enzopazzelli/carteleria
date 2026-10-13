@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** **escrito el 2026-10-12, sin ejecutar.** A revisar por Enzo.
+> **Estado:** **cerrado el 2026-10-12.** Ejecutado ese día, de la Tarea 0 a la 8, y en `main` desde entonces ([PR #18](https://github.com/enzopazzelli/carteleria/pull/18)). Esta carpeta pasó de `docs/plan/` a `docs/historico/`; lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). Las rutas `docs/plan/2.1a-lectura-con-imagen/` que aparecen más abajo son las de cuando se escribió el plan. Lo que se apartó está en «Desvíos», al final.
 >
 > **El código de este plan está probado.** El 2026-10-12 se aplicó, tal como está escrito acá, sobre una copia limpia del repo fuera del repositorio, tarea por tarea. Cada test falló y pasó donde el plan dice. El backend terminó en 462 en verde (423 antes) y el frontend en 56 (40 antes), con `tsc` y `vite build` sin errores. **No se probó la pantalla en el navegador:** es el Step 5 de la Tarea 6.
 
@@ -77,7 +77,7 @@ Las cantidades de la tabla del §2 del diseño salieron de una prueba descartabl
 
 **Files:** ninguno.
 
-- [ ] **Step 1: Pararse en la rama**
+- [x] **Step 1: Pararse en la rama**
 
 ```bash
 git switch feat/lectura-con-imagen
@@ -86,12 +86,12 @@ git status --short
 
 Expected: nada modificado. Puede figurar `?? Presupuesto_Cliente_Carteleria.docx`: es de Enzo, no se toca ni se suma a ningún commit.
 
-- [ ] **Step 2: Confirmar que el backend está en verde**
+- [x] **Step 2: Confirmar que el backend está en verde**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q`
 Expected: `423 passed`. Las tareas siguientes suman tests sobre ese número.
 
-- [ ] **Step 3: Confirmar que el frontend está en verde**
+- [x] **Step 3: Confirmar que el frontend está en verde**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: compila sin errores y `Tests  40 passed (40)`.
@@ -109,7 +109,7 @@ Expected: compila sin errores y `Tests  40 passed (40)`.
 - Consumes: nada de otras tareas.
 - Produces: `PiezaConRol.no_entra_en_ninguna_chapa: bool` (por defecto `False`). `sugerir_roles` conserva su firma. Una forma del mismo color adentro de otra que no entra en ninguna chapa y no es un rectángulo sale con `Rol.CONTRAPIEZA`.
 
-- [ ] **Step 1: Renombrar el test que hoy dice lo contrario**
+- [x] **Step 1: Renombrar el test que hoy dice lo contrario**
 
 En `backend/tests/api/test_rutas_trabajos.py` hay un test que fija que lo de adentro de «un emblema de 3 m» no se descarta. Su dibujo es un cuadrado, así que con la regla nueva sigue pasando: lo que cambia es lo que dice.
 
@@ -145,7 +145,7 @@ por:
     contenido = _dxf_bytes(tmp_path, "tablero.dxf", lambda msp: _forma_con_otra_adentro(msp, 3000))
 ```
 
-- [ ] **Step 2: Agregar los tests del análisis**
+- [x] **Step 2: Agregar los tests del análisis**
 
 Al final de `backend/tests/services/ingesta/test_analisis.py`:
 
@@ -246,7 +246,7 @@ def test_sin_formatos_en_el_catalogo_no_hay_recortes_en_piezas_grandes():
     assert roles["aro"].rol is Rol.REFERENCIA
 ```
 
-- [ ] **Step 3: Agregar el test de la carga**
+- [x] **Step 3: Agregar el test de la carga**
 
 Al final de `backend/tests/api/test_rutas_trabajos.py`:
 
@@ -285,7 +285,7 @@ def test_subir_dxf_deja_descartado_el_hueco_de_una_forma_grande_que_no_es_un_rec
     assert piezas[200]["descartada"] is True
 ```
 
-- [ ] **Step 4: Correr los tests y verlos fallar**
+- [x] **Step 4: Correr los tests y verlos fallar**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q tests/services/ingesta/test_analisis.py tests/api/test_rutas_trabajos.py`
 Expected: `4 failed, 67 passed`. Fallan, con `assert <Rol.CORTAR> is <Rol.CONTRAPIEZA>` o con una pieza sin descartar:
@@ -297,7 +297,7 @@ Expected: `4 failed, 67 passed`. Fallan, con `assert <Rol.CORTAR> is <Rol.CONTRA
 
 Los otros tres tests nuevos del análisis pasan desde ya: fijan lo que **no** tiene que cambiar (el rectángulo, el otro color, el catálogo vacío).
 
-- [ ] **Step 5: Cambiar el análisis**
+- [x] **Step 5: Cambiar el análisis**
 
 En `backend/app/services/ingesta/analisis.py`:
 
@@ -381,17 +381,17 @@ por:
             continue
 ```
 
-- [ ] **Step 6: Correr los tests y verlos pasar**
+- [x] **Step 6: Correr los tests y verlos pasar**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q tests/services/ingesta/test_analisis.py tests/api/test_rutas_trabajos.py`
 Expected: `71 passed`.
 
-- [ ] **Step 7: Correr todo el backend**
+- [x] **Step 7: Correr todo el backend**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q`
 Expected: `430 passed`.
 
-- [ ] **Step 8: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 8: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add backend/app/services/ingesta/analisis.py backend/tests/services/ingesta/test_analisis.py backend/tests/api/test_rutas_trabajos.py
@@ -414,7 +414,7 @@ git commit -m "feat(ingesta): los recortes de huecos tambien en piezas que no en
   - Las constantes `DISTANCIA_PARA_TOCARSE_MM` (`PAR-50`) y `AREA_MINIMA_PARA_PISARSE_MM2` (`PAR-51`).
   - La pieza unida se llama `<id de la línea más grande>/unida`; sus huecos, `<ese mismo id>/hueco1`, `/hueco2`...
 
-- [ ] **Step 1: Escribir los tests**
+- [x] **Step 1: Escribir los tests**
 
 `backend/tests/services/ingesta/test_uniones.py`:
 
@@ -684,12 +684,12 @@ def test_sin_tamano_de_agujero_ningun_hueco_pasa_a_ser_forma_aparte():
     assert uniones[0].huecos == []
 ```
 
-- [ ] **Step 2: Correr los tests y verlos fallar**
+- [x] **Step 2: Correr los tests y verlos fallar**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q tests/services/ingesta/test_uniones.py`
 Expected: `1 error`, con `ModuleNotFoundError: No module named 'app.services.ingesta.uniones'`.
 
-- [ ] **Step 3: Escribir el módulo**
+- [x] **Step 3: Escribir el módulo**
 
 `backend/app/services/ingesta/uniones.py`:
 
@@ -986,17 +986,17 @@ def _con_las_contenedoras_al_dia(
     return resultado
 ```
 
-- [ ] **Step 4: Correr los tests y verlos pasar**
+- [x] **Step 4: Correr los tests y verlos pasar**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q tests/services/ingesta/test_uniones.py`
 Expected: `14 passed`.
 
-- [ ] **Step 5: Correr todo el backend**
+- [x] **Step 5: Correr todo el backend**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q`
 Expected: `444 passed`.
 
-- [ ] **Step 6: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 6: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add backend/app/services/ingesta/uniones.py backend/tests/services/ingesta/test_uniones.py
@@ -1018,7 +1018,7 @@ git commit -m "feat(ingesta): unir las formas que se pisan"
   - `tolerancia_del_dibujo(piezas: list[PiezaImportada], detalle: Decimal) -> float`, en mm. Cero si no hay piezas.
   - `anillo_para_dibujar(anillo: list[tuple[Decimal, Decimal]], tolerancia_mm: float) -> list[list[float]]`.
 
-- [ ] **Step 1: Escribir los tests**
+- [x] **Step 1: Escribir los tests**
 
 `backend/tests/services/ingesta/test_dibujo.py`:
 
@@ -1087,12 +1087,12 @@ def test_sin_piezas_la_tolerancia_es_cero():
     assert tolerancia_del_dibujo([], Decimal(1) / Decimal(4000)) == 0.0
 ```
 
-- [ ] **Step 2: Correr los tests y verlos fallar**
+- [x] **Step 2: Correr los tests y verlos fallar**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q tests/services/ingesta/test_dibujo.py`
 Expected: `1 error`, con `ModuleNotFoundError: No module named 'app.services.ingesta.dibujo'`.
 
-- [ ] **Step 3: Escribir el módulo**
+- [x] **Step 3: Escribir el módulo**
 
 `backend/app/services/ingesta/dibujo.py`:
 
@@ -1140,12 +1140,12 @@ def anillo_para_dibujar(anillo: Anillo, tolerancia_mm: float) -> list[list[float
     return [[x, y] for x, y in simplificado.coords]
 ```
 
-- [ ] **Step 4: Correr los tests y verlos pasar**
+- [x] **Step 4: Correr los tests y verlos pasar**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q tests/services/ingesta/test_dibujo.py`
 Expected: `5 passed`.
 
-- [ ] **Step 5: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 5: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add backend/app/services/ingesta/dibujo.py backend/tests/services/ingesta/test_dibujo.py
@@ -1184,7 +1184,7 @@ git commit -m "feat(ingesta): los contornos de una lectura, achicados para dibuj
     `unida` tiene la misma forma que `sin_unir` y viene solo si `formas_que_se_pisan` es mayor que cero. Los contornos están en la posición del dibujo, en mm.
   - `POST /trabajos/{trabajo_id}/dxf` acepta además el campo de formulario `unir` (`"true"` o `"false"`; por defecto `false`).
 
-- [ ] **Step 1: Agregar los tests**
+- [x] **Step 1: Agregar los tests**
 
 Al final de `backend/tests/api/test_rutas_trabajos.py`. Usan `_octogono`, que quedó en ese archivo desde la Tarea 1:
 
@@ -1375,12 +1375,12 @@ def test_ver_la_lectura_con_una_escala_que_no_es_positiva_da_400(cliente, tmp_pa
     assert "escala" in respuesta.json()["detail"]
 ```
 
-- [ ] **Step 2: Correr los tests y verlos fallar**
+- [x] **Step 2: Correr los tests y verlos fallar**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q tests/api/test_rutas_trabajos.py`
 Expected: `11 failed, 27 passed`. Fallan los once que piden algo a la ruta nueva o esperan los avisos nuevos. Dos tests nuevos pasan desde ya: el del trabajo que no existe, porque una ruta que no existe también da 404, y el de unir un dibujo donde nada se pisa, porque hoy la carga ignora el campo `unir`.
 
-- [ ] **Step 3: Agregar los esquemas**
+- [x] **Step 3: Agregar los esquemas**
 
 En `backend/app/api/esquemas_trabajos.py`:
 
@@ -1432,7 +1432,7 @@ class LecturaDXFLeer(BaseModel):
     unida: LecturaLeer | None
 ```
 
-- [ ] **Step 4: Cambiar las rutas**
+- [x] **Step 4: Cambiar las rutas**
 
 En `backend/app/api/rutas_trabajos.py`, seis cambios:
 
@@ -1778,17 +1778,17 @@ por:
     )
 ```
 
-- [ ] **Step 5: Correr los tests y verlos pasar**
+- [x] **Step 5: Correr los tests y verlos pasar**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q tests/api/test_rutas_trabajos.py`
 Expected: `38 passed`.
 
-- [ ] **Step 6: Correr todo el backend**
+- [x] **Step 6: Correr todo el backend**
 
 Run: `cd backend && CARTELERIA_DATOS="$(mktemp -d)" python -m pytest -q`
 Expected: `462 passed`.
 
-- [ ] **Step 7: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 7: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add backend/app/api/esquemas_trabajos.py backend/app/api/rutas_trabajos.py backend/tests/api/test_rutas_trabajos.py
@@ -1814,7 +1814,7 @@ git commit -m "feat(api): ver como se lee un DXF antes de cargarlo, y cargar uni
 
 Esta tarea solo suma: `subirDxf` y `PiezasTab.tsx` no cambian todavía, así que la app sigue cargando como hoy.
 
-- [ ] **Step 1: Escribir los tests**
+- [x] **Step 1: Escribir los tests**
 
 `frontend/src/components/LecturaDxf/dibujo.test.ts`:
 
@@ -1918,12 +1918,12 @@ describe("esLaLecturaDe", () => {
 });
 ```
 
-- [ ] **Step 2: Correr los tests y verlos fallar**
+- [x] **Step 2: Correr los tests y verlos fallar**
 
 Run: `cd frontend && npm test`
 Expected: `Test Files  1 failed | 5 passed (6)`. El archivo nuevo no arranca: no encuentra `./dibujo`.
 
-- [ ] **Step 3: Agregar los tipos y el pedido**
+- [x] **Step 3: Agregar los tipos y el pedido**
 
 En `frontend/src/api/piezasYgrupos.ts`, después de `subirDxf`, que queda igual:
 
@@ -1984,7 +1984,7 @@ export function leerDxf(trabajoId: number, archivo: File, escalaAMm: string): Pr
 }
 ```
 
-- [ ] **Step 4: Agregar el hook**
+- [x] **Step 4: Agregar el hook**
 
 En `frontend/src/hooks/usePiezas.ts`:
 
@@ -2027,7 +2027,7 @@ export function useLeerDxf(trabajoId: number) {
 }
 ```
 
-- [ ] **Step 5: Escribir las cuentas del dibujo**
+- [x] **Step 5: Escribir las cuentas del dibujo**
 
 `frontend/src/components/LecturaDxf/dibujo.ts`:
 
@@ -2105,12 +2105,12 @@ export function esLaLecturaDe(
 }
 ```
 
-- [ ] **Step 6: Compilar y correr los tests**
+- [x] **Step 6: Compilar y correr los tests**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: compila sin errores y `Tests  56 passed (56)`.
 
-- [ ] **Step 7: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 7: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add frontend/src/components/LecturaDxf/dibujo.ts frontend/src/components/LecturaDxf/dibujo.test.ts frontend/src/api/piezasYgrupos.ts frontend/src/hooks/usePiezas.ts
@@ -2133,7 +2133,7 @@ git commit -m "feat(frontend): las cuentas del dibujo de una lectura y su pedido
 
 El panel usa las clases y los colores que ya tiene la app (`tailwind.config.ts`: `cut` para lo que se corta, `ink` para las líneas, `line` para los bordes). No suma estilos nuevos.
 
-- [ ] **Step 1: Escribir el panel**
+- [x] **Step 1: Escribir el panel**
 
 `frontend/src/components/LecturaDxf/LecturaPanel.tsx`:
 
@@ -2268,7 +2268,7 @@ export default function LecturaPanel({
 }
 ```
 
-- [ ] **Step 2: Que la carga mande `unir`**
+- [x] **Step 2: Que la carga mande `unir`**
 
 En `frontend/src/api/piezasYgrupos.ts`:
 
@@ -2325,7 +2325,7 @@ por:
       subirDxf(trabajoId, archivo, escalaAMm, unir),
 ```
 
-- [ ] **Step 3: Cambiar la pestaña Piezas**
+- [x] **Step 3: Cambiar la pestaña Piezas**
 
 En `frontend/src/routes/TrabajoWorkspace/PiezasTab.tsx`, seis cambios. El botón deja de cargar y pasa a pedir la lectura; el panel carga.
 
@@ -2517,12 +2517,12 @@ por:
       )}
 ```
 
-- [ ] **Step 4: Compilar y correr los tests**
+- [x] **Step 4: Compilar y correr los tests**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: compila sin errores y `Tests  56 passed (56)`.
 
-- [ ] **Step 5: Verlo andar, contra una copia de los datos**
+- [x] **Step 5: Verlo andar, contra una copia de los datos**
 
 Esto es lo único del plan que no se probó al escribirlo.
 
@@ -2559,7 +2559,7 @@ En `http://localhost:5173`, abrir el trabajo «Complejo», pestaña Piezas, y co
 
 Cerrar los dos procesos al terminar. Vite puede quedar vivo en el 5173: comprobarlo con el mismo comando de PowerShell.
 
-- [ ] **Step 6: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 6: Mostrárselo a Enzo y, con su ok, commitear**
 
 Mostrarle la pantalla andando (o capturas de los puntos 3, 4 y 6). Si pide cambios de texto o de aspecto, se hacen antes de commitear.
 
@@ -2580,7 +2580,7 @@ git commit -m "feat(frontend): ver como se lee el DXF antes de cargarlo"
 - Consumes: el pedido `POST /trabajos/{id}/dxf/lectura` (Tarea 4).
 - Produces: nada que use otra tarea.
 
-- [ ] **Step 1: Escribir el guion**
+- [x] **Step 1: Escribir el guion**
 
 `backend/scripts/leer_un_dxf.py`:
 
@@ -2653,7 +2653,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 2: Leer los DXF reales**
+- [x] **Step 2: Leer los DXF reales**
 
 Contra una copia de la base, que es de donde sale el catálogo de chapas. Los DXF están fuera del repo:
 
@@ -2686,7 +2686,7 @@ En `trabajo-1.dxf`, la unida tiene que mostrar `trabajo-1-39/unida: 4610 x 4610 
 
 Si un número no coincide, parar y mirar por qué antes de seguir: es la única comprobación contra dibujos de verdad.
 
-- [ ] **Step 3: Actualizar el diseño**
+- [x] **Step 3: Actualizar el diseño**
 
 En `docs/plan/2.1a-lectura-con-imagen/diseno.md`, la línea de estado pasa a decir, con la fecha del día:
 
@@ -2700,14 +2700,14 @@ Y al final del §2 se agrega:
 **Con el código construido** las cantidades de la tabla de arriba cambian en dos archivos, porque ahora cuentan los bordes de adentro rectangulares: en `Muestra Vectores.dxf` la unión reemplaza 39 líneas y en `strat.dxf`, 13. La tabla que vale es la de la Tarea 7 de [`plan.md`](plan.md).
 ```
 
-- [ ] **Step 4: Actualizar el registro**
+- [x] **Step 4: Actualizar el registro**
 
 En `docs/REGISTRO.md`, en las filas de `PAR-50`, `PAR-51` y `PAR-52`, cambiar «todavía sin código» y «sin medir» por dónde vive cada uno:
 
 - `PAR-50` y `PAR-51`: «en `backend/app/services/ingesta/uniones.py`».
 - `PAR-52`: «en `backend/app/services/ingesta/dibujo.py`. Con este valor la lectura de `Muestra Vectores.dxf` pesa 2,3 MB».
 
-- [ ] **Step 5: Escribir la entrada de la bitácora**
+- [x] **Step 5: Escribir la entrada de la bitácora**
 
 En `docs/BITACORA.md`, arriba de la entrada del 2026-10-10, con la fecha del día en que se termina:
 
@@ -2739,14 +2739,14 @@ Altas de `PAR-50`, `PAR-51` y `PAR-52`.
 - Las miniaturas de la tabla de Piezas siguen dadas vuelta; el dibujo nuevo sale derecho.
 ```
 
-- [ ] **Step 6: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 6: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add backend/scripts/leer_un_dxf.py docs/plan/2.1a-lectura-con-imagen/diseno.md docs/REGISTRO.md docs/BITACORA.md
 git commit -m "docs: lectura con imagen (2.1a) construida y medida"
 ```
 
-- [ ] **Step 7: Con el ok de Enzo, subir la rama y abrir el PR**
+- [x] **Step 7: Con el ok de Enzo, subir la rama y abrir el PR**
 
 Subir es publicar: no se hace sin que lo pida.
 
@@ -2771,7 +2771,7 @@ Fusionar es de Enzo: `gh pr merge <n> --merge`, con dos guiones.
 - Move: `docs/plan/2.1a-lectura-con-imagen/` → `docs/historico/2.1a-lectura-con-imagen/`
 - Modify: `docs/plan/PLAN-MAESTRO.md`, `docs/MAPA-DEL-PROYECTO.md`, `docs/REGISTRO.md`, `docs/BITACORA.md`
 
-- [ ] **Step 1: Pasar la carpeta a `historico/`**
+- [x] **Step 1: Pasar la carpeta a `historico/`**
 
 `CONVENCIONES.md §8 bis`: un sub-proyecto terminado pasa entero a `docs/historico/`, en el commit que lo cierra.
 
@@ -2783,7 +2783,7 @@ grep -rn "2.1a-lectura-con-imagen" docs backend frontend/src --include=*.md --in
 
 Corregir cada ruta que devuelva el `grep`: dentro de la carpeta movida, `../PLAN-MAESTRO.md` pasa a `../../plan/PLAN-MAESTRO.md`; en el plan maestro, `2.1a-lectura-con-imagen/diseno.md` pasa a `../historico/2.1a-lectura-con-imagen/diseno.md`; en el registro, los comentarios del código y la bitácora, `docs/plan/` pasa a `docs/historico/`.
 
-- [ ] **Step 2: Dejar el estado y los pendientes en el plan maestro**
+- [x] **Step 2: Dejar el estado y los pendientes en el plan maestro**
 
 En `diseno.md` y `plan.md` (ya en `historico/`), la línea de estado pasa a «**cerrado el AAAA-MM-DD**», con el número del PR.
 
@@ -2807,7 +2807,7 @@ Y en la fila de 2.1 de esa misma sección, «con diseño en» pasa a «construid
 
 En `docs/MAPA-DEL-PROYECTO.md §1`, en la fila «Importación de DXF»: a «Qué hay» se le suma «Ver la lectura antes de cargar, unir las formas que se pisan y los recortes de huecos en piezas grandes (2.1a)», y de «Qué falta» sale la frase de la regla de las islas.
 
-- [ ] **Step 3: Mostrárselo a Enzo y, con su ok, commitear y subir**
+- [x] **Step 3: Mostrárselo a Enzo y, con su ok, commitear y subir**
 
 ```bash
 git add -A docs backend/app backend/scripts backend/tests

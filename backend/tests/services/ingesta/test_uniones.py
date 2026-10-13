@@ -1,4 +1,4 @@
-"""Unir las formas que se pisan (`docs/plan/2.1a-lectura-con-imagen/`).
+"""Unir las formas que se pisan (`docs/historico/2.1a-lectura-con-imagen/`).
 
 Las piezas se arman a mano, como en `test_analisis.py`: la unión trabaja
 sobre lo que `parsear_dxf` ya devolvió. Las formas son octógonos y no

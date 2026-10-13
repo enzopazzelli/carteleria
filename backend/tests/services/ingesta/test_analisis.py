@@ -538,7 +538,7 @@ def test_una_forma_igual_al_agujero_pero_que_no_estaba_adentro_no_es_contrapieza
 # Un aro de 4,6 m no entra en ninguna chapa y se corta seccionado: sus huecos
 # son huecos igual que el centro de una «O». Un rectángulo que no entra es un
 # tablero o un marco, y lo que tiene adentro son piezas
-# (`docs/plan/2.1a-lectura-con-imagen/diseno.md §5.1`).
+# (`docs/historico/2.1a-lectura-con-imagen/diseno.md §5.1`).
 
 
 def _octogono(id_: str, x: int, y: int, lado: int, contenida_en_id: str | None = None) -> PiezaImportada:

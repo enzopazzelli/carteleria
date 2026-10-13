@@ -407,7 +407,7 @@ def _marcar_contrapiezas(
     rectángulo: esa se corta seccionada (un aro de 4,6 m), y sus huecos
     son huecos igual que los de una letra. Un rectángulo que no entra es
     un tablero o un marco, y lo que tiene adentro son piezas
-    (`docs/plan/2.1a-lectura-con-imagen/diseno.md §5.1`).
+    (`docs/historico/2.1a-lectura-con-imagen/diseno.md §5.1`).
 
     No se mide cuánto llena el agujero. El parser dibuja toda forma
     interior como agujero de su contenedora y además como pieza propia

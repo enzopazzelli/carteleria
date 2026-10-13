@@ -2,7 +2,7 @@
 `POST /trabajos/{id}/dxf/lectura`, que no guarda nada.
 
 Sirve para repetir la tabla del §2 de
-`docs/plan/2.1a-lectura-con-imagen/diseno.md` sobre los DXF reales.
+`docs/historico/2.1a-lectura-con-imagen/diseno.md` sobre los DXF reales.
 
     cd backend
     CARTELERIA_DATOS=<copia de los datos> python scripts/leer_un_dxf.py <archivo.dxf> <escala> [trabajo]

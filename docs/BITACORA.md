@@ -58,9 +58,9 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
-## 2026-10-12 — Lectura del DXF con imagen antes de cargar (2.1a): unir las formas que se pisan y los huecos de las piezas grandes
+## 2026-10-12 — Lectura del DXF con imagen antes de cargar (2.1a), en `main` y cerrada: unir las formas que se pisan y los huecos de las piezas grandes
 
-Sub-proyecto [`plan/2.1a-lectura-con-imagen/`](plan/2.1a-lectura-con-imagen/diseno.md). Rama `feat/lectura-con-imagen`.
+Sub-proyecto [`historico/2.1a-lectura-con-imagen/`](historico/2.1a-lectura-con-imagen/diseno.md), en `main` desde el 2026-10-12 ([PR #18](https://github.com/enzopazzelli/carteleria/pull/18), lo fusioné yo a pedido de Enzo).
 
 ### Qué se hizo
 
@@ -72,7 +72,8 @@ Sub-proyecto [`plan/2.1a-lectura-con-imagen/`](plan/2.1a-lectura-con-imagen/dise
   - **La unión borraba los agujeros chicos que caen donde dos franjas se pisan.** El lector trae ese tornillo como pieza, porque está adentro de dos bordes a la vez, y la unión lo tomaba por un borde de adentro. Ahora una forma chica que queda sobre el cuerpo de la pieza unida es un agujero suyo. En los DXF reales se recuperan tres agujeros en la guitarra y dos en un logo de la muestra; en `Complejo.dxf` no cambia nada.
   - **La unión tardaba el cuadrado de las formas del grupo.** Con 2.000 letras sueltas en el hueco de un aro, 40 s; ahora unos 3.
   - **Los huecos de una pieza unida no siempre entraban descartados:** si el color venía «por bloque», o si el hueco era un rectángulo que no entra en ninguna chapa. Ahora entran descartados siempre, por cómo se armaron.
-  - Lo menor que señaló quedó anotado en los «Desvíos» del [`plan.md`](plan/2.1a-lectura-con-imagen/plan.md).
+  - Lo menor que señaló quedó anotado en los «Desvíos» del [`plan.md`](historico/2.1a-lectura-con-imagen/plan.md).
+- **Enzo lo probó con su trabajo «Complejo»** y le gustó: lo volvió a cargar con el aro unido, seccionó la pieza unida en 8 tramos y anidó. Quedaron 31 piezas en el grupo, y el anidado (Sparrow, 240 s, «vaciar chapas» prendido) dio **8 chapas, 31,3 %**: las mismas 8 que el armado a mano del diseñador en Belgrano. Es una sola corrida. Antes de probar se respaldó su base en `backend/local/respaldo-2026-10-12-antes-de-probar-2.1a/`.
 
 ### Qué se decidió
 
@@ -86,7 +87,9 @@ Altas de `PAR-50`, `PAR-51` y `PAR-52`.
 
 ### Pendiente
 
-- **Volver a medir el anidado de «Complejo» con el trabajo bien leído.** En la base de Enzo, 14 de las 45 piezas del grupo y 17,95 de sus 23,70 m² eran el interior de un hueco: las 19 y 18 chapas del 2026-10-10 se midieron sobre eso, y lo que se concluyó de «vaciar chapas» hay que repetirlo.
+Lo que sigue vivo pasó a la tabla «Pendientes de la lectura con imagen» del [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md) §7. Lo principal:
+
+- **Repetir con varias corridas la comparación con y sin «vaciar chapas».** Lo medido el 2026-10-10 (19 y 18 chapas) incluía los huecos: 14 de las 45 piezas del grupo y 17,95 de sus 23,70 m². Con el trabajo bien leído, una corrida dio 8; una sola no prueba nada, porque Sparrow varía entre corridas iguales.
 - **2.1b:** corregir a mano con clics, unir grupo por grupo, y acercar y mover el dibujo. Es lo que resuelve el logo. Con acercamiento, el detalle del dibujo (`PAR-52`) tiene que depender de cuánto se acerca.
 - Las miniaturas de la tabla de Piezas siguen dadas vuelta; el dibujo nuevo sale derecho.
 

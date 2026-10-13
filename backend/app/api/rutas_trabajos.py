@@ -281,7 +281,7 @@ async def leer_dxf(
 ) -> LecturaDXFLeer:
     """Cómo se leería este DXF en este trabajo, **sin guardar nada**: ni
     piezas ni el archivo. Es lo que la pantalla dibuja antes de cargar
-    (`docs/plan/2.1a-lectura-con-imagen/diseno.md §5.3`).
+    (`docs/historico/2.1a-lectura-con-imagen/diseno.md §5.3`).
 
     Devuelve la lectura tal como viene el dibujo y, si hay formas que se
     pisan, también la lectura con esas formas unidas: la pantalla cambia

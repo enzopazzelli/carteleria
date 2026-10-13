@@ -1,5 +1,5 @@
 """Los contornos de una lectura como viajan a la pantalla —
-`docs/plan/2.1a-lectura-con-imagen/diseno.md §5.3`.
+`docs/historico/2.1a-lectura-con-imagen/diseno.md §5.3`.
 
 Para dibujar no hace falta cada vértice: una spline aplanada a `PAR-07`
 trae cientos, y un DXF grande, cientos de miles. Lo que sale de acá es

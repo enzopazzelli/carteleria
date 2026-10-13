@@ -1,4 +1,4 @@
-"""Unir las formas que se pisan — `docs/plan/2.1a-lectura-con-imagen/diseno.md §5.2`.
+"""Unir las formas que se pisan — `docs/historico/2.1a-lectura-con-imagen/diseno.md §5.2`.
 
 Un dibujo hecho con franjas trae cada una con dos líneas cerradas, el
 borde de afuera y el de adentro, y franjas montadas unas sobre otras (el

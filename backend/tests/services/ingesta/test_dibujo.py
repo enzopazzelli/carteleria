@@ -1,4 +1,4 @@
-"""Los contornos como viajan a la pantalla (`docs/plan/2.1a-lectura-con-imagen/`)."""
+"""Los contornos como viajan a la pantalla (`docs/historico/2.1a-lectura-con-imagen/`)."""
 from __future__ import annotations
 
 import math

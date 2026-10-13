@@ -138,7 +138,7 @@ Los incisos de A3 en `PLAN-RUMBO-ANIDADO-Y-REVISION.md §4` se reparten así:
 
 | Tema | Lado | Por qué |
 |---|---|---|
-| Regla de las islas: una forma que llena el agujero de otra viaja con ella (A3, inciso 0) | El resto, en 2.1 | Vive en el análisis y decide qué piezas existen. Para las letras está construida desde el 2026-10-08: el análisis marca el recorte y la carga lo deja descartado. Para las piezas que no entran en ninguna chapa falta, y es parte de [2.1a](2.1a-lectura-con-imagen/diseno.md) |
+| Regla de las islas: una forma que llena el agujero de otra viaja con ella (A3, inciso 0) | El resto, en 2.1 | Vive en el análisis y decide qué piezas existen. Para las letras está construida desde el 2026-10-08: el análisis marca el recorte y la carga lo deja descartado. Para las piezas que no entran en ninguna chapa, desde el 2026-10-12 ([2.1a](../historico/2.1a-lectura-con-imagen/diseno.md)) |
 | Alcance «se re-anida / queda como está» (A3, inciso b) | El resto, en 2.1 | Lo muestra y lo corrige la pantalla de revisión |
 | Separar piezas grandes de chicas, colocación directa, chapas con obstáculos e híbrido (A3, incisos a, c, d y e) | El motor | Es estrategia de anidado. El producto no necesita saberlo |
 
@@ -207,7 +207,7 @@ Se detallan cuando les toque, cada una con su diseño.
 
 | Sub-proyecto | Alcance | Historias | Depende de |
 |---|---|---|---|
-| **2.1 Importar y revisar** | El carril B de `PLAN-RUMBO-ANIDADO-Y-REVISION.md §5` (pasos B1 a B6): pantalla de importación, visor con roles y confirmación. Más la regla de las islas, el alcance de cada diseño y la asignación de material. Se partió en dos el 2026-10-12: **2.1a**, leer mejor y mostrar el dibujo antes de cargar, con diseño en [`2.1a-lectura-con-imagen/`](2.1a-lectura-con-imagen/diseno.md); y **2.1b**, la pantalla para corregir a mano, todavía sin diseño | `CART-506`, `CART-507` | `D-13` |
+| **2.1 Importar y revisar** | El carril B de `PLAN-RUMBO-ANIDADO-Y-REVISION.md §5` (pasos B1 a B6): pantalla de importación, visor con roles y confirmación. Más la regla de las islas, el alcance de cada diseño y la asignación de material. Se partió en dos el 2026-10-12: **2.1a**, leer mejor y mostrar el dibujo antes de cargar, construida y en `main` desde el 2026-10-12: [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/diseno.md); y **2.1b**, la pantalla para corregir a mano, todavía sin diseño | `CART-506`, `CART-507` | `D-13` |
 | **2.2 Catálogo y precios** | Precios con vigencia, carga desde la planilla de la empresa, insumos que no son chapa, historial. Completa lo que falta de materiales y parámetros de corte | `CART-101`, `CART-103` a `CART-107` | `D-10` |
 | **2.3 Cotizador completo** | Insumos desde catálogo, mano de obra por etapa, documento interno, PDF completo | `CART-304`, `CART-305`, `CART-309`, `CART-310` | 2.2 |
 | **2.4 Aprobación y envío completos** | Reintentos, respuesta del cliente, vencimientos, congelado con versiones de precio | `CART-401`, `CART-405`, `CART-407`, `CART-408` | 2.2, `D-07`, `D-17` |
@@ -265,6 +265,24 @@ Se detallan cuando les toque, cada una con su diseño.
 | Una comparación de formatos es un solo pedido que puede durar varias veces `PAR-09`; no se probó si el navegador lo corta | Revisión | `D-12` |
 | Si el worker falla en una segunda pasada, el supervisor descarta el anidado de la primera | Revisión; es anterior a este sub-proyecto | — |
 | `GUIA-SPARROW-PRUEBAS.md` sugiere 120 s como punto de partida y `motor/PLAN-VALIDACION-CORTE-MANUAL.md` nombra `PAR-09` con su valor anterior | Tarea 5 bis de su plan | — |
+
+**Pendientes de la lectura con imagen (2.1a).** Se cerró el 2026-10-12 y su carpeta pasó a [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/). Esto es lo que quedó vivo y se sigue desde acá. El detalle está en los «Desvíos» de su [`plan.md`](../historico/2.1a-lectura-con-imagen/plan.md).
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| Repetir con varias corridas la comparación con y sin «vaciar chapas» sobre el trabajo bien leído. Una sola corrida de Enzo, con el aro unido y seccionado, dio 8 chapas (las mismas que el armado a mano del diseñador); lo medido el 2026-10-10 incluía 18 m² de huecos | §2 de su diseño; bitácora del 2026-10-12 | — |
+| Corregir a mano la lectura: clic en una forma para decir qué es, y unir grupo por grupo. La casilla de unir hoy vale para el archivo entero | §3 y §7 de su diseño | 2.1b |
+| Acercar y mover el dibujo. Con acercamiento, el detalle de `PAR-52` tiene que depender de cuánto se acerca | §3 de su diseño; Tarea 3 de su plan | 2.1b |
+| La importación de varios diseños (`/importaciones/dxf/...`) no une | §3 de su diseño | 2.1b |
+| Una franja chica enganchada en otra se lee al revés, y una letra cuyo hueco se acerca a menos de `PAR-50` de su borde queda maciza al unir | Revisión de la rama | 2.1b |
+| Los huecos de una pieza unida suman filas descartadas a la tabla de Piezas (25 en el aro) | §7 de su diseño | Decisión de Enzo |
+| Si la excepción del rectángulo vale también para la forma de adentro: hoy una pieza irregular que no entra en ninguna chapa no descarta un hueco rectangular que tampoco entra | Revisión de la rama | Decisión de Enzo |
+| El panel deja cargar una lectura sin ninguna forma, y eso borra las piezas del trabajo | Revisión de la rama | — |
+| Al cargar sin unir, el aviso pide marcar una casilla que ya no está en pantalla | Revisión de la rama | — |
+| El lector toma como pieza un agujero que está adentro de dos formas a la vez: sin unir, un tornillo en el borde del aro sale como pieza a cortar | Revisión de la rama; es anterior a este sub-proyecto | — |
+| `dibujo.ts` calcula la caja con `Math.min(...)`, que con un archivo mucho más grande que la muestra puede fallar; y la lectura manda los números con todos sus decimales (2,3 MB en la muestra) | Revisión de la rama | — |
+| `pytest` levanta cualquier `test_*.py` que caiga en `backend/local/`: falta `testpaths = tests` en `backend/pytest.ini` | Revisión de la rama | — |
+| Las miniaturas de la tabla de Piezas salen dadas vuelta | Pendiente anterior | — |
 
 ---
 

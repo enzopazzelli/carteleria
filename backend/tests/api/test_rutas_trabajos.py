@@ -440,7 +440,7 @@ def test_subir_dxf_deja_descartado_el_hueco_de_una_forma_grande_que_no_es_un_rec
 
 # --- Ver la lectura antes de cargar, y unir (2.1a) ----------------------
 #
-# `docs/plan/2.1a-lectura-con-imagen/diseno.md`. La lectura no guarda nada;
+# `docs/historico/2.1a-lectura-con-imagen/diseno.md`. La lectura no guarda nada;
 # la carga guarda lo mismo que la lectura mostró.
 
 

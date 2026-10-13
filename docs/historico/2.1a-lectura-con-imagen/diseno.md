@@ -1,10 +1,10 @@
 # 2.1a · Lectura del DXF con imagen antes de cargar — diseño
 
-> **Estado:** **construido el 2026-10-12, en la rama `feat/lectura-con-imagen`, a la espera de que Enzo lo fusione.** Lo que el código precisó del diseño está al principio de [`plan.md`](plan.md).
+> **Estado:** **cerrado el 2026-10-12.** Construido ese día y en `main` desde entonces ([PR #18](https://github.com/enzopazzelli/carteleria/pull/18); lo fusioné yo a pedido de Enzo). Lo que el código precisó del diseño está al principio de [`plan.md`](plan.md), y lo que se apartó, en sus «Desvíos». Esta carpeta pasó de `docs/plan/` a `docs/historico/`, y lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md).
 >
 > **De dónde sale.** Enzo eligió seguir con la regla de las islas. Al mirarla resultó que para las letras ya estaba construida (2026-10-07 y 2026-10-08), y que en su trabajo «Complejo» el problema era otro: el aro se lee mal. Enzo explicó cómo se lee, pidió que la solución sirva para próximos diseños sin tocar código cada vez y que la carga muestre una imagen antes de confirmar.
 >
-> **Qué lugar ocupa.** Es la primera parte de 2.1 «Importar y revisar» del [`PLAN-MAESTRO.md`](../PLAN-MAESTRO.md). La segunda, **2.1b**, es la pantalla para corregir a mano, que retoma el carril B de [`PLAN-RUMBO-ANIDADO-Y-REVISION.md §5`](../../motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md) y tendrá su propio diseño.
+> **Qué lugar ocupa.** Es la primera parte de 2.1 «Importar y revisar» del [`PLAN-MAESTRO.md`](../../plan/PLAN-MAESTRO.md). La segunda, **2.1b**, es la pantalla para corregir a mano, que retoma el carril B de [`PLAN-RUMBO-ANIDADO-Y-REVISION.md §5`](../../motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md) y tendrá su propio diseño.
 >
 > **Sobre los valores.** Los parámetros se citan por ID y viven en [`REGISTRO.md`](../../REGISTRO.md). Este sub-proyecto dio de alta tres el 2026-10-12 (§4). Los números de esta página son mediciones, no parámetros.
 
