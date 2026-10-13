@@ -441,6 +441,41 @@ def test_marcar_una_forma_que_no_es_de_este_archivo_no_cambia_nada(tmp_path):
     assert sorted(_por_id(resultado)) == ["puntos-0", "puntos-2"]
 
 
+def _placa_con_marcos_y_ventana(msp):
+    """Una placa de 1000 con una ventana de 400. Alrededor de la ventana
+    hay dos marcos dibujados, de 600 y de 500: cuatro contornos, cada uno
+    adentro del anterior."""
+    for esquina, lado in ((0, 1000), (200, 600), (250, 500), (300, 400)):
+        msp.add_lwpolyline(
+            [(esquina, esquina), (esquina + lado, esquina), (esquina + lado, esquina + lado), (esquina, esquina + lado)],
+            close=True,
+        )
+
+
+def test_lo_de_adentro_de_una_forma_que_no_va_cuelga_de_la_que_la_rodea(tmp_path):
+    # Lo que tiene adentro una forma que no va se lee como si ella no
+    # estuviera: sin el marco de 500, la ventana es un agujero del de 600.
+    ruta = _guardar_dxf(tmp_path, "placa.dxf", _placa_con_marcos_y_ventana)
+    assert _por_id(parsear_dxf(ruta, _ESCALA_IDENTIDAD))["placa-3"].contenida_en_id == "placa-2"
+
+    piezas = _por_id(parsear_dxf(ruta, _ESCALA_IDENTIDAD, no_van={"placa-2"}))
+
+    ventana = piezas["placa-3"]
+    assert ventana.contenida_en_id == "placa-1"
+    assert ventana.contorno_mm in piezas["placa-1"].agujeros_mm
+    assert piezas["placa-2"].agujeros_mm == [ventana.contorno_mm], "la que no va se sigue dibujando con su agujero"
+
+
+def test_si_la_que_la_rodea_tampoco_va_cuelga_de_la_primera_que_si(tmp_path):
+    ruta = _guardar_dxf(tmp_path, "placa.dxf", _placa_con_marcos_y_ventana)
+
+    piezas = _por_id(parsear_dxf(ruta, _ESCALA_IDENTIDAD, no_van={"placa-1", "placa-2"}))
+
+    ventana = piezas["placa-3"]
+    assert ventana.contenida_en_id == "placa-0"
+    assert ventana.contorno_mm in piezas["placa-0"].agujeros_mm
+
+
 def test_archivo_invalido_levanta_excepcion_especifica(tmp_path):
     ruta = tmp_path / "no_es_un_dxf.dxf"
     ruta.write_text("esto no es un archivo DXF")

@@ -443,7 +443,12 @@ def _clasificar_piezas_y_agujeros(
     de `no_van` también: un agujero es el hueco de algo que se corta, y
     su padre ya no va. Sin esto, el punto de una leyenda rodeada por un
     contorno (un agujero de 20 mm) se perdería junto con el contorno.
-    El que no va sigue saliendo con sus agujeros, para dibujarlo."""
+    El que no va sigue saliendo con sus agujeros, para dibujarlo.
+
+    Y lo que el que no va tiene adentro pasa a colgar del contorno que lo
+    rodea a él, como agujero suyo y con él de contenedora: se lee como si
+    el que no va no estuviera. Sacando el marco dibujado alrededor de una
+    ventana, la ventana es el agujero de la placa (revisión de la rama)."""
     n = len(contornos)
     bounds = [c.poligono.bounds for c in contornos]
     contenedores: list[list[int]] = [[] for _ in range(n)]
@@ -478,19 +483,34 @@ def _clasificar_piezas_y_agujeros(
         for i in range(n)
     ]
 
+    def _de_quien_cuelga(i: int) -> int | None:
+        """El padre inmediato de `i` o, si ese no va, el contorno más chico
+        que lo encierra y sí va: lo que tiene adentro una forma que no va
+        se lee como si ella no estuviera. Sin ninguno que vaya, sigue
+        colgando de la que no va, que no es madre de nadie
+        (`sugerir_roles`)."""
+        if not _su_padre_no_va(i):
+            return padre_inmediato[i]
+        van = [j for j in contenedores[i] if contornos[j].indice not in no_van]
+        return min(van, key=lambda j: contornos[j].poligono.area) if van else padre_inmediato[i]
+
+    cuelga_de = [_de_quien_cuelga(i) for i in range(n)]
+
     resultado = []
     for i in range(n):
         if not es_pieza_propia[i]:
             continue
         # Todos los hijos directos son huecos visuales de "i" — se
         # promuevan o no a pieza propia por separado (representación
-        # doble, ver docstring).
-        agujeros = [contornos[k] for k in range(n) if padre_inmediato[k] == i]
+        # doble, ver docstring). El que no va se dibuja con los suyos,
+        # aunque para todo lo demás cuelguen de otro.
+        suyos = padre_inmediato if contornos[i].indice in no_van else cuelga_de
+        agujeros = [contornos[k] for k in range(n) if suyos[k] == i]
         # `padre_inmediato[i]` siempre es, si existe, una pieza propia
         # (nivel par por construcción: el padre inmediato de un nivel
         # impar es un nivel par) — por eso no hace falta chequear
         # `es_pieza_propia[padre_inmediato[i]]` acá.
-        contenedora = contornos[padre_inmediato[i]] if padre_inmediato[i] is not None else None
+        contenedora = contornos[cuelga_de[i]] if cuelga_de[i] is not None else None
         resultado.append((contornos[i], agujeros, contenedora))
     return resultado
 

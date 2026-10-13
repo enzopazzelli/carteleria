@@ -895,6 +895,51 @@ def test_un_hueco_de_la_pieza_unida_que_no_va_deja_de_ser_un_hueco(cliente, tmp_
     assert _totales(unida) == (1, 1, 1)
 
 
+def _placa_con_marco_y_ventana(msp):
+    """Una placa de 1000 con una ventana de 400 y, alrededor de la ventana,
+    un marco de 600 que está dibujado pero no se corta."""
+    _octogono(msp, 0, 0, 1000)
+    _octogono(msp, 200, 200, 600)
+    _octogono(msp, 300, 300, 400)
+
+
+def _trabajo_con_la_placa(cliente, tmp_path):
+    """El trabajo, el DXF y el nombre del marco."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "placa.dxf", _placa_con_marco_y_ventana)
+    formas = _por_ancho(_ver_lectura(cliente, trabajo["id"], contenido).json()["sin_unir"]["formas"])
+    assert [formas[ancho]["estado"] for ancho in (1000, 600, 400)] == ["se_corta", "descartada", "se_corta"]
+    return trabajo, contenido, formas[600]["id_origen"]
+
+
+def test_al_sacar_una_forma_lo_que_tenia_adentro_es_el_hueco_de_la_que_la_rodea(cliente, tmp_path):
+    """Lo de adentro de una forma que no va se lee como si ella no
+    estuviera: sin el marco, la ventana es el hueco de la placa y su
+    recorte entra descartado. Antes la placa quedaba llena y la ventana se
+    cortaba aparte, y no había clic que lo arreglara (revisión de la rama)."""
+    trabajo, contenido, marco = _trabajo_con_la_placa(cliente, tmp_path)
+
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={marco: "no_va"}).json()["sin_unir"]
+
+    formas = _por_ancho(lectura["formas"])
+    assert [formas[ancho]["estado"] for ancho in (1000, 600, 400)] == ["se_corta", "no_va", "descartada"]
+    assert len(formas[1000]["agujeros_mm"]) == 1, "la ventana, y ya no el marco"
+    assert _totales(lectura) == (1, 1, 1)
+
+
+def test_cargar_sin_el_marco_guarda_la_placa_con_su_ventana(cliente, tmp_path):
+    trabajo, contenido, marco = _trabajo_con_la_placa(cliente, tmp_path)
+
+    respuesta = _subir(cliente, trabajo["id"], contenido, correcciones=json.dumps({marco: "no_va"}))
+
+    assert respuesta.status_code == 200, respuesta.text
+    piezas = {round(Decimal(p["ancho_mm"])): p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()}
+    assert sorted(piezas) == [400, 1000]
+    assert len(piezas[1000]["agujeros_mm"]) == 1 and not piezas[1000]["descartada"]
+    assert piezas[400]["descartada"] is True
+
+
 def _leyenda_con_un_punto(msp):
     """Un contorno de 900 que rodea una letra de 500 y un punto de 20. El
     punto es tan chico que el lector lo toma por un agujero del contorno,
