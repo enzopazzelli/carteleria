@@ -339,7 +339,7 @@ def sugerir_roles(
 
     `correcciones` es lo que marcó quien carga mirando el dibujo: de `id`
     de pieza a `Rol.CORTAR` o `Rol.NO_VA`
-    (`docs/plan/2.1b-corregir-la-lectura/diseno.md §5.1`). Lo corregido
+    (`docs/historico/2.1b-corregir-la-lectura/diseno.md §5.1`). Lo corregido
     manda sobre cualquier regla, y las dos pasadas vuelven a decidir lo
     demás alrededor: lo que estaba adentro de una forma que ya no va deja
     de ser su recorte. Una corrección sobre una pieza que no está en el
@@ -488,7 +488,7 @@ def sin_los_huecos_de_lo_que_no_va(piezas: list[PiezaImportada], no_van: Collect
     """Las piezas, sin los agujeros que eran el contorno de una forma que
     quien carga sacó (`Rol.NO_VA`). Una forma que no va no es el hueco de
     nadie: la pieza que la tenía adentro queda llena ahí
-    (`docs/plan/2.1b-corregir-la-lectura/diseno.md §5.1`).
+    (`docs/historico/2.1b-corregir-la-lectura/diseno.md §5.1`).
 
     El lector toma por agujero a todo contorno que cae adentro de otro
     (`_clasificar_piezas_y_agujeros` en `dxf.py`), y no siempre lo es: en

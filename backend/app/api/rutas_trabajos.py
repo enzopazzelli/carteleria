@@ -182,7 +182,7 @@ _ROL_DE_UNA_CORRECCION = {"cortar": Rol.CORTAR, "no_va": Rol.NO_VA}
 def _correcciones(texto: str | None) -> dict[str, Rol]:
     """Lo que marcó quien carga, como llega en el campo `correcciones`: un
     objeto JSON de `id` de forma a `cortar` o `no_va`
-    (`docs/plan/2.1b-corregir-la-lectura/diseno.md §5.2`). Sin el campo,
+    (`docs/historico/2.1b-corregir-la-lectura/diseno.md §5.2`). Sin el campo,
     ninguna. Lo que no tiene esa forma da 400, diciendo qué."""
     if texto is None or not texto.strip():
         return {}

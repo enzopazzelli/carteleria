@@ -633,7 +633,7 @@ def test_sin_formatos_en_el_catalogo_no_hay_recortes_en_piezas_grandes():
 # --- Correcciones de quien carga (2.1b) -------------------------------------
 #
 # Quien carga puede forzar una forma a «se corta» o a «no va» mirando el
-# dibujo (`docs/plan/2.1b-corregir-la-lectura/diseno.md §5.1`). Lo corregido
+# dibujo (`docs/historico/2.1b-corregir-la-lectura/diseno.md §5.1`). Lo corregido
 # manda, y lo demás se vuelve a decidir alrededor.
 
 

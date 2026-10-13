@@ -207,7 +207,7 @@ Se detallan cuando les toque, cada una con su diseño.
 
 | Sub-proyecto | Alcance | Historias | Depende de |
 |---|---|---|---|
-| **2.1 Importar y revisar** | El carril B de `PLAN-RUMBO-ANIDADO-Y-REVISION.md §5` (pasos B1 a B6): pantalla de importación, visor con roles y confirmación. Más la regla de las islas, el alcance de cada diseño y la asignación de material. Se partió en dos el 2026-10-12: **2.1a**, leer mejor y mostrar el dibujo antes de cargar, construida y en `main` desde el 2026-10-12: [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/diseno.md); y **2.1b**, corregir la lectura a mano con clics sobre el dibujo, con diseño en [`2.1b-corregir-la-lectura/`](2.1b-corregir-la-lectura/diseno.md) | `CART-506`, `CART-507` | `D-13` |
+| **2.1 Importar y revisar** | El carril B de `PLAN-RUMBO-ANIDADO-Y-REVISION.md §5` (pasos B1 a B6): pantalla de importación, visor con roles y confirmación. Más la regla de las islas, el alcance de cada diseño y la asignación de material. Se partió en dos el 2026-10-12: **2.1a**, leer mejor y mostrar el dibujo antes de cargar, construida y en `main` desde el 2026-10-12: [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/diseno.md); y **2.1b**, corregir la lectura a mano con clics sobre el dibujo, construida y en `main` desde el 2026-10-13: [`historico/2.1b-corregir-la-lectura/`](../historico/2.1b-corregir-la-lectura/diseno.md) | `CART-506`, `CART-507` | `D-13` |
 | **2.2 Catálogo y precios** | Precios con vigencia, carga desde la planilla de la empresa, insumos que no son chapa, historial. Completa lo que falta de materiales y parámetros de corte | `CART-101`, `CART-103` a `CART-107` | `D-10` |
 | **2.3 Cotizador completo** | Insumos desde catálogo, mano de obra por etapa, documento interno, PDF completo | `CART-304`, `CART-305`, `CART-309`, `CART-310` | 2.2 |
 | **2.4 Aprobación y envío completos** | Reintentos, respuesta del cliente, vencimientos, congelado con versiones de precio | `CART-401`, `CART-405`, `CART-407`, `CART-408` | 2.2, `D-07`, `D-17` |
@@ -272,10 +272,8 @@ Se detallan cuando les toque, cada una con su diseño.
 | Pendiente | De dónde sale | Depende de |
 |---|---|---|
 | Repetir con varias corridas la comparación con y sin «vaciar chapas» sobre el trabajo bien leído. Una sola corrida de Enzo, con el aro unido y seccionado, dio 8 chapas (las mismas que el armado a mano del diseñador); lo medido el 2026-10-10 incluía 18 m² de huecos | §2 de su diseño; bitácora del 2026-10-12 | — |
-| Corregir a mano la lectura: clic en una forma para decir qué es, y unir grupo por grupo. La casilla de unir hoy vale para el archivo entero | §3 y §7 de su diseño | 2.1b |
-| Acercar y mover el dibujo. Con acercamiento, el detalle de `PAR-52` tiene que depender de cuánto se acerca | §3 de su diseño; Tarea 3 de su plan | 2.1b |
-| La importación de varios diseños (`/importaciones/dxf/...`) no une | §3 de su diseño | 2.1b |
-| Una franja chica enganchada en otra se lee al revés, y una letra cuyo hueco se acerca a menos de `PAR-50` de su borde queda maciza al unir | Revisión de la rama | 2.1b |
+| La importación de varios diseños (`/importaciones/dxf/...`) no une | §3 de su diseño | Carril B, B2 y B4. 2.1b también dejó afuera los archivos con varios diseños |
+| Una franja chica enganchada en otra se lee al revés, y una letra cuyo hueco se acerca a menos de `PAR-50` de su borde queda maciza al unir | Revisión de la rama | — (2.1b no tocó la regla de unir) |
 | Los huecos de una pieza unida suman filas descartadas a la tabla de Piezas (25 en el aro) | §7 de su diseño | Decisión de Enzo |
 | Si la excepción del rectángulo vale también para la forma de adentro: hoy una pieza irregular que no entra en ninguna chapa no descarta un hueco rectangular que tampoco entra | Revisión de la rama | Decisión de Enzo |
 | El panel deja cargar una lectura sin ninguna forma, y eso borra las piezas del trabajo | Revisión de la rama | — |
@@ -284,6 +282,16 @@ Se detallan cuando les toque, cada una con su diseño.
 | `dibujo.ts` calcula la caja con `Math.min(...)`, que con un archivo mucho más grande que la muestra puede fallar; y la lectura manda los números con todos sus decimales (2,3 MB en la muestra) | Revisión de la rama | — |
 | `pytest` levanta cualquier `test_*.py` que caiga en `backend/local/`: falta `testpaths = tests` en `backend/pytest.ini` | Revisión de la rama | — |
 | Las miniaturas de la tabla de Piezas salen dadas vuelta | Pendiente anterior | — |
+
+**Pendientes de corregir la lectura a mano (2.1b).** Se cerró el 2026-10-13 y su carpeta pasó a [`historico/2.1b-corregir-la-lectura/`](../historico/2.1b-corregir-la-lectura/). Esto es lo que quedó vivo y se sigue desde acá. Lo menor que señaló la revisión de la rama está en los «Desvíos» de su [`plan.md`](../historico/2.1b-corregir-la-lectura/plan.md).
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| El lector decide pieza o agujero por cuántos contornos encierran a la forma: el mismo dibujo se lee distinto solo que junto a otros | §2 y §7 de su diseño | — |
+| Elegir qué grupo de formas se une: la casilla vale para el archivo entero | §3 de su diseño | Que aparezca un diseño que lo pida |
+| Marcar de a muchas formas con un recuadro. Al sacar una placa con tornillos hay que sacar cada tornillo | §3 y §7 de su diseño | Que haga falta |
+| Recordar las correcciones de una carga a la otra | §3 de su diseño | — |
+| Corregir la lectura en la importación de varios diseños (`/importaciones/dxf/...`) | §3 de su diseño | Carril B, B2 y B4 |
 
 ---
 

@@ -437,7 +437,7 @@ def _clasificar_piezas_y_agujeros(
     promueve, solo para tests que prueban la clasificación en sí.
 
     **Lo que marcó quien carga también promueve**
-    (`docs/plan/2.1b-corregir-la-lectura/diseno.md §5.1`), por el
+    (`docs/historico/2.1b-corregir-la-lectura/diseno.md §5.1`), por el
     `indice` del contorno. Uno de `marcados` es siempre pieza propia: si
     no, su marca nombraría una forma que no está. Y los agujeros de uno
     de `no_van` también: un agujero es el hueco de algo que se corta, y

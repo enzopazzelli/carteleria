@@ -1,10 +1,10 @@
 # 2.1b · Corregir a mano la lectura del DXF — diseño
 
-> **Estado:** **construido el 2026-10-13, en la rama `feat/corregir-la-lectura`, a la espera de que Enzo lo fusione.** Lo que el código precisó del diseño está al principio de [`plan.md`](plan.md), y lo que corrigió el ensayo, en el §8.
+> **Estado:** **cerrado el 2026-10-13.** Construido ese día y en `main` desde entonces ([PR #20](https://github.com/enzopazzelli/carteleria/pull/20); lo fusioné yo a pedido de Enzo). Lo que el código precisó del diseño está al principio de [`plan.md`](plan.md), lo que corrigió el ensayo, en el §8, y lo que se apartó, en los «Desvíos» del plan. Esta carpeta pasó de `docs/plan/` a `docs/historico/`, y lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md).
 >
-> **De dónde sale.** [2.1a](../../historico/2.1a-lectura-con-imagen/diseno.md) dejó la pantalla que muestra cómo se lee un DXF antes de cargarlo. Ahí se vio que ninguna regla lee bien todos los dibujos: la unión acierta en el aro de `Complejo.dxf` y arruina un logo de la muestra. Enzo pidió poder corregir la lectura a mano.
+> **De dónde sale.** [2.1a](../2.1a-lectura-con-imagen/diseno.md) dejó la pantalla que muestra cómo se lee un DXF antes de cargarlo. Ahí se vio que ninguna regla lee bien todos los dibujos: la unión acierta en el aro de `Complejo.dxf` y arruina un logo de la muestra. Enzo pidió poder corregir la lectura a mano.
 >
-> **Qué lugar ocupa.** Es la segunda parte de 2.1 «Importar y revisar» del [`PLAN-MAESTRO.md`](../PLAN-MAESTRO.md). Retoma el paso B3 del carril B de [`PLAN-RUMBO-ANIDADO-Y-REVISION.md §5`](../../motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md), dentro de la pestaña Piezas y no en una pantalla aparte.
+> **Qué lugar ocupa.** Es la segunda parte de 2.1 «Importar y revisar» del [`PLAN-MAESTRO.md`](../../plan/PLAN-MAESTRO.md). Retoma el paso B3 del carril B de [`PLAN-RUMBO-ANIDADO-Y-REVISION.md §5`](../../motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md), dentro de la pestaña Piezas y no en una pantalla aparte.
 >
 > **Sobre los valores.** Los parámetros se citan por ID y viven en [`REGISTRO.md`](../../REGISTRO.md). Este sub-proyecto cambia uno y da de alta otro (§4), junto con el código. Los demás números de esta página son mediciones.
 
@@ -162,7 +162,7 @@ Una corrección es el nombre de una forma y una de dos palabras: `cortar` o `no_
 - **Al pasar el mouse:** el nombre de la forma, su medida, su estado y el motivo.
 - Cambiar el archivo o la escala cierra el panel: esa lectura y sus correcciones dejan de valer, y al leer de nuevo se empieza de cero. Si se vuelve a la escala de antes sin haber leído otra cosa, reaparecen las dos, como ya pasaba con la lectura.
 - **«Cargar» se apaga** si no queda ninguna forma para cortar, y lo dice.
-- La identidad visual es la de [`frontend-cotizador/diseno.md §4`](../../historico/frontend-cotizador/diseno.md).
+- La identidad visual es la de [`frontend-cotizador/diseno.md §4`](../frontend-cotizador/diseno.md).
 
 ---
 

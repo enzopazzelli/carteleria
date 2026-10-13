@@ -375,7 +375,7 @@ def test_el_umbral_de_agujero_es_configurable(tmp_path):
 
 # --- Lo que marcó quien carga (2.1b) -------------------------------------
 #
-# `docs/plan/2.1b-corregir-la-lectura/diseno.md §5.1`. Un agujero chico no
+# `docs/historico/2.1b-corregir-la-lectura/diseno.md §5.1`. Un agujero chico no
 # es una forma aparte: es solo el hueco de la que lo encierra. Si esa no
 # va, el agujero se quedaría sin madre y se perdería con ella.
 

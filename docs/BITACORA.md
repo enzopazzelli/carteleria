@@ -58,9 +58,9 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
-## 2026-10-13 — Corregir a mano la lectura del DXF (2.1b): clics sobre el dibujo, acercar y mover
+## 2026-10-13 — Corregir a mano la lectura del DXF (2.1b), en `main` y cerrada: clics sobre el dibujo, acercar y mover
 
-Sub-proyecto [`plan/2.1b-corregir-la-lectura/`](plan/2.1b-corregir-la-lectura/diseno.md). Rama `feat/corregir-la-lectura`.
+Sub-proyecto [`historico/2.1b-corregir-la-lectura/`](historico/2.1b-corregir-la-lectura/diseno.md), en `main` desde el 2026-10-13 ([PR #20](https://github.com/enzopazzelli/carteleria/pull/20), lo fusioné yo a pedido de Enzo).
 
 ### Qué se hizo
 
@@ -84,6 +84,8 @@ Sub-proyecto [`plan/2.1b-corregir-la-lectura/`](plan/2.1b-corregir-la-lectura/di
 `PAR-52` pasa de 1/4000 a 1/20000. Alta de `PAR-53`.
 
 ### Pendiente
+
+Lo que sigue vivo pasó a la tabla «Pendientes de corregir la lectura a mano» del [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md) §7. Lo principal:
 
 - **El lector decide pieza o agujero por cuántos contornos encierran a la forma.** El mismo dibujo se lee distinto solo que junto a otros. La corrección a mano lo resuelve en cada caso; cambiar esa regla quedó afuera.
 - Al sacar una placa con tornillos, cada tornillo aparece como una forma a cortar y hay que sacarlo también. Marcar de a muchas con un recuadro quedó anotado.

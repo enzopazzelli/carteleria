@@ -688,7 +688,7 @@ def test_ver_la_lectura_con_una_escala_que_no_es_positiva_da_400(cliente, tmp_pa
 
 # --- Corregir la lectura a mano (2.1b) -----------------------------------
 #
-# `docs/plan/2.1b-corregir-la-lectura/diseno.md`. Quien carga marca formas
+# `docs/historico/2.1b-corregir-la-lectura/diseno.md`. Quien carga marca formas
 # como «se corta» o «no va»; la lectura y la carga reciben la misma lista.
 
 

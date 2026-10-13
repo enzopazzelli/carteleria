@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** **construido el 2026-10-13, en la rama `feat/corregir-la-lectura`, a la espera de que Enzo lo fusione.** Las Tareas 0 a 7 se ejecutaron ese día, cada una con el ok de Enzo antes de su commit. Queda la Tarea 8, que va después de la fusión. Un revisor aparte leyó la rama después de la Tarea 7: lo que dejó está en «Desvíos», al final, y con eso el backend quedó en 506 y el frontend en 95.
+> **Estado:** **cerrado el 2026-10-13.** Ejecutado ese día, de la Tarea 0 a la 8, cada una con el ok de Enzo antes de su commit, y en `main` desde entonces ([PR #20](https://github.com/enzopazzelli/carteleria/pull/20); lo fusioné yo a pedido de Enzo). Un revisor aparte leyó la rama después de la Tarea 7: lo que dejó está en «Desvíos», al final, y con eso el backend quedó en 506 y el frontend en 95. Esta carpeta pasó de `docs/plan/` a `docs/historico/`; lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). Las rutas `docs/plan/2.1b-corregir-la-lectura/` que aparecen más abajo son las de cuando se escribió el plan.
 >
 > **El código de este plan está probado.** Entre el 2026-10-12 y el 13 se escribió sobre una copia limpia, fuera del repositorio, tarea por tarea y con las pruebas antes que el código. Cada prueba falló y pasó donde el plan dice. El backend terminó en 500 en verde (467 antes) y el frontend en 97 (56 antes), con `tsc` y `vite build` sin errores. **La pantalla se probó en un navegador sin ventana,** con clics, rueda y arrastre de verdad, contra una copia de la base y con un DXF que trae el logo solo: son el Step 9 de la Tarea 6 y el Step 1 de la Tarea 7. Ese ensayo corrigió el diseño (`diseno.md §8`).
 
@@ -4139,14 +4139,14 @@ Sub-proyecto [`plan/2.1b-corregir-la-lectura/`](plan/2.1b-corregir-la-lectura/di
 - Las miniaturas de la tabla de Piezas siguen dadas vuelta.
 ```
 
-- [ ] **Step 5: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 5: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add docs/plan/2.1b-corregir-la-lectura/diseno.md docs/BITACORA.md
 git commit -m "docs: corregir la lectura (2.1b) construida y medida"
 ```
 
-- [ ] **Step 6: Con el ok de Enzo, subir la rama y abrir el PR**
+- [x] **Step 6: Con el ok de Enzo, subir la rama y abrir el PR**
 
 Subir es publicar: no se hace sin que lo pida.
 
@@ -4172,7 +4172,7 @@ Fusionar es de Enzo: `gh pr merge <n> --merge`, con dos guiones.
 - Move: `docs/plan/2.1b-corregir-la-lectura/` → `docs/historico/2.1b-corregir-la-lectura/`
 - Modify: `docs/plan/PLAN-MAESTRO.md`, `docs/MAPA-DEL-PROYECTO.md`, `docs/REGISTRO.md`, `docs/BITACORA.md`
 
-- [ ] **Step 1: Pasar la carpeta a `historico/`**
+- [x] **Step 1: Pasar la carpeta a `historico/`**
 
 `CONVENCIONES.md §8 bis`: un sub-proyecto terminado pasa entero a `docs/historico/`, en el commit que lo cierra.
 
@@ -4184,7 +4184,7 @@ grep -rn "2.1b-corregir-la-lectura" docs backend frontend/src --include=*.md --i
 
 Corregir cada ruta que devuelva el `grep`: dentro de la carpeta movida, `../PLAN-MAESTRO.md` pasa a `../../plan/PLAN-MAESTRO.md` y `../../historico/` a `../`; en el plan maestro, `2.1b-corregir-la-lectura/diseno.md` pasa a `../historico/2.1b-corregir-la-lectura/diseno.md`; en el registro, los comentarios del código y la bitácora, `docs/plan/` y `plan/` pasan a `docs/historico/` e `historico/`.
 
-- [ ] **Step 2: Dejar el estado y los pendientes en el plan maestro**
+- [x] **Step 2: Dejar el estado y los pendientes en el plan maestro**
 
 En `diseno.md` y `plan.md` (ya en `historico/`), la línea de estado pasa a «**cerrado el AAAA-MM-DD**», con el número del PR.
 
@@ -4208,7 +4208,7 @@ En `docs/plan/PLAN-MAESTRO.md §7`:
 
 En `docs/MAPA-DEL-PROYECTO.md §1`, en la fila «Importación de DXF»: a «Qué hay» se le suma «Corregir la lectura con clics sobre el dibujo, y acercarlo y moverlo (2.1b)».
 
-- [ ] **Step 3: Mostrárselo a Enzo y, con su ok, commitear y subir**
+- [x] **Step 3: Mostrárselo a Enzo y, con su ok, commitear y subir**
 
 ```bash
 git add -A docs backend/app backend/tests frontend/src
