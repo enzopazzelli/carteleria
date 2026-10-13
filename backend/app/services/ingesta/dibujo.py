@@ -14,8 +14,9 @@ from shapely.geometry import LinearRing
 from .models import PiezaImportada
 
 #: `PAR-52`. Cuánto se puede apartar del original un contorno dibujado,
-#: como fracción del lado mayor del dibujo.
-DETALLE_DEL_DIBUJO = Decimal(1) / Decimal(4000)
+#: como fracción del lado mayor del dibujo. Alcanza para acercar el
+#: dibujo hasta `PAR-53` sin que las curvas se vean facetadas.
+DETALLE_DEL_DIBUJO = Decimal(1) / Decimal(20000)
 
 Anillo = list[tuple[Decimal, Decimal]]
 

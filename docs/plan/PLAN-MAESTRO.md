@@ -207,7 +207,7 @@ Se detallan cuando les toque, cada una con su diseño.
 
 | Sub-proyecto | Alcance | Historias | Depende de |
 |---|---|---|---|
-| **2.1 Importar y revisar** | El carril B de `PLAN-RUMBO-ANIDADO-Y-REVISION.md §5` (pasos B1 a B6): pantalla de importación, visor con roles y confirmación. Más la regla de las islas, el alcance de cada diseño y la asignación de material. Se partió en dos el 2026-10-12: **2.1a**, leer mejor y mostrar el dibujo antes de cargar, construida y en `main` desde el 2026-10-12: [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/diseno.md); y **2.1b**, la pantalla para corregir a mano, todavía sin diseño | `CART-506`, `CART-507` | `D-13` |
+| **2.1 Importar y revisar** | El carril B de `PLAN-RUMBO-ANIDADO-Y-REVISION.md §5` (pasos B1 a B6): pantalla de importación, visor con roles y confirmación. Más la regla de las islas, el alcance de cada diseño y la asignación de material. Se partió en dos el 2026-10-12: **2.1a**, leer mejor y mostrar el dibujo antes de cargar, construida y en `main` desde el 2026-10-12: [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/diseno.md); y **2.1b**, corregir la lectura a mano con clics sobre el dibujo, con diseño en [`2.1b-corregir-la-lectura/`](2.1b-corregir-la-lectura/diseno.md) | `CART-506`, `CART-507` | `D-13` |
 | **2.2 Catálogo y precios** | Precios con vigencia, carga desde la planilla de la empresa, insumos que no son chapa, historial. Completa lo que falta de materiales y parámetros de corte | `CART-101`, `CART-103` a `CART-107` | `D-10` |
 | **2.3 Cotizador completo** | Insumos desde catálogo, mano de obra por etapa, documento interno, PDF completo | `CART-304`, `CART-305`, `CART-309`, `CART-310` | 2.2 |
 | **2.4 Aprobación y envío completos** | Reintentos, respuesta del cliente, vencimientos, congelado con versiones de precio | `CART-401`, `CART-405`, `CART-407`, `CART-408` | 2.2, `D-07`, `D-17` |
@@ -265,6 +265,7 @@ Se detallan cuando les toque, cada una con su diseño.
 | Una comparación de formatos es un solo pedido que puede durar varias veces `PAR-09`; no se probó si el navegador lo corta | Revisión | `D-12` |
 | Si el worker falla en una segunda pasada, el supervisor descarta el anidado de la primera | Revisión; es anterior a este sub-proyecto | — |
 | `GUIA-SPARROW-PRUEBAS.md` sugiere 120 s como punto de partida y `motor/PLAN-VALIDACION-CORTE-MANUAL.md` nombra `PAR-09` con su valor anterior | Tarea 5 bis de su plan | — |
+| Girar una pieza con ángulo libre en el anidado automático. Hoy Sparrow solo prueba cuartos de vuelta (0°, 90°, 180°, 270°); a mano, en Ajuste, ya se puede girar a cualquier ángulo | Pedido de Enzo del 2026-10-12 | `INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md` lo dejaba afuera; hablarlo con Vale |
 
 **Pendientes de la lectura con imagen (2.1a).** Se cerró el 2026-10-12 y su carpeta pasó a [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/). Esto es lo que quedó vivo y se sigue desde acá. El detalle está en los «Desvíos» de su [`plan.md`](../historico/2.1a-lectura-con-imagen/plan.md).
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -80,17 +81,24 @@ class FormaLeida(BaseModel):
     id_origen: str
     contorno_mm: list[list[float]]
     agujeros_mm: list[list[list[float]]]
-    descartada: bool
-    #: Por qué entra descartada; `None` si se corta.
+    #: `se_corta`: se carga y se anida. `descartada`: se carga atenuada,
+    #: sin cortarse (el recorte de un hueco). `no_va`: la sacó quien
+    #: carga, y no se carga.
+    estado: Literal["se_corta", "descartada", "no_va"]
+    #: El estado no salió de una regla: lo marcó quien carga.
+    corregida: bool
+    #: Por qué entra descartada o no va; `None` si se corta sin que nadie
+    #: lo haya marcado.
     motivo: str | None
 
 
 class LecturaLeer(BaseModel):
     formas: list[FormaLeida]
-    #: Todo lo que no entra descartado, igual que al cargar: incluye lo
-    #: que después hay que seccionar.
+    #: Todo lo que se carga sin descartar, igual que al cargar: incluye
+    #: lo que después hay que seccionar.
     a_cortar: int
     descartadas: int
+    no_van: int
     advertencias: list[str]
 
 
