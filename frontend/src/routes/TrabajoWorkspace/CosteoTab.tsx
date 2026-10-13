@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   useAplicarOverride,
+  useActualizarLineaLibre,
   useActualizarMargenEIva,
   useClientes,
   useCosteo,
@@ -10,6 +11,7 @@ import {
   useCrearPresupuesto,
   useDesglose,
   useDuplicarPresupuesto,
+  useEliminarLineaLibre,
   usePresupuestosDelTrabajo,
   useRecalcularMateriales,
 } from "../../hooks/usePresupuestos";
@@ -18,7 +20,9 @@ import { ApiError } from "../../api/client";
 import { urlPlano } from "../../api/nesting";
 import { useGrupos } from "../../hooks/useGrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
+import type { LineaCosto } from "../../api/presupuestos";
 import PresupuestoClienteSeccion from "./PresupuestoClienteSeccion";
+import { importeParaEditar, leerImporte } from "./importes";
 
 export default function CosteoTab() {
   const { trabajoId } = useParams();
@@ -203,6 +207,15 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
   const crearLinea = useCrearLineaLibre(presupuestoId);
   const override = useAplicarOverride(presupuestoId);
   const margenEIva = useActualizarMargenEIva(presupuestoId);
+  const actualizarLinea = useActualizarLineaLibre(presupuestoId);
+  const eliminarLinea = useEliminarLineaLibre(presupuestoId);
+  // La línea que se está editando, con lo que hay escrito en cada campo.
+  const [edicion, setEdicion] = useState<{
+    id: number;
+    descripcion: string;
+    cantidad: string;
+    precio_unitario: string;
+  } | null>(null);
   const [nuevaLinea, setNuevaLinea] = useState({
     rubro: "MANO_DE_OBRA",
     descripcion: "",
@@ -215,14 +228,67 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
     return e instanceof ApiError ? e.message : fallback;
   }
 
+  const NUMEROS_INVALIDOS = "La cantidad y el precio unitario tienen que ser números, como 2 o 1.500,50.";
+
   async function alCrearLinea() {
     if (!nuevaLinea.descripcion.trim()) return;
+    const cantidad = leerImporte(nuevaLinea.cantidad);
+    const precio = leerImporte(nuevaLinea.precio_unitario);
+    if (cantidad === null || precio === null) {
+      setError(NUMEROS_INVALIDOS);
+      return;
+    }
     setError(null);
     try {
-      await crearLinea.mutateAsync(nuevaLinea);
+      await crearLinea.mutateAsync({ ...nuevaLinea, cantidad, precio_unitario: precio });
       setNuevaLinea((n) => ({ ...n, descripcion: "" }));
     } catch (e) {
       setError(mensajeDeError(e, "No se pudo agregar la línea."));
+    }
+  }
+
+  function alEmpezarEdicion(linea: LineaCosto) {
+    setError(null);
+    setEdicion({
+      id: linea.id,
+      descripcion: linea.descripcion,
+      cantidad: importeParaEditar(linea.cantidad),
+      precio_unitario: importeParaEditar(linea.precio_unitario),
+    });
+  }
+
+  async function alGuardarEdicion() {
+    if (!edicion) return;
+    const descripcion = edicion.descripcion.trim();
+    const cantidad = leerImporte(edicion.cantidad);
+    const precio = leerImporte(edicion.precio_unitario);
+    if (!descripcion) {
+      setError("La línea necesita una descripción.");
+      return;
+    }
+    if (cantidad === null || precio === null) {
+      setError(NUMEROS_INVALIDOS);
+      return;
+    }
+    setError(null);
+    try {
+      await actualizarLinea.mutateAsync({
+        lineaId: edicion.id,
+        datos: { descripcion, cantidad, precio_unitario: precio },
+      });
+      setEdicion(null);
+    } catch (e) {
+      setError(mensajeDeError(e, "No se pudo guardar la línea."));
+    }
+  }
+
+  async function alBorrar(linea: LineaCosto) {
+    if (!window.confirm(`¿Borrar la línea «${linea.descripcion}»?`)) return;
+    setError(null);
+    try {
+      await eliminarLinea.mutateAsync(linea.id);
+    } catch (e) {
+      setError(mensajeDeError(e, "No se pudo borrar la línea."));
     }
   }
 
@@ -268,21 +334,67 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
           <h3 className="text-sm font-medium mb-1">{rubro}</h3>
           <table className="w-full text-sm">
             <tbody>
-              {lineas.map((linea) => (
-                <tr key={linea.id} className="border-b border-line">
-                  <td>{linea.descripcion}</td>
-                  <td className="font-mono">{linea.cantidad ?? "—"}</td>
-                  <td className="font-mono">
-                    {linea.moneda} {Number(linea.valor_override ?? linea.valor_calculado ?? 0).toFixed(2)}
-                    {linea.valor_override !== null && <span className="ml-1 text-bronze text-xs">override</span>}
-                  </td>
-                  <td>
-                    <button className="text-xs underline" onClick={() => alAplicarOverride(linea.id)}>
-                      Override
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {lineas.map((linea) =>
+                edicion?.id === linea.id ? (
+                  <tr key={linea.id} className="border-b border-line">
+                    <td className="py-1 pr-2">
+                      <input
+                        className="border border-line rounded px-2 py-1 bg-paper w-full"
+                        value={edicion.descripcion}
+                        onChange={(e) => setEdicion({ ...edicion, descripcion: e.target.value })}
+                      />
+                    </td>
+                    <td className="pr-2">
+                      <input
+                        className="border border-line rounded px-2 py-1 bg-paper w-20 font-mono"
+                        value={edicion.cantidad}
+                        onChange={(e) => setEdicion({ ...edicion, cantidad: e.target.value })}
+                      />
+                    </td>
+                    <td className="pr-2">
+                      <input
+                        className="border border-line rounded px-2 py-1 bg-paper w-28 font-mono"
+                        value={edicion.precio_unitario}
+                        onChange={(e) => setEdicion({ ...edicion, precio_unitario: e.target.value })}
+                      />
+                    </td>
+                    <td className="whitespace-nowrap">
+                      <button className="text-xs underline" onClick={alGuardarEdicion}>
+                        Guardar
+                      </button>
+                      <button className="text-xs underline ml-2" onClick={() => setEdicion(null)}>
+                        Cancelar
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={linea.id} className="border-b border-line">
+                    <td>{linea.descripcion}</td>
+                    <td className="font-mono">{linea.cantidad ?? "—"}</td>
+                    <td className="font-mono">
+                      {linea.moneda} {Number(linea.valor_override ?? linea.valor_calculado ?? 0).toFixed(2)}
+                      {linea.valor_override !== null && <span className="ml-1 text-bronze text-xs">override</span>}
+                    </td>
+                    <td className="whitespace-nowrap">
+                      <button className="text-xs underline" onClick={() => alAplicarOverride(linea.id)}>
+                        Override
+                      </button>
+                      {/* Las de material no se editan ni se borran a mano: se
+                          regeneran con «Recalcular materiales». */}
+                      {linea.rubro !== "MATERIAL" && (
+                        <>
+                          <button className="text-xs underline ml-2" onClick={() => alEmpezarEdicion(linea)}>
+                            Editar
+                          </button>
+                          <button className="text-xs underline ml-2" onClick={() => alBorrar(linea)}>
+                            Borrar
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                )
+              )}
             </tbody>
           </table>
         </div>

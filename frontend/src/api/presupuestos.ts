@@ -1,4 +1,4 @@
-import { apiGet, apiGetArchivo, apiPatch, apiPost } from "./client";
+import { apiDelete, apiGet, apiGetArchivo, apiPatch, apiPost } from "./client";
 
 export interface Cliente {
   id: number;
@@ -134,6 +134,17 @@ export function crearLineaLibre(
   datos: { rubro: string; descripcion: string; cantidad: string; unidad?: string; precio_unitario: string }
 ): Promise<LineaCosto> {
   return apiPost<LineaCosto>(`/presupuestos/${presupuestoId}/lineas-costo`, datos);
+}
+
+export function actualizarLineaLibre(
+  lineaId: number,
+  datos: { descripcion: string; cantidad: string; precio_unitario: string }
+): Promise<LineaCosto> {
+  return apiPatch<LineaCosto>(`/lineas-costo/${lineaId}`, datos);
+}
+
+export function eliminarLineaLibre(lineaId: number): Promise<void> {
+  return apiDelete(`/lineas-costo/${lineaId}`);
 }
 
 export function aplicarOverride(lineaId: number, valorOverride: string | null, overridePor: string): Promise<LineaCosto> {

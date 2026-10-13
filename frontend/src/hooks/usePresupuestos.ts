@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   actualizarLineaCliente,
+  actualizarLineaLibre,
   actualizarMargenEIva,
   actualizarPresupuesto,
   aplicarOverride,
@@ -8,6 +9,7 @@ import {
   crearLineaLibre,
   crearPresupuesto,
   duplicarPresupuesto,
+  eliminarLineaLibre,
   listarClientes,
   listarLineasCosto,
   listarTodosLosPresupuestos,
@@ -128,6 +130,23 @@ export function useActualizarLineaCliente(presupuestoId: number) {
   return useMutation({
     mutationFn: ({ lineaId, datos }: { lineaId: number; datos: Parameters<typeof actualizarLineaCliente>[1] }) =>
       actualizarLineaCliente(lineaId, datos),
+    onSuccess: refrescar,
+  });
+}
+
+export function useActualizarLineaLibre(presupuestoId: number) {
+  const refrescar = useRefrescarPresupuesto(presupuestoId);
+  return useMutation({
+    mutationFn: ({ lineaId, datos }: { lineaId: number; datos: Parameters<typeof actualizarLineaLibre>[1] }) =>
+      actualizarLineaLibre(lineaId, datos),
+    onSuccess: refrescar,
+  });
+}
+
+export function useEliminarLineaLibre(presupuestoId: number) {
+  const refrescar = useRefrescarPresupuesto(presupuestoId);
+  return useMutation({
+    mutationFn: (lineaId: number) => eliminarLineaLibre(lineaId),
     onSuccess: refrescar,
   });
 }
