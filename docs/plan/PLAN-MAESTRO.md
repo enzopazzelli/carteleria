@@ -279,7 +279,7 @@ Cada una avanza con su valor por defecto hasta que se cierre. El enunciado compl
 | `D-13` | Qué hace el sistema con un diseño que «queda como está» | 2.1 |
 | `D-14` | En qué forma llega el motor de Vale | E1 |
 | `D-15` | Aprobación del presupuesto entero o ítem por ítem | 1.4 |
-| `D-16` | Herramienta para generar el PDF. **Cerrada: WeasyPrint** | 1.3 |
+| `D-16` | Herramienta para generar el PDF. Construido con WeasyPrint; **reabierta el 2026-10-13: pasa a ReportLab,** pendiente | 1.3 |
 | `D-17` | Al aceptar el cliente, ¿se crea sola la nota de pedido en AppSheet? | 2.4 |
 | `D-18` | ¿El override puede completar una línea de material sin anidado? | 1.2 |
 | `D-20` | Qué fecha lleva el presupuesto y desde cuándo corre la validez | 4.5 |

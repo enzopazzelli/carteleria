@@ -58,6 +58,38 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-13 — PDF del presupuesto: PR #19 abierto, y se decide pasar a ReportLab antes de fusionar
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (sub-proyecto 1.3)
+
+### Qué se hizo
+
+- **El PR #19 quedó abierto,** con la rama subida como `feat/pdf-presupuesto`. Choca con `main` en un solo archivo, esta bitácora: las dos ramas agregaron la entrada de arriba. Con choques GitHub no corre las pruebas del PR, así que se lanzaron a mano sobre la rama: pasaron las 507, sin saltear ninguna, con Pango instalado en Linux.
+- **Cuatro preguntas para el dueño en el registro** (`P-31` a `P-34`), sumadas al primer encuentro del guion de relevamiento.
+- **Una sonda con ReportLab, fuera del repo:** la misma hoja del presupuesto, con la tipografía del repo, «Página X de Y», el recuadro del logo y los textos escapados. Tarda entre 0,4 y 0,9 s, corta sola una palabra larguísima, y 80 renglones ocupan 4 hojas. No es código del producto: quedó en `.superpowers/sdd/plan/herramientas/` de la carpeta de la rama, que git ignora.
+- **Se vaciaron las cachés de pip y de npm** en la máquina de Enzo: el disco C: pasó de 1,1 a 4,7 GB libres.
+
+### Qué se decidió
+
+- **El PDF pasa de WeasyPrint a ReportLab, en todos lados** (Enzo). No quiere MSYS2 en su máquina, y ReportLab no necesita ninguna biblioteca del sistema, ni en Windows ni en el servidor. Reabre `D-16`. Se le avisó lo que cuesta: la plantilla deja de ser HTML y pasa a ser código.
+- **Antes de imprimir va a haber una pantalla para retocar el presupuesto** (Enzo): a un lado, los campos para editar y configurar; al otro, el PDF de verdad, que se vuelve a dibujar con cada cambio. Tiene que permitir verlo como va a salir, editar los textos, agregar textos libres (condiciones, forma de pago, plazo) y elegir qué se muestra. Se descartó una hoja HTML aparte del PDF: serían dos dibujos del mismo presupuesto para mantener iguales.
+- **El orden** (Enzo): primero el cambio a ReportLab, dentro del PR #19, para que WeasyPrint no llegue a `main`. La pantalla va después, como pieza aparte, con su diseño, su plan y su PR.
+
+### Cambios en el registro
+
+- **`D-16` reabierta:** pasa a ReportLab; pendiente de construir.
+- **`P-31` a `P-34` nuevas.**
+
+### Pendiente
+
+- **Cambiar el generador a ReportLab en la rama del PR #19.** Hoy el código de la rama sigue con WeasyPrint. Hay que reescribir `pdf.py` con la misma entrada y salida; borrar la plantilla HTML, la marca `pango` de las pruebas, el error de «faltan bibliotecas» y su respuesta 503; sacar `weasyprint` y `jinja2` de las dependencias y sumar `reportlab`; sacar del CI el paso que instala Pango; y reescribir la sección 5 de la guía de pruebas locales, el §4, §7, §9 y §10 del diseño y la fila de `D-16`.
+- **Después de eso, en la máquina de Enzo:** desinstalar MSYS2 (`D:\msys64`, 813 MB) y borrar la variable `WEASYPRINT_DLL_DIRECTORIES`.
+- **Resolver el choque de esta bitácora con `main`,** conservando las entradas de los dos lados.
+- **El recorrido de Enzo en un navegador con ventana,** fusionar, y después respaldar la base real y correr `alembic upgrade head`.
+- **Diseñar la pantalla para retocar el presupuesto.** Todavía no tiene diseño escrito: solo están las tres decisiones de arriba.
+
+---
+
 ## 2026-10-12 — PDF del presupuesto (1.3) construido: un importe por ítem, texto y precio editables, y total fijado
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (sub-proyecto 1.3)

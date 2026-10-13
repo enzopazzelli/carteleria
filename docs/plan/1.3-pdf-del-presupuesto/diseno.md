@@ -2,6 +2,8 @@
 
 > **Estado:** **construido el 2026-10-12,** en la rama `worktree-pdf-presupuesto`, con el plan de [`plan.md`](plan.md). Lo que se apartó está al final de ese plan, en «Desvíos». Se trabajó en una carpeta aparte del repositorio, en paralelo a la lectura del DXF (2.1a), que no tocó ninguno de estos archivos.
 >
+> **Lo que cambia y todavía no está hecho (2026-10-13).** Enzo decidió pasar de WeasyPrint a ReportLab antes de fusionar, para no depender de MSYS2 en su máquina, y sumar después una pantalla para retocar el presupuesto con el PDF real al lado. Hasta que se construya, los §4, §7, §9 y §10 de esta página describen lo que hay en la rama: WeasyPrint y la plantilla HTML. Qué falta, paso por paso: [`BITACORA.md`](../../BITACORA.md), entrada del 2026-10-13.
+>
 > **De dónde sale.** Es el sub-proyecto 1.3 de [`PLAN-MAESTRO.md §6`](../PLAN-MAESTRO.md), «PDF mínimo» (`CART-309`). Al diseñarlo, Enzo pidió que antes de sacar el PDF se puedan cambiar el texto y el precio de cada ítem y el total, así que el alcance creció: toma de 1.2 la edición del presupuesto (§3).
 >
 > **Sobre los valores.** Los parámetros se citan por ID y viven en [`REGISTRO.md`](../../REGISTRO.md). Los números del ejemplo del §5 son inventados, para mostrar la cuenta.
