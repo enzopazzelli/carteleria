@@ -10,7 +10,7 @@
 
 ## En una frase
 
-**El cotizador funciona de punta a punta en local, por API y en pantalla, hasta el desglose del presupuesto; faltan el PDF, el login, la aprobación del dueño y el envío al cliente.** El motor de anidado está medido pero no construido: desde el 2026-10-05 es un carril aparte (Vale) que se enchufa después, y el resto lo construye Enzo en el orden del plan maestro.
+**El cotizador funciona de punta a punta en local, por API y en pantalla, hasta el PDF del presupuesto; faltan el login, la aprobación del dueño y el envío al cliente.** El motor de anidado está medido pero no construido: desde el 2026-10-05 es un carril aparte (Vale) que se enchufa después, y el resto lo construye Enzo en el orden del plan maestro.
 
 ---
 
@@ -24,7 +24,7 @@ La columna «Sigue en» es el paso del plan maestro que lo completa.
 | **Catálogo** | Materiales, formatos con el precio importado de la planilla `COTIZADOR` (moneda, unidad, conversión) y parámetros de corte por material | Precios con vigencia, carga masiva, insumos que no son chapa, historial | 2.2 |
 | **Trabajos y grupos** | Trabajos, piezas y grupos de corte, cada grupo con su material (`CART-211`) | — | — |
 | **Anidado** | Corre en segundo plano con estados, guarda colocaciones, ajuste manual con validación, plano SVG, DXF de corte y aprovechamiento con área real (`ADR-08`). Comparar formatos antes de elegir uno (`CART-205`) | El motor real. El único conectado es `rectpack`, que sale del producto (`EPICA.md`, nota de `ADR-01`) | E1, E2 |
-| **Cotizador** | Presupuesto con cliente, líneas por rubro, override con trazabilidad, líneas libres, margen, IVA, total, desglose y duplicar como otra opción (`CART-301` a `CART-308`) | PDF, insumos elegidos de un catálogo, mano de obra por etapa, presupuestos fuera de un trabajo en pantalla | 1.2, 1.3, 2.3 |
+| **Cotizador** | Presupuesto con cliente, líneas por rubro, override con trazabilidad, líneas libres, margen, IVA, total, desglose y duplicar como otra opción, texto y precio por ítem para el cliente, total fijado y PDF (`CART-301` a `CART-309`) | Insumos elegidos de un catálogo, mano de obra por etapa, presupuestos fuera de un trabajo en pantalla | 1.2, 2.3 |
 | **Frontend** | Lista de trabajos y un espacio de trabajo con cinco pestañas: Piezas, Grupos, Anidado, Ajuste y Costeo | Login, pantalla de presupuestos, pantalla de importar y revisar | 1.1, 1.2, 2.1 |
 | **Fundaciones** | SQLite en local y PostgreSQL por configuración, migraciones de Alembic, tests del backend en CI | Servidor, login, roles, usuarios, clientes con email, auditoría, backups | 1.1, 2.5 |
 | **Aprobación y envío** | Nada: el presupuesto solo conoce el estado borrador | Todo (`CART-401` a `CART-408`) | 1.4, 1.5, 2.4 |

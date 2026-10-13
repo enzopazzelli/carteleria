@@ -1,6 +1,6 @@
 # 1.3 · PDF del presupuesto — diseño
 
-> **Estado:** **diseño escrito el 2026-10-12, a la espera de la revisión de Enzo.** Todavía no hay plan ni código. Se trabaja en la rama `worktree-pdf-presupuesto`, en una carpeta aparte del repositorio, en paralelo a la lectura del DXF (2.1), que no toca ninguno de estos archivos.
+> **Estado:** **construido el 2026-10-12,** en la rama `worktree-pdf-presupuesto`, con el plan de [`plan.md`](plan.md). Lo que se apartó está al final de ese plan, en «Desvíos». Se trabajó en una carpeta aparte del repositorio, en paralelo a la lectura del DXF (2.1a), que no tocó ninguno de estos archivos.
 >
 > **De dónde sale.** Es el sub-proyecto 1.3 de [`PLAN-MAESTRO.md §6`](../PLAN-MAESTRO.md), «PDF mínimo» (`CART-309`). Al diseñarlo, Enzo pidió que antes de sacar el PDF se puedan cambiar el texto y el precio de cada ítem y el total, así que el alcance creció: toma de 1.2 la edición del presupuesto (§3).
 >

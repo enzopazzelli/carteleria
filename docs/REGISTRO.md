@@ -323,10 +323,12 @@ Desde el 2026-10-05, «Se cierra en» nombra el paso de [`plan/PLAN-MAESTRO.md`]
 | **D-13** | ¿Qué hace el sistema con un diseño que «queda como está» (hojas de otra medida que la del catálogo, `PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.4`)? | `P-26`, `D-02` | **2.1, sin falta** | Se reconoce y se muestra en la revisión, sin anidar. **Pesa más desde el 2026-10-05:** con el anidado vacío hasta el motor, estos diseños no tendrían costo de material nunca, y son la mayoría de la muestra (`PLAN-MAESTRO.md §8`) |
 | **D-14** | ¿En qué forma llega el motor del carril de Vale al producto: función de Python, servicio aparte, otro lenguaje? | Conversación con Vale | E1 | Una función de Python en `backend/app/services/nesting/` que devuelve un `ResultadoAnidado`, como `deepnest_cliente.py` |
 | **D-15** | ¿El dueño aprueba el presupuesto entero, o ítem por ítem como modela AppSheet en `COT_APROBACIONES` (`cliente/DASHBOARD-VISTAS.md §1.5`)? | `B-11` y conversación con el dueño | 1.4 | Entero |
-| **D-16** | ¿Con qué herramienta se genera el PDF del presupuesto? | Que se instale en Windows (donde se desarrolla) y en el servidor; formato actual de `B-13` | 1.3 | Sin elegir. `ADR-05` nombra WeasyPrint |
+| **D-16** | ¿Con qué herramienta se genera el PDF del presupuesto? | Que se instale en Windows (donde se desarrolla) y en el servidor; formato actual de `B-13` | 1.3 | **Cerrada (Enzo, 2026-10-12):** WeasyPrint, con la plantilla en HTML y CSS. En Windows necesita MSYS2 con Pango (`GUIA-PRUEBAS-LOCALES.md §5`); en el servidor, Pango en la imagen de Docker (`plan/1.3-pdf-del-presupuesto/diseno.md §10`) |
 | **D-17** | Cuando el cliente acepta, ¿se crea sola la nota de pedido en AppSheet? | Conversación con el dueño; cuál de `NOTAS_PEDIDO` y `NOTAS_PEDIDO_V2` es la fuente de verdad (`cliente/DASHBOARD-VISTAS.md §1.2`) | 2.4 | Se carga a mano, como hoy |
 | **D-18** | ¿El override manual (`ADR-07`) puede completar una línea de material que no tiene anidado? Si puede, se emiten presupuestos con chapa antes de que llegue el motor | Conversación con el dueño | 1.2 | `ADR-07` sigue vigente: el override alcanza a cualquier línea |
 | **D-19** | ¿Cómo propone el sistema los cortes del seccionado? | `P-21`, `P-22`, `SUP-17` | A5 | **Cerrada (Enzo, 2026-10-07):** grilla del tamaño de la chapa, que se corre y se gira; primero menos tramos, después menos soldadura. El diseñador la ajusta antes de aplicar. Se descartaron partir por lo más angosto y la búsqueda global de cortes (`historico/A5-seccionado/diseno.md`) |
+| **D-20** | ¿Qué fecha lleva el presupuesto que ve el cliente, y desde cuándo corre la validez (`PAR-11`)? | Conversación con el dueño; el envío (1.5) | 4.5 | El día en que se genera el PDF (`plan/1.3-pdf-del-presupuesto/diseno.md §4`) |
+| **D-21** | Cuando se fija a mano el total de un presupuesto, ¿ese número es con IVA o sin IVA? | Conversación con el dueño | 4.5 | Con IVA: es el número final que paga el cliente |
 
 ---
 
@@ -354,7 +356,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Parámetros (`PAR`) | 49 | 12 | 25 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 30 | 26 | 4 | 0 |
-| Decisiones (`D`) | 19 | 18 | 0 | 1 |
+| Decisiones (`D`) | 21 | 19 | 0 | 2 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).
 

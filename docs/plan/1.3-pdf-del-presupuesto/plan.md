@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** **escrito el 2026-10-12, a la espera de la revisión de Enzo.** Sin ejecutar.
+> **Estado:** **ejecutado el 2026-10-12,** de la Tarea 1 a la 10. Lo que se apartó del plan está al final, en «Desvíos».
 >
 > **El código de este plan está probado, con un límite.** El 2026-10-12 los bloques de las Tareas 1 a 9 se aplicaron, tal como están escritos acá, sobre una copia del backend y otra del frontend fuera del repositorio. Se aplicó todo junto y se probó el estado final: backend **492 pruebas en verde** (423 antes), con el PDF generado de verdad y la migración de ida y vuelta; frontend **60** (40 antes) y `npm run build` sin errores. **No se probó:** cada tarea por separado (las corridas de «falla primero» son las esperadas, no las vistas), el recorrido en pantalla del tramo 3 (compila, nadie lo usó en un navegador), el paso de GitHub de la Tarea 5 y el enlace provisorio de la Tarea 6.
 
@@ -3953,3 +3953,27 @@ git push -u origin worktree-pdf-presupuesto:feat/pdf-presupuesto
 Mirar que el CI pase y que su salida no tenga pruebas salteadas: es la única comprobación del Step 9 de la Tarea 5.
 
 Después de fusionar, y **solo con el ok explícito de Enzo**, la base real: copiar `backend/local/carteleria.db` a `backend/local/respaldo-AAAA-MM-DD-antes-de-7f91bcd3ef15/` y recién ahí correr `python -m alembic upgrade head` desde `backend/` en la carpeta principal. Como en A5 y A6, la carpeta del sub-proyecto pasa a `docs/historico/` en un commit aparte, cuando Enzo lo da por cerrado.
+
+---
+
+## Desvíos
+
+Lo que se hizo distinto de lo escrito arriba, el 2026-10-12. El registro paso a paso está en `.superpowers/sdd/plan/progress.md` (fuera de git).
+
+**En el código:**
+
+- **Tarea 8: el clic en «Descargar PDF» se perdía.** Lo encontró el recorrido del Step 6. Con un aviso de error a la vista (por ejemplo, después de escribir «mil» en un precio), apretar el botón justo después de escribir en un campo hacía que el campo perdiera el foco; su guardado borraba el aviso, la sección subía 54 px y, al soltar, el botón ya no estaba bajo el puntero. El navegador no contaba el clic y el PDF no se pedía. Arreglo en `PresupuestoClienteSeccion.tsx`: el botón tiene `onMouseDown={(e) => e.preventDefault()}`, así no le saca el foco al campo, y `alDescargar` le saca el foco al campo activo antes de esperar `ultimoGuardado`. Comprobado con el guion de recorrido, con y sin aviso: la página pide el PDF después de guardar el texto. No hay prueba automática: el frontend no tiene pruebas con navegador.
+- **Tarea 6: un renglón vacío de más** en `frontend/src/api/presupuestos.ts` y en `docs/GUIA-PRUEBAS-LOCALES.md`, que dejó la herramienta que aplicaba los pasos. Se sacaron en el commit de la Tarea 6.
+
+**En cómo se probó:**
+
+- **Las pruebas del backend corrieron con los temporales en el disco D:** (`--basetemp` y `CARTELERIA_DATOS`). En C: quedaba menos de 1 GB y la primera corrida dio seis errores de «database or disk is full».
+- **Las dependencias se instalaron con `--no-cache-dir`,** por el mismo motivo.
+- **La variable de WeasyPrint se fijó al final de la Tarea 5,** no en su Step 2, porque cambia el entorno del usuario de Enzo y él pidió confirmarlo. Hasta ahí se puso en cada comando.
+- **Los recorridos de las Tareas 6, 8 y 9 se hicieron con Chrome sin ventana,** no a mano. Desde la Tarea 8, la app de la rama corrió en los puertos 8001 y 5174, porque en 8000 y 5173 estaba la de la carpeta principal; el Chrome de prueba redirigía los pedidos. Chrome sin ventana no guarda descargas: se comprobó el pedido que hace la página y el contenido del PDF bajándolo por la API.
+- **En la Tarea 10, el mapa** dice además «hasta el PDF del presupuesto» en lugar de «hasta el desglose», y la fila del cotizador deja 1.3 afuera de los pasos que faltan.
+
+**Lo que quedó anotado y no se hizo:**
+
+- Los botones «a mano · quitar» y «fijado · quitar» pueden perder un clic de la misma forma que el de descargar. Perderlo no hace nada: se vuelve a apretar.
+- Los campos «Margen %» e «IVA %» de «Líneas por rubro», anteriores a este sub-proyecto, mandan el texto tal cual: «10,5» vuelve como error en lugar de leerse con `leerImporte`.

@@ -193,6 +193,8 @@ Sin código de producto.
 | **1.4 Aprobación mínima** | Estados borrador, pendiente, observado y aprobado. Aviso al dueño por mail con link firmado (`PAR-17`). El dueño aprueba u observa sin iniciar sesión. Historial de quién cambió qué estado | Vencimiento automático, anulación, resumen agrupado de avisos | `CART-401` a `CART-404` | Usuario de prueba que aprueba; buzón de prueba |
 | **1.5 Envío por mail** | Al aprobar sale el PDF al cliente y el presupuesto queda como enviado, con el PDF y las líneas congelados. Se puede aprobar sin enviar. El cliente tiene un email cargado | WhatsApp, reintentos, respuesta del cliente por link | `CART-405`, `CART-406`, `CART-004` | Buzón de prueba |
 
+**1.3 quedó construido el 2026-10-12,** en la rama `worktree-pdf-presupuesto`: [`1.3-pdf-del-presupuesto/`](1.3-pdf-del-presupuesto/). Tomó de 1.2 la edición del presupuesto: el texto y el precio de cada ítem para el cliente, el total fijado, editar y borrar líneas, y cambiar la validez y el cliente, todo desde la pestaña Costeo. De 1.2 queda la lista de presupuestos fuera del trabajo.
+
 **Regla para mandar a aprobar.** El presupuesto tiene cliente, al menos una línea de costo y ningún material pendiente. **Material pendiente** es una línea de rubro material sin valor efectivo: ni calculado ni cargado por override. Si falta algo, el sistema lo rechaza diciendo qué falta.
 
 **Punto abierto de 1.2 (`D-18`, nueva).** El override manual de `ADR-07` ya existe y hoy alcanza a cualquier línea, también a una de material sin anidado. Eso permitiría completar a mano el costo de la chapa y emitir el presupuesto antes de que llegue el motor. Si se permite o se bloquea en ese caso se decide en el diseño de 1.2.
@@ -277,9 +279,11 @@ Cada una avanza con su valor por defecto hasta que se cierre. El enunciado compl
 | `D-13` | Qué hace el sistema con un diseño que «queda como está» | 2.1 |
 | `D-14` | En qué forma llega el motor de Vale | E1 |
 | `D-15` | Aprobación del presupuesto entero o ítem por ítem | 1.4 |
-| `D-16` | Herramienta para generar el PDF | 1.3 |
+| `D-16` | Herramienta para generar el PDF. **Cerrada: WeasyPrint** | 1.3 |
 | `D-17` | Al aceptar el cliente, ¿se crea sola la nota de pedido en AppSheet? | 2.4 |
 | `D-18` | ¿El override puede completar una línea de material sin anidado? | 1.2 |
+| `D-20` | Qué fecha lleva el presupuesto y desde cuándo corre la validez | 4.5 |
+| `D-21` | El total fijado a mano, con IVA o sin IVA | 4.5 |
 | `D-08` | Retención y backup de archivos generados | 1.1 |
 | `D-10` | Fórmula del costo por unidad de venta | 2.2 |
 | `D-04` | WhatsApp directo o por un intermediario | 4.3 |

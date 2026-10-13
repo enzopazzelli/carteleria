@@ -58,6 +58,46 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-12 — PDF del presupuesto (1.3) construido: un importe por ítem, texto y precio editables, y total fijado
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (sub-proyecto 1.3)
+
+### Qué se hizo
+
+- **La cuenta del presupuesto pasó a un servicio** (`backend/app/services/presupuesto/totales.py`) y ahora arma el precio de cada ítem: el escrito a mano o el costo más el margen. Con un total fijado, todos los ítems se ajustan por el mismo factor. La usan la pantalla y el PDF.
+- **El documento del cliente** (`documento.py`) no tiene ningún campo de costo ni de margen, y **el PDF** (`pdf.py`) sale de una plantilla HTML con WeasyPrint, con la tipografía Source Sans 3 guardada en el repo. Una prueba lee el texto del PDF y comprueba que no trae ni un importe de más.
+- **La sección «Presupuesto para el cliente» en Costeo:** texto y precio por ítem, total final, validez, cliente, margen resultante, la lista de lo que falta y el botón del PDF. En «Líneas por rubro» se suman editar y borrar.
+- **De paso se corrigió un error que ya existía:** una validez, un cliente o una moneda vacíos llegaban a la base y volvían como error del servidor. Ahora responden con un aviso.
+- **Se trabajó en una carpeta aparte del repositorio** (un worktree), en paralelo a la lectura del DXF (2.1a), que siguió en la carpeta principal y se fusionó antes (PR #18).
+- **El código del plan se probó antes de escribirlo,** sobre una copia fuera del repo, y después se aplicó tarea por tarea con el ok de Enzo en cada commit. Backend 492 en verde (423 antes), sin pruebas salteadas; frontend 60 (40 antes).
+- **La pantalla se recorrió con Chrome sin ventana:** los 9 puntos del plan para la sección nueva y los 5 de editar y borrar.
+- **El recorrido encontró una falla del plan, y se arregló:** con un aviso de error a la vista, apretar «Descargar PDF» justo después de escribir en un campo perdía el clic. El guardado del campo borraba el aviso, el botón subía 54 px y al soltar ya no estaba bajo el puntero. Ahora el botón no le saca el foco al campo y es el clic el que guarda lo escrito antes de pedir el PDF.
+
+### Qué se decidió
+
+- **Cada ítem con su importe,** y no solo el total (Enzo).
+- **WeasyPrint,** con MSYS2 y Pango instalados en `D:\msys64` para probar en Windows, y la variable `WEASYPRINT_DLL_DIRECTORIES` fija en el usuario de Enzo (Enzo). ReportLab andaba sin instalar nada, pero la plantilla hubiera sido código.
+- **Un presupuesto incompleto no genera PDF** y dice qué falta (Enzo).
+- **Al fijar el total se ajustan todos los ítems,** también los escritos a mano (Enzo). Lo escrito no se pisa: al quitar el total fijado, vuelve.
+- **De este diseño, a confirmar con el dueño:** la fecha del presupuesto es el día en que se genera, y el total fijado es con IVA.
+
+### Cambios en el registro
+
+- **`D-16` cerrada:** WeasyPrint.
+- **`D-20` y `D-21` nuevas:** la fecha del presupuesto y si el total fijado es con IVA. Se confirman en 4.5.
+
+### Pendiente
+
+- **El recorrido de Enzo en el navegador,** sobre todo que el archivo se descargue: Chrome sin ventana no guarda descargas, y eso no se pudo ver.
+- **La revisión independiente de la rama** antes del PR.
+- **Al abrir el PR,** resolver los choques con `main` en la bitácora y el mapa: los dos lados los tocaron.
+- **Antes de usarlo sobre la base real,** respaldarla y correr `alembic upgrade head`: la migración `7f91bcd3ef15` agrega tres columnas.
+- **La imagen de Docker de 1.1** tiene que instalar Pango.
+- **Juntar varias líneas de costo en un solo ítem** y **registrar quién cambió un precio** quedaron afuera (§3 del diseño).
+- **El disco C: de la máquina de Enzo quedó con 1 GB libre:** con menos, las pruebas del backend fallan por falta de espacio. Se corrieron con los temporales en D:.
+
+---
+
 ## 2026-10-10 — Reparto por chapa (A6) construido, en `main` y cerrado: Sparrow vacía chapas con el tiempo que sobra, y `PAR-09` sube a 240 s
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A6)
