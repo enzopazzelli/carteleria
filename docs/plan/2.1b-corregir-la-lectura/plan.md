@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** **construido el 2026-10-13, en la rama `feat/corregir-la-lectura`, a la espera de que Enzo lo fusione.** Las Tareas 0 a 7 se ejecutaron ese día, cada una con el ok de Enzo antes de su commit. Queda la Tarea 8, que va después de la fusión.
+> **Estado:** **construido el 2026-10-13, en la rama `feat/corregir-la-lectura`, a la espera de que Enzo lo fusione.** Las Tareas 0 a 7 se ejecutaron ese día, cada una con el ok de Enzo antes de su commit. Queda la Tarea 8, que va después de la fusión. Un revisor aparte leyó la rama después de la Tarea 7: lo que dejó está en «Desvíos», al final, y con eso el backend quedó en 506 y el frontend en 95.
 >
 > **El código de este plan está probado.** Entre el 2026-10-12 y el 13 se escribió sobre una copia limpia, fuera del repositorio, tarea por tarea y con las pruebas antes que el código. Cada prueba falló y pasó donde el plan dice. El backend terminó en 500 en verde (467 antes) y el frontend en 97 (56 antes), con `tsc` y `vite build` sin errores. **La pantalla se probó en un navegador sin ventana,** con clics, rueda y arrastre de verdad, contra una copia de la base y con un DXF que trae el logo solo: son el Step 9 de la Tarea 6 y el Step 1 de la Tarea 7. Ese ensayo corrigió el diseño (`diseno.md §8`).
 
@@ -4218,3 +4218,37 @@ git push origin main
 ```
 
 Antes del commit, mirar el `git status`: no tiene que figurar `Presupuesto_Cliente_Carteleria.docx`.
+
+---
+
+## Desvíos respecto de este plan (2026-10-13)
+
+**En la ejecución.**
+
+- **Cómo se aplicó cada tarea.** Los archivos no se tipearon: se copiaron del repo del ensayo, del que salió este plan (`git -C .superpowers/ensayo-2.1b show Tn-codigo:<ruta>`), y se comprobó que quedaran en CRLF. Cada tarea falló y pasó con los mismos números que dice el plan.
+- **Tarea 5, Step 6.** La fila de `PAR-53` quedó al final de su tabla del registro: la de `PAR-52` era la última.
+- **Tarea 7.** Además de lo que pedía, se actualizó la línea de estado de este plan y se tildaron sus pasos.
+
+**Lo que dejó la revisión de la rama.** Un revisor aparte leyó la rama entera: «se puede fusionar, con arreglos». Corrió las pruebas y, por su cuenta, 720 lecturas corregidas al azar sobre 120 dibujos: ningún error, y lo que muestra la lectura fue siempre lo que guarda la carga. Se arregló, cada cosa con una prueba que falló primero:
+
+1. **Lo de adentro de una forma que no va no se leía como si ella no estuviera** (`dxf.py`, `_clasificar_piezas_y_agujeros`). Si la forma sacada estaba adentro de otra que se corta, lo que tenía adentro seguía colgando de ella: una placa con un marco dibujado alrededor de su ventana se cargaba llena, y la ventana, como pieza suelta. No había clic que lo arreglara. En el logo no pasa, porque los contornos que se sacan son los de más afuera. Ahora lo de adentro cuelga del contorno más chico que la rodea y sí va, como agujero suyo. Pruebas: `test_lo_de_adentro_de_una_forma_que_no_va_cuelga_de_la_que_la_rodea`, `test_si_la_que_la_rodea_tampoco_va_cuelga_de_la_primera_que_si`, `test_al_sacar_una_forma_lo_que_tenia_adentro_es_el_hueco_de_la_que_la_rodea` y `test_cargar_sin_el_marco_guarda_la_placa_con_su_ventana`.
+2. **Los huecos de una pieza unida que no va seguían entrando descartados** (`rutas_trabajos.py`, `_leer`), con un motivo que ya no era cierto. Enzo decidió que se van con ella. Queda el que se haya marcado. Pruebas: `test_los_huecos_de_una_pieza_unida_que_no_va_se_van_con_ella` y `test_un_hueco_puesto_a_cortar_queda_aunque_su_pieza_unida_no_vaya`.
+3. **Un doble clic rápido sobre una forma que no va la dejaba forzada a cortar** (`dibujo.ts`, `alTocar`). El segundo clic veía la lista ya sin la marca y el dibujo de antes. Ahora ese clic no hace nada, y el panel no vuelve a pedir la lectura si la lista no cambió. Prueba: la de `alTocar` que termina en «el dibujo es de antes del último clic».
+4. **`turnos()` repetía a `crearTurnos()`,** que ya estaba en `Seccionado/turnos.ts` con sus pruebas. La pestaña Piezas usa esa; la de `dibujo.ts` y sus tres pruebas salieron.
+5. **El diseño decía que cambiar la escala «borra las correcciones».** Cierra el panel, y si se vuelve a la escala de antes reaparecen, como la lectura. Se corrigió el texto (`diseno.md §5.3` y `§7`).
+
+Backend 506 en verde después de los arreglos, frontend 95. Se volvió a medir: el logo da los mismos números en cada clic, en los dos órdenes en que se pueden tocar el contorno de la leyenda y la chapa dibujada; los siete DXF reales, sin correcciones, las mismas cantidades de la Tarea 7; y el recorrido en el navegador del Step 9 de la Tarea 6, entero y sin errores.
+
+**Lo que señaló y no se tocó:**
+
+- La parte de la pestaña Piezas que maneja los pedidos (vale la última respuesta, cancelar la descarta, se carga con la lista que se ve, si falla vuelve la lista) no tiene prueba en el repositorio: la cubre el recorrido en el navegador, que está afuera. Se puede pasar ese flujo a una función sin React y probarla con promesas falsas.
+- Si la carga da 400, el DXF guardado del trabajo ya quedó pisado por el archivo nuevo. El orden es anterior a esta rama, y hoy nadie vuelve a leer ese archivo.
+- Una corrección cuyo nombre tiene una barra se acepta con cualquier cosa después de la barra; alcanzaría con `/unida` y `/huecoN`.
+- Con un touchpad, o con la rueda inclinada, el acercamiento salta: cada evento chico acerca 1,25 veces, y uno horizontal aleja.
+- `cajaDelDibujo` usa `Math.min(...xs)` con todos los puntos de la lectura. Con el dibujo cinco veces más detallado queda menos margen en un archivo enorme. Estimado, no medido.
+- Un JSON con miles de niveles en `correcciones` da 500; solo con un pedido armado a mano.
+- `sin_los_huecos_de_lo_que_no_va` recorre todos los agujeros aunque no haya nada sacado.
+- El motivo «lo marcó quien carga» le habla en tercera persona a quien está cargando.
+- El servidor acepta cargar con todo sacado, y deja el trabajo sin piezas: lo impide la pantalla, no el pedido.
+- Una hoja de chapa de catálogo marcada «no va» sigue contando como hoja para lo que tiene adentro. Es de los archivos con hojas armadas, que quedaron afuera (`diseno.md §3`).
+- El dibujo no se maneja con teclado ni con pantalla táctil.

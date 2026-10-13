@@ -69,12 +69,14 @@ Sub-proyecto [`plan/2.1b-corregir-la-lectura/`](plan/2.1b-corregir-la-lectura/di
 - **Lo que no va no es madre ni hueco de nadie, ni se une.** Sus agujeros chicos pasan a ser formas, la pieza que lo tenía adentro queda llena, y la casilla de unir no lo junta con nada.
 - **El dibujo se acerca y se mueve:** rueda, arrastre, tres botones, hasta 20 aumentos.
 - El logo «AWADUCT / PERFECTO ETERNO» de la muestra, solo en un archivo, queda como dijo Enzo con nueve clics: 21 piezas a cortar.
-- Backend 500 tests en verde (467 antes), frontend 97 (56 antes).
+- **Un revisor aparte leyó la rama entera: «con arreglos».** Encontró que al sacar una forma que está adentro de otra, lo que tenía adentro no se leía como si ella no estuviera: una placa con un marco dibujado alrededor de su ventana se cargaba sin ventana. Arreglado en el lector, con cuatro pruebas. De los menores se arreglaron tres; el resto está al final del plan.
+- Backend 506 tests en verde (467 antes), frontend 95 (56 antes).
 
 ### Qué se decidió
 
 - **Dos opciones por forma, «se corta» y «no va», y un solo gesto.** El clic da toda la vuelta: lo contrario de lo que se ve, después «no va», después como lo leyó el sistema (Enzo, 2026-10-13).
 - **Lo que no va se dibuja al fondo.** Con el rayado encima de lo que se corta, media palabra parecía que no iba (Enzo, 2026-10-13).
+- **Los huecos de una pieza unida que no va se van con ella:** no se cargan ni como descartados (Enzo, 2026-10-13).
 - **El código se ensayó entero antes de escribir el plan,** contra un DXF con el logo solo y en un navegador. Ahí apareció que la palabra del logo son cinco formas y no una, y tres reglas que el diseño no tenía (`diseno.md §8`).
 
 ### Cambios en el registro

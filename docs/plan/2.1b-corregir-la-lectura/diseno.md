@@ -118,9 +118,9 @@ clic en una forma → la pantalla suma o saca una corrección → pide la lectur
 Una corrección es el nombre de una forma y una de dos palabras: `cortar` o `no_va`.
 
 - **Lo corregido manda.** La forma queda con lo que se marcó, diga lo que diga cualquier regla, y con el motivo «lo marcó quien carga». Y es siempre una forma, aunque por su tamaño el lector la tomara solo por un agujero.
-- **Una forma que no va no es madre de nadie.** Lo que tiene adentro se lee como si ella no estuviera: deja de ser «su recorte» y pasa por las reglas de siempre. Es lo que hace que sacar un contorno ponga a cortar las letras que encierra. Sus agujeros chicos, que el lector no daba como formas, pasan a serlo: si no, se perderían con ella, como los dos puntos de la leyenda.
+- **Una forma que no va no es madre de nadie.** Lo que tiene adentro se lee como si ella no estuviera: deja de ser «su recorte» y pasa por las reglas de siempre. Es lo que hace que sacar un contorno ponga a cortar las letras que encierra. Si a ella la rodea otra forma, lo de adentro pasa a colgar de esa: sacando el marco dibujado alrededor de una ventana, la ventana es el hueco de la placa. Sus agujeros chicos, que el lector no daba como formas, pasan a serlo: si no, se perderían con ella, como los dos puntos de la leyenda.
 - **Tampoco es el hueco de nadie.** La pieza que la tenía adentro queda llena ahí. El lector toma por agujero a todo contorno que cae adentro de otro, y no siempre lo es: la mitad repetida del palo de la «T».
-- **Ni se une con nada.** La unión de las formas que se pisan se arma sin lo que no va, que sigue a la vista en la lectura unida.
+- **Ni se une con nada.** La unión de las formas que se pisan se arma sin lo que no va, que sigue a la vista en la lectura unida. Si lo que no va es una pieza unida, sus huecos se van con ella: eran el recorte de algo que ya no se corta (Enzo, 2026-10-13). Queda el hueco que se haya marcado.
 - **Una forma forzada a cortar nunca pasa a recorte,** aunque esté adentro de otra que se corta. Y como se corta, lo que tiene adentro, de su mismo color, es su recorte.
 - **También manda sobre los huecos de una pieza unida,** que entran descartados por cómo se arman: un clic los pone a cortar, y otro los saca, con lo que la pieza unida queda llena ahí.
 - El análisis suma un rol, «no va». La importación de varios diseños (`/importaciones/dxf/...`) lo recibe sin cambios: ahí solo se crean las formas con rol «cortar».
@@ -160,7 +160,7 @@ Una corrección es el nombre de una forma y una de dos palabras: `cortar` o `no_
 - **Acercar y mover:** la rueda acerca hacia donde está el puntero, hasta `PAR-53`; arrastrar mueve; «Ver todo» vuelve al dibujo entero. Soltar después de arrastrar no cuenta como clic.
 - **Mientras llega la lectura nueva** se sigue viendo la anterior, atenuada. Si se hace otro clic antes, vale la última respuesta pedida.
 - **Al pasar el mouse:** el nombre de la forma, su medida, su estado y el motivo.
-- Cambiar el archivo o la escala cierra el panel y borra las correcciones, como ya pasa con la lectura.
+- Cambiar el archivo o la escala cierra el panel: esa lectura y sus correcciones dejan de valer, y al leer de nuevo se empieza de cero. Si se vuelve a la escala de antes sin haber leído otra cosa, reaparecen las dos, como ya pasaba con la lectura.
 - **«Cargar» se apaga** si no queda ninguna forma para cortar, y lo dice.
 - La identidad visual es la de [`frontend-cotizador/diseno.md §4`](../../historico/frontend-cotizador/diseno.md).
 
@@ -186,7 +186,7 @@ Una corrección es el nombre de una forma y una de dos palabras: `cortar` o `no_
 | Una forma sacada queda tapada por otra que se corta | No se la puede tocar para devolverla | Se devuelve con la ✕ de la lista de correcciones |
 | El mismo dibujo se lee distinto solo que junto a otros | El lector decide pieza o agujero por cuántos contornos encierran a la forma (§2) | La corrección a mano lo resuelve en cada caso. Cambiar esa regla queda afuera (§3) |
 | La persona saca todo | «Cargar» borraría las piezas del trabajo | «Cargar» se apaga si no queda nada para cortar |
-| Las correcciones se pierden al cambiar el archivo o la escala | Hay que hacerlas de nuevo | Se acepta: son pocos clics, y con otra escala u otro archivo no valdrían |
+| Las correcciones no pasan de una lectura a otra | Al leer otro archivo, o el mismo con otra escala, hay que hacerlas de nuevo | Se acepta: son pocos clics, y con otra escala u otro archivo no valdrían |
 | Una forma muy chica es difícil de tocar | No se puede corregir sin acercar | Para eso está el acercamiento, hasta `PAR-53` |
 | La respuesta de la lectura cambia de forma | El sí o no de «descartada» pasa a ser un estado de tres | Solo la usa esta pantalla, que cambia en el mismo sub-proyecto |
 | El dibujo pesa más | Con `PAR-52` en 1/20000, la respuesta de `Complejo.dxf`, que trae sus dos lecturas, pesa 0,3 MB; la de `Muestra Vectores.dxf`, 3,8 MB en vez de 2,3 | Se acepta. En un archivo de varios diseños pesaría varias veces más, y esos quedan afuera |
@@ -202,3 +202,5 @@ Antes de escribir el plan, el código se ensayó entero sobre una copia: los ped
 - **El clic tiene un paso más** (§4): de una forma forzada a cortar pasa a «no va». Enzo, 2026-10-13.
 - **Lo que no va se dibuja al fondo** (§4, §5.3). Con el rayado encima de lo que se corta, la mitad de la palabra parecía que no iba. Enzo, 2026-10-13.
 - **Un error menos** (§5.2): la corrección de una pieza unida que ya no se arma queda sin efecto, en vez de dar 400.
+
+**Lo que dejó la revisión de la rama (2026-10-13).** Un revisor aparte leyó la rama entera y encontró un caso que el logo no tenía: una forma que no va, adentro de otra que se corta y con algo adentro. La placa quedaba sin ventana y no había clic que lo arreglara. Ahora lo de adentro cuelga de la forma que la rodea (§5.1). De la misma revisión salió la decisión de Enzo sobre los huecos de una pieza unida que no va, y la precisión sobre qué pasa con las correcciones al cambiar la escala (§5.3). El detalle está al final de [`plan.md`](plan.md).
