@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import enum
 import math
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
@@ -482,3 +482,30 @@ def _marcar_contrapiezas(
             madre_id=madre.pieza_id,
         )
     return [rol_de[r.pieza_id] for r in roles]
+
+
+def sin_los_huecos_de_lo_que_no_va(piezas: list[PiezaImportada], no_van: Collection[str]) -> list[PiezaImportada]:
+    """Las piezas, sin los agujeros que eran el contorno de una forma que
+    quien carga sacó (`Rol.NO_VA`). Una forma que no va no es el hueco de
+    nadie: la pieza que la tenía adentro queda llena ahí
+    (`docs/plan/2.1b-corregir-la-lectura/diseno.md §5.1`).
+
+    El lector toma por agujero a todo contorno que cae adentro de otro
+    (`_clasificar_piezas_y_agujeros` en `dxf.py`), y no siempre lo es: en
+    el logo de la muestra, la mitad de abajo del palo de la «T» está
+    dibujada otra vez, adentro de la letra. Sirve igual para los huecos
+    de una pieza unida (`uniones.py`), que también son formas aparte.
+
+    Una pieza que no tenía ninguno de esos agujeros sale como entró."""
+    fuera = {tuple(pieza.contorno_mm) for pieza in piezas if pieza.id in no_van}
+    resultado = []
+    for pieza in piezas:
+        quedan = [agujero for agujero in pieza.agujeros_mm if tuple(agujero) not in fuera]
+        if len(quedan) != len(pieza.agujeros_mm):
+            llena = Polygon(
+                [(float(x), float(y)) for x, y in pieza.contorno_mm],
+                [[(float(x), float(y)) for x, y in agujero] for agujero in quedan],
+            )
+            pieza = replace(pieza, agujeros_mm=quedan, area_real_mm2=Decimal(str(llena.area)))
+        resultado.append(pieza)
+    return resultado

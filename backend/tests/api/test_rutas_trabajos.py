@@ -796,6 +796,105 @@ def test_un_hueco_de_la_pieza_unida_se_puede_poner_a_cortar(cliente, tmp_path):
     assert _totales(cuerpo["sin_unir"]) == _totales(antes["sin_unir"])
 
 
+def _tres_formas_en_fila(msp):
+    """Tres octógonos de 600, cada uno montado 100 mm sobre el anterior:
+    el primero se pisa con el segundo y el segundo con el tercero."""
+    for x in (0, 500, 1000):
+        _octogono(msp, x, 0, 600)
+
+
+def _trabajo_con_las_tres_formas(cliente, tmp_path):
+    """El trabajo, el DXF y los nombres de las formas, de izquierda a derecha."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "fila.dxf", _tres_formas_en_fila)
+    antes = _ver_lectura(cliente, trabajo["id"], contenido).json()
+    assert antes["formas_que_se_pisan"] == 3 and _totales(antes["unida"]) == (1, 0, 0)
+    en_fila = sorted(antes["sin_unir"]["formas"], key=lambda f: min(x for x, _ in f["contorno_mm"]))
+    return trabajo, contenido, [f["id_origen"] for f in en_fila]
+
+
+def test_una_forma_que_no_va_no_se_une_con_las_que_pisa(cliente, tmp_path):
+    """Lo que se sacó no es parte del diseño: la unión se arma sin eso, y
+    la forma sigue a la vista en la lectura unida, para poder devolverla."""
+    trabajo, contenido, (_, _, tercera) = _trabajo_con_las_tres_formas(cliente, tmp_path)
+
+    cuerpo = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={tercera: "no_va"}).json()
+
+    assert cuerpo["formas_que_se_pisan"] == 2
+    assert _totales(cuerpo["unida"]) == (1, 0, 1)
+    unida = next(f for f in cuerpo["unida"]["formas"] if f["id_origen"].endswith("/unida"))
+    assert round(max(x for x, _ in unida["contorno_mm"])) == 1100, "la pieza unida llega hasta la segunda forma"
+    assert next(f for f in cuerpo["unida"]["formas"] if f["id_origen"] == tercera)["estado"] == "no_va"
+
+
+def test_si_al_sacar_una_forma_ya_nada_se_pisa_no_hay_nada_que_unir(cliente, tmp_path):
+    trabajo, contenido, (_, segunda, _) = _trabajo_con_las_tres_formas(cliente, tmp_path)
+
+    cuerpo = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={segunda: "no_va"}).json()
+
+    assert cuerpo["formas_que_se_pisan"] == 0 and cuerpo["unida"] is None
+    assert not any("se pisan" in aviso for aviso in cuerpo["sin_unir"]["advertencias"])
+    assert _totales(cuerpo["sin_unir"]) == (2, 0, 1)
+
+
+def test_la_marca_de_una_pieza_unida_que_ya_no_se_arma_queda_sin_efecto(cliente, tmp_path):
+    """Quien carga saca la pieza unida y después, mirando la lectura sin
+    unir, saca una de sus formas: la unión que queda es otra, o ninguna, y
+    la primera marca nombra una pieza que ya no está. No es un error."""
+    trabajo, contenido, (_, segunda, _) = _trabajo_con_las_tres_formas(cliente, tmp_path)
+    antes = _ver_lectura(cliente, trabajo["id"], contenido).json()
+    unida = next(f["id_origen"] for f in antes["unida"]["formas"] if f["id_origen"].endswith("/unida"))
+
+    respuesta = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={unida: "no_va", segunda: "no_va"})
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert _totales(respuesta.json()["sin_unir"]) == (2, 0, 1)
+
+
+def test_una_forma_que_no_va_no_es_el_hueco_de_nadie(cliente, tmp_path):
+    """Como el palo de la «T» del logo de la muestra: su mitad de abajo
+    está dibujada otra vez, adentro de la letra, y el lector la toma por un
+    agujero. Sacándola, la letra queda llena."""
+    trabajo, contenido, ids = _trabajo_con_el_logo(cliente, tmp_path)
+    antes = _por_ancho(_ver_lectura(cliente, trabajo["id"], contenido).json()["sin_unir"]["formas"])
+    assert len(antes[500]["agujeros_mm"]) == 1
+
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={ids[200]: "no_va"}).json()["sin_unir"]
+
+    formas = _por_ancho(lectura["formas"])
+    assert formas[200]["estado"] == "no_va"
+    assert formas[500]["agujeros_mm"] == []
+    assert len(formas[900]["agujeros_mm"]) == 1, "el contorno sigue con el suyo"
+
+
+def test_cargar_sin_una_forma_que_era_un_hueco_guarda_la_pieza_llena(cliente, tmp_path):
+    trabajo, contenido, ids = _trabajo_con_el_logo(cliente, tmp_path)
+
+    respuesta = _subir(
+        cliente, trabajo["id"], contenido, correcciones=json.dumps({ids[900]: "no_va", ids[200]: "no_va"})
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    (letra,) = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    assert round(Decimal(letra["ancho_mm"])) == 500
+    assert letra["agujeros_mm"] == []
+
+
+def test_un_hueco_de_la_pieza_unida_que_no_va_deja_de_ser_un_hueco(cliente, tmp_path):
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "franjas.dxf", _dos_franjas_que_se_pisan)
+    antes = _ver_lectura(cliente, trabajo["id"], contenido).json()["unida"]
+    hueco = next(f["id_origen"] for f in antes["formas"] if f["id_origen"].endswith("/hueco1"))
+
+    unida = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={hueco: "no_va"}).json()["unida"]
+
+    pieza = next(f for f in unida["formas"] if f["id_origen"].endswith("/unida"))
+    assert len(pieza["agujeros_mm"]) == 1, "tenía dos"
+    assert _totales(unida) == (1, 1, 1)
+
+
 def _leyenda_con_un_punto(msp):
     """Un contorno de 900 que rodea una letra de 500 y un punto de 20. El
     punto es tan chico que el lector lo toma por un agujero del contorno,

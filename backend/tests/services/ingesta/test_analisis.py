@@ -17,6 +17,7 @@ from app.services.ingesta.analisis import (
     agrupar_en_disenios,
     Rol,
     detectar_hojas,
+    sin_los_huecos_de_lo_que_no_va,
     sugerir_factor_de_escala,
     sugerir_roles,
 )
@@ -738,3 +739,30 @@ def test_una_correccion_sobre_una_forma_que_no_esta_no_hace_nada():
     piezas = _contorno_con_letra()
 
     assert _roles_corregidos(piezas, {"otra": Rol.NO_VA}) == _roles_corregidos(piezas, {})
+
+
+def _letra_con_su_centro() -> list[PiezaImportada]:
+    """Una letra de 100 con un centro de 20, que es su agujero y además
+    una forma aparte: así lo arma el lector."""
+    centro = _rectangulo("centro", 40, 40, 20, 20, contenida_en_id="letra")
+    letra = replace(
+        _rectangulo("letra", 0, 0, 100, 100), agujeros_mm=[centro.contorno_mm], area_real_mm2=Decimal(100 * 100 - 20 * 20)
+    )
+    return [letra, centro]
+
+
+def test_una_pieza_pierde_el_agujero_que_era_una_forma_que_no_va():
+    # La mitad de una letra dibujada dos veces cae adentro de la letra, y
+    # el lector la toma por un agujero. Sacándola, la letra queda llena.
+    letra, centro = sin_los_huecos_de_lo_que_no_va(_letra_con_su_centro(), {"centro"})
+
+    assert letra.agujeros_mm == []
+    assert letra.area_real_mm2 == Decimal(100 * 100)
+    assert centro.contorno_mm == _letra_con_su_centro()[1].contorno_mm, "la forma que no va no cambia"
+
+
+def test_una_pieza_conserva_los_agujeros_de_las_formas_que_siguen():
+    piezas = _letra_con_su_centro()
+
+    assert sin_los_huecos_de_lo_que_no_va(piezas, set()) == piezas
+    assert sin_los_huecos_de_lo_que_no_va(piezas, {"letra", "otra"}) == piezas, "sacar la letra no le saca su agujero"

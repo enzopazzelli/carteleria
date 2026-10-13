@@ -32,6 +32,7 @@ from ..services.ingesta.analisis import (
     Rol,
     agrupar_en_disenios,
     detectar_hojas,
+    sin_los_huecos_de_lo_que_no_va,
     sugerir_roles,
 )
 from ..services.ingesta.dibujo import DETALLE_DEL_DIBUJO, anillo_para_dibujar, tolerancia_del_dibujo
@@ -293,25 +294,38 @@ def _leer(
 
     `correcciones` se aplica a las dos lecturas. Cada una ignora las que
     nombran una forma que no tiene (el hueco de una pieza unida no existe
-    en la lectura sin unir); una que no está en ninguna de las dos da 400."""
+    en la lectura sin unir); una que no es de este archivo da 400. Lo que
+    no va queda afuera de la unión, no es el hueco de ninguna pieza, y
+    sus propios agujeros pasan a ser formas."""
     tamano = _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT if tamano_maximo_agujero_mm is None else tamano_maximo_agujero_mm
+    no_van = {id_forma for id_forma, rol in correcciones.items() if rol is Rol.NO_VA}
     try:
         # Lo marcado es siempre una forma, y los agujeros de una que no
         # va también: se quedaron sin la pieza de la que eran el hueco.
-        resultado = parsear_dxf(
-            ruta,
-            escala_a_mm,
-            tamano,
-            marcadas=set(correcciones),
-            no_van={id_forma for id_forma, rol in correcciones.items() if rol is Rol.NO_VA},
-        )
+        resultado = parsear_dxf(ruta, escala_a_mm, tamano, marcadas=set(correcciones), no_van=no_van)
     except ArchivoDXFInvalido as error:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
 
+    # Lo que no va no es parte del diseño: no es el hueco de nadie ni se
+    # une con nada. Pasa a la lectura unida como está, para verlo ahí y
+    # poder sacarle la marca.
+    piezas = sin_los_huecos_de_lo_que_no_va(resultado.piezas, no_van)
     unidas, uniones = unir_formas_que_se_pisan(
-        resultado.piezas, DISTANCIA_PARA_TOCARSE_MM, AREA_MINIMA_PARA_PISARSE_MM2, tamano
+        [p for p in piezas if p.id not in no_van],
+        DISTANCIA_PARA_TOCARSE_MM,
+        AREA_MINIMA_PARA_PISARSE_MM2,
+        tamano,
     )
-    ajenas = sorted(set(correcciones) - {p.id for p in resultado.piezas} - {p.id for p in unidas})
+    unidas = sin_los_huecos_de_lo_que_no_va([*unidas, *(p for p in piezas if p.id in no_van)], no_van)
+    del_archivo = {p.id for p in piezas}
+    # Una pieza unida o un hueco suyo (`…/unida`, `…/hueco2`) puede no
+    # estar ahora: sacar una de sus formas cambia qué se une. Su marca
+    # queda sin efecto hasta que la pieza vuelva; no es un error.
+    ajenas = sorted(
+        id_forma
+        for id_forma in set(correcciones) - del_archivo - {p.id for p in unidas}
+        if "/" not in id_forma or id_forma.split("/")[0] not in del_archivo
+    )
     if ajenas:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
@@ -319,11 +333,11 @@ def _leer(
         )
     avisos = list(resultado.advertencias)
     if not uniones:
-        return _LecturasDeUnDXF(resultado, _lectura(resultado.piezas, formatos, avisos, correcciones), None, 0)
+        return _LecturasDeUnDXF(resultado, _lectura(piezas, formatos, avisos, correcciones), None, 0)
 
     se_pisan = sum(len(union.lineas) for union in uniones)
     sin_unir = _lectura(
-        resultado.piezas,
+        piezas,
         formatos,
         [
             *avisos,
