@@ -296,7 +296,8 @@ def _leer(
     nombran una forma que no tiene (el hueco de una pieza unida no existe
     en la lectura sin unir); una que no es de este archivo da 400. Lo que
     no va queda afuera de la unión, no es el hueco de ninguna pieza, y
-    sus propios agujeros pasan a ser formas."""
+    sus propios agujeros pasan a ser formas. Si lo que no va es una pieza
+    unida, sus huecos no entran en la lectura."""
     tamano = _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT if tamano_maximo_agujero_mm is None else tamano_maximo_agujero_mm
     no_van = {id_forma for id_forma, rol in correcciones.items() if rol is Rol.NO_VA}
     try:
@@ -317,6 +318,17 @@ def _leer(
         tamano,
     )
     unidas = sin_los_huecos_de_lo_que_no_va([*unidas, *(p for p in piezas if p.id in no_van)], no_van)
+    # Los huecos de una pieza unida que no va se van con ella: eran el
+    # recorte de algo que ya no se corta (Enzo, 2026-10-13). Queda el que
+    # quien carga marcó, con su marca.
+    se_van = {
+        hueco
+        for union in uniones
+        if union.pieza_id in no_van
+        for hueco in union.huecos
+        if hueco not in correcciones
+    }
+    unidas = [p for p in unidas if p.id not in se_van]
     del_archivo = {p.id for p in piezas}
     # Una pieza unida o un hueco suyo (`…/unida`, `…/hueco2`) puede no
     # estar ahora: sacar una de sus formas cambia qué se une. Su marca
@@ -355,6 +367,7 @@ def _leer(
             hueco: f"hueco de {union.pieza_id}: viaja con esa pieza, no se anida solo"
             for union in uniones
             for hueco in union.huecos
+            if hueco not in se_van
         },
     )
     return _LecturasDeUnDXF(resultado, sin_unir, unida, se_pisan)

@@ -895,6 +895,48 @@ def test_un_hueco_de_la_pieza_unida_que_no_va_deja_de_ser_un_hueco(cliente, tmp_
     assert _totales(unida) == (1, 1, 1)
 
 
+def _franjas_unidas(cliente, tmp_path):
+    """El trabajo, el DXF de las dos franjas, y los nombres de la pieza
+    unida y de su primer hueco."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "franjas.dxf", _dos_franjas_que_se_pisan)
+    unida = _ver_lectura(cliente, trabajo["id"], contenido).json()["unida"]
+    assert _totales(unida) == (1, 2, 0)
+    nombres = [f["id_origen"] for f in unida["formas"]]
+    return (
+        trabajo,
+        contenido,
+        next(n for n in nombres if n.endswith("/unida")),
+        next(n for n in nombres if n.endswith("/hueco1")),
+    )
+
+
+def test_los_huecos_de_una_pieza_unida_que_no_va_se_van_con_ella(cliente, tmp_path):
+    """El hueco de una pieza unida es el recorte de algo que se corta. Si
+    la pieza no va, no hay recorte: no se dibuja ni se carga (Enzo,
+    2026-10-13). Antes quedaba descartado, «viajando» con una pieza que
+    ya no estaba (revisión de la rama)."""
+    trabajo, contenido, pieza, _ = _franjas_unidas(cliente, tmp_path)
+
+    unida = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={pieza: "no_va"}).json()["unida"]
+
+    assert [f["id_origen"] for f in unida["formas"]] == [pieza]
+    assert _totales(unida) == (0, 0, 1)
+
+
+def test_un_hueco_puesto_a_cortar_queda_aunque_su_pieza_unida_no_vaya(cliente, tmp_path):
+    trabajo, contenido, pieza, hueco = _franjas_unidas(cliente, tmp_path)
+
+    unida = _ver_lectura(
+        cliente, trabajo["id"], contenido, correcciones={pieza: "no_va", hueco: "cortar"}
+    ).json()["unida"]
+
+    estados = {f["id_origen"]: f["estado"] for f in unida["formas"]}
+    assert estados == {pieza: "no_va", hueco: "se_corta"}, "lo que marcó quien carga manda"
+    assert _totales(unida) == (1, 0, 1)
+
+
 def _placa_con_marco_y_ventana(msp):
     """Una placa de 1000 con una ventana de 400 y, alrededor de la ventana,
     un marco de 600 que está dibujado pero no se corta."""
