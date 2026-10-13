@@ -22,7 +22,14 @@ import { useGrupos } from "../../hooks/useGrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
 import type { LineaCosto } from "../../api/presupuestos";
 import PresupuestoClienteSeccion from "./PresupuestoClienteSeccion";
-import { importeParaEditar, leerImporte } from "./importes";
+import {
+  cambiosDeLinea,
+  cantidadParaEditar,
+  importeParaEditar,
+  leerCantidad,
+  leerImporte,
+  type TextosDeLinea,
+} from "./importes";
 
 export default function CosteoTab() {
   const { trabajoId } = useParams();
@@ -209,13 +216,9 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
   const margenEIva = useActualizarMargenEIva(presupuestoId);
   const actualizarLinea = useActualizarLineaLibre(presupuestoId);
   const eliminarLinea = useEliminarLineaLibre(presupuestoId);
-  // La línea que se está editando, con lo que hay escrito en cada campo.
-  const [edicion, setEdicion] = useState<{
-    id: number;
-    descripcion: string;
-    cantidad: string;
-    precio_unitario: string;
-  } | null>(null);
+  // La línea que se está editando: lo que hay escrito en cada campo y,
+  // en `antes`, con qué se llenó el formulario, para mandar solo lo que cambió.
+  const [edicion, setEdicion] = useState<(TextosDeLinea & { id: number; antes: TextosDeLinea }) | null>(null);
   const [nuevaLinea, setNuevaLinea] = useState({
     rubro: "MANO_DE_OBRA",
     descripcion: "",
@@ -232,7 +235,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
 
   async function alCrearLinea() {
     if (!nuevaLinea.descripcion.trim()) return;
-    const cantidad = leerImporte(nuevaLinea.cantidad);
+    const cantidad = leerCantidad(nuevaLinea.cantidad);
     const precio = leerImporte(nuevaLinea.precio_unitario);
     if (cantidad === null || precio === null) {
       setError(NUMEROS_INVALIDOS);
@@ -249,33 +252,32 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
 
   function alEmpezarEdicion(linea: LineaCosto) {
     setError(null);
-    setEdicion({
-      id: linea.id,
+    const textos: TextosDeLinea = {
       descripcion: linea.descripcion,
-      cantidad: importeParaEditar(linea.cantidad),
+      cantidad: cantidadParaEditar(linea.cantidad),
       precio_unitario: importeParaEditar(linea.precio_unitario),
-    });
+    };
+    setEdicion({ id: linea.id, antes: textos, ...textos });
   }
 
   async function alGuardarEdicion() {
     if (!edicion) return;
-    const descripcion = edicion.descripcion.trim();
-    const cantidad = leerImporte(edicion.cantidad);
-    const precio = leerImporte(edicion.precio_unitario);
-    if (!descripcion) {
+    if (!edicion.descripcion.trim()) {
       setError("La línea necesita una descripción.");
       return;
     }
-    if (cantidad === null || precio === null) {
+    const cambios = cambiosDeLinea(edicion.antes, edicion);
+    if (cambios === null) {
       setError(NUMEROS_INVALIDOS);
       return;
     }
     setError(null);
+    if (Object.keys(cambios).length === 0) {
+      setEdicion(null);
+      return;
+    }
     try {
-      await actualizarLinea.mutateAsync({
-        lineaId: edicion.id,
-        datos: { descripcion, cantidad, precio_unitario: precio },
-      });
+      await actualizarLinea.mutateAsync({ lineaId: edicion.id, datos: cambios });
       setEdicion(null);
     } catch (e) {
       setError(mensajeDeError(e, "No se pudo guardar la línea."));

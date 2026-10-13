@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  cambiosDeLinea,
+  cantidadParaEditar,
   importeParaEditar,
+  leerCantidad,
   leerDias,
   leerImporte,
   mismoImporte,
@@ -40,6 +43,13 @@ describe("leerImporte", () => {
     expect(leerImporte("1,2,3")).toBeNull();
     expect(leerImporte("150000,")).toBeNull();
     expect(leerImporte("1 400 000")).toBeNull();
+  });
+
+  it("no toma como miles un grupo que empieza en cero", () => {
+    // «0.125» no es ciento veinticinco: nadie escribe miles así. Leído como
+    // miles, un valor chico quedaba mil veces más grande sin avisar.
+    expect(leerImporte("0.125")).toBeNull();
+    expect(leerImporte("0.5")).toBe("0.50");
   });
 
   it("rechaza lo que no es un importe", () => {
@@ -135,5 +145,69 @@ describe("leerDias", () => {
     expect(leerDias("1.5")).toBeNull();
     expect(leerDias("")).toBeNull();
     expect(leerDias("quince")).toBeNull();
+  });
+});
+
+describe("leerCantidad", () => {
+  it("lee el punto y la coma como decimal, con los decimales que traiga", () => {
+    // En la cantidad no hay separador de miles: así era antes, y «2.375»
+    // horas o metros no pueden pasar a ser dos mil.
+    expect(leerCantidad("2.375")).toBe("2.375");
+    expect(leerCantidad("2,375")).toBe("2.375");
+    expect(leerCantidad("0,125")).toBe("0.125");
+    expect(leerCantidad("0.125")).toBe("0.125");
+  });
+
+  it("no deja ceros de más: «1.000» es uno", () => {
+    expect(leerCantidad("1.000")).toBe("1");
+    expect(leerCantidad("2,50")).toBe("2.5");
+    expect(leerCantidad("08")).toBe("8");
+    expect(leerCantidad(" 3 ")).toBe("3");
+  });
+
+  it("rechaza lo que no es una cantidad", () => {
+    for (const texto of ["", "abc", "-1", "1,2,3", "1.2.3", "2.", ",5", "1e3"]) {
+      expect(leerCantidad(texto)).toBeNull();
+    }
+  });
+});
+
+describe("cantidadParaEditar", () => {
+  it("muestra la cantidad entera, con coma, sin redondear", () => {
+    expect(cantidadParaEditar("2.375")).toBe("2,375");
+    expect(cantidadParaEditar("1.000")).toBe("1");
+    expect(cantidadParaEditar("8")).toBe("8");
+    expect(cantidadParaEditar(null)).toBe("");
+  });
+
+  it("devuelve algo que leerCantidad lee igual", () => {
+    for (const valor of ["2.375", "0.125", "8", "1234.5"]) {
+      expect(leerCantidad(cantidadParaEditar(valor))).toBe(valor);
+    }
+  });
+});
+
+describe("cambiosDeLinea", () => {
+  const antes = { descripcion: "Flete", cantidad: "2,375", precio_unitario: "1.234,57" };
+
+  it("no manda nada si no se tocó nada", () => {
+    // El campo del precio muestra dos decimales aunque el guardado tenga
+    // más: si se mandara lo que se ve, guardar sin tocar cambiaría el costo.
+    expect(cambiosDeLinea(antes, { ...antes })).toEqual({});
+  });
+
+  it("manda solo lo que cambió", () => {
+    expect(cambiosDeLinea(antes, { ...antes, descripcion: " Flete al taller " })).toEqual({ descripcion: "Flete al taller" });
+    expect(cambiosDeLinea(antes, { ...antes, cantidad: "3" })).toEqual({ cantidad: "3" });
+    expect(cambiosDeLinea(antes, { ...antes, precio_unitario: "90.000" })).toEqual({ precio_unitario: "90000" });
+  });
+
+  it("devuelve null si lo que se cambió no es un número", () => {
+    expect(cambiosDeLinea(antes, { ...antes, cantidad: "abc" })).toBeNull();
+    expect(cambiosDeLinea(antes, { ...antes, precio_unitario: "mil" })).toBeNull();
+  });
+
+  it("devuelve null si la descripción queda vacía", () => {
+    expect(cambiosDeLinea(antes, { ...antes, descripcion: "   " })).toBeNull();
   });
 });

@@ -138,7 +138,7 @@ export function crearLineaLibre(
 
 export function actualizarLineaLibre(
   lineaId: number,
-  datos: { descripcion: string; cantidad: string; precio_unitario: string }
+  datos: { descripcion?: string; cantidad?: string; precio_unitario?: string }
 ): Promise<LineaCosto> {
   return apiPatch<LineaCosto>(`/lineas-costo/${lineaId}`, datos);
 }

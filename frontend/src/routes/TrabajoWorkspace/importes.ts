@@ -10,7 +10,10 @@ const SIMBOLOS: Record<string, string> = { ARS: "$", USD: "US$" };
  *
  * La coma siempre es el decimal. El punto es separador de miles cuando
  * arma grupos de tres («1.400.000», «1.400»), y decimal cuando es uno
- * solo con uno o dos dígitos detrás («1400000.50», «12.5»). */
+ * solo con uno o dos dígitos detrás («1400000.50», «12.5»). Un grupo de
+ * miles no empieza en cero: «0.125» no es ciento veinticinco, se rechaza.
+ *
+ * Es para plata. Una cantidad se lee con `leerCantidad`. */
 export function leerImporte(texto: string): string | null {
   const limpio = texto.trim().replace(/^\$\s*/, "");
   if (limpio === "") return null;
@@ -25,7 +28,7 @@ export function leerImporte(texto: string): string | null {
     [entero, decimales] = limpio.split(".");
   }
 
-  if (/^\d{1,3}(\.\d{3})+$/.test(entero)) entero = entero.replace(/\./g, "");
+  if (/^[1-9]\d{0,2}(\.\d{3})+$/.test(entero)) entero = entero.replace(/\./g, "");
   if (!/^\d+$/.test(entero)) return null;
 
   const sinCeros = entero.replace(/^0+(?=\d)/, "");
@@ -79,4 +82,61 @@ export function leerDias(texto: string): number | null {
   if (!/^\d+$/.test(limpio)) return null;
   const dias = Number(limpio);
   return dias > 0 ? dias : null;
+}
+
+/** La cantidad de una línea → el número que espera la API, o `null`.
+ *
+ * Acá el punto y la coma son los dos decimales, con los decimales que
+ * traigan, y no hay separador de miles: «2.375» es dos coma trescientos
+ * setenta y cinco y «1.000» es uno. Así se leyó siempre este campo; con
+ * la regla de la plata, «2.375» horas pasaban a ser dos mil. */
+export function leerCantidad(texto: string): string | null {
+  const limpio = texto.trim().replace(",", ".");
+  if (!/^\d+(\.\d+)?$/.test(limpio)) return null;
+  const [entero, decimales = ""] = limpio.split(".");
+  const sinCeros = entero.replace(/^0+(?=\d)/, "");
+  const utiles = decimales.replace(/0+$/, "");
+  return utiles ? `${sinCeros}.${utiles}` : sinCeros;
+}
+
+/** Para poner en un campo de texto, entera y sin redondear: «2.375» →
+ * «2,375». Lo que devuelve lo lee `leerCantidad` igual. */
+export function cantidadParaEditar(valor: string | null | undefined): string {
+  return leerCantidad(valor ?? "")?.replace(".", ",") ?? "";
+}
+
+export interface TextosDeLinea {
+  descripcion: string;
+  cantidad: string;
+  precio_unitario: string;
+}
+
+/** Qué mandar al guardar la edición de una línea: solo lo que cambió
+ * respecto de los textos con que se llenó el formulario (`antes`).
+ *
+ * Lo que no se tocó no viaja. El campo del precio muestra dos decimales
+ * aunque el guardado tenga más: mandar lo que se ve cambiaría el costo
+ * de una línea a la que solo se le corrigió la descripción.
+ *
+ * Devuelve `null` si la descripción queda vacía o si la cantidad o el
+ * precio que se cambiaron no son números. */
+export function cambiosDeLinea(
+  antes: TextosDeLinea,
+  ahora: TextosDeLinea
+): Partial<TextosDeLinea> | null {
+  const cambios: Partial<TextosDeLinea> = {};
+  const descripcion = ahora.descripcion.trim();
+  if (!descripcion) return null;
+  if (descripcion !== antes.descripcion.trim()) cambios.descripcion = descripcion;
+  if (ahora.cantidad.trim() !== antes.cantidad.trim()) {
+    const cantidad = leerCantidad(ahora.cantidad);
+    if (cantidad === null) return null;
+    cambios.cantidad = cantidad;
+  }
+  if (ahora.precio_unitario.trim() !== antes.precio_unitario.trim()) {
+    const precio = leerImporte(ahora.precio_unitario);
+    if (precio === null) return null;
+    cambios.precio_unitario = precio;
+  }
+  return cambios;
 }
