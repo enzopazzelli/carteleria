@@ -2817,3 +2817,34 @@ git push origin main
 ```
 
 Antes del commit, mirar el `git status`: no tiene que figurar `Presupuesto_Cliente_Carteleria.docx`.
+
+---
+
+## Desvíos respecto de este plan (2026-10-12)
+
+**En la ejecución.**
+
+- **Tarea 0.** `pytest`, que corre desde `backend/` sin `testpaths`, levantaba dos archivos de prueba del material del plan guardado en `backend/local/`. Se agregó un `conftest.py` en esa carpeta, fuera de git, que los excluye.
+- **Tarea 6, Step 5.** La pantalla no se miró a mano: un guion manejó Chrome sin ventana contra una copia de la base, comprobó los siete puntos de la lista y sacó capturas (`backend/local/herramientas-lectura-2026-10-12/ver_lectura.mjs`). Enzo vio las capturas.
+- **Tarea 7.** La entrada de la bitácora y la fila de `PAR-52` del registro suman dos cosas que el texto del plan no traía: que la regla de las letras ya estaba construida, y que con acercamiento el detalle del dibujo tiene que depender de cuánto se acerca (medido en la Tarea 3: en `Muestra Vectores.dxf` el dibujo se aparta hasta 8,1 mm, y las formas de un par de centímetros salen deformadas).
+
+**Lo que dejó la revisión de la rama.** Un revisor aparte leyó la rama entera: «se puede fusionar con arreglos». Se arreglaron, cada uno con una prueba que falló primero:
+
+1. **La unión borraba los agujeros chicos que caen donde dos franjas se pisan** (`uniones.py`). El lector trae ese tornillo como pieza, porque está adentro de dos bordes de afuera a la vez, y la unión lo tomaba por el borde de adentro de una franja: lo restaba de su cuerpo, el cuerpo de la otra lo tapaba, y no quedaba ni como agujero ni como fila. Ahora una forma chica no participa como borde: si queda sobre el cuerpo de la pieza unida es un agujero suyo. Pruebas: `test_un_agujero_chico_donde_se_pisan_dos_franjas_no_se_pierde` y `test_cargar_uniendo_conserva_el_agujero_chico_donde_se_pisan_las_franjas`. En los DXF reales: tres agujeros recuperados en `strat.dxf` y dos en el logo de la muestra; en `Complejo.dxf`, nada.
+2. **La unión comparaba cada cuerpo con todos los demás del grupo** (`uniones.py`). Con 2.000 letras sueltas en el hueco de un aro tardaba 40 s; ahora compara solo los cuerpos cuyas cajas se tocan, y tarda unos 3. Prueba: `test_muchas_piezas_adentro_del_hueco_no_vuelven_lenta_la_union`.
+3. **Los huecos de una pieza unida no siempre entraban descartados** (`rutas_trabajos.py`): lo decidía el análisis, que pide el color de la madre y que el hueco no sea un rectángulo que no entra. Ahora entran descartados por cómo se armaron. Pruebas: `test_los_huecos_de_la_pieza_unida_entran_descartados_aunque_no_se_sepa_su_color` y `test_un_hueco_rectangular_de_la_pieza_unida_entra_descartado_aunque_no_entre_en_ninguna_chapa`.
+
+Backend 467 en verde después de los arreglos. Las cantidades de la tabla de la Tarea 7 no cambiaron.
+
+**Lo que señaló y no se tocó:**
+
+- Una franja chica enganchada en otra, con su borde de afuera limpio adentro del de afuera de la grande pero cruzando su borde de adentro, se lee al revés. Es un límite de la regla de afuera hacia adentro; se ve en el dibujo. Para 2.1b.
+- Con la casilla marcada, una letra cuyo hueco se acerca a menos de `PAR-50` de su borde queda maciza.
+- El panel deja cargar una lectura sin ninguna forma, y eso borra las piezas del trabajo. Avisa cuántas reemplaza; la carga de antes hacía lo mismo.
+- Al cargar sin unir, el aviso dice «marcá «Unir las formas que se pisan»» cuando el panel ya se cerró.
+- `dibujo.ts` calcula la caja con `Math.min(...xs)`: con un archivo mucho más grande que la muestra el navegador podría dar un error.
+- `MAPA-DEL-PROYECTO.md` y `PLAN-MAESTRO.md` (§4.5) siguen diciendo que falta la regla de las piezas grandes: se corrigen en la Tarea 8.
+- El `conftest.py` de la Tarea 0 podría reemplazarse por `testpaths = tests` en `backend/pytest.ini`.
+- Se importan nombres privados de otros módulos (`_TAMANO_MAXIMO_AGUJERO_MM_DEFAULT`, `_RESOLUCION_MM`, `_es_rectangular`).
+- La lectura manda los números con todos sus decimales; redondearlos achicaría los 2,3 MB de la muestra.
+- **Decisión de Enzo, abierta:** la excepción del rectángulo vale también para la forma de adentro. Una pieza irregular de 3 m con un hueco rectangular que no entra en ninguna chapa no lo descarta. El §5.1 del diseño se puede leer de las dos maneras.

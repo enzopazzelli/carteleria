@@ -67,7 +67,12 @@ Sub-proyecto [`plan/2.1a-lectura-con-imagen/`](plan/2.1a-lectura-con-imagen/dise
 - **La carga de la pestaña Piezas ahora muestra el dibujo antes de guardar.** «Ver cómo se lee» abre un panel con lo que se corta pintado, los huecos en blanco y lo que entra descartado en línea de puntos. Recién «Cargar» guarda las piezas.
 - **Unir las formas que se pisan,** con una casilla apagada de entrada. El aro de `Complejo.dxf`, que viene como ocho líneas, entra como una pieza de 4610 × 4610 mm y 4,30 m² con 25 huecos.
 - **Los recortes de huecos también en piezas que no entran en ninguna chapa,** salvo que sean rectángulos. Es automática, como la de las letras.
-- Backend 462 tests en verde (423 antes), frontend 56 (40 antes). La pantalla se probó en el navegador contra una copia de la base, con `Complejo.dxf`.
+- Backend 467 tests en verde (423 antes), frontend 56 (40 antes). La pantalla se probó en el navegador contra una copia de la base, con `Complejo.dxf`.
+- **Revisión de la rama.** Un revisor aparte leyó la rama entera: «se puede fusionar con arreglos». Se arreglaron tres cosas, cada una con su prueba:
+  - **La unión borraba los agujeros chicos que caen donde dos franjas se pisan.** El lector trae ese tornillo como pieza, porque está adentro de dos bordes a la vez, y la unión lo tomaba por un borde de adentro. Ahora una forma chica que queda sobre el cuerpo de la pieza unida es un agujero suyo. En los DXF reales se recuperan tres agujeros en la guitarra y dos en un logo de la muestra; en `Complejo.dxf` no cambia nada.
+  - **La unión tardaba el cuadrado de las formas del grupo.** Con 2.000 letras sueltas en el hueco de un aro, 40 s; ahora unos 3.
+  - **Los huecos de una pieza unida no siempre entraban descartados:** si el color venía «por bloque», o si el hueco era un rectángulo que no entra en ninguna chapa. Ahora entran descartados siempre, por cómo se armaron.
+  - Lo menor que señaló quedó anotado en los «Desvíos» del [`plan.md`](plan/2.1a-lectura-con-imagen/plan.md).
 
 ### Qué se decidió
 
