@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import Banner from "../../components/Banner";
 import { ApiError } from "../../api/client";
 import { descargarPdf, type ItemCliente, type LineaCosto } from "../../api/presupuestos";
@@ -27,6 +28,27 @@ function bajarArchivo(contenido: Blob, nombre: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/** Espera a que no quede ningún guardado en curso: de esta sección o de
+ * cualquier otra de la pestaña. El margen y el IVA están en la sección de
+ * arriba y guardan por su cuenta; si el PDF se pidiera sin esperarlos,
+ * saldría con el valor viejo mientras la pantalla ya muestra el nuevo. */
+async function esperarGuardados(queryClient: QueryClient) {
+  // El guardado que dispara perder el foco se anota en esta misma vuelta:
+  // se le da una para que figure antes de preguntar.
+  await new Promise((listo) => setTimeout(listo, 0));
+  while (queryClient.isMutating() > 0) {
+    await new Promise((listo) => setTimeout(listo, 50));
+  }
+}
+
+/** Si algún guardado empezado desde `desde` terminó en error. */
+function falloAlgunGuardado(queryClient: QueryClient, desde: number): boolean {
+  return queryClient
+    .getMutationCache()
+    .getAll()
+    .some((guardado) => guardado.state.status === "error" && guardado.state.submittedAt >= desde);
+}
+
 /** Lo que va a leer el cliente: el texto y el precio de cada ítem y el
  * total, editables, y el PDF (`docs/plan/1.3-pdf-del-presupuesto/diseno.md §8`).
  * Cada campo se guarda al salir de él, igual que el margen y el IVA. */
@@ -37,7 +59,9 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
   const actualizarLinea = useActualizarLineaCliente(presupuestoId);
   const [error, setError] = useState<string | null>(null);
   const [descargando, setDescargando] = useState(false);
-  const ultimoGuardado = useRef<Promise<void>>(Promise.resolve());
+  const queryClient = useQueryClient();
+  // Si lo último que se escribió en un campo no era un valor que sirva.
+  const entradaInvalida = useRef(false);
 
   if (!desglose) return null;
   const { presupuesto, totales, items_cliente: items, faltantes } = desglose;
@@ -52,10 +76,12 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
 
   function guardar(accion: () => Promise<unknown>, fallback: string) {
     setError(null);
-    ultimoGuardado.current = accion().then(
-      () => undefined,
-      (e: unknown) => setError(e instanceof ApiError ? e.message : fallback)
-    );
+    accion().catch((e: unknown) => setError(e instanceof ApiError ? e.message : fallback));
+  }
+
+  function rechazar(mensaje: string) {
+    entradaInvalida.current = true;
+    setError(mensaje);
   }
 
   function alSalirDelTexto(item: ItemCliente, campo: HTMLInputElement) {
@@ -91,7 +117,7 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
     }
     const importe = leerImporte(escrito);
     if (importe === null) {
-      setError(`«${escrito}» no es un importe. Escribilo como 150.000 o como 150000,50.`);
+      rechazar(`«${escrito}» no es un importe. Escribilo como 150.000 o como 150000,50.`);
       campo.value = actual;
       return;
     }
@@ -120,7 +146,7 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
     }
     const importe = leerImporte(escrito);
     if (importe === null || Number(importe) <= 0) {
-      setError(`«${escrito}» no sirve como total. Escribilo como 1.400.000 o como 1400000,50.`);
+      rechazar(`«${escrito}» no sirve como total. Escribilo como 1.400.000 o como 1400000,50.`);
       campo.value = actual;
       return;
     }
@@ -134,7 +160,7 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
   function alSalirDeLaValidez(campo: HTMLInputElement) {
     const dias = leerDias(campo.value);
     if (dias === null) {
-      setError("La validez tiene que ser una cantidad de días, mayor que cero.");
+      rechazar("La validez tiene que ser una cantidad de días, mayor que cero.");
       campo.value = String(presupuesto.validez_dias);
       return;
     }
@@ -145,13 +171,22 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
   async function alDescargar() {
     setError(null);
     setDescargando(true);
+    entradaInvalida.current = false;
+    const desde = Date.now();
     // Apretar el botón no le saca el foco al campo que se estaba editando
     // (ver `onMouseDown`): se lo saca acá, ya con el clic hecho, para que
-    // lo recién escrito se guarde. Y se espera ese guardado, para que el
-    // PDF lo traiga.
+    // lo recién escrito se guarde. Vale para cualquier campo de la pestaña,
+    // también el margen y el IVA de la sección de arriba.
     (document.activeElement as HTMLElement | null)?.blur();
     try {
-      await ultimoGuardado.current;
+      await esperarGuardados(queryClient);
+      // Si lo último que se escribió no se pudo guardar, el PDF saldría sin
+      // ese cambio y con cara de estar bien: mejor no bajarlo.
+      if (entradaInvalida.current) return;
+      if (falloAlgunGuardado(queryClient, desde)) {
+        setError((actual) => actual ?? "No se bajó el PDF: el último cambio no se pudo guardar.");
+        return;
+      }
       bajarArchivo(await descargarPdf(presupuestoId), `${presupuesto.codigo}.pdf`);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "No se pudo generar el PDF.");
