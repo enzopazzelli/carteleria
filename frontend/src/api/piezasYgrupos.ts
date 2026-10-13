@@ -60,8 +60,14 @@ export interface FormaLeida {
   id_origen: string;
   contorno_mm: number[][];
   agujeros_mm: number[][][];
-  descartada: boolean;
-  /** Por qué entra descartada; `null` si se corta. */
+  /** `se_corta`: se carga y se anida. `descartada`: se carga atenuada, sin
+   * cortarse (el recorte de un hueco). `no_va`: la sacó quien carga, y no
+   * se carga. */
+  estado: "se_corta" | "descartada" | "no_va";
+  /** El estado no salió de una regla: lo marcó quien carga. */
+  corregida: boolean;
+  /** Por qué entra descartada o no va; `null` si se corta sin que nadie
+   * lo haya marcado. */
   motivo: string | null;
 }
 
@@ -69,8 +75,13 @@ export interface Lectura {
   formas: FormaLeida[];
   a_cortar: number;
   descartadas: number;
+  no_van: number;
   advertencias: string[];
 }
+
+/** Lo que quien carga marcó sobre el dibujo: de nombre de forma
+ * (`id_origen`) a lo que tiene que pasar con ella. */
+export type Correcciones = Record<string, "cortar" | "no_va">;
 
 /** Cómo se leería un DXF. `unida` viene solo si hay formas que se pisan. */
 export interface LecturaDxf {
