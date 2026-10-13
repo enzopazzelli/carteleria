@@ -69,9 +69,11 @@ Qué queda abierto y cuál es el próximo paso.
 - **La sección «Presupuesto para el cliente» en Costeo:** texto y precio por ítem, total final, validez, cliente, margen resultante, la lista de lo que falta y el botón del PDF. En «Líneas por rubro» se suman editar y borrar.
 - **De paso se corrigió un error que ya existía:** una validez, un cliente o una moneda vacíos llegaban a la base y volvían como error del servidor. Ahora responden con un aviso.
 - **Se trabajó en una carpeta aparte del repositorio** (un worktree), en paralelo a la lectura del DXF (2.1a), que siguió en la carpeta principal y se fusionó antes (PR #18).
-- **El código del plan se probó antes de escribirlo,** sobre una copia fuera del repo, y después se aplicó tarea por tarea con el ok de Enzo en cada commit. Backend 492 en verde (423 antes), sin pruebas salteadas; frontend 60 (40 antes).
+- **El código del plan se probó antes de escribirlo,** sobre una copia fuera del repo, y después se aplicó tarea por tarea con el ok de Enzo en cada commit. Al cierre, con los arreglos de la revisión: backend 507 en verde (423 antes), sin pruebas salteadas; frontend 70 (40 antes).
 - **La pantalla se recorrió con Chrome sin ventana:** los 9 puntos del plan para la sección nueva y los 5 de editar y borrar.
 - **El recorrido encontró una falla del plan, y se arregló:** con un aviso de error a la vista, apretar «Descargar PDF» justo después de escribir en un campo perdía el clic. El guardado del campo borraba el aviso, el botón subía 54 px y al soltar ya no estaba bajo el puntero. Ahora el botón no le saca el foco al campo y es el clic el que guarda lo escrito antes de pedir el PDF.
+- **Un revisor independiente leyó toda la rama** antes del PR: nada crítico, y tres fallas importantes en la pantalla, que se arreglaron con su prueba primero. Un precio escrito a mano desaparecía del campo si faltaba el margen o el costo, y salir de ese campo vacío lo borraba. La cantidad de una línea se leía con las reglas de la plata («0.125» quedaba en 125) y al editar se redondeaba a dos decimales. Y cambiar el margen o el IVA y apretar «Descargar PDF» enseguida bajaba el PDF con el valor viejo. Las tres se comprobaron además en Chrome sin ventana.
+- **Con la revisión se sumaron cuatro arreglos menores:** el PDF no se baja si lo último que se escribió no se pudo guardar; una palabra larguísima sin espacios ya no saca los importes de la hoja; la API rechaza valores absurdos (un IVA de −100 con total fijado dividía por cero y el presupuesto dejaba de abrirse); y dos renglones de documentos que habían quedado viejos.
 
 ### Qué se decidió
 
@@ -80,6 +82,7 @@ Qué queda abierto y cuál es el próximo paso.
 - **Un presupuesto incompleto no genera PDF** y dice qué falta (Enzo).
 - **Al fijar el total se ajustan todos los ítems,** también los escritos a mano (Enzo). Lo escrito no se pisa: al quitar el total fijado, vuelve.
 - **De este diseño, a confirmar con el dueño:** la fecha del presupuesto es el día en que se genera, y el total fijado es con IVA.
+- **En la cantidad de una línea, el punto y la coma son decimales** y no hay separador de miles (Enzo): «2.375» es dos coma trescientos setenta y cinco, como se leía antes de esta rama. En los importes sigue la regla de la plata: «1.400» es mil cuatrocientos.
 
 ### Cambios en el registro
 
@@ -89,7 +92,8 @@ Qué queda abierto y cuál es el próximo paso.
 ### Pendiente
 
 - **El recorrido de Enzo en el navegador,** sobre todo que el archivo se descargue: Chrome sin ventana no guarda descargas, y eso no se pudo ver.
-- **La revisión independiente de la rama** antes del PR.
+- **Preguntarle al dueño si cargan descuentos como una línea con precio negativo.** Desde la pantalla ya no se puede: los importes no aceptan negativos. Si se usa, hay que permitirlo y hacer que un total fijado con suma negativa cuente como incompleto.
+- **Lo que la revisión anotó y no se hizo:** está al final de los «Desvíos» de [`plan.md`](plan/1.3-pdf-del-presupuesto/plan.md).
 - **Al abrir el PR,** resolver los choques con `main` en la bitácora y el mapa: los dos lados los tocaron.
 - **Antes de usarlo sobre la base real,** respaldarla y correr `alembic upgrade head`: la migración `7f91bcd3ef15` agrega tres columnas.
 - **La imagen de Docker de 1.1** tiene que instalar Pango.

@@ -215,7 +215,7 @@ Subtotal 1.157.024,79 · IVA 242.975,21
 | Dónde | Qué hace falta |
 |---|---|
 | Dependencias de Python | `weasyprint` y `jinja2`. En las de desarrollo, `pypdf`, para leer el texto del PDF en las pruebas |
-| Windows, para desarrollar | MSYS2 con Pango, y la variable `WEASYPRINT_DLL_DIRECTORIES` apuntando a su carpeta de bibliotecas. En la máquina de Enzo quedó instalado el 2026-10-12 en `D:\msys64` (813 MB); falta dejar fija la variable. Se explica en `GUIA-PRUEBAS-LOCALES.md` |
+| Windows, para desarrollar | MSYS2 con Pango, y la variable `WEASYPRINT_DLL_DIRECTORIES` apuntando a su carpeta de bibliotecas. En la máquina de Enzo quedó instalado el 2026-10-12 en `D:\msys64` (813 MB), y la variable quedó fija en su usuario ese mismo día. Se explica en `GUIA-PRUEBAS-LOCALES.md §5` |
 | GitHub, que corre las pruebas en Linux | Un paso más en `.github/workflows/ci.yml` que instala Pango |
 | El servidor | La imagen de Docker de 1.1 tiene que instalar Pango. Se anota ahí |
 

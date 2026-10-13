@@ -3973,7 +3973,26 @@ Lo que se hizo distinto de lo escrito arriba, el 2026-10-12. El registro paso a 
 - **Los recorridos de las Tareas 6, 8 y 9 se hicieron con Chrome sin ventana,** no a mano. Desde la Tarea 8, la app de la rama corrió en los puertos 8001 y 5174, porque en 8000 y 5173 estaba la de la carpeta principal; el Chrome de prueba redirigía los pedidos. Chrome sin ventana no guarda descargas: se comprobó el pedido que hace la página y el contenido del PDF bajándolo por la API.
 - **En la Tarea 10, el mapa** dice además «hasta el PDF del presupuesto» en lugar de «hasta el desglose», y la fila del cotizador deja 1.3 afuera de los pasos que faltan.
 
+**Lo que cambió con la revisión de la rama.** Un revisor independiente leyó toda la rama contra el diseño. No encontró nada crítico, y sí tres fallas importantes en la pantalla, que se arreglaron con su prueba primero:
+
+- **Un precio escrito a mano desaparecía del campo** cuando el presupuesto no tenía margen o la línea no tenía costo, y salir de ese campo vacío lo borraba. La cuenta (`totales.py`) devuelve ahora el precio a mano siempre que exista, entre o no la línea en la cuenta.
+- **La cantidad de una línea se leía con las reglas de la plata:** «0.125» quedaba en 125, y al editar se llenaba redondeada a dos decimales, con lo que guardar sin tocar cambiaba el costo. Ahora hay un lector propio, `leerCantidad`, donde el punto y la coma son decimales y no hay separador de miles (decisión de Enzo: como se leía antes de esta rama). Al editar una línea se manda solo lo que cambió (`cambiosDeLinea`). De paso, `leerImporte` rechaza un grupo de miles que empieza en cero.
+- **Cambiar el margen o el IVA y apretar «Descargar PDF» bajaba el PDF con el valor viejo.** El botón esperaba solo los guardados de su sección, y el arreglo del clic perdido le había sacado a ese guardado la ventaja de tiempo que tenía. Ahora espera a que no quede ningún guardado en curso en toda la pestaña.
+
+Y cuatro menores que Enzo eligió sumar:
+
+- **Si lo último que se escribió no se pudo guardar,** o no era un importe, el PDF no se baja.
+- **Una palabra larguísima sin espacios** ya no saca la columna de importes de la hoja (`overflow-wrap` en la plantilla). La prueba mide dónde arranca cada texto dibujado: buscarlo no alcanza, porque sigue en el archivo aunque no se vea.
+- **Topes a valores absurdos** en lo que entra por la API: importes hasta doce cifras, cantidad hasta nueve, validez hasta 3650 días, IVA entre 0 y 100, margen entre −100 y 1000. Sin ellos, un IVA de −100 con total fijado dividía por cero y el presupuesto dejaba de abrirse.
+- **Dos renglones de documentos** que habían quedado viejos.
+
+Con esto la rama quedó en 507 pruebas de backend (ninguna salteada) y 70 de frontend. Los tres arreglos de pantalla se comprobaron además en Chrome sin ventana.
+
 **Lo que quedó anotado y no se hizo:**
 
+- **¿Se cargan descuentos como una línea con precio negativo?** Desde la pantalla ya no se puede: los importes no aceptan negativos. Y un total fijado con una suma de precios negativa invierte los signos en lugar de contar como incompleto. Queda como pregunta para el dueño.
 - Los botones «a mano · quitar» y «fijado · quitar» pueden perder un clic de la misma forma que el de descargar. Perderlo no hace nada: se vuelve a apretar.
 - Los campos «Margen %» e «IVA %» de «Líneas por rubro», anteriores a este sub-proyecto, mandan el texto tal cual: «10,5» vuelve como error en lugar de leerse con `leerImporte`.
+- Sin total fijado, «Precio base» y «En el presupuesto» pueden diferir en centavos cuando el redondeo le carga la diferencia a un ítem; y todos los centavos van a un solo ítem, como pide el §5.3 del diseño.
+- La prueba de muchos renglones mira tres ítems de ochenta y no comprueba que el bloque de totales quede entero; el revisor lo comprobó a mano, de 14 a 79 ítems.
+- Dos líneas sin costo con la misma descripción repiten la clave de la lista de lo que falta.
