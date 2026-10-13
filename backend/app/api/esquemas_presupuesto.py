@@ -7,9 +7,19 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ..modelos.catalogo import Moneda
+
+# --- Topes -----------------------------------------------------------------
+# Lo que se rechaza al entrar por absurdo, no por una regla de negocio: un
+# dedo de más en un importe no tiene que dejar un presupuesto sin abrir.
+# Antes, un IVA de -100 con total fijado dividía por cero, y un importe de
+# decenas de cifras no se podía redondear. Con estos topes ninguna cuenta
+# de `services/presupuesto/totales.py` pasa de las 28 cifras de `Decimal`.
+_IMPORTE_MAX = Decimal("999999999999.99")
+_CANTIDAD_MAX = Decimal("999999999")
+_VALIDEZ_MAX_DIAS = 3650
 
 # --- Clientes --------------------------------------------------------------
 
@@ -42,7 +52,7 @@ class PresupuestoCrear(BaseModel):
 
     cliente_id: int
     #: Sin default: `PAR-11` sigue sin confirmar — ver `presupuesto.py`.
-    validez_dias: int
+    validez_dias: int = Field(gt=0, le=_VALIDEZ_MAX_DIAS)
     trabajo_id: int | None = None
     moneda: Moneda = Moneda.ARS
 
@@ -50,13 +60,27 @@ class PresupuestoCrear(BaseModel):
 class PresupuestoActualizar(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
+    cliente_id: int | None = None
     trabajo_id: int | None = None
-    validez_dias: int | None = None
+    validez_dias: int | None = Field(default=None, gt=0, le=_VALIDEZ_MAX_DIAS)
     moneda: Moneda | None = None
     #: `PAR-12` sin confirmar — se fija a mano cuando se sabe cuánto
     #: cobrar (`CART-307`, paso 5). `None` explícito lo vuelve a limpiar.
-    margen_pct: Decimal | None = None
-    iva_pct: Decimal | None = None
+    margen_pct: Decimal | None = Field(default=None, ge=-100, le=1000)
+    iva_pct: Decimal | None = Field(default=None, ge=0, le=100)
+    #: El total final, con IVA (`diseno.md §5` de 1.3). `None` explícito
+    #: lo quita y el total vuelve a salir de la suma de los ítems.
+    total_fijado: Decimal | None = Field(default=None, gt=0, le=_IMPORTE_MAX, decimal_places=2)
+
+    @model_validator(mode="after")
+    def _lo_que_no_puede_quedar_vacio(self) -> PresupuestoActualizar:
+        # Un `null` explícito sirve para limpiar margen, IVA, trabajo o
+        # total fijado. En estos tres la columna no admite vacío: sin
+        # este chequeo el `null` llegaba a la base y volvía como error 500.
+        for campo in ("cliente_id", "validez_dias", "moneda"):
+            if campo in self.model_fields_set and getattr(self, campo) is None:
+                raise ValueError(f"{campo} no puede quedar vacío.")
+        return self
 
 
 class PresupuestoLeer(BaseModel):
@@ -71,6 +95,7 @@ class PresupuestoLeer(BaseModel):
     moneda: str
     margen_pct: Decimal | None
     iva_pct: Decimal | None
+    total_fijado: Decimal | None
     creado_en: datetime
     actualizado_en: datetime
 
@@ -97,6 +122,8 @@ class LineaCostoLeer(BaseModel):
     valor_override: Decimal | None
     override_por: str | None
     override_en: datetime | None
+    texto_cliente: str | None
+    precio_cliente: Decimal | None
 
 
 class LineaCostoOverride(BaseModel):
@@ -104,7 +131,7 @@ class LineaCostoOverride(BaseModel):
     limpia `override_por`/`override_en` — no hace falta un endpoint
     aparte para "volver al calculado"."""
 
-    valor_override: Decimal | None
+    valor_override: Decimal | None = Field(ge=-_IMPORTE_MAX, le=_IMPORTE_MAX)
     override_por: str | None = None
 
     @model_validator(mode="after")
@@ -112,6 +139,22 @@ class LineaCostoOverride(BaseModel):
         if self.valor_override is not None and not self.override_por:
             raise ValueError("override_por es obligatorio para aplicar un override — hay que saber quién lo hizo.")
         return self
+
+
+class LineaClienteActualizar(BaseModel):
+    """Lo que lee el cliente en una línea (`diseno.md §5` de 1.3): el
+    texto y el precio a mano, sin IVA. Vale para cualquier rubro,
+    también `MATERIAL`: no cambia el costo, es una capa encima. Un
+    `null` explícito limpia el campo y se vuelve a usar la descripción
+    o el costo más el margen."""
+
+    texto_cliente: str | None = Field(default=None, max_length=300)
+    precio_cliente: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAX, decimal_places=2)
+
+    @field_validator("texto_cliente")
+    @classmethod
+    def _un_texto_en_blanco_es_vacio(cls, valor: str | None) -> str | None:
+        return (valor or "").strip() or None
 
 
 # --- Líneas libres (paso 4: `CART-304`/`305`/`306`) -----------------------
@@ -124,9 +167,9 @@ class LineaCostoCrear(BaseModel):
 
     rubro: Literal["INSUMO", "MANO_DE_OBRA", "FLETE", "INSTALACION", "OTRO"]
     descripcion: str
-    cantidad: Decimal
+    cantidad: Decimal = Field(ge=-_CANTIDAD_MAX, le=_CANTIDAD_MAX)
     unidad: str | None = None
-    precio_unitario: Decimal
+    precio_unitario: Decimal = Field(ge=-_IMPORTE_MAX, le=_IMPORTE_MAX)
 
 
 class LineaCostoActualizar(BaseModel):
@@ -134,9 +177,9 @@ class LineaCostoActualizar(BaseModel):
     rubro `MATERIAL` — ver `rutas_presupuesto.py`."""
 
     descripcion: str | None = None
-    cantidad: Decimal | None = None
+    cantidad: Decimal | None = Field(default=None, ge=-_CANTIDAD_MAX, le=_CANTIDAD_MAX)
     unidad: str | None = None
-    precio_unitario: Decimal | None = None
+    precio_unitario: Decimal | None = Field(default=None, ge=-_IMPORTE_MAX, le=_IMPORTE_MAX)
 
 
 # --- Totales (paso 5: `CART-307`) -----------------------------------------
@@ -153,15 +196,34 @@ class TotalesLeer(BaseModel):
     subtotales_por_rubro: dict[str, Decimal]
     costo_total: Decimal
     margen_pct: Decimal | None
+    #: Precio de venta menos costo. Con precios a mano o total fijado ya
+    #: no es `costo × margen_pct`: es lo que queda (`diseno.md §5.5`).
     monto_margen: Decimal | None
+    margen_resultante_pct: Decimal | None
+    #: El subtotal del presupuesto: la suma de los ítems, sin IVA.
     precio_venta: Decimal | None
     iva_pct: Decimal | None
     monto_iva: Decimal | None
     total: Decimal | None
+    total_fijado: Decimal | None
     advertencias: list[str]
 
 
 # --- Desglose completo (paso 6: `CART-308`, el último del plan) ----------
+
+
+class ItemClienteLeer(BaseModel):
+    """Una línea vista desde el precio — `services.presupuesto.totales.ItemCuenta`."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    linea_id: int
+    rubro: str
+    texto: str
+    costo: Decimal | None
+    precio_base: Decimal | None
+    a_mano: bool
+    precio_final: Decimal | None
 
 
 class DesgloseLeer(BaseModel):
@@ -177,3 +239,8 @@ class DesgloseLeer(BaseModel):
     cliente: ClienteLeer
     lineas_por_rubro: dict[str, list[LineaCostoLeer]]
     totales: TotalesLeer
+    #: Una fila por línea, en el orden de carga: lo que va a leer el
+    #: cliente al lado de lo que cuesta. Es vista interna, trae el costo.
+    items_cliente: list[ItemClienteLeer]
+    #: Lo que impide sacar el PDF. Vacía = el presupuesto está completo.
+    faltantes: list[str]

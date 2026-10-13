@@ -237,3 +237,20 @@ El visor **ya es una página web** — HTTP, HTML, JavaScript — pero es una he
 ## 4. Qué hacer con esto cuando F1/F5 existan
 
 Nada de los scripts va a sobrevivir tal cual: `extraer_catalogo_chapa_xlsx.py` lo reemplaza `CART-104` (importación masiva real, con su propia pantalla de previsualización); `probar_nesting_real.py`, `generar_visor_html.py` y `servidor_visor.py` los reemplaza el flujo real del cotizador (`F3`) y su visor en frontend una vez que exista presupuesto, piezas persistidas y catálogo real. Lo que sí es código de producto real, no descartable: `app/services/ingesta/dxf.py` (`CART-503` — falta el filtro por capa `CORTE` cuando se acuerde `CART-501`), `app/services/nesting/visualizacion.py` (`CART-208`) y `app/services/nesting/validacion_manual.py` (override manual de una posición — no está en el backlog todavía como historia propia, pero es la lógica que un frontend real va a necesitar el día que se permita ajustar el anidado a mano).
+
+---
+
+## 5. El PDF del presupuesto
+
+El PDF se dibuja con ReportLab (`backend/app/services/presupuesto/pdf.py`). Se instala con `pip`, junto con lo demás de `requirements.txt`, y no necesita ninguna biblioteca del sistema: anda igual en Windows, en GitHub y en el servidor. Las pruebas que generan un PDF corren en cualquier máquina, sin saltear ninguna:
+
+```bash
+cd backend
+python -m pytest -q tests/services/presupuesto/test_pdf.py
+```
+
+Hasta el 2026-10-13 el PDF se hacía con WeasyPrint, que en Windows pedía instalar MSYS2 con Pango y fijar la variable `WEASYPRINT_DLL_DIRECTORIES`. Ya no hace falta nada de eso: si quedó instalado, se puede sacar.
+
+### La tipografía
+
+El PDF usa Source Sans 3, guardada en `backend/app/services/presupuesto/fuentes/` con su licencia (SIL Open Font License 1.1). Va en el repo para que el PDF salga igual en Windows y en el servidor.

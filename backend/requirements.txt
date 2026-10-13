@@ -17,3 +17,8 @@ python-multipart==0.0.20
 
 # Motor irregular experimental, seleccionable sin reemplazar rectpack.
 spyrrow==0.9.0
+
+# PDF del presupuesto (docs/plan/1.3-pdf-del-presupuesto/diseno.md, D-16).
+# Python puro: no necesita bibliotecas del sistema, ni en Windows ni en el
+# servidor.
+reportlab==4.4.4

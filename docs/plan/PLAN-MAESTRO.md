@@ -193,6 +193,8 @@ Sin código de producto.
 | **1.4 Aprobación mínima** | Estados borrador, pendiente, observado y aprobado. Aviso al dueño por mail con link firmado (`PAR-17`). El dueño aprueba u observa sin iniciar sesión. Historial de quién cambió qué estado | Vencimiento automático, anulación, resumen agrupado de avisos | `CART-401` a `CART-404` | Usuario de prueba que aprueba; buzón de prueba |
 | **1.5 Envío por mail** | Al aprobar sale el PDF al cliente y el presupuesto queda como enviado, con el PDF y las líneas congelados. Se puede aprobar sin enviar. El cliente tiene un email cargado | WhatsApp, reintentos, respuesta del cliente por link | `CART-405`, `CART-406`, `CART-004` | Buzón de prueba |
 
+**1.3 quedó construido el 2026-10-12,** en la rama `feat/pdf-presupuesto` ([PR #19](https://github.com/enzopazzelli/carteleria/pull/19)): [`1.3-pdf-del-presupuesto/`](1.3-pdf-del-presupuesto/). El 2026-10-13, antes de fusionar, el PDF pasó de WeasyPrint a ReportLab (`D-16`). Tomó de 1.2 la edición del presupuesto: el texto y el precio de cada ítem para el cliente, el total fijado, editar y borrar líneas, y cambiar la validez y el cliente, todo desde la pestaña Costeo. De 1.2 queda la lista de presupuestos fuera del trabajo.
+
 **Regla para mandar a aprobar.** El presupuesto tiene cliente, al menos una línea de costo y ningún material pendiente. **Material pendiente** es una línea de rubro material sin valor efectivo: ni calculado ni cargado por override. Si falta algo, el sistema lo rechaza diciendo qué falta.
 
 **Punto abierto de 1.2 (`D-18`, nueva).** El override manual de `ADR-07` ya existe y hoy alcanza a cualquier línea, también a una de material sin anidado. Eso permitiría completar a mano el costo de la chapa y emitir el presupuesto antes de que llegue el motor. Si se permite o se bloquea en ese caso se decide en el diseño de 1.2.
@@ -218,7 +220,7 @@ Se detallan cuando les toque, cada una con su diseño.
 | **4.2 Mail real** | Cambiar el buzón de prueba por la cuenta real | `CART-403`, `CART-406` | `T-03` |
 | **4.3 WhatsApp** | Aviso al dueño y envío al cliente por WhatsApp | `CART-403`, `CART-406` | `B-12`, `D-04` |
 | **4.4 Formato de la empresa** | Logo, datos fiscales y formato del presupuesto en el PDF | `CART-309` | `B-13` |
-| **4.5 Confirmar con el dueño** | Lo que avanzó con su valor por defecto: quién aprueba, validez, margen, `D-07`, `D-15` y `D-17` | — | `B-11`, `PAR-11`, `PAR-12`, `PAR-20` |
+| **4.5 Confirmar con el dueño** | Lo que avanzó con su valor por defecto: quién aprueba, validez, margen, `D-07`, `D-15`, `D-17`, `D-20` y `D-21` | — | `B-11`, `PAR-11`, `PAR-12`, `PAR-20` |
 
 **Lo que no entra en ninguna etapa de este plan**, y por qué:
 
@@ -304,9 +306,10 @@ Cada una avanza con su valor por defecto hasta que se cierre. El enunciado compl
 | `D-13` | Qué hace el sistema con un diseño que «queda como está» | 2.1 |
 | `D-14` | En qué forma llega el motor de Vale | E1 |
 | `D-15` | Aprobación del presupuesto entero o ítem por ítem | 1.4 |
-| `D-16` | Herramienta para generar el PDF | 1.3 |
 | `D-17` | Al aceptar el cliente, ¿se crea sola la nota de pedido en AppSheet? | 2.4 |
 | `D-18` | ¿El override puede completar una línea de material sin anidado? | 1.2 |
+| `D-20` | Qué fecha lleva el presupuesto y desde cuándo corre la validez | 4.5 |
+| `D-21` | El total fijado a mano, con IVA o sin IVA | 4.5 |
 | `D-08` | Retención y backup de archivos generados | 1.1 |
 | `D-10` | Fórmula del costo por unidad de venta | 2.2 |
 | `D-04` | WhatsApp directo o por un intermediario | 4.3 |
@@ -338,7 +341,7 @@ Se aplican en la etapa 0.
 | Riesgo | Efecto | Qué se hace |
 |---|---|---|
 | Lo real se conecta al final (etapa 4) | Las sorpresas de servidor, mail o formato aparecen tarde | Docker igual al servidor desde 1.1, y cada reemplazo local anotado en el diseño de su sub-proyecto, para saber qué cambiar |
-| WeasyPrint es incómodo de instalar en Windows, donde se desarrolla | 1.3 se traba en el entorno | La herramienta se elige en el diseño de 1.3 (`D-16`) |
+| WeasyPrint es incómodo de instalar en Windows, donde se desarrolla | 1.3 se traba en el entorno | Pasó: pedía MSYS2 con Pango. El 2026-10-13 se cambió a ReportLab, que se instala con `pip` y nada más (`D-16`) |
 | El alta de WhatsApp Business tarda semanas | 4.3 se atrasa | Se puede pedir antes sin frenar nada. El mail cubre todo el recorrido |
 | No se sabe en qué forma llega el motor | E2 puede necesitar un adaptador que nadie planificó | E1 lo pregunta primero (`D-14`) |
 | Sin motor no se emite ningún presupuesto con chapa | La empresa prueba el circuito pero no lo usa para trabajos reales | Es consecuencia aceptada del §1. `D-18` es la única vía que lo cambiaría |

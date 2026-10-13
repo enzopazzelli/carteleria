@@ -58,6 +58,31 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-13 — PDF del presupuesto: pasó de WeasyPrint a ReportLab, sin nada que instalar fuera de `pip`
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (sub-proyecto 1.3)
+
+### Qué se hizo
+
+- **El PDF se dibuja con ReportLab** (`backend/app/services/presupuesto/pdf.py`). Se ve igual que el de WeasyPrint: la misma tipografía, el recuadro del logo, «Página X de Y», la palabra larga cortada dentro de su columna y los totales juntos al final. Una hoja tarda 0,01 s; antes, alrededor de un segundo.
+- **Se fueron la plantilla HTML, Jinja2, el error de «faltan las bibliotecas» con su respuesta 503, la marca que salteaba pruebas sin Pango y el paso del CI que lo instalaba.** La tipografía pasó a `presupuesto/fuentes/`.
+- **Las pruebas del PDF leen el PDF terminado,** y ninguna se saltea en una máquina sin Pango. Antes del cambio se corrieron contra WeasyPrint para tener la línea de base. La de la tipografía encontró que ReportLab declara Helvetica por su cuenta en cada tabla y al comenzar cada hoja.
+- Backend 504 pruebas en verde, sin la variable de WeasyPrint. Lo que se apartó del plan está en sus «Desvíos».
+
+### Cambios en el registro
+
+- **`D-16` cerrada otra vez: ReportLab.** Sale de la tabla de decisiones abiertas del plan maestro.
+
+### Pendiente
+
+- **Traer `main` a esta rama** y resolver el choque de esta bitácora, conservando las entradas de los dos lados.
+- **Subir la rama** y ver la verificación de GitHub, que ahora corre sola.
+- **El recorrido de Enzo en un navegador con ventana,** fusionar, y después respaldar la base real y correr `alembic upgrade head`.
+- **Después de fusionar, en la máquina de Enzo:** desinstalar MSYS2 (`D:\msys64`, 813 MB), borrar la variable `WEASYPRINT_DLL_DIRECTORIES` y sacar WeasyPrint del Python del sistema.
+- **Diseñar la pantalla para retocar el presupuesto,** con el PDF de verdad al lado.
+
+---
+
 ## 2026-10-13 — Corregir a mano la lectura del DXF (2.1b), en `main` y cerrada: clics sobre el dibujo, acercar y mover
 
 Sub-proyecto [`historico/2.1b-corregir-la-lectura/`](historico/2.1b-corregir-la-lectura/diseno.md), en `main` desde el 2026-10-13 ([PR #20](https://github.com/enzopazzelli/carteleria/pull/20), lo fusioné yo a pedido de Enzo).
@@ -91,6 +116,83 @@ Lo que sigue vivo pasó a la tabla «Pendientes de corregir la lectura a mano» 
 - Al sacar una placa con tornillos, cada tornillo aparece como una forma a cortar y hay que sacarlo también. Marcar de a muchas con un recuadro quedó anotado.
 - Girar una pieza con ángulo libre en el anidado automático (pedido de Enzo del 2026-10-12): es del motor.
 - Las miniaturas de la tabla de Piezas siguen dadas vuelta.
+
+---
+
+## 2026-10-13 — PDF del presupuesto: PR #19 abierto, y se decide pasar a ReportLab antes de fusionar
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (sub-proyecto 1.3)
+
+### Qué se hizo
+
+- **El PR #19 quedó abierto,** con la rama subida como `feat/pdf-presupuesto`. Choca con `main` en un solo archivo, esta bitácora: las dos ramas agregaron la entrada de arriba. Con choques GitHub no corre las pruebas del PR, así que se lanzaron a mano sobre la rama: pasaron las 507, sin saltear ninguna, con Pango instalado en Linux.
+- **Cuatro preguntas para el dueño en el registro** (`P-31` a `P-34`), sumadas al primer encuentro del guion de relevamiento.
+- **Una sonda con ReportLab, fuera del repo:** la misma hoja del presupuesto, con la tipografía del repo, «Página X de Y», el recuadro del logo y los textos escapados. Tarda entre 0,4 y 0,9 s, corta sola una palabra larguísima, y 80 renglones ocupan 4 hojas. No es código del producto: quedó en `.superpowers/sdd/plan/herramientas/` de la carpeta de la rama, que git ignora.
+- **Se vaciaron las cachés de pip y de npm** en la máquina de Enzo: el disco C: pasó de 1,1 a 4,7 GB libres.
+
+### Qué se decidió
+
+- **El PDF pasa de WeasyPrint a ReportLab, en todos lados** (Enzo). No quiere MSYS2 en su máquina, y ReportLab no necesita ninguna biblioteca del sistema, ni en Windows ni en el servidor. Reabre `D-16`. Se le avisó lo que cuesta: la plantilla deja de ser HTML y pasa a ser código.
+- **Antes de imprimir va a haber una pantalla para retocar el presupuesto** (Enzo): a un lado, los campos para editar y configurar; al otro, el PDF de verdad, que se vuelve a dibujar con cada cambio. Tiene que permitir verlo como va a salir, editar los textos, agregar textos libres (condiciones, forma de pago, plazo) y elegir qué se muestra. Se descartó una hoja HTML aparte del PDF: serían dos dibujos del mismo presupuesto para mantener iguales.
+- **El orden** (Enzo): primero el cambio a ReportLab, dentro del PR #19, para que WeasyPrint no llegue a `main`. La pantalla va después, como pieza aparte, con su diseño, su plan y su PR.
+
+### Cambios en el registro
+
+- **`D-16` reabierta:** pasa a ReportLab; pendiente de construir.
+- **`P-31` a `P-34` nuevas.**
+
+### Pendiente
+
+- **Cambiar el generador a ReportLab en la rama del PR #19.** Hoy el código de la rama sigue con WeasyPrint. Hay que reescribir `pdf.py` con la misma entrada y salida; borrar la plantilla HTML, la marca `pango` de las pruebas, el error de «faltan bibliotecas» y su respuesta 503; sacar `weasyprint` y `jinja2` de las dependencias y sumar `reportlab`; sacar del CI el paso que instala Pango; y reescribir la sección 5 de la guía de pruebas locales, el §4, §7, §9 y §10 del diseño y la fila de `D-16`.
+- **Después de eso, en la máquina de Enzo:** desinstalar MSYS2 (`D:\msys64`, 813 MB) y borrar la variable `WEASYPRINT_DLL_DIRECTORIES`.
+- **Resolver el choque de esta bitácora con `main`,** conservando las entradas de los dos lados.
+- **El recorrido de Enzo en un navegador con ventana,** fusionar, y después respaldar la base real y correr `alembic upgrade head`.
+- **Diseñar la pantalla para retocar el presupuesto.** Todavía no tiene diseño escrito: solo están las tres decisiones de arriba.
+
+---
+
+## 2026-10-12 — PDF del presupuesto (1.3) construido: un importe por ítem, texto y precio editables, y total fijado
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (sub-proyecto 1.3)
+
+### Qué se hizo
+
+- **La cuenta del presupuesto pasó a un servicio** (`backend/app/services/presupuesto/totales.py`) y ahora arma el precio de cada ítem: el escrito a mano o el costo más el margen. Con un total fijado, todos los ítems se ajustan por el mismo factor. La usan la pantalla y el PDF.
+- **El documento del cliente** (`documento.py`) no tiene ningún campo de costo ni de margen, y **el PDF** (`pdf.py`) sale de una plantilla HTML con WeasyPrint, con la tipografía Source Sans 3 guardada en el repo. Una prueba lee el texto del PDF y comprueba que no trae ni un importe de más.
+- **La sección «Presupuesto para el cliente» en Costeo:** texto y precio por ítem, total final, validez, cliente, margen resultante, la lista de lo que falta y el botón del PDF. En «Líneas por rubro» se suman editar y borrar.
+- **De paso se corrigió un error que ya existía:** una validez, un cliente o una moneda vacíos llegaban a la base y volvían como error del servidor. Ahora responden con un aviso.
+- **Se trabajó en una carpeta aparte del repositorio** (un worktree), en paralelo a la lectura del DXF (2.1a), que siguió en la carpeta principal y se fusionó antes (PR #18).
+- **El código del plan se probó antes de escribirlo,** sobre una copia fuera del repo, y después se aplicó tarea por tarea con el ok de Enzo en cada commit. Al cierre, con los arreglos de la revisión: backend 507 en verde (423 antes), sin pruebas salteadas; frontend 70 (40 antes).
+- **La pantalla se recorrió con Chrome sin ventana:** los 9 puntos del plan para la sección nueva y los 5 de editar y borrar.
+- **El recorrido encontró una falla del plan, y se arregló:** con un aviso de error a la vista, apretar «Descargar PDF» justo después de escribir en un campo perdía el clic. El guardado del campo borraba el aviso, el botón subía 54 px y al soltar ya no estaba bajo el puntero. Ahora el botón no le saca el foco al campo y es el clic el que guarda lo escrito antes de pedir el PDF.
+- **Un revisor independiente leyó toda la rama** antes del PR: nada crítico, y tres fallas importantes en la pantalla, que se arreglaron con su prueba primero. Un precio escrito a mano desaparecía del campo si faltaba el margen o el costo, y salir de ese campo vacío lo borraba. La cantidad de una línea se leía con las reglas de la plata («0.125» quedaba en 125) y al editar se redondeaba a dos decimales. Y cambiar el margen o el IVA y apretar «Descargar PDF» enseguida bajaba el PDF con el valor viejo. Las tres se comprobaron además en Chrome sin ventana.
+- **Con la revisión se sumaron cuatro arreglos menores:** el PDF no se baja si lo último que se escribió no se pudo guardar; una palabra larguísima sin espacios ya no saca los importes de la hoja; la API rechaza valores absurdos (un IVA de −100 con total fijado dividía por cero y el presupuesto dejaba de abrirse); y dos renglones de documentos que habían quedado viejos.
+
+### Qué se decidió
+
+- **Cada ítem con su importe,** y no solo el total (Enzo).
+- **WeasyPrint,** con MSYS2 y Pango instalados en `D:\msys64` para probar en Windows, y la variable `WEASYPRINT_DLL_DIRECTORIES` fija en el usuario de Enzo (Enzo). ReportLab andaba sin instalar nada, pero la plantilla hubiera sido código.
+- **Un presupuesto incompleto no genera PDF** y dice qué falta (Enzo).
+- **Al fijar el total se ajustan todos los ítems,** también los escritos a mano (Enzo). Lo escrito no se pisa: al quitar el total fijado, vuelve.
+- **De este diseño, a confirmar con el dueño:** la fecha del presupuesto es el día en que se genera, y el total fijado es con IVA.
+- **En la cantidad de una línea, el punto y la coma son decimales** y no hay separador de miles (Enzo): «2.375» es dos coma trescientos setenta y cinco, como se leía antes de esta rama. En los importes sigue la regla de la plata: «1.400» es mil cuatrocientos.
+
+### Cambios en el registro
+
+- **`D-16` cerrada:** WeasyPrint.
+- **`D-20` y `D-21` nuevas:** la fecha del presupuesto y si el total fijado es con IVA. Se confirman en 4.5.
+- **`P-31` a `P-34` nuevas,** las cuatro para el dueño: qué fecha lleva el presupuesto y desde cuándo corre la validez, si el precio final que acuerdan es con IVA, si cargan descuentos como un renglón negativo, y si en el presupuesto que mandan hoy cada renglón lleva su importe o va un solo precio. Quedaron sumadas al primer encuentro del guion de relevamiento.
+
+### Pendiente
+
+- **El recorrido de Enzo en el navegador,** sobre todo que el archivo se descargue: Chrome sin ventana no guarda descargas, y eso no se pudo ver.
+- **Preguntarle al dueño si cargan descuentos como una línea con precio negativo** (`P-33`). Desde la pantalla ya no se puede: los importes no aceptan negativos. Si se usa, hay que permitirlo y hacer que un total fijado con suma negativa cuente como incompleto.
+- **Lo que la revisión anotó y no se hizo:** está al final de los «Desvíos» de [`plan.md`](plan/1.3-pdf-del-presupuesto/plan.md).
+- **Al abrir el PR,** resolver los choques con `main` en la bitácora y el mapa: los dos lados los tocaron.
+- **Antes de usarlo sobre la base real,** respaldarla y correr `alembic upgrade head`: la migración `7f91bcd3ef15` agrega tres columnas.
+- **La imagen de Docker de 1.1** tiene que instalar Pango.
+- **Juntar varias líneas de costo en un solo ítem** y **registrar quién cambió un precio** quedaron afuera (§3 del diseño).
+- **El disco C: de la máquina de Enzo quedó con 1 GB libre:** con menos, las pruebas del backend fallan por falta de espacio. Se corrieron con los temporales en D:.
 
 ---
 

@@ -3,3 +3,6 @@ pytest==9.1.1
 # TestClient de FastAPI corre sobre httpx, no es dependencia obligatoria
 # de fastapi/starlette.
 httpx==0.28.1
+
+# Leer el texto de un PDF generado, para comprobar qué trae y qué no.
+pypdf==6.19.0

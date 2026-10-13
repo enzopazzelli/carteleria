@@ -4,12 +4,15 @@ HTTP real.
 """
 from __future__ import annotations
 
+import io
+import re
 import time
 from decimal import Decimal
 
 import ezdxf
 import pytest
 from fastapi.testclient import TestClient
+from pypdf import PdfReader
 from sqlalchemy.orm import Session
 
 from app.api.app import app
@@ -733,3 +736,350 @@ def test_desglose_sin_lineas_tiene_diccionario_vacio(cliente):
 
 def test_desglose_de_presupuesto_inexistente_da_404(cliente):
     assert cliente.get("/presupuestos/999/desglose").status_code == 404
+
+
+# --- Lo que lee el cliente (1.3: docs/plan/1.3-pdf-del-presupuesto/diseno.md) ---
+
+
+def _linea_libre(cliente, presupuesto_id: int, descripcion: str, precio: str, rubro: str = "OTRO") -> dict:
+    respuesta = cliente.post(
+        f"/presupuestos/{presupuesto_id}/lineas-costo",
+        json={"rubro": rubro, "descripcion": descripcion, "cantidad": "1", "precio_unitario": precio},
+    )
+    assert respuesta.status_code == 201, respuesta.text
+    return respuesta.json()
+
+
+def test_presupuesto_y_linea_nacen_sin_nada_escrito_para_el_cliente(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+    linea = _linea_libre(cliente, presupuesto["id"], "Flete", "80000", rubro="FLETE")
+
+    assert presupuesto["total_fijado"] is None
+    assert linea["texto_cliente"] is None
+    assert linea["precio_cliente"] is None
+
+
+def _presupuesto_del_ejemplo(cliente) -> tuple[dict, dict[str, dict]]:
+    """Las cuatro líneas del §5.2 del diseño, con margen del 30 %."""
+    presupuesto = _crear_presupuesto(cliente)
+    lineas = {
+        nombre: _linea_libre(cliente, presupuesto["id"], nombre, costo)
+        for nombre, costo in (
+            ("Chapa", "400000"),
+            ("Mano de obra", "300000"),
+            ("Flete", "80000"),
+            ("Instalación", "120000"),
+        )
+    }
+    cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"margen_pct": "30"})
+    return presupuesto, lineas
+
+
+def test_guardar_el_texto_y_el_precio_para_el_cliente_no_toca_el_costo(cliente):
+    _presupuesto, lineas = _presupuesto_del_ejemplo(cliente)
+
+    respuesta = cliente.patch(
+        f"/lineas-costo/{lineas['Instalación']['id']}/cliente",
+        json={"texto_cliente": "Colocación en el local", "precio_cliente": "150000"},
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["texto_cliente"] == "Colocación en el local"
+    assert Decimal(cuerpo["precio_cliente"]) == Decimal("150000")
+    assert cuerpo["descripcion"] == "Instalación"
+    assert Decimal(cuerpo["valor_calculado"]) == Decimal("120000")
+    assert cuerpo["valor_override"] is None
+
+
+def test_lo_del_cliente_vale_para_una_linea_de_material_y_recalcular_no_lo_pisa(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    material = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+
+    respuesta = cliente.patch(
+        f"/lineas-costo/{material['id']}/cliente",
+        json={"texto_cliente": "Chapa del frente", "precio_cliente": "9000"},
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    recalculada = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
+    assert recalculada["texto_cliente"] == "Chapa del frente"
+    assert Decimal(recalculada["precio_cliente"]) == Decimal("9000")
+
+
+def test_un_nulo_o_un_texto_en_blanco_limpian_lo_del_cliente(cliente):
+    _presupuesto, lineas = _presupuesto_del_ejemplo(cliente)
+    ruta = f"/lineas-costo/{lineas['Flete']['id']}/cliente"
+    cliente.patch(ruta, json={"texto_cliente": "Traslado", "precio_cliente": "100000"})
+
+    sin_precio = cliente.patch(ruta, json={"precio_cliente": None}).json()
+    assert sin_precio["precio_cliente"] is None
+    assert sin_precio["texto_cliente"] == "Traslado", "lo que no viaja en el pedido no se toca"
+
+    en_blanco = cliente.patch(ruta, json={"texto_cliente": "   "}).json()
+    assert en_blanco["texto_cliente"] is None
+
+
+@pytest.mark.parametrize("precio", ["-1", "10.123", "mil"])
+def test_un_precio_para_el_cliente_que_no_sirve_da_422(cliente, precio):
+    _presupuesto, lineas = _presupuesto_del_ejemplo(cliente)
+
+    respuesta = cliente.patch(
+        f"/lineas-costo/{lineas['Flete']['id']}/cliente", json={"precio_cliente": precio}
+    )
+
+    assert respuesta.status_code == 422
+
+
+def test_un_texto_para_el_cliente_demasiado_largo_da_422(cliente):
+    _presupuesto, lineas = _presupuesto_del_ejemplo(cliente)
+
+    respuesta = cliente.patch(
+        f"/lineas-costo/{lineas['Flete']['id']}/cliente", json={"texto_cliente": "x" * 301}
+    )
+
+    assert respuesta.status_code == 422
+
+
+def test_lo_del_cliente_en_una_linea_inexistente_da_404(cliente):
+    assert cliente.patch("/lineas-costo/999/cliente", json={"texto_cliente": "x"}).status_code == 404
+
+
+def test_fijar_y_quitar_el_total(cliente):
+    presupuesto, _lineas = _presupuesto_del_ejemplo(cliente)
+    ruta = f"/presupuestos/{presupuesto['id']}"
+
+    fijado = cliente.patch(ruta, json={"total_fijado": "1400000"})
+
+    assert fijado.status_code == 200, fijado.text
+    assert Decimal(fijado.json()["total_fijado"]) == Decimal("1400000")
+    totales = cliente.get(f"{ruta}/totales").json()
+    assert Decimal(totales["total"]) == Decimal("1400000.00")
+    assert Decimal(totales["precio_venta"]) == Decimal("1157024.79")
+    assert Decimal(totales["monto_iva"]) == Decimal("242975.21")
+
+    cliente.patch(ruta, json={"total_fijado": None})
+
+    totales = cliente.get(f"{ruta}/totales").json()
+    assert totales["total_fijado"] is None
+    assert Decimal(totales["total"]) == Decimal("1415700.00")
+
+
+@pytest.mark.parametrize("total", ["0", "-100", "1400000.123", "un millón"])
+def test_un_total_fijado_que_no_sirve_da_422(cliente, total):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"total_fijado": total})
+
+    assert respuesta.status_code == 422
+
+
+def test_cambiar_el_cliente_del_presupuesto(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+    otro = _crear_cliente(cliente, nombre="Farmacia Central")
+
+    respuesta = cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"cliente_id": otro["id"]})
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.json()["cliente_id"] == otro["id"]
+    desglose = cliente.get(f"/presupuestos/{presupuesto['id']}/desglose").json()
+    assert desglose["cliente"]["nombre"] == "Farmacia Central"
+
+
+def test_cambiar_a_un_cliente_inexistente_da_404(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"cliente_id": 999})
+
+    assert respuesta.status_code == 404
+
+
+@pytest.mark.parametrize(
+    "datos",
+    [{"cliente_id": None}, {"validez_dias": None}, {"moneda": None}, {"validez_dias": 0}, {"validez_dias": -5}],
+)
+def test_lo_que_no_puede_quedar_vacio_da_422_y_no_un_error_del_servidor(cliente, datos):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.patch(f"/presupuestos/{presupuesto['id']}", json=datos)
+
+    assert respuesta.status_code == 422
+
+
+def test_el_desglose_trae_lo_que_lee_el_cliente_y_el_margen_que_queda(cliente):
+    presupuesto, lineas = _presupuesto_del_ejemplo(cliente)
+    cliente.patch(f"/lineas-costo/{lineas['Instalación']['id']}/cliente", json={"precio_cliente": "150000"})
+    cliente.patch(f"/lineas-costo/{lineas['Chapa']['id']}/cliente", json={"texto_cliente": "Cartel frontal"})
+    cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"total_fijado": "1400000"})
+
+    cuerpo = cliente.get(f"/presupuestos/{presupuesto['id']}/desglose").json()
+
+    items = cuerpo["items_cliente"]
+    assert [item["linea_id"] for item in items] == [linea["id"] for linea in lineas.values()]
+    assert [item["texto"] for item in items] == ["Cartel frontal", "Mano de obra", "Flete", "Instalación"]
+    assert [Decimal(item["costo"]) for item in items] == [
+        Decimal("400000"), Decimal("300000"), Decimal("80000"), Decimal("120000"),
+    ]
+    assert [item["a_mano"] for item in items] == [False, False, False, True]
+    assert Decimal(items[3]["precio_base"]) == Decimal("150000.00")
+    assert [Decimal(item["precio_final"]) for item in items] == [
+        Decimal("516883.92"), Decimal("387662.95"), Decimal("103376.79"), Decimal("149101.13"),
+    ]
+    assert Decimal(cuerpo["totales"]["monto_margen"]) == Decimal("257024.79")
+    assert Decimal(cuerpo["totales"]["margen_resultante_pct"]) == Decimal("28.56")
+    assert cuerpo["faltantes"] == []
+
+
+def test_el_desglose_dice_que_le_falta_al_presupuesto(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+
+    cuerpo = cliente.get(f"/presupuestos/{presupuesto['id']}/desglose").json()
+
+    assert cuerpo["faltantes"] == [
+        "El presupuesto no tiene ninguna línea.",
+        "Falta cargar el margen, o un precio a mano en cada ítem.",
+    ]
+    assert cuerpo["items_cliente"] == []
+
+
+def test_duplicar_copia_lo_escrito_para_el_cliente(cliente):
+    presupuesto, lineas = _presupuesto_del_ejemplo(cliente)
+    cliente.patch(
+        f"/lineas-costo/{lineas['Instalación']['id']}/cliente",
+        json={"texto_cliente": "Colocación", "precio_cliente": "150000"},
+    )
+    cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"total_fijado": "1400000"})
+
+    copia = cliente.post(f"/presupuestos/{presupuesto['id']}/duplicar").json()
+
+    assert Decimal(copia["total_fijado"]) == Decimal("1400000")
+    lineas_copia = cliente.get(f"/presupuestos/{copia['id']}/lineas-costo").json()
+    instalacion = next(linea for linea in lineas_copia if linea["descripcion"] == "Instalación")
+    assert instalacion["texto_cliente"] == "Colocación"
+    assert Decimal(instalacion["precio_cliente"]) == Decimal("150000")
+
+
+# --- El PDF para el cliente (1.3, CART-309) --------------------------------
+
+
+def _importes(texto: str) -> set[str]:
+    """Todos los importes que aparecen escritos, enteros: «1.400.000,00»
+    cuenta como uno solo y no como si contuviera «400.000,00»."""
+    return set(re.findall(r"\d{1,3}(?:\.\d{3})*,\d{2}", texto))
+
+
+def test_el_pdf_trae_lo_del_cliente_y_nada_de_lo_interno(cliente):
+    presupuesto, lineas = _presupuesto_del_ejemplo(cliente)
+    cliente.patch(f"/lineas-costo/{lineas['Instalación']['id']}/cliente", json={"precio_cliente": "150000"})
+    cliente.patch(f"/lineas-costo/{lineas['Chapa']['id']}/cliente", json={"texto_cliente": "Cartel frontal"})
+    cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"total_fijado": "1400000"})
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/pdf")
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.headers["content-type"] == "application/pdf"
+    assert f'filename="{presupuesto["codigo"]}.pdf"' in respuesta.headers["content-disposition"]
+    texto = "\n".join(pagina.extract_text() for pagina in PdfReader(io.BytesIO(respuesta.content)).pages)
+    for esperado in (presupuesto["codigo"], "Megacarteles", "Cartel frontal", "Mano de obra", "Flete", "Instalación"):
+        assert esperado in texto, esperado
+    assert _importes(texto) == {
+        "516.883,92", "387.662,95", "103.376,79", "149.101,13",  # los ítems
+        "1.157.024,79", "242.975,21", "1.400.000,00",  # subtotal, IVA y total
+    }, "ni un importe de más: los costos, el margen y el precio base no salen"
+    assert "margen" not in texto.lower()
+    assert "Chapa" not in texto, "la descripción interna quedó reemplazada por el texto para el cliente"
+
+
+def test_el_pdf_de_un_presupuesto_incompleto_da_409_y_dice_que_falta(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+    _linea_libre(cliente, presupuesto["id"], "Flete", "80000")
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/pdf")
+
+    assert respuesta.status_code == 409
+    detalle = respuesta.json()["detail"]
+    assert detalle["faltantes"] == ["Falta cargar el margen, o un precio a mano en cada ítem."]
+    assert "Falta cargar el margen" in detalle["mensaje"]
+
+
+def test_el_pdf_de_un_presupuesto_inexistente_da_404(cliente):
+    assert cliente.get("/presupuestos/999/pdf").status_code == 404
+
+
+# --- Topes: un valor absurdo se rechaza al entrar ---------------------------
+# Sin tope, un IVA de -100 con total fijado dividía por cero y un importe de
+# decenas de cifras no se podía redondear: el presupuesto dejaba de abrirse.
+
+
+@pytest.mark.parametrize(
+    "datos",
+    [
+        {"iva_pct": "-1"},
+        {"iva_pct": "101"},
+        {"margen_pct": "-101"},
+        {"margen_pct": "1001"},
+        {"total_fijado": "1000000000000"},
+        {"validez_dias": 3651},
+    ],
+)
+def test_un_valor_absurdo_en_el_presupuesto_da_422(cliente, datos):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.patch(f"/presupuestos/{presupuesto['id']}", json=datos)
+
+    assert respuesta.status_code == 422, respuesta.text
+
+
+def test_crear_un_presupuesto_con_una_validez_absurda_da_422(cliente):
+    cliente_creado = _crear_cliente(cliente)
+
+    for validez in (0, 3651):
+        respuesta = cliente.post("/presupuestos", json={"cliente_id": cliente_creado["id"], "validez_dias": validez})
+        assert respuesta.status_code == 422, validez
+
+
+@pytest.mark.parametrize(
+    "datos",
+    [
+        {"cantidad": "10000000000", "precio_unitario": "1"},
+        {"cantidad": "1", "precio_unitario": "1000000000000"},
+        {"cantidad": "1", "precio_unitario": "-1000000000000"},
+    ],
+)
+def test_un_importe_absurdo_en_una_linea_da_422(cliente, datos):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo",
+        json={"rubro": "OTRO", "descripcion": "Absurdo"} | datos,
+    )
+
+    assert respuesta.status_code == 422, respuesta.text
+
+
+def test_un_importe_absurdo_al_editar_corregir_o_poner_precio_da_422(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+    linea = _linea_libre(cliente, presupuesto["id"], "Flete", "80000")
+
+    assert cliente.patch(f"/lineas-costo/{linea['id']}", json={"precio_unitario": "1000000000000"}).status_code == 422
+    assert cliente.patch(f"/lineas-costo/{linea['id']}", json={"cantidad": "10000000000"}).status_code == 422
+    assert (
+        cliente.patch(
+            f"/lineas-costo/{linea['id']}/override", json={"valor_override": "1000000000000", "override_por": "A"}
+        ).status_code
+        == 422
+    )
+    assert cliente.patch(f"/lineas-costo/{linea['id']}/cliente", json={"precio_cliente": "1000000000000"}).status_code == 422
+
+
+def test_los_valores_en_el_borde_del_tope_se_aceptan(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.patch(
+        f"/presupuestos/{presupuesto['id']}",
+        json={"iva_pct": "0", "margen_pct": "-100", "total_fijado": "999999999999.99", "validez_dias": 3650},
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert cliente.get(f"/presupuestos/{presupuesto['id']}/desglose").status_code == 200
