@@ -242,39 +242,15 @@ Nada de los scripts va a sobrevivir tal cual: `extraer_catalogo_chapa_xlsx.py` l
 
 ## 5. El PDF del presupuesto
 
-El PDF se genera con WeasyPrint. `pip` instala WeasyPrint, pero no Pango, la biblioteca del sistema que usa para armar el texto. Sin Pango la app arranca igual: la ruta del PDF responde que falta, y las pruebas que generan un PDF se saltean con el motivo a la vista (`backend/tests/conftest.py`). En GitHub no se saltean.
-
-### En Windows
-
-1. Instalar MSYS2. En la máquina de Enzo se hizo con `winget`, en `D:\msys64`, y no pidió permisos de administrador (ocupa unos 800 MB):
-
-   ```powershell
-   winget install --id MSYS2.MSYS2 --exact --location "D:\msys64" --silent --accept-package-agreements --accept-source-agreements
-   ```
-
-2. Instalar Pango adentro de MSYS2:
-
-   ```powershell
-   $env:MSYSTEM = "MSYS"; $env:CHERE_INVOKING = "1"
-   & "D:\msys64\usr\bin\bash.exe" -lc "pacman -S --noconfirm --needed mingw-w64-x86_64-pango"
-   ```
-
-3. Decirle a WeasyPrint dónde quedaron las bibliotecas, con una variable de entorno del usuario. Vale para las terminales que se abran después:
-
-   ```powershell
-   setx WEASYPRINT_DLL_DIRECTORIES "D:\msys64\mingw64\bin"
-   ```
-
-**Cómo saber si quedó bien.** Desde `backend/`, `python -m pytest -q -rs tests/services/presupuesto/test_pdf.py` tiene que terminar sin ninguna prueba salteada. Si dice `3 skipped`, esa terminal no tiene la variable: abrir una nueva.
-
-### En Linux y en el CI
+El PDF se dibuja con ReportLab (`backend/app/services/presupuesto/pdf.py`). Se instala con `pip`, junto con lo demás de `requirements.txt`, y no necesita ninguna biblioteca del sistema: anda igual en Windows, en GitHub y en el servidor. Las pruebas que generan un PDF corren en cualquier máquina, sin saltear ninguna:
 
 ```bash
-sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0
+cd backend
+python -m pytest -q tests/services/presupuesto/test_pdf.py
 ```
 
-Es el paso que corre `.github/workflows/ci.yml`. La imagen de Docker del servidor (1.1) tiene que instalar lo mismo.
+Hasta el 2026-10-13 el PDF se hacía con WeasyPrint, que en Windows pedía instalar MSYS2 con Pango y fijar la variable `WEASYPRINT_DLL_DIRECTORIES`. Ya no hace falta nada de eso: si quedó instalado, se puede sacar.
 
 ### La tipografía
 
-El PDF usa Source Sans 3, guardada en `backend/app/services/presupuesto/plantillas/fuentes/` con su licencia (SIL Open Font License 1.1). Va en el repo para que el PDF salga igual en Windows y en el servidor.
+El PDF usa Source Sans 3, guardada en `backend/app/services/presupuesto/fuentes/` con su licencia (SIL Open Font License 1.1). Va en el repo para que el PDF salga igual en Windows y en el servidor.

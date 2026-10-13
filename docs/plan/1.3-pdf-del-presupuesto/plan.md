@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** **ejecutado el 2026-10-12,** de la Tarea 1 a la 10. Lo que se apartó del plan está al final, en «Desvíos».
+> **Estado:** **ejecutado el 2026-10-12,** de la Tarea 1 a la 10. Lo que se apartó del plan está al final, en «Desvíos». **El 2026-10-13 el PDF pasó de WeasyPrint a ReportLab:** las Tareas 5 y 6 describen la versión con WeasyPrint, y lo que quedó está al final de «Desvíos».
 >
 > **El código de este plan está probado, con un límite.** El 2026-10-12 los bloques de las Tareas 1 a 9 se aplicaron, tal como están escritos acá, sobre una copia del backend y otra del frontend fuera del repositorio. Se aplicó todo junto y se probó el estado final: backend **492 pruebas en verde** (423 antes), con el PDF generado de verdad y la migración de ida y vuelta; frontend **60** (40 antes) y `npm run build` sin errores. **No se probó:** cada tarea por separado (las corridas de «falla primero» son las esperadas, no las vistas), el recorrido en pantalla del tramo 3 (compila, nadie lo usó en un navegador), el paso de GitHub de la Tarea 5 y el enlace provisorio de la Tarea 6.
 
@@ -3996,3 +3996,14 @@ Con esto la rama quedó en 507 pruebas de backend (ninguna salteada) y 70 de fro
 - Sin total fijado, «Precio base» y «En el presupuesto» pueden diferir en centavos cuando el redondeo le carga la diferencia a un ítem; y todos los centavos van a un solo ítem, como pide el §5.3 del diseño.
 - La prueba de muchos renglones mira tres ítems de ochenta y no comprueba que el bloque de totales quede entero; el revisor lo comprobó a mano, de 14 a 79 ítems.
 - Dos líneas sin costo con la misma descripción repiten la clave de la lista de lo que falta.
+
+**El cambio a ReportLab (2026-10-13).** Después de la revisión, y antes de fusionar, Enzo decidió dejar WeasyPrint (`D-16`): no quiere MSYS2 en su máquina. Lo que quedó en lugar de las Tareas 5 y 6:
+
+- **`pdf.py` dibuja la hoja con ReportLab.** Recibe el mismo documento y devuelve el PDF; `formatear_importe`, `formatear_porcentaje` y `formatear_fecha` no cambiaron. Se fueron `renderizar_html`, la plantilla `presupuesto.html`, el error de «faltan las bibliotecas» y la respuesta 503 de la ruta.
+- **La tipografía pasó de `plantillas/fuentes/` a `fuentes/`,** porque ya no hay plantillas.
+- **Dependencias:** salen `weasyprint` y `jinja2`, entra `reportlab==4.4.4`. La marca `pango` de `pytest.ini`, `tests/conftest.py` y el paso del CI que instalaba Pango volvieron a quedar como en `main`.
+- **Las pruebas del HTML pasaron a leer el PDF terminado.** Antes de cambiar el código se corrieron contra WeasyPrint: 19 en verde. Con ReportLab dieron lo mismo. Se comprobó que fallan si se saca el escapado, o si un cliente sin contacto muestra «None».
+- **Tres cosas de ReportLab que la sonda no tenía.** Cada tabla elige Helvetica para cada celda, y cada hoja arranca declarándola, salvo que se les dé otra fuente (`FONT` en el estilo de las tablas e `initialFontName`): lo encontró la prueba de la tipografía. Y el marco de la hoja trae de fábrica 6 puntos de relleno por lado, que acortaba la raya del encabezado y corría los totales: se sacó.
+- **La columna de importes toma el ancho del importe más largo,** como hacía la hoja HTML.
+
+Con esto el backend quedó en 504 pruebas, ninguna salteada, sin la variable que usaba WeasyPrint. Son 507 menos las dos del error de las bibliotecas, y menos una porque la del texto del HTML y la del texto del PDF quedaron en una.

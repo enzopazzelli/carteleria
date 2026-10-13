@@ -58,6 +58,31 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-13 — PDF del presupuesto: pasó de WeasyPrint a ReportLab, sin nada que instalar fuera de `pip`
+
+**Quién:** Enzo · **Carril:** Producto · **Sprint:** — (sub-proyecto 1.3)
+
+### Qué se hizo
+
+- **El PDF se dibuja con ReportLab** (`backend/app/services/presupuesto/pdf.py`). Se ve igual que el de WeasyPrint: la misma tipografía, el recuadro del logo, «Página X de Y», la palabra larga cortada dentro de su columna y los totales juntos al final. Una hoja tarda 0,01 s; antes, alrededor de un segundo.
+- **Se fueron la plantilla HTML, Jinja2, el error de «faltan las bibliotecas» con su respuesta 503, la marca que salteaba pruebas sin Pango y el paso del CI que lo instalaba.** La tipografía pasó a `presupuesto/fuentes/`.
+- **Las pruebas del PDF leen el PDF terminado,** y ninguna se saltea en una máquina sin Pango. Antes del cambio se corrieron contra WeasyPrint para tener la línea de base. La de la tipografía encontró que ReportLab declara Helvetica por su cuenta en cada tabla y al comenzar cada hoja.
+- Backend 504 pruebas en verde, sin la variable de WeasyPrint. Lo que se apartó del plan está en sus «Desvíos».
+
+### Cambios en el registro
+
+- **`D-16` cerrada otra vez: ReportLab.** Sale de la tabla de decisiones abiertas del plan maestro.
+
+### Pendiente
+
+- **Traer `main` a esta rama** y resolver el choque de esta bitácora, conservando las entradas de los dos lados.
+- **Subir la rama** y ver la verificación de GitHub, que ahora corre sola.
+- **El recorrido de Enzo en un navegador con ventana,** fusionar, y después respaldar la base real y correr `alembic upgrade head`.
+- **Después de fusionar, en la máquina de Enzo:** desinstalar MSYS2 (`D:\msys64`, 813 MB), borrar la variable `WEASYPRINT_DLL_DIRECTORIES` y sacar WeasyPrint del Python del sistema.
+- **Diseñar la pantalla para retocar el presupuesto,** con el PDF de verdad al lado.
+
+---
+
 ## 2026-10-13 — PDF del presupuesto: PR #19 abierto, y se decide pasar a ReportLab antes de fusionar
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (sub-proyecto 1.3)

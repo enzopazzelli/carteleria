@@ -1,7 +1,7 @@
 """El documento del cliente: lo que sale en el presupuesto, y nada más.
 
 No tiene ningún campo de costo ni de margen, a propósito
-(`docs/plan/1.3-pdf-del-presupuesto/diseno.md §7`): la plantilla no puede
+(`docs/plan/1.3-pdf-del-presupuesto/diseno.md §7`): el PDF no puede
 mostrar lo que el documento no trae. Es el último criterio de `CART-309`.
 """
 from __future__ import annotations
