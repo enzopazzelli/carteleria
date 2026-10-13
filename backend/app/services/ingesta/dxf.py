@@ -61,6 +61,7 @@ from __future__ import annotations
 import math
 import re
 from collections import Counter
+from collections.abc import Collection
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -404,6 +405,8 @@ def _bbox_contiene(exterior: tuple, interior: tuple) -> bool:
 def _clasificar_piezas_y_agujeros(
     contornos: list[_ContornoValido],
     tamano_maximo_agujero_mm: Decimal | None,
+    marcados: Collection[int] = (),
+    no_van: Collection[int] = (),
 ) -> list[tuple[_ContornoValido, list[_ContornoValido]]]:
     """Agrupa los contornos por nivel de anidamiento: un contorno
     contenido por una cantidad PAR de otros (0, 2, 4...) es una pieza
@@ -431,7 +434,16 @@ def _clasificar_piezas_y_agujeros(
     que el umbral se dibuja igual como hueco de su padre Y ADEMÁS
     aparece como su propia pieza en la lista de anidado — ninguna de
     las dos cosas se pierde. `None` desactiva el umbral: nada se
-    promueve, solo para tests que prueban la clasificación en sí."""
+    promueve, solo para tests que prueban la clasificación en sí.
+
+    **Lo que marcó quien carga también promueve**
+    (`docs/plan/2.1b-corregir-la-lectura/diseno.md §5.1`), por el
+    `indice` del contorno. Uno de `marcados` es siempre pieza propia: si
+    no, su marca nombraría una forma que no está. Y los agujeros de uno
+    de `no_van` también: un agujero es el hueco de algo que se corta, y
+    su padre ya no va. Sin esto, el punto de una leyenda rodeada por un
+    contorno (un agujero de 20 mm) se perdería junto con el contorno.
+    El que no va sigue saliendo con sus agujeros, para dibujarlo."""
     n = len(contornos)
     bounds = [c.poligono.bounds for c in contornos]
     contenedores: list[list[int]] = [[] for _ in range(n)]
@@ -454,7 +466,17 @@ def _clasificar_piezas_y_agujeros(
         ancho, alto = bounds[i][2] - bounds[i][0], bounds[i][3] - bounds[i][1]
         return ancho > float(tamano_maximo_agujero_mm) or alto > float(tamano_maximo_agujero_mm)
 
-    es_pieza_propia = [nivel[i] % 2 == 0 or _demasiado_grande_para_agujero(i) for i in range(n)]
+    def _su_padre_no_va(i: int) -> bool:
+        padre = padre_inmediato[i]
+        return padre is not None and contornos[padre].indice in no_van
+
+    es_pieza_propia = [
+        nivel[i] % 2 == 0
+        or _demasiado_grande_para_agujero(i)
+        or contornos[i].indice in marcados
+        or _su_padre_no_va(i)
+        for i in range(n)
+    ]
 
     resultado = []
     for i in range(n):
@@ -473,6 +495,12 @@ def _clasificar_piezas_y_agujeros(
     return resultado
 
 
+def _id(ruta: str | Path, contorno: _ContornoValido) -> str:
+    """El nombre de un contorno: el del archivo y su número de orden. Es
+    el `id` de su pieza, y el que usa quien carga para marcarlo."""
+    return f"{Path(ruta).stem}-{contorno.indice}"
+
+
 def _pieza_desde_clasificacion(
     ruta: str | Path,
     pieza: _ContornoValido,
@@ -482,14 +510,14 @@ def _pieza_desde_clasificacion(
     poligono_con_huecos = Polygon(pieza.poligono.exterior.coords, [a.poligono.exterior.coords for a in agujeros])
     minx, miny, maxx, maxy = pieza.poligono.bounds
     return PiezaImportada(
-        id=f"{Path(ruta).stem}-{pieza.indice}",
+        id=_id(ruta, pieza),
         capa=pieza.capa,
         ancho_mm=Decimal(str(maxx - minx)),
         alto_mm=Decimal(str(maxy - miny)),
         area_real_mm2=Decimal(str(poligono_con_huecos.area)),
         contorno_mm=pieza.puntos,
         agujeros_mm=[a.puntos for a in agujeros],
-        contenida_en_id=f"{Path(ruta).stem}-{contenedora.indice}" if contenedora is not None else None,
+        contenida_en_id=_id(ruta, contenedora) if contenedora is not None else None,
         color_aci=pieza.color,
     )
 
@@ -498,6 +526,9 @@ def parsear_dxf(
     ruta: str | Path,
     escala_a_mm: Decimal,
     tamano_maximo_agujero_mm: Decimal | None = _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT,
+    *,
+    marcadas: Collection[str] = (),
+    no_van: Collection[str] = (),
 ) -> ResultadoImportacionDXF:
     """Parsea un DXF y devuelve las piezas detectadas.
 
@@ -512,6 +543,11 @@ def parsear_dxf(
     agujeros genuinos más grandes que 25mm, o piezas independientes más
     chicas que eso, hay que ajustarlo caso por caso — ver el docstring
     de `_clasificar_piezas_y_agujeros`.
+
+    `marcadas` y `no_van` son los `id` de las formas que quien carga
+    marcó sobre el dibujo, y de esas, las que sacó. Cambian qué agujeros
+    salen además como piezas (mismo docstring). Un `id` que no es de un
+    contorno de este archivo no hace nada.
     """
     # La escala es un divisor desde que las curvas se aplanan con una
     # tolerancia en mm: con 0 el aplanado fallaría con un error confuso, y
@@ -582,9 +618,14 @@ def parsear_dxf(
             poligono, puntos = reparado, [(_en_mm(px), _en_mm(py)) for px, py in reparado.exterior.coords]
         contornos_validos.append(_ContornoValido(poligono, puntos, trazo.capa, trazo.indice, trazo.color))
 
+    def _indices(ids: Collection[str]) -> set[int]:
+        return {contorno.indice for contorno in contornos_validos if _id(ruta, contorno) in ids}
+
     piezas = [
         _pieza_desde_clasificacion(ruta, pieza, agujeros, contenedora)
-        for pieza, agujeros, contenedora in _clasificar_piezas_y_agujeros(contornos_validos, tamano_maximo_agujero_mm)
+        for pieza, agujeros, contenedora in _clasificar_piezas_y_agujeros(
+            contornos_validos, tamano_maximo_agujero_mm, _indices(marcadas), _indices(no_van)
+        )
     ]
 
     return ResultadoImportacionDXF(

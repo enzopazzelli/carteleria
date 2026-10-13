@@ -796,6 +796,63 @@ def test_un_hueco_de_la_pieza_unida_se_puede_poner_a_cortar(cliente, tmp_path):
     assert _totales(cuerpo["sin_unir"]) == _totales(antes["sin_unir"])
 
 
+def _leyenda_con_un_punto(msp):
+    """Un contorno de 900 que rodea una letra de 500 y un punto de 20. El
+    punto es tan chico que el lector lo toma por un agujero del contorno,
+    no por una forma: sin corregir no aparece en la lectura."""
+    _octogono(msp, 0, 0, 900)
+    _octogono(msp, 100, 200, 500)
+    _octogono(msp, 700, 200, 20)
+
+
+def _trabajo_con_la_leyenda(cliente, tmp_path):
+    """El trabajo, el DXF y el nombre del contorno."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "leyenda.dxf", _leyenda_con_un_punto)
+    formas = _por_ancho(_ver_lectura(cliente, trabajo["id"], contenido).json()["sin_unir"]["formas"])
+    assert sorted(formas) == [500, 900], "el punto no es una forma hasta que se saca el contorno"
+    return trabajo, contenido, formas[900]["id_origen"]
+
+
+def test_al_sacar_un_contorno_sus_agujeros_chicos_pasan_a_cortarse(cliente, tmp_path):
+    trabajo, contenido, contorno = _trabajo_con_la_leyenda(cliente, tmp_path)
+
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={contorno: "no_va"}).json()["sin_unir"]
+
+    formas = _por_ancho(lectura["formas"])
+    assert [formas[ancho]["estado"] for ancho in (900, 500, 20)] == ["no_va", "se_corta", "se_corta"]
+    assert _totales(lectura) == (2, 0, 1)
+
+
+def test_cargar_sin_el_contorno_guarda_el_punto(cliente, tmp_path):
+    trabajo, contenido, contorno = _trabajo_con_la_leyenda(cliente, tmp_path)
+
+    respuesta = _subir(cliente, trabajo["id"], contenido, correcciones=json.dumps({contorno: "no_va"}))
+
+    assert respuesta.status_code == 200, respuesta.text
+    piezas = {round(Decimal(p["ancho_mm"])): p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()}
+    assert sorted(piezas) == [20, 500]
+    assert not piezas[20]["descartada"]
+
+
+def test_un_punto_marcado_sigue_a_la_vista_aunque_vuelva_su_contorno(cliente, tmp_path):
+    """Quien carga saca el contorno, saca también el punto, y después se
+    arrepiente del contorno. El punto vuelve a ser su agujero, pero la
+    marca sigue puesta y se tiene que poder sacar: si no fuera una forma,
+    el pedido daría 400 por nombrar una que no existe."""
+    trabajo, contenido, contorno = _trabajo_con_la_leyenda(cliente, tmp_path)
+    sin_contorno = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={contorno: "no_va"}).json()
+    punto = _por_ancho(sin_contorno["sin_unir"]["formas"])[20]["id_origen"]
+
+    respuesta = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={punto: "no_va"})
+
+    assert respuesta.status_code == 200, respuesta.text
+    formas = _por_ancho(respuesta.json()["sin_unir"]["formas"])
+    assert formas[20]["estado"] == "no_va" and formas[20]["corregida"] is True
+    assert formas[900]["estado"] == "se_corta"
+
+
 @pytest.mark.parametrize(
     "correcciones, dice",
     [

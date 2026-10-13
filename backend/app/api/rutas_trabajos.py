@@ -296,7 +296,15 @@ def _leer(
     en la lectura sin unir); una que no está en ninguna de las dos da 400."""
     tamano = _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT if tamano_maximo_agujero_mm is None else tamano_maximo_agujero_mm
     try:
-        resultado = parsear_dxf(ruta, escala_a_mm, tamano)
+        # Lo marcado es siempre una forma, y los agujeros de una que no
+        # va también: se quedaron sin la pieza de la que eran el hueco.
+        resultado = parsear_dxf(
+            ruta,
+            escala_a_mm,
+            tamano,
+            marcadas=set(correcciones),
+            no_van={id_forma for id_forma, rol in correcciones.items() if rol is Rol.NO_VA},
+        )
     except ArchivoDXFInvalido as error:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
 
