@@ -37,7 +37,9 @@ export function listarGrupos(trabajoId: number): Promise<GrupoDeCorte[]> {
   return apiGet<GrupoDeCorte[]>(`/trabajos/${trabajoId}/grupos`);
 }
 
-export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string): Promise<{
+/** `unir`: cargar con las formas que se pisan vueltas una sola pieza,
+ * como se vio en la lectura (`leerDxf`). */
+export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string, unir: boolean): Promise<{
   trabajo: unknown;
   piezas_creadas: number;
   contornos_no_cerrados: number;
@@ -47,7 +49,44 @@ export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string): P
   const formData = new FormData();
   formData.append("archivo", archivo);
   formData.append("escala_a_mm", escalaAMm);
+  formData.append("unir", unir ? "true" : "false");
   return apiPostForm(`/trabajos/${trabajoId}/dxf`, formData);
+}
+
+/** Una forma de una lectura, para dibujarla. A diferencia de `Pieza`, el
+ * contorno viene en la posición del dibujo (no en su marco local), como
+ * números y con menos vértices: es para mirar, no es lo que se guarda. */
+export interface FormaLeida {
+  id_origen: string;
+  contorno_mm: number[][];
+  agujeros_mm: number[][][];
+  descartada: boolean;
+  /** Por qué entra descartada; `null` si se corta. */
+  motivo: string | null;
+}
+
+export interface Lectura {
+  formas: FormaLeida[];
+  a_cortar: number;
+  descartadas: number;
+  advertencias: string[];
+}
+
+/** Cómo se leería un DXF. `unida` viene solo si hay formas que se pisan. */
+export interface LecturaDxf {
+  contornos_no_cerrados: number;
+  lineas_duplicadas_descartadas: number;
+  formas_que_se_pisan: number;
+  sin_unir: Lectura;
+  unida: Lectura | null;
+}
+
+/** Lee el archivo sin guardar nada: es lo que se dibuja antes de cargar. */
+export function leerDxf(trabajoId: number, archivo: File, escalaAMm: string): Promise<LecturaDxf> {
+  const formData = new FormData();
+  formData.append("archivo", archivo);
+  formData.append("escala_a_mm", escalaAMm);
+  return apiPostForm(`/trabajos/${trabajoId}/dxf/lectura`, formData);
 }
 
 export function descartarPieza(piezaId: number, descartada: boolean): Promise<Pieza> {

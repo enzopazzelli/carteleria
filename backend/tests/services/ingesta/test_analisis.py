@@ -531,3 +531,99 @@ def test_una_forma_igual_al_agujero_pero_que_no_estaba_adentro_no_es_contrapieza
     suelta = _rectangulo("suelta", 1000, 0, 200, 200)
 
     assert _roles_completos(_en_una_hoja([letra, suelta]))["suelta"].rol is Rol.CORTAR
+
+
+# --- Recortes en piezas que no entran en ninguna chapa (2.1a) ---------------
+#
+# Un aro de 4,6 m no entra en ninguna chapa y se corta seccionado: sus huecos
+# son huecos igual que el centro de una «O». Un rectángulo que no entra es un
+# tablero o un marco, y lo que tiene adentro son piezas
+# (`docs/plan/2.1a-lectura-con-imagen/diseno.md §5.1`).
+
+
+def _octogono(id_: str, x: int, y: int, lado: int, contenida_en_id: str | None = None) -> PiezaImportada:
+    """Un cuadrado de `lado` con las cuatro esquinas cortadas a un quinto
+    del lado: llena el 92 % de su caja, así que no es un rectángulo."""
+    c = lado // 5
+    puntos = [(x + c, y), (x + lado - c, y), (x + lado, y + c), (x + lado, y + lado - c),
+              (x + lado - c, y + lado), (x + c, y + lado), (x, y + lado - c), (x, y + c), (x + c, y)]
+    return PiezaImportada(
+        id=id_,
+        capa="0",
+        ancho_mm=Decimal(lado),
+        alto_mm=Decimal(lado),
+        area_real_mm2=Decimal(lado * lado - 2 * c * c),
+        contorno_mm=[(Decimal(px), Decimal(py)) for px, py in puntos],
+        contenida_en_id=contenida_en_id,
+    )
+
+
+def _aro_con_hueco(lado_del_hueco: int = 400):
+    """Un aro de 3 m, que no entra en la chapa, y adentro la forma de su
+    hueco, los dos del mismo color."""
+    return [
+        _con_color(_octogono("aro", 0, 0, 3000), 250),
+        _con_color(_octogono("hueco", 1000, 1000, lado_del_hueco, contenida_en_id="aro"), 250),
+    ]
+
+
+def test_el_recorte_de_una_pieza_que_no_entra_en_ninguna_chapa_es_su_contrapieza():
+    roles = _roles_completos(_aro_con_hueco())
+
+    assert roles["hueco"].rol is Rol.CONTRAPIEZA
+    assert roles["hueco"].madre_id == "aro"
+    # El aro sigue como estaba: no se corta tal cual, hay que seccionarlo.
+    assert roles["aro"].rol is Rol.REFERENCIA
+
+
+def test_un_recorte_que_tampoco_entra_en_ninguna_chapa_es_contrapieza():
+    # El interior de un aro de 4,6 m mide 4,4 m: tampoco entra, y es hueco.
+    roles = _roles_completos(_aro_con_hueco(lado_del_hueco=2600))
+
+    assert roles["hueco"].rol is Rol.CONTRAPIEZA
+
+
+def test_lo_de_adentro_de_un_rectangulo_que_no_entra_se_sigue_cortando():
+    # Un tablero de presentación de 3 m con una pieza adentro, de su color.
+    tablero = _con_color(_rectangulo("tablero", 0, 0, 3000, 3000), 250)
+    pieza = _con_color(_octogono("pieza", 1000, 1000, 400, contenida_en_id="tablero"), 250)
+
+    roles = _roles_completos([tablero, pieza])
+
+    assert roles["pieza"].rol is Rol.CORTAR
+    assert roles["tablero"].rol is Rol.REFERENCIA
+
+
+def test_lo_que_esta_adentro_del_recorte_de_una_pieza_grande_se_sigue_cortando():
+    # La cruz del centro del aro: está adentro de un hueco, y un recorte no
+    # es madre de nadie.
+    aro, hueco = _aro_con_hueco(lado_del_hueco=1000)
+    cruz = _con_color(_octogono("cruz", 1300, 1300, 300, contenida_en_id="hueco"), 250)
+
+    roles = _roles_completos([aro, hueco, cruz])
+
+    assert roles["hueco"].rol is Rol.CONTRAPIEZA
+    assert roles["cruz"].rol is Rol.CORTAR
+
+
+def test_adentro_de_una_pieza_grande_una_forma_de_otro_color_se_sigue_cortando():
+    aro, hueco = _aro_con_hueco()
+
+    roles = _roles_completos([aro, _con_color(hueco, 7)])
+
+    assert roles["hueco"].rol is Rol.CORTAR
+
+
+def test_sin_formatos_en_el_catalogo_no_hay_recortes_en_piezas_grandes():
+    # Sin ninguna chapa cargada no entra nada, y eso no dice que una
+    # forma haya que seccionarla.
+    disenio = DisenioDetectado(piezas=_aro_con_hueco())
+    roles = {
+        r.pieza_id: r
+        for r in sugerir_roles(
+            disenio, [], [], _TOLERANCIA_GEMELA, _AREA_MINIMA_GEMELA_MM2, _FRACCION_MINIMA_EN_HOJA, _COLORES_DE_ROTULO
+        )
+    }
+
+    assert roles["hueco"].rol is Rol.REFERENCIA
+    assert roles["aro"].rol is Rol.REFERENCIA

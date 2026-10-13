@@ -58,6 +58,40 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-12 — Lectura del DXF con imagen antes de cargar (2.1a): unir las formas que se pisan y los huecos de las piezas grandes
+
+Sub-proyecto [`plan/2.1a-lectura-con-imagen/`](plan/2.1a-lectura-con-imagen/diseno.md). Rama `feat/lectura-con-imagen`.
+
+### Qué se hizo
+
+- **La carga de la pestaña Piezas ahora muestra el dibujo antes de guardar.** «Ver cómo se lee» abre un panel con lo que se corta pintado, los huecos en blanco y lo que entra descartado en línea de puntos. Recién «Cargar» guarda las piezas.
+- **Unir las formas que se pisan,** con una casilla apagada de entrada. El aro de `Complejo.dxf`, que viene como ocho líneas, entra como una pieza de 4610 × 4610 mm y 4,30 m² con 25 huecos.
+- **Los recortes de huecos también en piezas que no entran en ninguna chapa,** salvo que sean rectángulos. Es automática, como la de las letras.
+- Backend 467 tests en verde (423 antes), frontend 56 (40 antes). La pantalla se probó en el navegador contra una copia de la base, con `Complejo.dxf`.
+- **Revisión de la rama.** Un revisor aparte leyó la rama entera: «se puede fusionar con arreglos». Se arreglaron tres cosas, cada una con su prueba:
+  - **La unión borraba los agujeros chicos que caen donde dos franjas se pisan.** El lector trae ese tornillo como pieza, porque está adentro de dos bordes a la vez, y la unión lo tomaba por un borde de adentro. Ahora una forma chica que queda sobre el cuerpo de la pieza unida es un agujero suyo. En los DXF reales se recuperan tres agujeros en la guitarra y dos en un logo de la muestra; en `Complejo.dxf` no cambia nada.
+  - **La unión tardaba el cuadrado de las formas del grupo.** Con 2.000 letras sueltas en el hueco de un aro, 40 s; ahora unos 3.
+  - **Los huecos de una pieza unida no siempre entraban descartados:** si el color venía «por bloque», o si el hueco era un rectángulo que no entra en ninguna chapa. Ahora entran descartados siempre, por cómo se armaron.
+  - Lo menor que señaló quedó anotado en los «Desvíos» del [`plan.md`](plan/2.1a-lectura-con-imagen/plan.md).
+
+### Qué se decidió
+
+- **Unir no corre solo.** En los DXF reales acierta en el aro y falla en un logo de la muestra, donde junta 28 líneas en una mancha y se come 27 letras. La persona lo ve en el dibujo y decide.
+- **Lo que hace general a la importación es que la persona vea el dibujo y corrija,** no sumar reglas por diseño (Enzo, 2026-10-12). Este sub-proyecto es la primera mitad; la pantalla para corregir a mano es 2.1b.
+- **La regla de las islas para las letras ya estaba construida** desde el 2026-10-07 y 08. El plan maestro y el mapa la daban «a medio hacer»: se corrigieron.
+
+### Cambios en el registro
+
+Altas de `PAR-50`, `PAR-51` y `PAR-52`.
+
+### Pendiente
+
+- **Volver a medir el anidado de «Complejo» con el trabajo bien leído.** En la base de Enzo, 14 de las 45 piezas del grupo y 17,95 de sus 23,70 m² eran el interior de un hueco: las 19 y 18 chapas del 2026-10-10 se midieron sobre eso, y lo que se concluyó de «vaciar chapas» hay que repetirlo.
+- **2.1b:** corregir a mano con clics, unir grupo por grupo, y acercar y mover el dibujo. Es lo que resuelve el logo. Con acercamiento, el detalle del dibujo (`PAR-52`) tiene que depender de cuánto se acerca.
+- Las miniaturas de la tabla de Piezas siguen dadas vuelta; el dibujo nuevo sale derecho.
+
+---
+
 ## 2026-10-10 — Reparto por chapa (A6) construido, en `main` y cerrado: Sparrow vacía chapas con el tiempo que sobra, y `PAR-09` sube a 240 s
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (paso A6)

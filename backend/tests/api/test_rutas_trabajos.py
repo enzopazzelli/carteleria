@@ -250,13 +250,15 @@ def test_subir_dxf_deja_descartado_el_centro_de_una_letra_que_se_corta(cliente, 
     assert piezas[200]["descartada"] is True
 
 
-def test_subir_dxf_no_descarta_lo_de_adentro_de_una_forma_que_no_entra_en_ninguna_chapa(cliente, tmp_path):
-    """Adentro de una forma que no se corta tal cual (un emblema de 3 m
-    que hay que seccionar, un tablero de presentación) puede haber piezas
-    de verdad: lo decide quien revisa las piezas, no la carga."""
+def test_subir_dxf_no_descarta_lo_de_adentro_de_un_rectangulo_que_no_entra_en_ninguna_chapa(cliente, tmp_path):
+    """Un rectángulo que no entra en ninguna chapa es un tablero de
+    presentación o un marco, y adentro puede haber piezas de verdad: lo
+    decide quien revisa las piezas, no la carga. Si no es un rectángulo
+    es una pieza que se secciona, y lo de adentro es su hueco: el test
+    del emblema, al final del archivo."""
     _chapa_en_el_catalogo(cliente)
     trabajo = _crear_trabajo(cliente)
-    contenido = _dxf_bytes(tmp_path, "emblema.dxf", lambda msp: _forma_con_otra_adentro(msp, 3000))
+    contenido = _dxf_bytes(tmp_path, "tablero.dxf", lambda msp: _forma_con_otra_adentro(msp, 3000))
 
     respuesta = _subir(cliente, trabajo["id"], contenido)
 
@@ -398,3 +400,281 @@ def test_actualizar_grupo_borra_parametros_usados_con_null(cliente):
 
     assert respuesta.status_code == 200
     assert respuesta.json()["parametros_usados"] is None
+
+
+# --- Recortes en piezas que no entran en ninguna chapa (2.1a) -----------
+
+
+def _octogono(msp, x, y, lado, color=None):
+    """Un cuadrado con las esquinas cortadas a un quinto del lado: no es
+    un rectángulo, que es lo que la unión y la regla de los huecos piden.
+    `color` es el ACI del trazo; sin él, el de la capa."""
+    c = lado / 5
+    msp.add_lwpolyline(
+        [(x + c, y), (x + lado - c, y), (x + lado, y + c), (x + lado, y + lado - c),
+         (x + lado - c, y + lado), (x + c, y + lado), (x, y + lado - c), (x, y + c)],
+        close=True,
+        dxfattribs={} if color is None else {"color": color},
+    )
+
+
+def test_subir_dxf_deja_descartado_el_hueco_de_una_forma_grande_que_no_es_un_rectangulo(cliente, tmp_path):
+    """Un emblema de 3 m no entra en ninguna chapa y se corta seccionado:
+    lo que tiene adentro, de su mismo color, es su hueco."""
+
+    def emblema(msp):
+        _octogono(msp, 0, 0, 3000)
+        msp.add_lwpolyline([(1400, 1400), (1600, 1400), (1600, 1700), (1400, 1700)], close=True)
+
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+
+    respuesta = _subir(cliente, trabajo["id"], _dxf_bytes(tmp_path, "emblema.dxf", emblema))
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert any("1 forma" in aviso and "hueco" in aviso for aviso in respuesta.json()["advertencias"])
+    piezas = {round(Decimal(p["ancho_mm"])): p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()}
+    assert piezas[3000]["descartada"] is False
+    assert piezas[200]["descartada"] is True
+
+
+# --- Ver la lectura antes de cargar, y unir (2.1a) ----------------------
+#
+# `docs/plan/2.1a-lectura-con-imagen/diseno.md`. La lectura no guarda nada;
+# la carga guarda lo mismo que la lectura mostró.
+
+
+def _franja(msp, x, y, lado, ancho=100, color=None):
+    """El borde de afuera y el de adentro de una franja."""
+    _octogono(msp, x, y, lado, color)
+    _octogono(msp, x + ancho, y + ancho, lado - 2 * ancho, color)
+
+
+def _dos_franjas_que_se_pisan(msp, color=None):
+    """Una de 1200 y otra de 1000, montada 50 mm sobre el lado derecho de
+    la primera. Unidas dan una pieza de 2050 x 1200 con dos huecos."""
+    _franja(msp, 0, 0, 1200, color=color)
+    _franja(msp, 1050, 100, 1000, color=color)
+
+
+def _ver_lectura(cliente, trabajo_id, contenido, *, escala_a_mm="1"):
+    return cliente.post(
+        f"/trabajos/{trabajo_id}/dxf/lectura",
+        files={"archivo": ("pieza.dxf", contenido, "application/dxf")},
+        data={"escala_a_mm": escala_a_mm},
+    )
+
+
+def test_ver_la_lectura_no_guarda_nada(cliente, tmp_path):
+    from app import config
+
+    trabajo, pieza = _trabajo_con_una_pieza(cliente, tmp_path)
+    archivos_antes = sorted(p.name for p in config.DIRECTORIO_ARCHIVOS.rglob("*"))
+    otro = _dxf_bytes(tmp_path, "otro.dxf", lambda msp: _octogono(msp, 0, 0, 500))
+
+    respuesta = _ver_lectura(cliente, trabajo["id"], otro)
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert [p["id"] for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()] == [pieza["id"]]
+    assert cliente.get(f"/trabajos/{trabajo['id']}").json()["archivo_origen"] == "pieza.dxf"
+    assert sorted(p.name for p in config.DIRECTORIO_ARCHIVOS.rglob("*")) == archivos_antes
+
+
+def test_la_lectura_trae_cada_forma_en_su_lugar_y_cuales_entran_descartadas(cliente, tmp_path):
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "o.dxf", lambda msp: _forma_con_otra_adentro(msp, 600))
+
+    cuerpo = _ver_lectura(cliente, trabajo["id"], contenido).json()
+
+    assert cuerpo["formas_que_se_pisan"] == 0
+    assert cuerpo["unida"] is None
+    lectura = cuerpo["sin_unir"]
+    assert (lectura["a_cortar"], lectura["descartadas"]) == (1, 1)
+    formas = {round(max(x for x, _ in f["contorno_mm"]) - min(x for x, _ in f["contorno_mm"])): f for f in lectura["formas"]}
+    assert formas[600]["descartada"] is False and formas[600]["motivo"] is None
+    assert len(formas[600]["agujeros_mm"]) == 1
+    assert formas[200]["descartada"] is True and "recorte" in formas[200]["motivo"]
+    # En la posición del dibujo, no en el marco local en que se guarda: el
+    # centro de la «O» arranca en x = 100.
+    assert min(x for x, _ in formas[200]["contorno_mm"]) == pytest.approx(100)
+    assert formas[600]["id_origen"].startswith(f"trabajo-{trabajo['id']}-"), "los mismos nombres que va a guardar la carga"
+    assert any("1 forma" in aviso and "hueco" in aviso for aviso in lectura["advertencias"])
+
+
+def test_la_lectura_de_formas_que_se_pisan_trae_tambien_la_unida(cliente, tmp_path):
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "franjas.dxf", _dos_franjas_que_se_pisan)
+
+    cuerpo = _ver_lectura(cliente, trabajo["id"], contenido).json()
+
+    assert cuerpo["formas_que_se_pisan"] == 4
+    assert len(cuerpo["sin_unir"]["formas"]) == 4
+    assert any("4 formas que se pisan" in aviso for aviso in cuerpo["sin_unir"]["advertencias"])
+    unida = cuerpo["unida"]
+    assert (unida["a_cortar"], unida["descartadas"]) == (1, 2)
+    assert any("4 formas que se pisaban quedaron unidas en 1 pieza" in aviso for aviso in unida["advertencias"])
+    pieza = next(f for f in unida["formas"] if f["id_origen"].endswith("/unida"))
+    assert pieza["descartada"] is False
+    assert len(pieza["agujeros_mm"]) == 2
+    assert all(f["descartada"] for f in unida["formas"] if "/hueco" in f["id_origen"])
+
+
+def test_cargar_uniendo_guarda_la_pieza_unida_y_sus_huecos_descartados(cliente, tmp_path):
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "franjas.dxf", _dos_franjas_que_se_pisan)
+
+    respuesta = _subir(cliente, trabajo["id"], contenido, unir="true")
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["piezas_creadas"] == 3
+    assert any("quedaron unidas en 1 pieza" in aviso for aviso in cuerpo["advertencias"])
+    piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    unida = next(p for p in piezas if p["id_origen"].endswith("/unida"))
+    assert unida["descartada"] is False
+    assert (float(unida["ancho_mm"]), float(unida["alto_mm"])) == pytest.approx((2050, 1200))
+    assert len(unida["agujeros_mm"]) == 2
+    assert min(float(x) for x, _ in unida["contorno_mm"]) == pytest.approx(0), "se guarda en su marco local"
+    huecos = [p for p in piezas if "/hueco" in p["id_origen"]]
+    assert len(huecos) == 2 and all(p["descartada"] for p in huecos)
+
+
+def test_cargar_sin_unir_deja_las_formas_como_vienen_y_avisa(cliente, tmp_path):
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "franjas.dxf", _dos_franjas_que_se_pisan)
+
+    cuerpo = _subir(cliente, trabajo["id"], contenido).json()
+
+    assert cuerpo["piezas_creadas"] == 4
+    assert any("4 formas que se pisan" in aviso for aviso in cuerpo["advertencias"])
+    assert not [p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json() if "/unida" in p["id_origen"]]
+
+
+@pytest.mark.parametrize("unir", [False, True])
+def test_lo_que_muestra_la_lectura_es_lo_que_guarda_la_carga(cliente, tmp_path, unir):
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "franjas.dxf", _dos_franjas_que_se_pisan)
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido).json()["unida" if unir else "sin_unir"]
+
+    _subir(cliente, trabajo["id"], contenido, unir="true" if unir else "false")
+
+    guardadas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    assert sorted((p["id_origen"], p["descartada"]) for p in guardadas) == sorted(
+        (f["id_origen"], f["descartada"]) for f in lectura["formas"]
+    )
+
+
+def test_volver_a_cargar_uniendo_reemplaza_lo_que_se_cargo_sin_unir(cliente, tmp_path):
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "franjas.dxf", _dos_franjas_que_se_pisan)
+    _subir(cliente, trabajo["id"], contenido)
+
+    _subir(cliente, trabajo["id"], contenido, unir="true")
+
+    assert len(cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()) == 3
+
+
+def test_cargar_uniendo_conserva_el_agujero_chico_donde_se_pisan_las_franjas(cliente, tmp_path):
+    """Un tornillo de 10 mm justo donde se montan las dos franjas: el
+    lector lo trae como pieza, porque está adentro de dos bordes de afuera.
+    Unido, tiene que quedar como agujero de la pieza, no perderse ni ser
+    una fila más (revisión de la rama)."""
+
+    def franjas_con_tornillo(msp):
+        _dos_franjas_que_se_pisan(msp)
+        msp.add_lwpolyline([(1115, 590), (1125, 590), (1125, 600), (1115, 600)], close=True)
+
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "tornillo.dxf", franjas_con_tornillo)
+
+    cuerpo = _subir(cliente, trabajo["id"], contenido, unir="true").json()
+
+    assert cuerpo["piezas_creadas"] == 3, "la pieza unida y sus dos huecos"
+    unida = next(p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json() if p["id_origen"].endswith("/unida"))
+    assert len(unida["agujeros_mm"]) == 3
+
+
+def test_los_huecos_de_la_pieza_unida_entran_descartados_aunque_no_se_sepa_su_color(cliente, tmp_path):
+    """Color «por bloque» (0): el lector no lo resuelve y la regla de los
+    recortes, fuera de las hojas, pide el color. Pero los huecos de una
+    pieza unida son huecos por cómo se armaron (diseño, §4)."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "por-bloque.dxf", lambda msp: _dos_franjas_que_se_pisan(msp, color=0))
+
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido).json()["unida"]
+
+    assert (lectura["a_cortar"], lectura["descartadas"]) == (1, 2)
+    assert all(f["descartada"] for f in lectura["formas"] if "/hueco" in f["id_origen"])
+
+
+def test_un_hueco_rectangular_de_la_pieza_unida_entra_descartado_aunque_no_entre_en_ninguna_chapa(cliente, tmp_path):
+    """Una franja con una ventana rectangular de 2600 x 1500, que no entra
+    en la chapa de 1220 x 2440: adentro de una franja un rectángulo es un
+    hueco (diseño, §5.2), no un tablero."""
+
+    def con_ventana(msp):
+        _octogono(msp, 0, 0, 3200)
+        msp.add_lwpolyline([(300, 850), (2900, 850), (2900, 2350), (300, 2350)], close=True)
+        _franja(msp, 3100, 1100, 1000)
+
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "ventana.dxf", con_ventana)
+
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido).json()["unida"]
+
+    huecos = [f for f in lectura["formas"] if "/hueco" in f["id_origen"]]
+    assert len(huecos) == 2
+    assert all(f["descartada"] for f in huecos)
+
+
+def test_unir_un_dibujo_donde_nada_se_pisa_carga_lo_mismo(cliente, tmp_path):
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "o.dxf", lambda msp: _forma_con_otra_adentro(msp, 600))
+
+    cuerpo = _subir(cliente, trabajo["id"], contenido, unir="true").json()
+
+    assert cuerpo["piezas_creadas"] == 2
+    assert not any("pisa" in aviso for aviso in cuerpo["advertencias"])
+
+
+def test_la_lectura_de_un_archivo_sin_formas_cerradas_viene_vacia(cliente, tmp_path):
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(
+        tmp_path, "abierto.dxf", lambda msp: msp.add_lwpolyline([(0, 0), (10, 0), (10, 10), (0, 30)], close=False)
+    )
+
+    cuerpo = _ver_lectura(cliente, trabajo["id"], contenido).json()
+
+    assert cuerpo["contornos_no_cerrados"] == 1
+    assert cuerpo["sin_unir"]["formas"] == []
+    assert (cuerpo["sin_unir"]["a_cortar"], cuerpo["sin_unir"]["descartadas"]) == (0, 0)
+    assert cuerpo["sin_unir"]["advertencias"]
+
+
+def test_ver_la_lectura_de_un_trabajo_que_no_existe_da_404(cliente, tmp_path):
+    contenido = _dxf_bytes(tmp_path, "a.dxf", lambda msp: _octogono(msp, 0, 0, 500))
+
+    assert _ver_lectura(cliente, 999, contenido).status_code == 404
+
+
+def test_ver_la_lectura_de_un_archivo_que_no_es_dxf_da_400(cliente):
+    assert _ver_lectura(cliente, _crear_trabajo(cliente)["id"], b"esto no es un dxf").status_code == 400
+
+
+def test_ver_la_lectura_con_una_escala_que_no_es_positiva_da_400(cliente, tmp_path):
+    contenido = _dxf_bytes(tmp_path, "a.dxf", lambda msp: _octogono(msp, 0, 0, 500))
+
+    respuesta = _ver_lectura(cliente, _crear_trabajo(cliente)["id"], contenido, escala_a_mm="0")
+
+    assert respuesta.status_code == 400
+    assert "escala" in respuesta.json()["detail"]

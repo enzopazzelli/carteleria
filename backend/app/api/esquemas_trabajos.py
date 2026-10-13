@@ -72,6 +72,40 @@ class ImportacionDXFLeer(BaseModel):
     advertencias: list[str]
 
 
+class FormaLeida(BaseModel):
+    """Una forma de una lectura, para dibujarla. El contorno viene en la
+    posición del dibujo y con menos vértices (`PAR-52`): no es el que se
+    guarda al cargar."""
+
+    id_origen: str
+    contorno_mm: list[list[float]]
+    agujeros_mm: list[list[list[float]]]
+    descartada: bool
+    #: Por qué entra descartada; `None` si se corta.
+    motivo: str | None
+
+
+class LecturaLeer(BaseModel):
+    formas: list[FormaLeida]
+    #: Todo lo que no entra descartado, igual que al cargar: incluye lo
+    #: que después hay que seccionar.
+    a_cortar: int
+    descartadas: int
+    advertencias: list[str]
+
+
+class LecturaDXFLeer(BaseModel):
+    """Cómo se leería un DXF, sin haber guardado nada."""
+
+    contornos_no_cerrados: int
+    lineas_duplicadas_descartadas: int
+    #: Cuántas líneas reemplazaría la unión. Cero si ninguna se pisa.
+    formas_que_se_pisan: int
+    sin_unir: LecturaLeer
+    #: Solo si hay formas que se pisan.
+    unida: LecturaLeer | None
+
+
 # --- Grupos de corte (`CART-211`) -----------------------------------------
 
 
