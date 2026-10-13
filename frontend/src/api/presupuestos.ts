@@ -136,3 +136,7 @@ export function obtenerTotales(presupuestoId: number): Promise<Totales> {
 export function obtenerDesglose(presupuestoId: number): Promise<Desglose> {
   return apiGet<Desglose>(`/presupuestos/${presupuestoId}/desglose`);
 }
+
+export function urlPdf(presupuestoId: number): string {
+  return `http://localhost:8000/presupuestos/${presupuestoId}/pdf`;
+}

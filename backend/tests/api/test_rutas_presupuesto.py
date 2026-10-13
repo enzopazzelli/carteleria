@@ -4,12 +4,15 @@ HTTP real.
 """
 from __future__ import annotations
 
+import io
+import re
 import time
 from decimal import Decimal
 
 import ezdxf
 import pytest
 from fastapi.testclient import TestClient
+from pypdf import PdfReader
 from sqlalchemy.orm import Session
 
 from app.api.app import app
@@ -955,3 +958,67 @@ def test_duplicar_copia_lo_escrito_para_el_cliente(cliente):
     instalacion = next(linea for linea in lineas_copia if linea["descripcion"] == "Instalación")
     assert instalacion["texto_cliente"] == "Colocación"
     assert Decimal(instalacion["precio_cliente"]) == Decimal("150000")
+
+
+# --- El PDF para el cliente (1.3, CART-309) --------------------------------
+
+
+def _importes(texto: str) -> set[str]:
+    """Todos los importes que aparecen escritos, enteros: «1.400.000,00»
+    cuenta como uno solo y no como si contuviera «400.000,00»."""
+    return set(re.findall(r"\d{1,3}(?:\.\d{3})*,\d{2}", texto))
+
+
+@pytest.mark.pango
+def test_el_pdf_trae_lo_del_cliente_y_nada_de_lo_interno(cliente):
+    presupuesto, lineas = _presupuesto_del_ejemplo(cliente)
+    cliente.patch(f"/lineas-costo/{lineas['Instalación']['id']}/cliente", json={"precio_cliente": "150000"})
+    cliente.patch(f"/lineas-costo/{lineas['Chapa']['id']}/cliente", json={"texto_cliente": "Cartel frontal"})
+    cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"total_fijado": "1400000"})
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/pdf")
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.headers["content-type"] == "application/pdf"
+    assert f'filename="{presupuesto["codigo"]}.pdf"' in respuesta.headers["content-disposition"]
+    texto = "\n".join(pagina.extract_text() for pagina in PdfReader(io.BytesIO(respuesta.content)).pages)
+    for esperado in (presupuesto["codigo"], "Megacarteles", "Cartel frontal", "Mano de obra", "Flete", "Instalación"):
+        assert esperado in texto, esperado
+    assert _importes(texto) == {
+        "516.883,92", "387.662,95", "103.376,79", "149.101,13",  # los ítems
+        "1.157.024,79", "242.975,21", "1.400.000,00",  # subtotal, IVA y total
+    }, "ni un importe de más: los costos, el margen y el precio base no salen"
+    assert "margen" not in texto.lower()
+    assert "Chapa" not in texto, "la descripción interna quedó reemplazada por el texto para el cliente"
+
+
+def test_el_pdf_de_un_presupuesto_incompleto_da_409_y_dice_que_falta(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+    _linea_libre(cliente, presupuesto["id"], "Flete", "80000")
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/pdf")
+
+    assert respuesta.status_code == 409
+    detalle = respuesta.json()["detail"]
+    assert detalle["faltantes"] == ["Falta cargar el margen, o un precio a mano en cada ítem."]
+    assert "Falta cargar el margen" in detalle["mensaje"]
+
+
+def test_el_pdf_de_un_presupuesto_inexistente_da_404(cliente):
+    assert cliente.get("/presupuestos/999/pdf").status_code == 404
+
+
+def test_sin_las_bibliotecas_la_ruta_del_pdf_da_503_y_el_resto_sigue_andando(cliente, monkeypatch):
+    from app.services.presupuesto import pdf
+
+    def _sin_pango():
+        raise OSError("cannot load library 'libgobject-2.0-0'")
+
+    monkeypatch.setattr(pdf, "_cargar_weasyprint", _sin_pango)
+    presupuesto, _lineas = _presupuesto_del_ejemplo(cliente)
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/pdf")
+
+    assert respuesta.status_code == 503
+    assert "GUIA-PRUEBAS-LOCALES" in respuesta.json()["detail"]
+    assert cliente.get(f"/presupuestos/{presupuesto['id']}/desglose").status_code == 200

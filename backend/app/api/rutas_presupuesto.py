@@ -9,13 +9,15 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..costeo import resumen_materiales
 from ..modelos.presupuesto import Cliente, LineaCosto, Presupuesto, RubroLineaCosto
+from ..services.presupuesto.documento import PresupuestoIncompleto, armar_documento, hoy_en_argentina
+from ..services.presupuesto.pdf import BibliotecasPdfFaltantes, generar_pdf
 from ..services.presupuesto.totales import Cuenta, calcular
 from .dependencias import obtener_sesion
 from .esquemas_presupuesto import (
@@ -498,4 +500,38 @@ def obtener_desglose(
         totales=_totales_leer(presupuesto, cuenta),
         items_cliente=cuenta.items,
         faltantes=cuenta.faltantes,
+    )
+
+
+# --- El PDF para el cliente (1.3: `CART-309`) -----------------------------
+
+
+@router.get("/presupuestos/{presupuesto_id}/pdf")
+def descargar_pdf(presupuesto_id: int, sesion: Session = Depends(obtener_sesion)) -> Response:
+    """El presupuesto como lo ve el cliente
+    (`docs/plan/1.3-pdf-del-presupuesto/diseno.md`). Se genera cada vez
+    que se pide y no se guarda: el congelado llega con el envío (1.5).
+
+    Si al presupuesto le falta algo responde 409 con la lista
+    (`diseno.md §5.4`): nunca sale un PDF con huecos."""
+    presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    cuenta = calcular(presupuesto, _lineas_del_presupuesto(sesion, presupuesto_id))
+    try:
+        documento = armar_documento(presupuesto, cuenta, hoy_en_argentina())
+    except PresupuestoIncompleto as error:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            {
+                "mensaje": "No se puede sacar el PDF todavía. " + " ".join(error.faltantes),
+                "faltantes": error.faltantes,
+            },
+        ) from error
+    try:
+        contenido = generar_pdf(documento)
+    except BibliotecasPdfFaltantes as error:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(error)) from error
+    return Response(
+        contenido,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{presupuesto.codigo}.pdf"'},
     )

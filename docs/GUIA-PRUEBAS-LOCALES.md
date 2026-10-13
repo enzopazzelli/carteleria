@@ -238,7 +238,6 @@ El visor **ya es una página web** — HTTP, HTML, JavaScript — pero es una he
 
 Nada de los scripts va a sobrevivir tal cual: `extraer_catalogo_chapa_xlsx.py` lo reemplaza `CART-104` (importación masiva real, con su propia pantalla de previsualización); `probar_nesting_real.py`, `generar_visor_html.py` y `servidor_visor.py` los reemplaza el flujo real del cotizador (`F3`) y su visor en frontend una vez que exista presupuesto, piezas persistidas y catálogo real. Lo que sí es código de producto real, no descartable: `app/services/ingesta/dxf.py` (`CART-503` — falta el filtro por capa `CORTE` cuando se acuerde `CART-501`), `app/services/nesting/visualizacion.py` (`CART-208`) y `app/services/nesting/validacion_manual.py` (override manual de una posición — no está en el backlog todavía como historia propia, pero es la lógica que un frontend real va a necesitar el día que se permita ajustar el anidado a mano).
 
-
 ---
 
 ## 5. El PDF del presupuesto
