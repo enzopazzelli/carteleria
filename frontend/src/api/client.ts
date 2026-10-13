@@ -32,6 +32,16 @@ export async function apiGet<T>(path: string): Promise<T> {
   return manejarRespuesta<T>(respuesta);
 }
 
+/** Para bajar un archivo (el PDF del presupuesto). Si la API responde
+ * con un error, tira el mismo `ApiError` que el resto. */
+export async function apiGetArchivo(path: string): Promise<Blob> {
+  const respuesta = await fetch(`${BASE_URL}${path}`);
+  if (!respuesta.ok) {
+    return manejarRespuesta<never>(respuesta);
+  }
+  return respuesta.blob();
+}
+
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   const respuesta = await fetch(`${BASE_URL}${path}`, {
     method: "POST",

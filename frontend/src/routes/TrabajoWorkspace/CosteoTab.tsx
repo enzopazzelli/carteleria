@@ -16,9 +16,9 @@ import {
 import Banner from "../../components/Banner";
 import { ApiError } from "../../api/client";
 import { urlPlano } from "../../api/nesting";
-import { urlPdf } from "../../api/presupuestos";
 import { useGrupos } from "../../hooks/useGrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
+import PresupuestoClienteSeccion from "./PresupuestoClienteSeccion";
 
 export default function CosteoTab() {
   const { trabajoId } = useParams();
@@ -191,6 +191,7 @@ export default function CosteoTab() {
           ))}
 
           <SeccionDesglose presupuestoId={presupuestoActivo.id} />
+          <PresupuestoClienteSeccion key={presupuestoActivo.id} presupuestoId={presupuestoActivo.id} />
         </div>
       )}
     </div>
@@ -354,9 +355,6 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
       ))}
 
       <div className="mt-4">
-        <a className="text-xs underline mr-3" href={urlPdf(presupuestoId)}>
-          Descargar PDF
-        </a>
         {Object.values(desglose.lineas_por_rubro)
           .flat()
           .filter((l) => l.rubro === "MATERIAL" && l.ejecucion_id)

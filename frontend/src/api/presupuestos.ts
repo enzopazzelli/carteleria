@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from "./client";
+import { apiGet, apiGetArchivo, apiPatch, apiPost } from "./client";
 
 export interface Cliente {
   id: number;
@@ -16,6 +16,7 @@ export interface Presupuesto {
   moneda: string;
   margen_pct: string | null;
   iva_pct: string | null;
+  total_fijado: string | null;
 }
 
 export interface LineaMaterial {
@@ -81,6 +82,8 @@ export interface LineaCosto {
   advertencia: string | null;
   valor_override: string | null;
   override_por: string | null;
+  texto_cliente: string | null;
+  precio_cliente: string | null;
 }
 
 export interface Totales {
@@ -90,11 +93,26 @@ export interface Totales {
   costo_total: string;
   margen_pct: string | null;
   monto_margen: string | null;
+  margen_resultante_pct: string | null;
   precio_venta: string | null;
   iva_pct: string | null;
   monto_iva: string | null;
   total: string | null;
+  total_fijado: string | null;
   advertencias: string[];
+}
+
+/** Una línea vista desde el precio: lo que va a leer el cliente al lado
+ * de lo que cuesta. `precio_base` es el escrito a mano o costo más margen;
+ * `precio_final` es el que sale en el presupuesto. */
+export interface ItemCliente {
+  linea_id: number;
+  rubro: string;
+  texto: string;
+  costo: string | null;
+  precio_base: string | null;
+  a_mano: boolean;
+  precio_final: string | null;
 }
 
 export interface Desglose {
@@ -102,6 +120,9 @@ export interface Desglose {
   cliente: Cliente;
   lineas_por_rubro: Record<string, LineaCosto[]>;
   totales: Totales;
+  items_cliente: ItemCliente[];
+  /** Lo que impide sacar el PDF. Vacía = el presupuesto está completo. */
+  faltantes: string[];
 }
 
 export function listarLineasCosto(presupuestoId: number): Promise<LineaCosto[]> {
@@ -137,6 +158,22 @@ export function obtenerDesglose(presupuestoId: number): Promise<Desglose> {
   return apiGet<Desglose>(`/presupuestos/${presupuestoId}/desglose`);
 }
 
-export function urlPdf(presupuestoId: number): string {
-  return `http://localhost:8000/presupuestos/${presupuestoId}/pdf`;
+export function actualizarPresupuesto(
+  presupuestoId: number,
+  datos: { cliente_id?: number; validez_dias?: number; total_fijado?: string | null }
+): Promise<Presupuesto> {
+  return apiPatch<Presupuesto>(`/presupuestos/${presupuestoId}`, datos);
+}
+
+export function actualizarLineaCliente(
+  lineaId: number,
+  datos: { texto_cliente?: string | null; precio_cliente?: string | null }
+): Promise<LineaCosto> {
+  return apiPatch<LineaCosto>(`/lineas-costo/${lineaId}/cliente`, datos);
+}
+
+/** El PDF para el cliente. Si al presupuesto le falta algo, la API
+ * responde 409 y esto tira un `ApiError` con el motivo. */
+export function descargarPdf(presupuestoId: number): Promise<Blob> {
+  return apiGetArchivo(`/presupuestos/${presupuestoId}/pdf`);
 }

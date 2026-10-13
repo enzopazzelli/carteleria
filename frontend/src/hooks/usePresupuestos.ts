@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  actualizarLineaCliente,
   actualizarMargenEIva,
+  actualizarPresupuesto,
   aplicarOverride,
   crearCliente,
   crearLineaLibre,
@@ -100,6 +102,33 @@ export function useActualizarMargenEIva(presupuestoId: number) {
   return useMutation({
     mutationFn: (datos: { margen_pct?: string; iva_pct?: string }) => actualizarMargenEIva(presupuestoId, datos),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["desglose", presupuestoId] }),
+  });
+}
+
+/** Lo que hay que volver a pedir cuando cambia algo del presupuesto. */
+function useRefrescarPresupuesto(presupuestoId: number) {
+  const queryClient = useQueryClient();
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ["presupuestos"] });
+    queryClient.invalidateQueries({ queryKey: ["lineas-costo", presupuestoId] });
+    queryClient.invalidateQueries({ queryKey: ["desglose", presupuestoId] });
+  };
+}
+
+export function useActualizarPresupuesto(presupuestoId: number) {
+  const refrescar = useRefrescarPresupuesto(presupuestoId);
+  return useMutation({
+    mutationFn: (datos: Parameters<typeof actualizarPresupuesto>[1]) => actualizarPresupuesto(presupuestoId, datos),
+    onSuccess: refrescar,
+  });
+}
+
+export function useActualizarLineaCliente(presupuestoId: number) {
+  const refrescar = useRefrescarPresupuesto(presupuestoId);
+  return useMutation({
+    mutationFn: ({ lineaId, datos }: { lineaId: number; datos: Parameters<typeof actualizarLineaCliente>[1] }) =>
+      actualizarLineaCliente(lineaId, datos),
+    onSuccess: refrescar,
   });
 }
 
