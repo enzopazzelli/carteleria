@@ -78,7 +78,11 @@ def _anillo(coordenadas) -> Anillo:
 
 
 def _relaciones(
-    piezas: list[PiezaImportada], formas: list[Polygon], distancia_mm: float, area_minima_mm2: float
+    piezas: list[PiezaImportada],
+    formas: list[Polygon],
+    rectangulos: list[bool],
+    distancia_mm: float,
+    area_minima_mm2: float,
 ) -> tuple[list[set[int]], list[tuple[int, int]]]:
     """Por cada forma, las que la contienen limpia (sin que los bordes se
     acerquen a menos de `distancia_mm`); y los pares que se pisan: los
@@ -87,7 +91,6 @@ def _relaciones(
     Solo entre formas del mismo color: otro color es otra pieza. Un
     rectángulo no se pisa con nadie: es una hoja, un marco o un tablero,
     y que algo lo toque no lo vuelve una franja."""
-    rectangulos = [_es_rectangular(p) for p in piezas]
     arbol = STRtree(formas)
     la_contienen: list[set[int]] = [set() for _ in piezas]
     pisadas = []
@@ -137,6 +140,13 @@ def _es_grande_para_agujero(hueco: Polygon, tamano_maximo_agujero_mm: Decimal | 
     return max_x - min_x > float(tamano_maximo_agujero_mm) or max_y - min_y > float(tamano_maximo_agujero_mm)
 
 
+def _es_chica(forma: Polygon, tamano_maximo_agujero_mm: Decimal | None) -> bool:
+    """La que el lector no promovería a pieza si fuera un agujero (un
+    tornillo). Sin `tamano_maximo_agujero_mm` el lector no promueve nada, y
+    no hay cómo saber qué es chico: ninguna lo es."""
+    return tamano_maximo_agujero_mm is not None and not _es_grande_para_agujero(forma, tamano_maximo_agujero_mm)
+
+
 def _en_orden(huecos: list[Polygon]) -> list[Polygon]:
     """De abajo hacia arriba y de izquierda a derecha, como los tramos
     del seccionado: el número de cada hueco no cambia entre lecturas."""
@@ -166,15 +176,24 @@ def unir_formas_que_se_pisan(
     recorte. Los agujeros chicos de las líneas unidas se conservan."""
     formas = [_forma(p.contorno_mm) for p in piezas]
     area_minima = float(area_minima_para_pisarse_mm2)
-    la_contienen, pisadas = _relaciones(piezas, formas, float(distancia_para_tocarse_mm), area_minima)
+    rectangulos = [_es_rectangular(p) for p in piezas]
+    la_contienen, pisadas = _relaciones(piezas, formas, rectangulos, float(distancia_para_tocarse_mm), area_minima)
     es_pieza = {tuple(p.contorno_mm) for p in piezas}
 
     nuevas: dict[int, list[PiezaImportada]] = {}  # dónde va cada pieza unida, con sus huecos
     reemplazadas: set[int] = set()
     uniones = []
     for conjunto in _conjuntos(len(piezas), la_contienen, pisadas):
-        del_conjunto = set(conjunto)
-        padre = {i: min(la_contienen[i] & del_conjunto, key=lambda j: formas[j].area, default=None) for i in conjunto}
+        # Una forma chica (un tornillo) no es el borde de una franja: si
+        # quedó sobre el cuerpo de la pieza unida es un agujero suyo, y si
+        # quedó en un hueco, una pieza suelta. El lector trae como pieza el
+        # tornillo que cae donde dos franjas se pisan, porque está adentro
+        # de dos bordes de afuera; tomarlo por un borde de adentro lo
+        # perdía bajo el cuerpo de la otra franja.
+        chicas = [i for i in conjunto if _es_chica(formas[i], tamano_maximo_agujero_mm)]
+        de_los_bordes = set(conjunto) - set(chicas)
+        bordes = [i for i in conjunto if i in de_los_bordes]
+        padre = {i: min(la_contienen[i] & de_los_bordes, key=lambda j: formas[j].area, default=None) for i in bordes}
 
         def _nivel(i: int) -> int:
             nivel = 0
@@ -182,18 +201,26 @@ def unir_formas_que_se_pisan(
                 i, nivel = padre[i], nivel + 1
             return nivel
 
-        de_afuera = [i for i in conjunto if _nivel(i) % 2 == 0]
-        de_adentro = {i: [h for h in conjunto if padre[h] == i] for i in de_afuera}
+        de_afuera = [i for i in bordes if _nivel(i) % 2 == 0]
+        de_adentro: dict[int, list[int]] = {i: [] for i in de_afuera}
+        for h in bordes:
+            if padre[h] in de_adentro:
+                de_adentro[padre[h]].append(h)
         cuerpos = {
             i: formas[i].difference(unary_union([formas[h] for h in de_adentro[i]])) if de_adentro[i] else formas[i]
             for i in de_afuera
         }
         # Un rectángulo tampoco se une acá adentro: queda como estaba.
-        unibles = [i for i in de_afuera if not _es_rectangular(piezas[i])]
+        unibles = [i for i in de_afuera if not rectangulos[i]]
         juntos = _Grupos(len(piezas))
+        # Solo se comparan los cuerpos cuyas cajas se tocan: con cientos de
+        # letras sueltas en un hueco, comparar todos con todos tardaba el
+        # cuadrado (revisión de la rama).
+        arbol = STRtree([cuerpos[i] for i in unibles])
         for posicion, i in enumerate(unibles):
-            for j in unibles[posicion + 1 :]:
-                if cuerpos[i].intersection(cuerpos[j]).area > area_minima:
+            for otra in arbol.query(cuerpos[i]):
+                j = unibles[int(otra)]
+                if int(otra) > posicion and cuerpos[i].intersection(cuerpos[j]).area > area_minima:
                     juntos.unir(i, j)
         for miembros in juntos.partes(unibles):
             if len(miembros) < 2:
@@ -202,7 +229,13 @@ def unir_formas_que_se_pisan(
             if not isinstance(partes, Polygon):
                 continue  # no quedó una sola pieza: no se inventa nada
             mayor = max(miembros, key=lambda i: formas[i].area)
-            lineas = sorted({*miembros, *(h for i in miembros for h in de_adentro[i])})
+            sobre_el_cuerpo = [i for i in chicas if partes.contains(formas[i])]
+            # Si una chica está adentro de otra, la de afuera es el agujero
+            # y la de adentro queda como estaba.
+            tornillos = [
+                i for i in sobre_el_cuerpo if not any(formas[j].contains(formas[i]) for j in sobre_el_cuerpo if j != i)
+            ]
+            lineas = sorted({*miembros, *(h for i in miembros for h in de_adentro[i]), *tornillos})
             unida_id = f"{piezas[mayor].id}/unida"
 
             chicos = [
@@ -210,7 +243,7 @@ def unir_formas_que_se_pisan(
                 for i in lineas
                 for agujero in piezas[i].agujeros_mm
                 if tuple(agujero) not in es_pieza and partes.contains(_forma(agujero))
-            ]
+            ] + [piezas[i].contorno_mm for i in tornillos]
             huecos = [
                 h
                 for h in _en_orden([Polygon(interior) for interior in partes.interiors])

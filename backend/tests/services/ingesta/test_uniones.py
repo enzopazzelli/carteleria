@@ -6,6 +6,7 @@ rectángulos, porque un rectángulo no se une con nadie.
 """
 from __future__ import annotations
 
+import time
 from dataclasses import replace
 from decimal import Decimal
 
@@ -261,3 +262,43 @@ def test_sin_tamano_de_agujero_ningun_hueco_pasa_a_ser_forma_aparte():
 
     assert [p.id for p in piezas] == ["a-afuera/unida"]
     assert uniones[0].huecos == []
+
+
+def test_un_agujero_chico_donde_se_pisan_dos_franjas_no_se_pierde():
+    # Un tornillo de 10 mm en la franja donde se montan el lado derecho de la
+    # «a» y el izquierdo de la «b». Está adentro de los dos bordes de afuera
+    # a la vez, y el lector, que cuenta contenedores, lo trae como pieza
+    # (además de agujero de la más chica de las dos). Revisión de la rama.
+    tornillo = _rectangulo("tornillo", 1115, 590, 10, 10, contenida_en_id="b-afuera")
+    a_afuera, a_adentro, b_afuera, b_adentro = _dos_franjas()
+    b_afuera = replace(b_afuera, agujeros_mm=[*b_afuera.agujeros_mm, tornillo.contorno_mm])
+
+    piezas, uniones = _unir([a_afuera, a_adentro, b_afuera, b_adentro, tornillo])
+
+    unida = next(p for p in piezas if p.id == "a-afuera/unida")
+    assert tornillo.contorno_mm in unida.agujeros_mm
+    assert float(unida.area_real_mm2) == pytest.approx(_las_dos_franjas_unidas().area - 100)
+    assert "tornillo" not in {p.id for p in piezas}, "es un agujero de la pieza unida, no una fila más"
+    assert "tornillo" in uniones[0].lineas
+
+
+def test_muchas_piezas_adentro_del_hueco_no_vuelven_lenta_la_union():
+    # 2.000 letras del color del aro, sueltas en el hueco de la franja
+    # grande: entran al grupo, pero no se pisan con nadie. Comparar cada
+    # una con todas las demás tardaba el cuadrado (revisión de la rama:
+    # con estas 2.000, 40 s; en línea, unos 3). El tope es holgado a
+    # propósito: es para no volver a eso, no para medir.
+    letras = [
+        _octogono(f"letra-{fila}-{columna}", 1000 + 40 * columna, 1000 + 40 * fila, 30, contenida_en_id="a-adentro")
+        for fila in range(40)
+        for columna in range(50)
+    ]
+    piezas = [*_franja("a", 0, 0, 4000), *_franja("b", 3850, 1500, 1000), *letras]
+
+    inicio = time.perf_counter()
+    resultado, uniones = _unir(piezas)
+    segundos = time.perf_counter() - inicio
+
+    assert len(uniones) == 1
+    assert sum(1 for p in resultado if p.id.startswith("letra-")) == 2000
+    assert segundos < 15, f"tardó {segundos:.1f} s"

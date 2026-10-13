@@ -405,14 +405,16 @@ def test_actualizar_grupo_borra_parametros_usados_con_null(cliente):
 # --- Recortes en piezas que no entran en ninguna chapa (2.1a) -----------
 
 
-def _octogono(msp, x, y, lado):
+def _octogono(msp, x, y, lado, color=None):
     """Un cuadrado con las esquinas cortadas a un quinto del lado: no es
-    un rectángulo, que es lo que la unión y la regla de los huecos piden."""
+    un rectángulo, que es lo que la unión y la regla de los huecos piden.
+    `color` es el ACI del trazo; sin él, el de la capa."""
     c = lado / 5
     msp.add_lwpolyline(
         [(x + c, y), (x + lado - c, y), (x + lado, y + c), (x + lado, y + lado - c),
          (x + lado - c, y + lado), (x + c, y + lado), (x, y + lado - c), (x, y + c)],
         close=True,
+        dxfattribs={} if color is None else {"color": color},
     )
 
 
@@ -442,17 +444,17 @@ def test_subir_dxf_deja_descartado_el_hueco_de_una_forma_grande_que_no_es_un_rec
 # la carga guarda lo mismo que la lectura mostró.
 
 
-def _franja(msp, x, y, lado, ancho=100):
+def _franja(msp, x, y, lado, ancho=100, color=None):
     """El borde de afuera y el de adentro de una franja."""
-    _octogono(msp, x, y, lado)
-    _octogono(msp, x + ancho, y + ancho, lado - 2 * ancho)
+    _octogono(msp, x, y, lado, color)
+    _octogono(msp, x + ancho, y + ancho, lado - 2 * ancho, color)
 
 
-def _dos_franjas_que_se_pisan(msp):
+def _dos_franjas_que_se_pisan(msp, color=None):
     """Una de 1200 y otra de 1000, montada 50 mm sobre el lado derecho de
     la primera. Unidas dan una pieza de 2050 x 1200 con dos huecos."""
-    _franja(msp, 0, 0, 1200)
-    _franja(msp, 1050, 100, 1000)
+    _franja(msp, 0, 0, 1200, color=color)
+    _franja(msp, 1050, 100, 1000, color=color)
 
 
 def _ver_lectura(cliente, trabajo_id, contenido, *, escala_a_mm="1"):
@@ -576,6 +578,62 @@ def test_volver_a_cargar_uniendo_reemplaza_lo_que_se_cargo_sin_unir(cliente, tmp
     _subir(cliente, trabajo["id"], contenido, unir="true")
 
     assert len(cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()) == 3
+
+
+def test_cargar_uniendo_conserva_el_agujero_chico_donde_se_pisan_las_franjas(cliente, tmp_path):
+    """Un tornillo de 10 mm justo donde se montan las dos franjas: el
+    lector lo trae como pieza, porque está adentro de dos bordes de afuera.
+    Unido, tiene que quedar como agujero de la pieza, no perderse ni ser
+    una fila más (revisión de la rama)."""
+
+    def franjas_con_tornillo(msp):
+        _dos_franjas_que_se_pisan(msp)
+        msp.add_lwpolyline([(1115, 590), (1125, 590), (1125, 600), (1115, 600)], close=True)
+
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "tornillo.dxf", franjas_con_tornillo)
+
+    cuerpo = _subir(cliente, trabajo["id"], contenido, unir="true").json()
+
+    assert cuerpo["piezas_creadas"] == 3, "la pieza unida y sus dos huecos"
+    unida = next(p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json() if p["id_origen"].endswith("/unida"))
+    assert len(unida["agujeros_mm"]) == 3
+
+
+def test_los_huecos_de_la_pieza_unida_entran_descartados_aunque_no_se_sepa_su_color(cliente, tmp_path):
+    """Color «por bloque» (0): el lector no lo resuelve y la regla de los
+    recortes, fuera de las hojas, pide el color. Pero los huecos de una
+    pieza unida son huecos por cómo se armaron (diseño, §4)."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "por-bloque.dxf", lambda msp: _dos_franjas_que_se_pisan(msp, color=0))
+
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido).json()["unida"]
+
+    assert (lectura["a_cortar"], lectura["descartadas"]) == (1, 2)
+    assert all(f["descartada"] for f in lectura["formas"] if "/hueco" in f["id_origen"])
+
+
+def test_un_hueco_rectangular_de_la_pieza_unida_entra_descartado_aunque_no_entre_en_ninguna_chapa(cliente, tmp_path):
+    """Una franja con una ventana rectangular de 2600 x 1500, que no entra
+    en la chapa de 1220 x 2440: adentro de una franja un rectángulo es un
+    hueco (diseño, §5.2), no un tablero."""
+
+    def con_ventana(msp):
+        _octogono(msp, 0, 0, 3200)
+        msp.add_lwpolyline([(300, 850), (2900, 850), (2900, 2350), (300, 2350)], close=True)
+        _franja(msp, 3100, 1100, 1000)
+
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "ventana.dxf", con_ventana)
+
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido).json()["unida"]
+
+    huecos = [f for f in lectura["formas"] if "/hueco" in f["id_origen"]]
+    assert len(huecos) == 2
+    assert all(f["descartada"] for f in huecos)
 
 
 def test_unir_un_dibujo_donde_nada_se_pisa_carga_lo_mismo(cliente, tmp_path):

@@ -188,8 +188,18 @@ class _LecturasDeUnDXF:
         return self.unida if unir and self.unida is not None else self.sin_unir
 
 
-def _lectura(piezas: list[PiezaImportada], formatos: list[Plancha], avisos: list[str]) -> _Lectura:
-    recortes = _recortes_de_huecos(piezas, formatos)
+def _lectura(
+    piezas: list[PiezaImportada],
+    formatos: list[Plancha],
+    avisos: list[str],
+    huecos_de_uniones: dict[str, str] | None = None,
+) -> _Lectura:
+    """`huecos_de_uniones`: los huecos de las piezas unidas, con su motivo.
+    Entran descartados siempre: son huecos por cómo se armaron, y el
+    análisis, que pide el color de la madre o que no sea un rectángulo
+    que no entra, a veces no los reconoce (revisión de la rama). Si el
+    análisis también los reconoce, queda su motivo."""
+    recortes = {**(huecos_de_uniones or {}), **_recortes_de_huecos(piezas, formatos)}
     if recortes:
         avisos = [
             *avisos,
@@ -230,7 +240,14 @@ def _leer(
         ],
     )
     unida = _lectura(
-        unidas, formatos, [*avisos, f"{se_pisan} formas que se pisaban quedaron unidas en {len(uniones)} pieza(s)."]
+        unidas,
+        formatos,
+        [*avisos, f"{se_pisan} formas que se pisaban quedaron unidas en {len(uniones)} pieza(s)."],
+        {
+            hueco: f"hueco de {union.pieza_id}: viaja con esa pieza, no se anida solo"
+            for union in uniones
+            for hueco in union.huecos
+        },
     )
     return _LecturasDeUnDXF(resultado, sin_unir, unida, se_pisan)
 
