@@ -11,6 +11,16 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from ..modelos.catalogo import Moneda
 
+# --- Topes -----------------------------------------------------------------
+# Lo que se rechaza al entrar por absurdo, no por una regla de negocio: un
+# dedo de más en un importe no tiene que dejar un presupuesto sin abrir.
+# Antes, un IVA de -100 con total fijado dividía por cero, y un importe de
+# decenas de cifras no se podía redondear. Con estos topes ninguna cuenta
+# de `services/presupuesto/totales.py` pasa de las 28 cifras de `Decimal`.
+_IMPORTE_MAX = Decimal("999999999999.99")
+_CANTIDAD_MAX = Decimal("999999999")
+_VALIDEZ_MAX_DIAS = 3650
+
 # --- Clientes --------------------------------------------------------------
 
 
@@ -42,7 +52,7 @@ class PresupuestoCrear(BaseModel):
 
     cliente_id: int
     #: Sin default: `PAR-11` sigue sin confirmar — ver `presupuesto.py`.
-    validez_dias: int
+    validez_dias: int = Field(gt=0, le=_VALIDEZ_MAX_DIAS)
     trabajo_id: int | None = None
     moneda: Moneda = Moneda.ARS
 
@@ -52,15 +62,15 @@ class PresupuestoActualizar(BaseModel):
 
     cliente_id: int | None = None
     trabajo_id: int | None = None
-    validez_dias: int | None = Field(default=None, gt=0)
+    validez_dias: int | None = Field(default=None, gt=0, le=_VALIDEZ_MAX_DIAS)
     moneda: Moneda | None = None
     #: `PAR-12` sin confirmar — se fija a mano cuando se sabe cuánto
     #: cobrar (`CART-307`, paso 5). `None` explícito lo vuelve a limpiar.
-    margen_pct: Decimal | None = None
-    iva_pct: Decimal | None = None
+    margen_pct: Decimal | None = Field(default=None, ge=-100, le=1000)
+    iva_pct: Decimal | None = Field(default=None, ge=0, le=100)
     #: El total final, con IVA (`diseno.md §5` de 1.3). `None` explícito
     #: lo quita y el total vuelve a salir de la suma de los ítems.
-    total_fijado: Decimal | None = Field(default=None, gt=0, decimal_places=2)
+    total_fijado: Decimal | None = Field(default=None, gt=0, le=_IMPORTE_MAX, decimal_places=2)
 
     @model_validator(mode="after")
     def _lo_que_no_puede_quedar_vacio(self) -> PresupuestoActualizar:
@@ -121,7 +131,7 @@ class LineaCostoOverride(BaseModel):
     limpia `override_por`/`override_en` — no hace falta un endpoint
     aparte para "volver al calculado"."""
 
-    valor_override: Decimal | None
+    valor_override: Decimal | None = Field(ge=-_IMPORTE_MAX, le=_IMPORTE_MAX)
     override_por: str | None = None
 
     @model_validator(mode="after")
@@ -139,7 +149,7 @@ class LineaClienteActualizar(BaseModel):
     o el costo más el margen."""
 
     texto_cliente: str | None = Field(default=None, max_length=300)
-    precio_cliente: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    precio_cliente: Decimal | None = Field(default=None, ge=0, le=_IMPORTE_MAX, decimal_places=2)
 
     @field_validator("texto_cliente")
     @classmethod
@@ -157,9 +167,9 @@ class LineaCostoCrear(BaseModel):
 
     rubro: Literal["INSUMO", "MANO_DE_OBRA", "FLETE", "INSTALACION", "OTRO"]
     descripcion: str
-    cantidad: Decimal
+    cantidad: Decimal = Field(ge=-_CANTIDAD_MAX, le=_CANTIDAD_MAX)
     unidad: str | None = None
-    precio_unitario: Decimal
+    precio_unitario: Decimal = Field(ge=-_IMPORTE_MAX, le=_IMPORTE_MAX)
 
 
 class LineaCostoActualizar(BaseModel):
@@ -167,9 +177,9 @@ class LineaCostoActualizar(BaseModel):
     rubro `MATERIAL` — ver `rutas_presupuesto.py`."""
 
     descripcion: str | None = None
-    cantidad: Decimal | None = None
+    cantidad: Decimal | None = Field(default=None, ge=-_CANTIDAD_MAX, le=_CANTIDAD_MAX)
     unidad: str | None = None
-    precio_unitario: Decimal | None = None
+    precio_unitario: Decimal | None = Field(default=None, ge=-_IMPORTE_MAX, le=_IMPORTE_MAX)
 
 
 # --- Totales (paso 5: `CART-307`) -----------------------------------------

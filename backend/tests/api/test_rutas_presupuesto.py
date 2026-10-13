@@ -1022,3 +1022,81 @@ def test_sin_las_bibliotecas_la_ruta_del_pdf_da_503_y_el_resto_sigue_andando(cli
     assert respuesta.status_code == 503
     assert "GUIA-PRUEBAS-LOCALES" in respuesta.json()["detail"]
     assert cliente.get(f"/presupuestos/{presupuesto['id']}/desglose").status_code == 200
+
+
+# --- Topes: un valor absurdo se rechaza al entrar ---------------------------
+# Sin tope, un IVA de -100 con total fijado dividía por cero y un importe de
+# decenas de cifras no se podía redondear: el presupuesto dejaba de abrirse.
+
+
+@pytest.mark.parametrize(
+    "datos",
+    [
+        {"iva_pct": "-1"},
+        {"iva_pct": "101"},
+        {"margen_pct": "-101"},
+        {"margen_pct": "1001"},
+        {"total_fijado": "1000000000000"},
+        {"validez_dias": 3651},
+    ],
+)
+def test_un_valor_absurdo_en_el_presupuesto_da_422(cliente, datos):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.patch(f"/presupuestos/{presupuesto['id']}", json=datos)
+
+    assert respuesta.status_code == 422, respuesta.text
+
+
+def test_crear_un_presupuesto_con_una_validez_absurda_da_422(cliente):
+    cliente_creado = _crear_cliente(cliente)
+
+    for validez in (0, 3651):
+        respuesta = cliente.post("/presupuestos", json={"cliente_id": cliente_creado["id"], "validez_dias": validez})
+        assert respuesta.status_code == 422, validez
+
+
+@pytest.mark.parametrize(
+    "datos",
+    [
+        {"cantidad": "10000000000", "precio_unitario": "1"},
+        {"cantidad": "1", "precio_unitario": "1000000000000"},
+        {"cantidad": "1", "precio_unitario": "-1000000000000"},
+    ],
+)
+def test_un_importe_absurdo_en_una_linea_da_422(cliente, datos):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo",
+        json={"rubro": "OTRO", "descripcion": "Absurdo"} | datos,
+    )
+
+    assert respuesta.status_code == 422, respuesta.text
+
+
+def test_un_importe_absurdo_al_editar_corregir_o_poner_precio_da_422(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+    linea = _linea_libre(cliente, presupuesto["id"], "Flete", "80000")
+
+    assert cliente.patch(f"/lineas-costo/{linea['id']}", json={"precio_unitario": "1000000000000"}).status_code == 422
+    assert cliente.patch(f"/lineas-costo/{linea['id']}", json={"cantidad": "10000000000"}).status_code == 422
+    assert (
+        cliente.patch(
+            f"/lineas-costo/{linea['id']}/override", json={"valor_override": "1000000000000", "override_por": "A"}
+        ).status_code
+        == 422
+    )
+    assert cliente.patch(f"/lineas-costo/{linea['id']}/cliente", json={"precio_cliente": "1000000000000"}).status_code == 422
+
+
+def test_los_valores_en_el_borde_del_tope_se_aceptan(cliente):
+    presupuesto = _crear_presupuesto(cliente)
+
+    respuesta = cliente.patch(
+        f"/presupuestos/{presupuesto['id']}",
+        json={"iva_pct": "0", "margen_pct": "-100", "total_fijado": "999999999999.99", "validez_dias": 3650},
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert cliente.get(f"/presupuestos/{presupuesto['id']}/desglose").status_code == 200
