@@ -7,6 +7,10 @@ anidado y las colocaciones son el paso siguiente del plan, no esto.
 """
 from __future__ import annotations
 
+import json
+import tempfile
+from collections.abc import Mapping
+from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 
@@ -24,20 +28,31 @@ from ..services.ingesta.analisis import (
     TOLERANCIA_MEDIDA_DE_HOJA_MM,
     TOLERANCIA_RELATIVA_GEMELA,
     DisenioDetectado,
+    PiezaConRol,
     Rol,
     agrupar_en_disenios,
     detectar_hojas,
+    sin_los_huecos_de_lo_que_no_va,
     sugerir_roles,
 )
-from ..services.ingesta.dxf import ArchivoDXFInvalido, parsear_dxf
-from ..services.ingesta.models import PiezaImportada
+from ..services.ingesta.dibujo import DETALLE_DEL_DIBUJO, anillo_para_dibujar, tolerancia_del_dibujo
+from ..services.ingesta.dxf import _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT, ArchivoDXFInvalido, parsear_dxf
+from ..services.ingesta.models import PiezaImportada, ResultadoImportacionDXF
+from ..services.ingesta.uniones import (
+    AREA_MINIMA_PARA_PISARSE_MM2,
+    DISTANCIA_PARA_TOCARSE_MM,
+    unir_formas_que_se_pisan,
+)
 from ..services.nesting.models import Plancha
 from .dependencias import obtener_sesion
 from .esquemas_trabajos import (
+    FormaLeida,
     GrupoDeCorteActualizar,
     GrupoDeCorteCrear,
     GrupoDeCorteLeer,
     ImportacionDXFLeer,
+    LecturaDXFLeer,
+    LecturaLeer,
     PiezaActualizar,
     PiezaLeer,
     TrabajoCrear,
@@ -122,7 +137,9 @@ def _pieza_orm_desde_importada(trabajo_id: int, pieza: PiezaImportada) -> Pieza:
     )
 
 
-def _hojas_y_roles(disenio: DisenioDetectado, formatos: list[Plancha]):
+def _hojas_y_roles(
+    disenio: DisenioDetectado, formatos: list[Plancha], correcciones: Mapping[str, Rol] | None = None
+):
     hojas = detectar_hojas(disenio, formatos, TOLERANCIA_MEDIDA_DE_HOJA_MM)
     return hojas, sugerir_roles(
         disenio,
@@ -132,24 +149,288 @@ def _hojas_y_roles(disenio: DisenioDetectado, formatos: list[Plancha]):
         AREA_MINIMA_GEMELA_MM2,
         FRACCION_MINIMA_EN_HOJA,
         COLORES_DE_ROTULO,
+        correcciones,
     )
 
 
-def _recortes_de_huecos(piezas: list[PiezaImportada], formatos: list[Plancha]) -> set[str]:
-    """Las formas que son el recorte del agujero de otra pieza que se
-    corta (el centro de una «O»): el lector las devuelve como agujero de
-    esa pieza y además como pieza propia (`_clasificar_piezas_y_agujeros`
-    en `dxf.py`), y anidarlas contaría dos veces su área.
+def _roles(
+    piezas: list[PiezaImportada], formatos: list[Plancha], correcciones: Mapping[str, Rol]
+) -> dict[str, PiezaConRol]:
+    """El rol que el análisis de `CART-511` le da a cada forma, con lo que
+    marcó quien carga. De esos roles la carga usa dos:
 
-    Lo decide el análisis de `CART-511` (`Rol.CONTRAPIEZA`). De sus otros
-    roles no se usa ninguno acá: una forma que no entra en ninguna chapa
-    o que parece un rótulo se sigue importando como hasta ahora, y qué
-    hacer con ella lo resuelve quien revisa las piezas."""
-    recortes: set[str] = set()
+    - `Rol.CONTRAPIEZA`, el recorte del agujero de otra pieza que se corta
+      (el centro de una «O», el hueco de un aro): el lector la devuelve
+      como agujero de esa pieza y además como pieza propia
+      (`_clasificar_piezas_y_agujeros` en `dxf.py`), y anidarla contaría
+      dos veces su área. Entra descartada.
+    - `Rol.NO_VA`, lo que sacó quien carga. No se guarda.
+
+    Con los demás no hace nada: una forma que no entra en ninguna chapa o
+    que parece un rótulo se importa igual, y qué hacer con ella lo
+    resuelve quien mira el dibujo o revisa las piezas."""
+    roles: dict[str, PiezaConRol] = {}
     for disenio in agrupar_en_disenios(piezas, DISTANCIA_MAXIMA_ENTRE_PIEZAS_DE_UN_DISENIO_MM):
-        _, roles = _hojas_y_roles(disenio, formatos)
-        recortes.update(rol.pieza_id for rol in roles if rol.rol is Rol.CONTRAPIEZA)
-    return recortes
+        _, del_disenio = _hojas_y_roles(disenio, formatos, correcciones)
+        roles.update({rol.pieza_id: rol for rol in del_disenio})
+    return roles
+
+
+_ROL_DE_UNA_CORRECCION = {"cortar": Rol.CORTAR, "no_va": Rol.NO_VA}
+
+
+def _correcciones(texto: str | None) -> dict[str, Rol]:
+    """Lo que marcó quien carga, como llega en el campo `correcciones`: un
+    objeto JSON de `id` de forma a `cortar` o `no_va`
+    (`docs/historico/2.1b-corregir-la-lectura/diseno.md §5.2`). Sin el campo,
+    ninguna. Lo que no tiene esa forma da 400, diciendo qué."""
+    if texto is None or not texto.strip():
+        return {}
+    try:
+        datos = json.loads(texto)
+    except json.JSONDecodeError as error:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, f"Las correcciones no son un JSON válido ({error.msg})."
+        ) from error
+    if not isinstance(datos, dict):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Las correcciones tienen que ser un objeto: de nombre de forma a «cortar» o «no_va».",
+        )
+    correcciones = {}
+    for forma, valor in datos.items():
+        if not isinstance(valor, str) or valor not in _ROL_DE_UNA_CORRECCION:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"«{valor}» no es una corrección: para «{forma}» tiene que ser «cortar» o «no_va».",
+            )
+        correcciones[forma] = _ROL_DE_UNA_CORRECCION[valor]
+    return correcciones
+
+
+@dataclass(frozen=True)
+class _Lectura:
+    """Una manera de leer un DXF: las piezas que salen, cuáles entran
+    descartadas, cuáles no van y los avisos. Es lo que se dibuja y lo que
+    se guarda."""
+
+    piezas: list[PiezaImportada]
+    #: `id` de la pieza → por qué entra descartada.
+    recortes: dict[str, str]
+    #: Las que sacó quien carga: no se guardan.
+    no_van: set[str]
+    #: Las que marcó quien carga, se corten o no vayan.
+    corregidas: set[str]
+    advertencias: list[str]
+
+    def estado(self, pieza_id: str) -> str:
+        if pieza_id in self.no_van:
+            return "no_va"
+        return "descartada" if pieza_id in self.recortes else "se_corta"
+
+    def motivo(self, pieza_id: str) -> str | None:
+        if pieza_id in self.corregidas:
+            return "lo marcó quien carga"
+        return self.recortes.get(pieza_id)
+
+
+@dataclass(frozen=True)
+class _LecturasDeUnDXF:
+    resultado: ResultadoImportacionDXF
+    sin_unir: _Lectura
+    #: `None` si no hay formas que se pisan.
+    unida: _Lectura | None
+    #: Cuántas líneas reemplaza la unión.
+    formas_que_se_pisan: int
+
+    def elegida(self, unir: bool) -> _Lectura:
+        return self.unida if unir and self.unida is not None else self.sin_unir
+
+
+def _lectura(
+    piezas: list[PiezaImportada],
+    formatos: list[Plancha],
+    avisos: list[str],
+    correcciones: Mapping[str, Rol],
+    huecos_de_uniones: dict[str, str] | None = None,
+) -> _Lectura:
+    """`huecos_de_uniones`: los huecos de las piezas unidas, con su motivo.
+    Entran descartados siempre: son huecos por cómo se armaron, y el
+    análisis, que pide el color de la madre o que no sea un rectángulo
+    que no entra, a veces no los reconoce (revisión de la rama de 2.1a).
+    Si el análisis también los reconoce, queda su motivo.
+
+    Lo que marcó quien carga manda también sobre eso: un hueco forzado a
+    cortar no entra descartado."""
+    roles = _roles(piezas, formatos, correcciones)
+    corregidas = {pieza_id for pieza_id, rol in roles.items() if rol.corregida}
+    no_van = {pieza_id for pieza_id, rol in roles.items() if rol.rol is Rol.NO_VA}
+    recortes = {
+        **{hueco: motivo for hueco, motivo in (huecos_de_uniones or {}).items() if hueco not in corregidas},
+        **{pieza_id: rol.motivo for pieza_id, rol in roles.items() if rol.rol is Rol.CONTRAPIEZA},
+    }
+    if recortes:
+        avisos = [
+            *avisos,
+            f"{len(recortes)} forma(s) son el recorte del hueco de otra pieza (como el centro de una «O») "
+            "y entran descartadas: no se cortan ni se anidan. Si alguna se corta aparte, tocá «Restaurar».",
+        ]
+    if no_van:
+        avisos = [*avisos, f"{len(no_van)} forma(s) no van: las marcaste en el dibujo, y no se cargan."]
+    return _Lectura(piezas=piezas, recortes=recortes, no_van=no_van, corregidas=corregidas, advertencias=avisos)
+
+
+def _leer(
+    ruta: Path,
+    escala_a_mm: Decimal,
+    tamano_maximo_agujero_mm: Decimal | None,
+    formatos: list[Plancha],
+    correcciones: Mapping[str, Rol],
+) -> _LecturasDeUnDXF:
+    """Parsea el archivo y arma sus dos lecturas: tal como viene, y con
+    las formas que se pisan unidas (`uniones.py`). Las usan la ruta que
+    muestra la lectura y la que carga, así que lo que se ve es lo que se
+    guarda. Un archivo o una escala que no sirven dan 400.
+
+    `correcciones` se aplica a las dos lecturas. Cada una ignora las que
+    nombran una forma que no tiene (el hueco de una pieza unida no existe
+    en la lectura sin unir); una que no es de este archivo da 400. Lo que
+    no va queda afuera de la unión, no es el hueco de ninguna pieza, y
+    sus propios agujeros pasan a ser formas. Si lo que no va es una pieza
+    unida, sus huecos no entran en la lectura."""
+    tamano = _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT if tamano_maximo_agujero_mm is None else tamano_maximo_agujero_mm
+    no_van = {id_forma for id_forma, rol in correcciones.items() if rol is Rol.NO_VA}
+    try:
+        # Lo marcado es siempre una forma, y los agujeros de una que no
+        # va también: se quedaron sin la pieza de la que eran el hueco.
+        resultado = parsear_dxf(ruta, escala_a_mm, tamano, marcadas=set(correcciones), no_van=no_van)
+    except ArchivoDXFInvalido as error:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
+
+    # Lo que no va no es parte del diseño: no es el hueco de nadie ni se
+    # une con nada. Pasa a la lectura unida como está, para verlo ahí y
+    # poder sacarle la marca.
+    piezas = sin_los_huecos_de_lo_que_no_va(resultado.piezas, no_van)
+    unidas, uniones = unir_formas_que_se_pisan(
+        [p for p in piezas if p.id not in no_van],
+        DISTANCIA_PARA_TOCARSE_MM,
+        AREA_MINIMA_PARA_PISARSE_MM2,
+        tamano,
+    )
+    unidas = sin_los_huecos_de_lo_que_no_va([*unidas, *(p for p in piezas if p.id in no_van)], no_van)
+    # Los huecos de una pieza unida que no va se van con ella: eran el
+    # recorte de algo que ya no se corta (Enzo, 2026-10-13). Queda el que
+    # quien carga marcó, con su marca.
+    se_van = {
+        hueco
+        for union in uniones
+        if union.pieza_id in no_van
+        for hueco in union.huecos
+        if hueco not in correcciones
+    }
+    unidas = [p for p in unidas if p.id not in se_van]
+    del_archivo = {p.id for p in piezas}
+    # Una pieza unida o un hueco suyo (`…/unida`, `…/hueco2`) puede no
+    # estar ahora: sacar una de sus formas cambia qué se une. Su marca
+    # queda sin efecto hasta que la pieza vuelva; no es un error.
+    ajenas = sorted(
+        id_forma
+        for id_forma in set(correcciones) - del_archivo - {p.id for p in unidas}
+        if "/" not in id_forma or id_forma.split("/")[0] not in del_archivo
+    )
+    if ajenas:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Las correcciones nombran formas que no están en este archivo: {', '.join(ajenas)}.",
+        )
+    avisos = list(resultado.advertencias)
+    if not uniones:
+        return _LecturasDeUnDXF(resultado, _lectura(piezas, formatos, avisos, correcciones), None, 0)
+
+    se_pisan = sum(len(union.lineas) for union in uniones)
+    sin_unir = _lectura(
+        piezas,
+        formatos,
+        [
+            *avisos,
+            f"Hay {se_pisan} formas que se pisan entre sí, sin unir. Si son franjas de una misma pieza, "
+            "se unen con la casilla «Unir las formas que se pisan», al ver cómo se lee.",
+        ],
+        correcciones,
+    )
+    unida = _lectura(
+        unidas,
+        formatos,
+        [*avisos, f"{se_pisan} formas que se pisaban quedaron unidas en {len(uniones)} pieza(s)."],
+        correcciones,
+        {
+            hueco: f"hueco de {union.pieza_id}: viaja con esa pieza, no se anida solo"
+            for union in uniones
+            for hueco in union.huecos
+            if hueco not in se_van
+        },
+    )
+    return _LecturasDeUnDXF(resultado, sin_unir, unida, se_pisan)
+
+
+def _para_dibujar(lectura: _Lectura) -> LecturaLeer:
+    tolerancia = tolerancia_del_dibujo(lectura.piezas, DETALLE_DEL_DIBUJO)
+    return LecturaLeer(
+        formas=[
+            FormaLeida(
+                id_origen=pieza.id,
+                contorno_mm=anillo_para_dibujar(pieza.contorno_mm, tolerancia),
+                agujeros_mm=[anillo_para_dibujar(agujero, tolerancia) for agujero in pieza.agujeros_mm],
+                estado=lectura.estado(pieza.id),
+                corregida=pieza.id in lectura.corregidas,
+                motivo=lectura.motivo(pieza.id),
+            )
+            for pieza in lectura.piezas
+        ],
+        a_cortar=len(lectura.piezas) - len(lectura.recortes) - len(lectura.no_van),
+        descartadas=len(lectura.recortes),
+        no_van=len(lectura.no_van),
+        advertencias=lectura.advertencias,
+    )
+
+
+@router.post("/trabajos/{trabajo_id}/dxf/lectura", response_model=LecturaDXFLeer)
+async def leer_dxf(
+    trabajo_id: int,
+    archivo: UploadFile = File(...),
+    escala_a_mm: Decimal = Form(...),
+    tamano_maximo_agujero_mm: Decimal | None = Form(None),
+    correcciones: str | None = Form(None),
+    sesion: Session = Depends(obtener_sesion),
+) -> LecturaDXFLeer:
+    """Cómo se leería este DXF en este trabajo, **sin guardar nada**: ni
+    piezas ni el archivo. Es lo que la pantalla dibuja antes de cargar
+    (`docs/historico/2.1a-lectura-con-imagen/diseno.md §5.3`).
+
+    Devuelve la lectura tal como viene el dibujo y, si hay formas que se
+    pisan, también la lectura con esas formas unidas: la pantalla cambia
+    de una a otra sin volver a mandar el archivo. Cargar es otro pedido,
+    `POST /trabajos/{id}/dxf`, con `unir` según lo que se eligió.
+
+    `correcciones` es lo que quien carga marcó sobre el dibujo
+    (`_correcciones`). La pantalla vuelve a pedir la lectura después de
+    cada clic, con la lista entera, y manda esa misma lista al cargar."""
+    _trabajo_o_404(sesion, trabajo_id)
+    marcadas = _correcciones(correcciones)
+    sufijo = Path(archivo.filename or "trabajo.dxf").suffix or ".dxf"
+    with tempfile.TemporaryDirectory() as carpeta:
+        # Con el nombre que le da la carga: de ahí salen los `id` de las
+        # piezas, y tienen que ser los mismos que van a quedar guardados.
+        ruta = Path(carpeta) / f"trabajo-{trabajo_id}{sufijo}"
+        ruta.write_bytes(await archivo.read())
+        lecturas = _leer(ruta, escala_a_mm, tamano_maximo_agujero_mm, _formatos_del_catalogo(sesion), marcadas)
+    return LecturaDXFLeer(
+        contornos_no_cerrados=len(lecturas.resultado.contornos_no_cerrados),
+        lineas_duplicadas_descartadas=lecturas.resultado.lineas_duplicadas_descartadas,
+        formas_que_se_pisan=lecturas.formas_que_se_pisan,
+        sin_unir=_para_dibujar(lecturas.sin_unir),
+        unida=_para_dibujar(lecturas.unida) if lecturas.unida is not None else None,
+    )
 
 
 @router.post("/trabajos/{trabajo_id}/dxf", response_model=ImportacionDXFLeer)
@@ -158,6 +439,8 @@ async def subir_dxf(
     archivo: UploadFile = File(...),
     escala_a_mm: Decimal = Form(...),
     tamano_maximo_agujero_mm: Decimal | None = Form(None),
+    unir: bool = Form(False),
+    correcciones: str | None = Form(None),
     sesion: Session = Depends(obtener_sesion),
 ) -> ImportacionDXFLeer:
     """Sube un DXF, lo parsea (`parsear_dxf`) y reemplaza las piezas del
@@ -166,9 +449,14 @@ async def subir_dxf(
     `escala_a_mm` es obligatorio, sin default — mismo criterio que
     `parsear_dxf`: nunca se asume la escala del header del archivo.
 
-    Se guardan todas las formas que devuelve el parser. Las que son el
-    recorte del hueco de otra pieza entran descartadas, con un aviso
-    (`_recortes_de_huecos`).
+    Se guardan todas las formas que devuelve el parser, menos las que
+    quien carga marcó como que no van. Las que son el recorte del hueco
+    de otra pieza entran descartadas, con un aviso (`_roles`).
+
+    Con `unir`, las formas que se pisan entran como una sola pieza
+    (`uniones.py`). Es lo que eligió quien carga después de ver la
+    lectura (`POST /trabajos/{id}/dxf/lectura`); sin eso no se une nada.
+    `correcciones` es lo que marcó sobre ese dibujo (`_correcciones`).
 
     Volver a subir un archivo (para corregir la escala o el propio DXF)
     reemplaza las piezas anteriores del trabajo. Re-parsear el mismo
@@ -177,6 +465,7 @@ async def subir_dxf(
     para cuando haga falta.
     """
     trabajo = _trabajo_o_404(sesion, trabajo_id)
+    marcadas = _correcciones(correcciones)
 
     contenido = await archivo.read()
     config.DIRECTORIO_ARCHIVOS.mkdir(parents=True, exist_ok=True)
@@ -184,24 +473,19 @@ async def subir_dxf(
     ruta_guardada = config.DIRECTORIO_ARCHIVOS / f"trabajo-{trabajo_id}{sufijo}"
     ruta_guardada.write_bytes(contenido)
 
-    try:
-        if tamano_maximo_agujero_mm is None:
-            resultado = parsear_dxf(ruta_guardada, escala_a_mm)
-        else:
-            resultado = parsear_dxf(ruta_guardada, escala_a_mm, tamano_maximo_agujero_mm)
-    except ArchivoDXFInvalido as error:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
+    lecturas = _leer(ruta_guardada, escala_a_mm, tamano_maximo_agujero_mm, _formatos_del_catalogo(sesion), marcadas)
+    lectura = lecturas.elegida(unir)
 
     for pieza_existente in list(trabajo.piezas):
         sesion.delete(pieza_existente)
     sesion.flush()
 
-    recortes = _recortes_de_huecos(resultado.piezas, _formatos_del_catalogo(sesion))
-    for pieza_importada in resultado.piezas:
+    a_guardar = [p for p in lectura.piezas if p.id not in lectura.no_van]
+    for pieza_importada in a_guardar:
         pieza = _pieza_orm_desde_importada(trabajo_id, pieza_importada)
         # Descartada y no omitida: queda a la vista, y si en este dibujo
         # esa forma se corta aparte se restaura con un clic.
-        pieza.descartada = pieza_importada.id in recortes
+        pieza.descartada = pieza_importada.id in lectura.recortes
         sesion.add(pieza)
 
     trabajo.archivo_origen = archivo.filename
@@ -209,18 +493,12 @@ async def subir_dxf(
     trabajo.escala_a_mm = escala_a_mm
     sesion.commit()
 
-    advertencias = list(resultado.advertencias)
-    if recortes:
-        advertencias.append(
-            f"{len(recortes)} forma(s) son el recorte del hueco de otra pieza (como el centro de una «O») "
-            "y entraron descartadas: no se cortan ni se anidan. Si alguna se corta aparte, tocá «Restaurar»."
-        )
     return ImportacionDXFLeer(
         trabajo=TrabajoLeer.model_validate(trabajo),
-        piezas_creadas=len(resultado.piezas),
-        contornos_no_cerrados=len(resultado.contornos_no_cerrados),
-        lineas_duplicadas_descartadas=resultado.lineas_duplicadas_descartadas,
-        advertencias=advertencias,
+        piezas_creadas=len(a_guardar),
+        contornos_no_cerrados=len(lecturas.resultado.contornos_no_cerrados),
+        lineas_duplicadas_descartadas=lecturas.resultado.lineas_duplicadas_descartadas,
+        advertencias=lectura.advertencias,
     )
 
 

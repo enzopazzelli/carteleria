@@ -37,7 +37,16 @@ export function listarGrupos(trabajoId: number): Promise<GrupoDeCorte[]> {
   return apiGet<GrupoDeCorte[]>(`/trabajos/${trabajoId}/grupos`);
 }
 
-export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string): Promise<{
+/** `unir`: cargar con las formas que se pisan vueltas una sola pieza.
+ * `correcciones`: lo que se marcó sobre el dibujo. Los dos tienen que
+ * ser los de la lectura que se vio (`leerDxf`): se carga lo que se vio. */
+export function subirDxf(
+  trabajoId: number,
+  archivo: File,
+  escalaAMm: string,
+  unir: boolean,
+  correcciones: Correcciones,
+): Promise<{
   trabajo: unknown;
   piezas_creadas: number;
   contornos_no_cerrados: number;
@@ -47,7 +56,64 @@ export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string): P
   const formData = new FormData();
   formData.append("archivo", archivo);
   formData.append("escala_a_mm", escalaAMm);
+  formData.append("unir", unir ? "true" : "false");
+  formData.append("correcciones", JSON.stringify(correcciones));
   return apiPostForm(`/trabajos/${trabajoId}/dxf`, formData);
+}
+
+/** Una forma de una lectura, para dibujarla. A diferencia de `Pieza`, el
+ * contorno viene en la posición del dibujo (no en su marco local), como
+ * números y con menos vértices: es para mirar, no es lo que se guarda. */
+export interface FormaLeida {
+  id_origen: string;
+  contorno_mm: number[][];
+  agujeros_mm: number[][][];
+  /** `se_corta`: se carga y se anida. `descartada`: se carga atenuada, sin
+   * cortarse (el recorte de un hueco). `no_va`: la sacó quien carga, y no
+   * se carga. */
+  estado: "se_corta" | "descartada" | "no_va";
+  /** El estado no salió de una regla: lo marcó quien carga. */
+  corregida: boolean;
+  /** Por qué entra descartada o no va; `null` si se corta sin que nadie
+   * lo haya marcado. */
+  motivo: string | null;
+}
+
+export interface Lectura {
+  formas: FormaLeida[];
+  a_cortar: number;
+  descartadas: number;
+  no_van: number;
+  advertencias: string[];
+}
+
+/** Lo que quien carga marcó sobre el dibujo: de nombre de forma
+ * (`id_origen`) a lo que tiene que pasar con ella. */
+export type Correcciones = Record<string, "cortar" | "no_va">;
+
+/** Cómo se leería un DXF. `unida` viene solo si hay formas que se pisan. */
+export interface LecturaDxf {
+  contornos_no_cerrados: number;
+  lineas_duplicadas_descartadas: number;
+  formas_que_se_pisan: number;
+  sin_unir: Lectura;
+  unida: Lectura | null;
+}
+
+/** Lee el archivo sin guardar nada: es lo que se dibuja antes de cargar.
+ * Con `correcciones`, el servidor fuerza lo marcado y vuelve a decidir
+ * lo demás. */
+export function leerDxf(
+  trabajoId: number,
+  archivo: File,
+  escalaAMm: string,
+  correcciones: Correcciones,
+): Promise<LecturaDxf> {
+  const formData = new FormData();
+  formData.append("archivo", archivo);
+  formData.append("escala_a_mm", escalaAMm);
+  formData.append("correcciones", JSON.stringify(correcciones));
+  return apiPostForm(`/trabajos/${trabajoId}/dxf/lectura`, formData);
 }
 
 export function descartarPieza(piezaId: number, descartada: boolean): Promise<Pieza> {

@@ -17,6 +17,7 @@ from app.services.ingesta.analisis import (
     agrupar_en_disenios,
     Rol,
     detectar_hojas,
+    sin_los_huecos_de_lo_que_no_va,
     sugerir_factor_de_escala,
     sugerir_roles,
 )
@@ -531,3 +532,237 @@ def test_una_forma_igual_al_agujero_pero_que_no_estaba_adentro_no_es_contrapieza
     suelta = _rectangulo("suelta", 1000, 0, 200, 200)
 
     assert _roles_completos(_en_una_hoja([letra, suelta]))["suelta"].rol is Rol.CORTAR
+
+
+# --- Recortes en piezas que no entran en ninguna chapa (2.1a) ---------------
+#
+# Un aro de 4,6 m no entra en ninguna chapa y se corta seccionado: sus huecos
+# son huecos igual que el centro de una «O». Un rectángulo que no entra es un
+# tablero o un marco, y lo que tiene adentro son piezas
+# (`docs/historico/2.1a-lectura-con-imagen/diseno.md §5.1`).
+
+
+def _octogono(id_: str, x: int, y: int, lado: int, contenida_en_id: str | None = None) -> PiezaImportada:
+    """Un cuadrado de `lado` con las cuatro esquinas cortadas a un quinto
+    del lado: llena el 92 % de su caja, así que no es un rectángulo."""
+    c = lado // 5
+    puntos = [(x + c, y), (x + lado - c, y), (x + lado, y + c), (x + lado, y + lado - c),
+              (x + lado - c, y + lado), (x + c, y + lado), (x, y + lado - c), (x, y + c), (x + c, y)]
+    return PiezaImportada(
+        id=id_,
+        capa="0",
+        ancho_mm=Decimal(lado),
+        alto_mm=Decimal(lado),
+        area_real_mm2=Decimal(lado * lado - 2 * c * c),
+        contorno_mm=[(Decimal(px), Decimal(py)) for px, py in puntos],
+        contenida_en_id=contenida_en_id,
+    )
+
+
+def _aro_con_hueco(lado_del_hueco: int = 400):
+    """Un aro de 3 m, que no entra en la chapa, y adentro la forma de su
+    hueco, los dos del mismo color."""
+    return [
+        _con_color(_octogono("aro", 0, 0, 3000), 250),
+        _con_color(_octogono("hueco", 1000, 1000, lado_del_hueco, contenida_en_id="aro"), 250),
+    ]
+
+
+def test_el_recorte_de_una_pieza_que_no_entra_en_ninguna_chapa_es_su_contrapieza():
+    roles = _roles_completos(_aro_con_hueco())
+
+    assert roles["hueco"].rol is Rol.CONTRAPIEZA
+    assert roles["hueco"].madre_id == "aro"
+    # El aro sigue como estaba: no se corta tal cual, hay que seccionarlo.
+    assert roles["aro"].rol is Rol.REFERENCIA
+
+
+def test_un_recorte_que_tampoco_entra_en_ninguna_chapa_es_contrapieza():
+    # El interior de un aro de 4,6 m mide 4,4 m: tampoco entra, y es hueco.
+    roles = _roles_completos(_aro_con_hueco(lado_del_hueco=2600))
+
+    assert roles["hueco"].rol is Rol.CONTRAPIEZA
+
+
+def test_lo_de_adentro_de_un_rectangulo_que_no_entra_se_sigue_cortando():
+    # Un tablero de presentación de 3 m con una pieza adentro, de su color.
+    tablero = _con_color(_rectangulo("tablero", 0, 0, 3000, 3000), 250)
+    pieza = _con_color(_octogono("pieza", 1000, 1000, 400, contenida_en_id="tablero"), 250)
+
+    roles = _roles_completos([tablero, pieza])
+
+    assert roles["pieza"].rol is Rol.CORTAR
+    assert roles["tablero"].rol is Rol.REFERENCIA
+
+
+def test_lo_que_esta_adentro_del_recorte_de_una_pieza_grande_se_sigue_cortando():
+    # La cruz del centro del aro: está adentro de un hueco, y un recorte no
+    # es madre de nadie.
+    aro, hueco = _aro_con_hueco(lado_del_hueco=1000)
+    cruz = _con_color(_octogono("cruz", 1300, 1300, 300, contenida_en_id="hueco"), 250)
+
+    roles = _roles_completos([aro, hueco, cruz])
+
+    assert roles["hueco"].rol is Rol.CONTRAPIEZA
+    assert roles["cruz"].rol is Rol.CORTAR
+
+
+def test_adentro_de_una_pieza_grande_una_forma_de_otro_color_se_sigue_cortando():
+    aro, hueco = _aro_con_hueco()
+
+    roles = _roles_completos([aro, _con_color(hueco, 7)])
+
+    assert roles["hueco"].rol is Rol.CORTAR
+
+
+def test_sin_formatos_en_el_catalogo_no_hay_recortes_en_piezas_grandes():
+    # Sin ninguna chapa cargada no entra nada, y eso no dice que una
+    # forma haya que seccionarla.
+    disenio = DisenioDetectado(piezas=_aro_con_hueco())
+    roles = {
+        r.pieza_id: r
+        for r in sugerir_roles(
+            disenio, [], [], _TOLERANCIA_GEMELA, _AREA_MINIMA_GEMELA_MM2, _FRACCION_MINIMA_EN_HOJA, _COLORES_DE_ROTULO
+        )
+    }
+
+    assert roles["hueco"].rol is Rol.REFERENCIA
+    assert roles["aro"].rol is Rol.REFERENCIA
+
+
+# --- Correcciones de quien carga (2.1b) -------------------------------------
+#
+# Quien carga puede forzar una forma a «se corta» o a «no va» mirando el
+# dibujo (`docs/historico/2.1b-corregir-la-lectura/diseno.md §5.1`). Lo corregido
+# manda, y lo demás se vuelve a decidir alrededor.
+
+
+def _roles_corregidos(piezas: list[PiezaImportada], correcciones: dict[str, Rol]):
+    disenio = DisenioDetectado(piezas=piezas)
+    hojas = detectar_hojas(disenio, [_CHAPA], _TOLERANCIA_HOJA_MM)
+    return {
+        r.pieza_id: r
+        for r in sugerir_roles(
+            disenio,
+            hojas,
+            [_CHAPA],
+            _TOLERANCIA_GEMELA,
+            _AREA_MINIMA_GEMELA_MM2,
+            _FRACCION_MINIMA_EN_HOJA,
+            _COLORES_DE_ROTULO,
+            correcciones,
+        )
+    }
+
+
+def _contorno_con_letra():
+    """Como el logo de la muestra: un contorno que rodea una letra, y la
+    letra con su centro, los tres del mismo color."""
+    return [
+        _con_color(_octogono("contorno", 0, 0, 900), 7),
+        _con_color(_octogono("letra", 200, 200, 500, contenida_en_id="contorno"), 7),
+        _con_color(_octogono("centro", 350, 350, 200, contenida_en_id="letra"), 7),
+    ]
+
+
+def test_sin_corregir_un_contorno_con_una_letra_adentro_se_lee_al_reves():
+    # No falla ninguna regla: un contorno con una forma de su color adentro
+    # se lee igual que una «O» con su centro.
+    roles = _roles_corregidos(_contorno_con_letra(), {})
+
+    assert roles["contorno"].rol is Rol.CORTAR
+    assert roles["letra"].rol is Rol.CONTRAPIEZA
+    assert roles["centro"].rol is Rol.CORTAR
+    assert not any(r.corregida for r in roles.values())
+
+
+def test_sacar_un_contorno_pone_a_cortar_lo_que_encierra():
+    roles = _roles_corregidos(_contorno_con_letra(), {"contorno": Rol.NO_VA})
+
+    assert roles["contorno"].rol is Rol.NO_VA
+    assert roles["contorno"].corregida
+    assert "quien carga" in roles["contorno"].motivo
+    # La letra ya no es el recorte de nadie, y su centro pasa a ser el suyo.
+    assert roles["letra"].rol is Rol.CORTAR
+    assert not roles["letra"].corregida
+    assert roles["centro"].rol is Rol.CONTRAPIEZA
+    assert roles["centro"].madre_id == "letra"
+
+
+def test_una_forma_forzada_a_cortar_no_pasa_a_recorte():
+    roles = _roles_corregidos(_contorno_con_letra(), {"letra": Rol.CORTAR})
+
+    assert roles["letra"].rol is Rol.CORTAR
+    assert roles["letra"].corregida
+    assert roles["letra"].madre_id is None
+    # El contorno no cambia; y como la letra se corta, su centro es su recorte.
+    assert roles["contorno"].rol is Rol.CORTAR
+    assert roles["centro"].rol is Rol.CONTRAPIEZA
+
+
+def test_lo_de_adentro_de_una_forma_forzada_a_cortar_es_su_recorte():
+    # Un tablero rectangular de 3 m: solo, es referencia y lo de adentro se
+    # corta. Si quien carga dice que el tablero se corta, lo de adentro es
+    # su hueco.
+    tablero = _con_color(_rectangulo("tablero", 0, 0, 3000, 3000), 250)
+    pieza = _con_color(_octogono("pieza", 1000, 1000, 400, contenida_en_id="tablero"), 250)
+
+    sin_corregir = _roles_corregidos([tablero, pieza], {})
+    corregido = _roles_corregidos([tablero, pieza], {"tablero": Rol.CORTAR})
+
+    assert sin_corregir["pieza"].rol is Rol.CORTAR
+    assert corregido["tablero"].rol is Rol.CORTAR
+    assert corregido["pieza"].rol is Rol.CONTRAPIEZA
+    assert corregido["pieza"].madre_id == "tablero"
+
+
+def test_una_hoja_de_chapa_dibujada_tambien_se_puede_sacar():
+    # La chapa que el diseñador dibuja para marcar qué entra en cada una.
+    hoja, letra = _en_una_hoja([_rectangulo("letra", 100, 100, 400, 400)])
+
+    roles = _roles_corregidos([hoja, letra], {"hoja": Rol.NO_VA})
+
+    assert roles["hoja"].rol is Rol.NO_VA
+    assert roles["letra"].rol is Rol.CORTAR
+
+
+def test_una_forma_forzada_a_cortar_no_hereda_la_referencia_de_su_contenedora():
+    # El ojal de una «O» que ya está en una hoja no se corta aparte… salvo
+    # que quien carga diga que sí.
+    piezas = [*_hoja_y_ensamblado(), _rectangulo("ojal", 3100, 100, 20, 20, contenida_en_id="ensamblada")]
+
+    assert _roles_corregidos(piezas, {})["ojal"].rol is Rol.REFERENCIA
+    assert _roles_corregidos(piezas, {"ojal": Rol.CORTAR})["ojal"].rol is Rol.CORTAR
+
+
+def test_una_correccion_sobre_una_forma_que_no_esta_no_hace_nada():
+    piezas = _contorno_con_letra()
+
+    assert _roles_corregidos(piezas, {"otra": Rol.NO_VA}) == _roles_corregidos(piezas, {})
+
+
+def _letra_con_su_centro() -> list[PiezaImportada]:
+    """Una letra de 100 con un centro de 20, que es su agujero y además
+    una forma aparte: así lo arma el lector."""
+    centro = _rectangulo("centro", 40, 40, 20, 20, contenida_en_id="letra")
+    letra = replace(
+        _rectangulo("letra", 0, 0, 100, 100), agujeros_mm=[centro.contorno_mm], area_real_mm2=Decimal(100 * 100 - 20 * 20)
+    )
+    return [letra, centro]
+
+
+def test_una_pieza_pierde_el_agujero_que_era_una_forma_que_no_va():
+    # La mitad de una letra dibujada dos veces cae adentro de la letra, y
+    # el lector la toma por un agujero. Sacándola, la letra queda llena.
+    letra, centro = sin_los_huecos_de_lo_que_no_va(_letra_con_su_centro(), {"centro"})
+
+    assert letra.agujeros_mm == []
+    assert letra.area_real_mm2 == Decimal(100 * 100)
+    assert centro.contorno_mm == _letra_con_su_centro()[1].contorno_mm, "la forma que no va no cambia"
+
+
+def test_una_pieza_conserva_los_agujeros_de_las_formas_que_siguen():
+    piezas = _letra_con_su_centro()
+
+    assert sin_los_huecos_de_lo_que_no_va(piezas, set()) == piezas
+    assert sin_los_huecos_de_lo_que_no_va(piezas, {"letra", "otra"}) == piezas, "sacar la letra no le saca su agujero"

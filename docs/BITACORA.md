@@ -83,6 +83,42 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-13 — Corregir a mano la lectura del DXF (2.1b), en `main` y cerrada: clics sobre el dibujo, acercar y mover
+
+Sub-proyecto [`historico/2.1b-corregir-la-lectura/`](historico/2.1b-corregir-la-lectura/diseno.md), en `main` desde el 2026-10-13 ([PR #20](https://github.com/enzopazzelli/carteleria/pull/20), lo fusioné yo a pedido de Enzo).
+
+### Qué se hizo
+
+- **El dibujo de «Así se lee» ahora se corrige con clics.** Una forma que se corta pasa a «no va»; una descartada pasa a «se corta» y, con otro clic, a «no va». Lo que no va no se carga. Cada corrección figura debajo del dibujo, con una ✕ que la saca.
+- **El servidor vuelve a leer en cada clic,** con el archivo y la lista de correcciones. Lo marcado manda, y lo demás se acomoda solo: sacar un contorno pone a cortar las letras que encierra.
+- **Lo que no va no es madre ni hueco de nadie, ni se une.** Sus agujeros chicos pasan a ser formas, la pieza que lo tenía adentro queda llena, y la casilla de unir no lo junta con nada.
+- **El dibujo se acerca y se mueve:** rueda, arrastre, tres botones, hasta 20 aumentos.
+- El logo «AWADUCT / PERFECTO ETERNO» de la muestra, solo en un archivo, queda como dijo Enzo con nueve clics: 21 piezas a cortar.
+- **Un revisor aparte leyó la rama entera: «con arreglos».** Encontró que al sacar una forma que está adentro de otra, lo que tenía adentro no se leía como si ella no estuviera: una placa con un marco dibujado alrededor de su ventana se cargaba sin ventana. Arreglado en el lector, con cuatro pruebas. De los menores se arreglaron tres; el resto está al final del plan.
+- Backend 506 tests en verde (467 antes), frontend 95 (56 antes).
+
+### Qué se decidió
+
+- **Dos opciones por forma, «se corta» y «no va», y un solo gesto.** El clic da toda la vuelta: lo contrario de lo que se ve, después «no va», después como lo leyó el sistema (Enzo, 2026-10-13).
+- **Lo que no va se dibuja al fondo.** Con el rayado encima de lo que se corta, media palabra parecía que no iba (Enzo, 2026-10-13).
+- **Los huecos de una pieza unida que no va se van con ella:** no se cargan ni como descartados (Enzo, 2026-10-13).
+- **El código se ensayó entero antes de escribir el plan,** contra un DXF con el logo solo y en un navegador. Ahí apareció que la palabra del logo son cinco formas y no una, y tres reglas que el diseño no tenía (`diseno.md §8`).
+
+### Cambios en el registro
+
+`PAR-52` pasa de 1/4000 a 1/20000. Alta de `PAR-53`.
+
+### Pendiente
+
+Lo que sigue vivo pasó a la tabla «Pendientes de corregir la lectura a mano» del [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md) §7. Lo principal:
+
+- **El lector decide pieza o agujero por cuántos contornos encierran a la forma.** El mismo dibujo se lee distinto solo que junto a otros. La corrección a mano lo resuelve en cada caso; cambiar esa regla quedó afuera.
+- Al sacar una placa con tornillos, cada tornillo aparece como una forma a cortar y hay que sacarlo también. Marcar de a muchas con un recuadro quedó anotado.
+- Girar una pieza con ángulo libre en el anidado automático (pedido de Enzo del 2026-10-12): es del motor.
+- Las miniaturas de la tabla de Piezas siguen dadas vuelta.
+
+---
+
 ## 2026-10-13 — PDF del presupuesto: PR #19 abierto, y se decide pasar a ReportLab antes de fusionar
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (sub-proyecto 1.3)
@@ -157,6 +193,43 @@ Qué queda abierto y cuál es el próximo paso.
 - **La imagen de Docker de 1.1** tiene que instalar Pango.
 - **Juntar varias líneas de costo en un solo ítem** y **registrar quién cambió un precio** quedaron afuera (§3 del diseño).
 - **El disco C: de la máquina de Enzo quedó con 1 GB libre:** con menos, las pruebas del backend fallan por falta de espacio. Se corrieron con los temporales en D:.
+
+---
+
+## 2026-10-12 — Lectura del DXF con imagen antes de cargar (2.1a), en `main` y cerrada: unir las formas que se pisan y los huecos de las piezas grandes
+
+Sub-proyecto [`historico/2.1a-lectura-con-imagen/`](historico/2.1a-lectura-con-imagen/diseno.md), en `main` desde el 2026-10-12 ([PR #18](https://github.com/enzopazzelli/carteleria/pull/18), lo fusioné yo a pedido de Enzo).
+
+### Qué se hizo
+
+- **La carga de la pestaña Piezas ahora muestra el dibujo antes de guardar.** «Ver cómo se lee» abre un panel con lo que se corta pintado, los huecos en blanco y lo que entra descartado en línea de puntos. Recién «Cargar» guarda las piezas.
+- **Unir las formas que se pisan,** con una casilla apagada de entrada. El aro de `Complejo.dxf`, que viene como ocho líneas, entra como una pieza de 4610 × 4610 mm y 4,30 m² con 25 huecos.
+- **Los recortes de huecos también en piezas que no entran en ninguna chapa,** salvo que sean rectángulos. Es automática, como la de las letras.
+- Backend 467 tests en verde (423 antes), frontend 56 (40 antes). La pantalla se probó en el navegador contra una copia de la base, con `Complejo.dxf`.
+- **Revisión de la rama.** Un revisor aparte leyó la rama entera: «se puede fusionar con arreglos». Se arreglaron tres cosas, cada una con su prueba:
+  - **La unión borraba los agujeros chicos que caen donde dos franjas se pisan.** El lector trae ese tornillo como pieza, porque está adentro de dos bordes a la vez, y la unión lo tomaba por un borde de adentro. Ahora una forma chica que queda sobre el cuerpo de la pieza unida es un agujero suyo. En los DXF reales se recuperan tres agujeros en la guitarra y dos en un logo de la muestra; en `Complejo.dxf` no cambia nada.
+  - **La unión tardaba el cuadrado de las formas del grupo.** Con 2.000 letras sueltas en el hueco de un aro, 40 s; ahora unos 3.
+  - **Los huecos de una pieza unida no siempre entraban descartados:** si el color venía «por bloque», o si el hueco era un rectángulo que no entra en ninguna chapa. Ahora entran descartados siempre, por cómo se armaron.
+  - Lo menor que señaló quedó anotado en los «Desvíos» del [`plan.md`](historico/2.1a-lectura-con-imagen/plan.md).
+- **Enzo lo probó con su trabajo «Complejo»** y le gustó: lo volvió a cargar con el aro unido, seccionó la pieza unida en 8 tramos y anidó. Quedaron 31 piezas en el grupo, y el anidado (Sparrow, 240 s, «vaciar chapas» prendido) dio **8 chapas, 31,3 %**: las mismas 8 que el armado a mano del diseñador en Belgrano. Es una sola corrida. Antes de probar se respaldó su base en `backend/local/respaldo-2026-10-12-antes-de-probar-2.1a/`.
+
+### Qué se decidió
+
+- **Unir no corre solo.** En los DXF reales acierta en el aro y falla en un logo de la muestra, donde junta 28 líneas en una mancha y se come 27 letras. La persona lo ve en el dibujo y decide.
+- **Lo que hace general a la importación es que la persona vea el dibujo y corrija,** no sumar reglas por diseño (Enzo, 2026-10-12). Este sub-proyecto es la primera mitad; la pantalla para corregir a mano es 2.1b.
+- **La regla de las islas para las letras ya estaba construida** desde el 2026-10-07 y 08. El plan maestro y el mapa la daban «a medio hacer»: se corrigieron.
+
+### Cambios en el registro
+
+Altas de `PAR-50`, `PAR-51` y `PAR-52`.
+
+### Pendiente
+
+Lo que sigue vivo pasó a la tabla «Pendientes de la lectura con imagen» del [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md) §7. Lo principal:
+
+- **Repetir con varias corridas la comparación con y sin «vaciar chapas».** Lo medido el 2026-10-10 (19 y 18 chapas) incluía los huecos: 14 de las 45 piezas del grupo y 17,95 de sus 23,70 m². Con el trabajo bien leído, una corrida dio 8; una sola no prueba nada, porque Sparrow varía entre corridas iguales.
+- **2.1b:** corregir a mano con clics, unir grupo por grupo, y acercar y mover el dibujo. Es lo que resuelve el logo. Con acercamiento, el detalle del dibujo (`PAR-52`) tiene que depender de cuánto se acerca.
+- Las miniaturas de la tabla de Piezas siguen dadas vuelta; el dibujo nuevo sale derecho.
 
 ---
 

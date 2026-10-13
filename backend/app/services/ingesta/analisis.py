@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import enum
 import math
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
@@ -227,6 +228,10 @@ class Rol(str, enum.Enum):
     #: (`docs/motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.5`). Ver
     #: `_marcar_contrapiezas`.
     CONTRAPIEZA = "contrapieza"
+    #: No va: lo sacó quien carga, mirando el dibujo. No lo sugiere ninguna
+    #: regla; solo llega como corrección (`sugerir_roles`). Lo que tiene
+    #: adentro se lee como si esta forma no estuviera.
+    NO_VA = "no_va"
 
 
 @dataclass(frozen=True)
@@ -239,6 +244,14 @@ class PiezaConRol:
     gemela_id: str | None = None
     #: Solo para `CONTRAPIEZA`: la pieza cuyo agujero llena.
     madre_id: str | None = None
+    #: Solo para `REFERENCIA`: quedó así por no entrar en ninguna chapa.
+    #: Si además no es un rectángulo, es una pieza que se corta
+    #: seccionada, y lo que tiene adentro puede ser su recorte
+    #: (`_marcar_contrapiezas`).
+    no_entra_en_ninguna_chapa: bool = False
+    #: El rol no salió de una regla: lo marcó quien carga. Ninguna pasada
+    #: posterior lo cambia.
+    corregida: bool = False
 
 
 def _firma(pieza: PiezaImportada) -> tuple[float, float]:
@@ -313,6 +326,7 @@ def sugerir_roles(
     area_minima_gemela_mm2: Decimal,
     fraccion_minima_en_hoja: Decimal,
     colores_de_rotulo: frozenset[int],
+    correcciones: Mapping[str, Rol] | None = None,
 ) -> list[PiezaConRol]:
     """Un rol sugerido por pieza, con las reglas de `CART-511` en orden
     de prioridad: hoja → rótulo (color de rótulo fuera de las hojas) →
@@ -321,7 +335,16 @@ def sugerir_roles(
     referencia con gemela tampoco se corta, y lo que está adentro de una
     pieza que se corta es su contra-pieza (en una hoja armada, o fuera
     con el mismo color). Nunca se excluye nada en silencio: sin señal,
-    el default es cortar."""
+    el default es cortar.
+
+    `correcciones` es lo que marcó quien carga mirando el dibujo: de `id`
+    de pieza a `Rol.CORTAR` o `Rol.NO_VA`
+    (`docs/historico/2.1b-corregir-la-lectura/diseno.md §5.1`). Lo corregido
+    manda sobre cualquier regla, y las dos pasadas vuelven a decidir lo
+    demás alrededor: lo que estaba adentro de una forma que ya no va deja
+    de ser su recorte. Una corrección sobre una pieza que no está en el
+    diseño no hace nada."""
+    correcciones = correcciones or {}
     por_id = {p.id: p for p in disenio.piezas}
     ids_de_hojas = {h.pieza_id for h in hojas}
     firmas = {p.id: _firma(p) for p in disenio.piezas}
@@ -338,6 +361,9 @@ def sugerir_roles(
 
     roles = []
     for pieza in disenio.piezas:
+        if pieza.id in correcciones:
+            roles.append(PiezaConRol(pieza.id, correcciones[pieza.id], "lo marcó quien carga", corregida=True))
+            continue
         if pieza.id in ids_de_hojas:
             roles.append(PiezaConRol(pieza.id, Rol.MARCO_DE_CHAPA, "hoja de chapa ya armada"))
             continue
@@ -355,7 +381,16 @@ def sugerir_roles(
                 continue
         dentro_de_hoja = hoja_de[pieza.id] is not None
         if not dentro_de_hoja and not any(_entra_en_formato(pieza.ancho_mm, pieza.alto_mm, f) for f in formatos):
-            roles.append(PiezaConRol(pieza.id, Rol.REFERENCIA, "no entra en ningún formato: no se corta tal cual"))
+            roles.append(
+                PiezaConRol(
+                    pieza.id,
+                    Rol.REFERENCIA,
+                    "no entra en ningún formato: no se corta tal cual",
+                    # Sin formatos en el catálogo no entra nada, y eso no
+                    # dice nada de la pieza.
+                    no_entra_en_ninguna_chapa=bool(formatos),
+                )
+            )
             continue
         roles.append(PiezaConRol(pieza.id, Rol.CORTAR, "sin otra señal"))
     return _marcar_contrapiezas(_heredar_referencia_de_gemelas(roles, por_id), por_id, hoja_de)
@@ -369,7 +404,7 @@ def _heredar_referencia_de_gemelas(roles: list[PiezaConRol], por_id: dict[str, P
     por_gemela = {r.pieza_id for r in roles if r.rol is Rol.REFERENCIA and r.gemela_id is not None}
     resultado = []
     for rol in roles:
-        if rol.rol is Rol.CORTAR and rol.gemela_id is None:
+        if rol.rol is Rol.CORTAR and rol.gemela_id is None and not rol.corregida:
             actual = por_id[rol.pieza_id]
             while actual.contenida_en_id is not None and actual.contenida_en_id in por_id:
                 if actual.contenida_en_id in por_gemela:
@@ -388,6 +423,12 @@ def _marcar_contrapiezas(
     """Una pieza a cortar que está adentro de otra que también se corta es
     el recorte de su agujero, su contra-pieza: en una hoja armada siempre,
     y fuera de las hojas solo si tiene el color de su madre.
+
+    «Se corta» incluye a la forma que no entra en ninguna chapa y no es un
+    rectángulo: esa se corta seccionada (un aro de 4,6 m), y sus huecos
+    son huecos igual que los de una letra. Un rectángulo que no entra es
+    un tablero o un marco, y lo que tiene adentro son piezas
+    (`docs/historico/2.1a-lectura-con-imagen/diseno.md §5.1`).
 
     No se mide cuánto llena el agujero. El parser dibuja toda forma
     interior como agujero de su contenedora y además como pieza propia
@@ -417,9 +458,17 @@ def _marcar_contrapiezas(
             profundidad, actual = profundidad + 1, por_id[actual.contenida_en_id]
         return profundidad
 
+    def _se_corta(pieza_id: str) -> bool:
+        rol = rol_de[pieza_id]
+        return rol.rol is Rol.CORTAR or (rol.no_entra_en_ninguna_chapa and not _es_rectangular(por_id[pieza_id]))
+
     for pieza_id in sorted(rol_de, key=_profundidad):
         madre = rol_de.get(por_id[pieza_id].contenida_en_id or "")
-        if madre is None or rol_de[pieza_id].rol is not Rol.CORTAR or madre.rol is not Rol.CORTAR:
+        # Lo que marcó quien carga no se toca. Y una forma que no va no se
+        # corta, así que no es madre de nadie: lo de adentro queda libre.
+        if madre is None or rol_de[pieza_id].corregida:
+            continue
+        if not _se_corta(pieza_id) or not _se_corta(madre.pieza_id):
             continue
         color = por_id[pieza_id].color_aci
         en_hoja = hoja_de[pieza_id] is not None
@@ -433,3 +482,30 @@ def _marcar_contrapiezas(
             madre_id=madre.pieza_id,
         )
     return [rol_de[r.pieza_id] for r in roles]
+
+
+def sin_los_huecos_de_lo_que_no_va(piezas: list[PiezaImportada], no_van: Collection[str]) -> list[PiezaImportada]:
+    """Las piezas, sin los agujeros que eran el contorno de una forma que
+    quien carga sacó (`Rol.NO_VA`). Una forma que no va no es el hueco de
+    nadie: la pieza que la tenía adentro queda llena ahí
+    (`docs/historico/2.1b-corregir-la-lectura/diseno.md §5.1`).
+
+    El lector toma por agujero a todo contorno que cae adentro de otro
+    (`_clasificar_piezas_y_agujeros` en `dxf.py`), y no siempre lo es: en
+    el logo de la muestra, la mitad de abajo del palo de la «T» está
+    dibujada otra vez, adentro de la letra. Sirve igual para los huecos
+    de una pieza unida (`uniones.py`), que también son formas aparte.
+
+    Una pieza que no tenía ninguno de esos agujeros sale como entró."""
+    fuera = {tuple(pieza.contorno_mm) for pieza in piezas if pieza.id in no_van}
+    resultado = []
+    for pieza in piezas:
+        quedan = [agujero for agujero in pieza.agujeros_mm if tuple(agujero) not in fuera]
+        if len(quedan) != len(pieza.agujeros_mm):
+            llena = Polygon(
+                [(float(x), float(y)) for x, y in pieza.contorno_mm],
+                [[(float(x), float(y)) for x, y in agujero] for agujero in quedan],
+            )
+            pieza = replace(pieza, agujeros_mm=quedan, area_real_mm2=Decimal(str(llena.area)))
+        resultado.append(pieza)
+    return resultado

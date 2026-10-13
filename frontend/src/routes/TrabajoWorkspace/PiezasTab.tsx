@@ -1,14 +1,17 @@
 import { Fragment, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { usePiezas, useSubirDxf, useDescartarPieza, useDeshacerSeccionado } from "../../hooks/usePiezas";
+import { usePiezas, useSubirDxf, useLeerDxf, useDescartarPieza, useDeshacerSeccionado } from "../../hooks/usePiezas";
 import { useGrupos } from "../../hooks/useGrupos";
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import PiezaMiniPreview from "../../components/PiezaMiniPreview";
 import Banner from "../../components/Banner";
 import SeccionarPanel from "../../components/Seccionado/SeccionarPanel";
+import LecturaPanel from "../../components/LecturaDxf/LecturaPanel";
+import { esLaLecturaDe } from "../../components/LecturaDxf/dibujo";
 import { originalesASeccionar, porQueSeccionar } from "../../components/Seccionado/geometria";
+import { crearTurnos } from "../../components/Seccionado/turnos";
 import { ApiError } from "../../api/client";
-import type { Pieza } from "../../api/piezasYgrupos";
+import type { Correcciones, LecturaDxf, Pieza } from "../../api/piezasYgrupos";
 import { escalaParaCargar } from "./cargaDxf";
 
 export default function PiezasTab() {
@@ -27,6 +30,7 @@ export default function PiezasTab() {
   const aSeccionar = originalesASeccionar(pedidas, piezas ?? []);
   const yaSeccionadas = (piezas ?? []).filter((p) => aSeccionar.has(p.id) && p.seccionado).length;
   const subirDxf = useSubirDxf(id);
+  const leerDxf = useLeerDxf(id);
   const descartarPieza = useDescartarPieza(id);
   const deshacerSeccionado = useDeshacerSeccionado(id);
   const { data: grupos } = useGrupos(id);
@@ -47,23 +51,86 @@ export default function PiezasTab() {
   // explorador.
   const [archivoActual, setArchivoActual] = useState<File | null>(null);
   const escala = escalaParaCargar(escalaAMm);
+  // Cómo leyó el servidor el archivo, con qué archivo, escala y
+  // correcciones se pidió. Nada se guarda hasta «Cargar»; si después
+  // cambia el archivo o la escala, esta lectura queda vieja y el panel
+  // se cierra solo.
+  const [lectura, setLectura] = useState<{
+    datos: LecturaDxf;
+    archivo: File;
+    escala: string;
+    correcciones: Correcciones;
+  } | null>(null);
+  const [unir, setUnir] = useState(false);
+  // Lo último que se marcó sobre el dibujo. Mientras llega la lectura que
+  // lo aplica va un paso adelante de `lectura.correcciones`, que es lo
+  // que se está viendo, y lo que se carga.
+  const [correcciones, setCorrecciones] = useState<Correcciones>({});
+  // Cada clic pide la lectura de nuevo: solo vale la última respuesta.
+  const [pedidos] = useState(crearTurnos);
+  const lecturaVigente = esLaLecturaDe(lectura, archivoActual, escala) ? lectura : null;
+
+  const noSePudoSubir = "No se pudo subir el archivo. Si lo modificaste después de elegirlo, volvé a elegirlo.";
+
+  /** Pide la lectura con las correcciones `pedidas`. `aLaVista` son las
+   * de la lectura que se está viendo: si el pedido falla, se sigue viendo
+   * esa, y la lista vuelve a ser la suya. */
+  async function leer(archivo: File, escalaPedida: string, pedidas: Correcciones, aLaVista: Correcciones) {
+    const turno = pedidos.tomar();
+    setError(null);
+    setCorrecciones(pedidas);
+    try {
+      const datos = await leerDxf.mutateAsync({ archivo, escalaAMm: escalaPedida, correcciones: pedidas });
+      if (!pedidos.vigente(turno)) return;
+      setLectura({ datos, archivo, escala: escalaPedida, correcciones: pedidas });
+    } catch (e) {
+      if (!pedidos.vigente(turno)) return;
+      setCorrecciones(aLaVista);
+      setError(e instanceof ApiError ? e.message : noSePudoSubir);
+    }
+  }
+
+  function alVerLectura() {
+    if (!archivoActual || escala === null) return;
+    setAvisos([]);
+    setLectura(null);
+    // Ni la unión ni las correcciones vienen de antes: se deciden
+    // mirando este dibujo.
+    setUnir(false);
+    void leer(archivoActual, escala, {}, {});
+  }
+
+  function alCorregir(nuevas: Correcciones) {
+    if (!lecturaVigente) return;
+    void leer(lecturaVigente.archivo, lecturaVigente.escala, nuevas, lecturaVigente.correcciones);
+  }
+
+  /** Cierra el panel. Anular el turno deja sin valor a la lectura que
+   * estuviera en camino: si no, al llegar lo abriría de nuevo. */
+  function cerrarLectura() {
+    pedidos.anular();
+    setLectura(null);
+    setCorrecciones({});
+  }
 
   async function alCargar() {
-    if (!archivoActual || escala === null) return;
+    if (!lecturaVigente) return;
     setError(null);
     setAvisos([]);
     try {
-      const resultado = await subirDxf.mutateAsync({ archivo: archivoActual, escalaAMm: escala });
+      const resultado = await subirDxf.mutateAsync({
+        archivo: lecturaVigente.archivo,
+        escalaAMm: lecturaVigente.escala,
+        unir: unir && lecturaVigente.datos.unida !== null,
+        correcciones: lecturaVigente.correcciones,
+      });
+      cerrarLectura();
       setAvisos([
         `${resultado.piezas_creadas} pieza(s) importada(s).`,
         ...resultado.advertencias,
       ]);
     } catch (e) {
-      setError(
-        e instanceof ApiError
-          ? e.message
-          : "No se pudo subir el archivo. Si lo modificaste después de elegirlo, volvé a elegirlo."
-      );
+      setError(e instanceof ApiError ? e.message : noSePudoSubir);
     }
   }
 
@@ -215,29 +282,39 @@ export default function PiezasTab() {
           </button>
           <span className="text-sm">{archivoActual ? archivoActual.name : "Ningún archivo elegido"}</span>
         </div>
-        {archivoActual && (
+        {archivoActual && !lecturaVigente && (
           <div className="mt-2">
             <button
               className="bg-cut text-paper rounded px-3 py-1 text-sm disabled:opacity-50"
-              disabled={escala === null || subirDxf.isPending}
-              onClick={() => void alCargar()}
+              disabled={escala === null || leerDxf.isPending}
+              onClick={alVerLectura}
             >
-              {subirDxf.isPending
-                ? "Cargando…"
-                : `Cargar «${archivoActual.name}»${escala === null ? "" : ` a escala ${escala}`}`}
+              {leerDxf.isPending
+                ? "Leyendo…"
+                : `Ver cómo se lee «${archivoActual.name}»${escala === null ? "" : ` a escala ${escala}`}`}
             </button>
             {escala === null && (
               <p className="text-sm text-conflict mt-1">La escala tiene que ser un número mayor que cero.</p>
             )}
-            {piezas && piezas.length > 0 && (
-              <p className="text-sm mt-1">
-                Cargar reemplaza {piezas.length === 1 ? "la pieza" : `las ${piezas.length} piezas`} que ya tiene este
-                trabajo.
-              </p>
-            )}
+            <p className="text-sm mt-1">Todavía no se carga nada: primero se muestra el dibujo.</p>
           </div>
         )}
       </div>
+
+      {lecturaVigente && (
+        <LecturaPanel
+          lectura={lecturaVigente.datos}
+          unir={unir}
+          alCambiarUnir={setUnir}
+          correcciones={correcciones}
+          alCorregir={alCorregir}
+          leyendo={leerDxf.isPending}
+          alCargar={() => void alCargar()}
+          alCancelar={cerrarLectura}
+          cargando={subirDxf.isPending}
+          piezasQueReemplaza={piezas?.length ?? 0}
+        />
+      )}
 
       {error && (
         <div className="mb-4">

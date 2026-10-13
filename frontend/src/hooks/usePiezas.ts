@@ -3,8 +3,10 @@ import {
   aplicarSeccionado,
   deshacerSeccionado,
   descartarPieza,
+  leerDxf,
   listarPiezas,
   subirDxf,
+  type Correcciones,
   type PedidoAplicarSeccionado,
 } from "../api/piezasYgrupos";
 
@@ -15,9 +17,33 @@ export function usePiezas(trabajoId: number) {
 export function useSubirDxf(trabajoId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ archivo, escalaAMm }: { archivo: File; escalaAMm: string }) =>
-      subirDxf(trabajoId, archivo, escalaAMm),
+    mutationFn: ({
+      archivo,
+      escalaAMm,
+      unir,
+      correcciones,
+    }: {
+      archivo: File;
+      escalaAMm: string;
+      unir: boolean;
+      correcciones: Correcciones;
+    }) => subirDxf(trabajoId, archivo, escalaAMm, unir, correcciones),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
+  });
+}
+
+/** No guarda nada en el servidor, así que no hay consulta que refrescar. */
+export function useLeerDxf(trabajoId: number) {
+  return useMutation({
+    mutationFn: ({
+      archivo,
+      escalaAMm,
+      correcciones,
+    }: {
+      archivo: File;
+      escalaAMm: string;
+      correcciones: Correcciones;
+    }) => leerDxf(trabajoId, archivo, escalaAMm, correcciones),
   });
 }
 

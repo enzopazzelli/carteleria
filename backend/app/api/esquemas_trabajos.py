@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -70,6 +71,47 @@ class ImportacionDXFLeer(BaseModel):
     contornos_no_cerrados: int
     lineas_duplicadas_descartadas: int
     advertencias: list[str]
+
+
+class FormaLeida(BaseModel):
+    """Una forma de una lectura, para dibujarla. El contorno viene en la
+    posición del dibujo y con menos vértices (`PAR-52`): no es el que se
+    guarda al cargar."""
+
+    id_origen: str
+    contorno_mm: list[list[float]]
+    agujeros_mm: list[list[list[float]]]
+    #: `se_corta`: se carga y se anida. `descartada`: se carga atenuada,
+    #: sin cortarse (el recorte de un hueco). `no_va`: la sacó quien
+    #: carga, y no se carga.
+    estado: Literal["se_corta", "descartada", "no_va"]
+    #: El estado no salió de una regla: lo marcó quien carga.
+    corregida: bool
+    #: Por qué entra descartada o no va; `None` si se corta sin que nadie
+    #: lo haya marcado.
+    motivo: str | None
+
+
+class LecturaLeer(BaseModel):
+    formas: list[FormaLeida]
+    #: Todo lo que se carga sin descartar, igual que al cargar: incluye
+    #: lo que después hay que seccionar.
+    a_cortar: int
+    descartadas: int
+    no_van: int
+    advertencias: list[str]
+
+
+class LecturaDXFLeer(BaseModel):
+    """Cómo se leería un DXF, sin haber guardado nada."""
+
+    contornos_no_cerrados: int
+    lineas_duplicadas_descartadas: int
+    #: Cuántas líneas reemplazaría la unión. Cero si ninguna se pisa.
+    formas_que_se_pisan: int
+    sin_unir: LecturaLeer
+    #: Solo si hay formas que se pisan.
+    unida: LecturaLeer | None
 
 
 # --- Grupos de corte (`CART-211`) -----------------------------------------
