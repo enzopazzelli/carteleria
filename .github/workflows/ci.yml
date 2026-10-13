@@ -36,6 +36,11 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
 
+      # El PDF del presupuesto se genera con WeasyPrint, que usa Pango: una
+      # biblioteca del sistema que no viene con pip. Sin ella, las pruebas
+      # marcadas `pango` fallan acá (en el CI no se saltean: tests/conftest.py).
+      - run: sudo apt-get update && sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0
+
       - run: pip install -r requirements-dev.txt
 
       # Las migraciones tienen que poder correr de cero contra una base vacía.

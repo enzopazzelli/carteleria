@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Presupuesto {{ doc.codigo }}</title>
+<style>
+  /* La tipografía va guardada al lado para que el PDF salga igual en
+     Windows y en el servidor, que no tiene las fuentes de Windows. */
+  @font-face { font-family: "Source Sans 3"; font-weight: 400; src: url("fuentes/SourceSans3-Regular.ttf"); }
+  @font-face { font-family: "Source Sans 3"; font-weight: 700; src: url("fuentes/SourceSans3-Bold.ttf"); }
+
+  @page {
+    size: A4;
+    margin: 20mm 18mm;
+    @bottom-right {
+      content: "Página " counter(page) " de " counter(pages);
+      font-family: "Source Sans 3"; font-size: 8pt; color: #777;
+    }
+  }
+
+  body { font-family: "Source Sans 3"; font-size: 10.5pt; color: #1b1b1b; margin: 0; }
+
+  header { display: flex; justify-content: space-between; align-items: flex-start;
+           border-bottom: 2px solid #1b1b1b; padding-bottom: 8mm; }
+  h1 { font-size: 20pt; margin: 0 0 2mm; }
+  .codigo { font-size: 11pt; letter-spacing: .04em; }
+  /* Espacio reservado: el logo y el formato de la empresa llegan en 4.4. */
+  .logo { width: 45mm; height: 22mm; border: 1px dashed #999; }
+
+  dl { display: grid; grid-template-columns: 32mm 1fr; row-gap: 1.5mm; margin: 8mm 0; }
+  dt { color: #666; }
+  dd { margin: 0; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; border-bottom: 1px solid #1b1b1b; padding: 2mm 0;
+       font-size: 9pt; text-transform: uppercase; letter-spacing: .04em; }
+  td { padding: 2.2mm 0; border-bottom: 1px solid #ddd; vertical-align: top; }
+  tr { break-inside: avoid; }
+  .importe { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; padding-left: 6mm; }
+
+  .totales { width: 80mm; margin: 8mm 0 0 auto; break-inside: avoid; }
+  .totales td { border: 0; padding: 1.2mm 0; }
+  .totales tr:last-child td { border-top: 2px solid #1b1b1b; font-weight: 700;
+                              font-size: 13pt; padding-top: 2.5mm; }
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Presupuesto</h1>
+      <div class="codigo">{{ doc.codigo }}</div>
+    </div>
+    <div class="logo"></div>
+  </header>
+
+  <dl>
+    <dt>Cliente</dt>
+    <dd>{{ doc.cliente_nombre }}{% if doc.cliente_contacto %}<br>{{ doc.cliente_contacto }}{% endif %}</dd>
+    <dt>Fecha</dt>
+    <dd>{{ doc.fecha | fecha }}</dd>
+    <dt>Válido hasta</dt>
+    <dd>{{ doc.valido_hasta | fecha }}</dd>
+  </dl>
+
+  <table>
+    <thead>
+      <tr><th>Detalle</th><th class="importe">Importe</th></tr>
+    </thead>
+    <tbody>
+      {% for item in doc.items %}
+      <tr><td>{{ item.texto }}</td><td class="importe">{{ item.importe | importe(doc.moneda) }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="totales">
+    <tr><td>Subtotal</td><td class="importe">{{ doc.subtotal | importe(doc.moneda) }}</td></tr>
+    <tr><td>IVA {{ doc.iva_pct | porcentaje }} %</td><td class="importe">{{ doc.monto_iva | importe(doc.moneda) }}</td></tr>
+    <tr><td>Total</td><td class="importe">{{ doc.total | importe(doc.moneda) }}</td></tr>
+  </table>
+</body>
+</html>

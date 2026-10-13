@@ -17,3 +17,9 @@ python-multipart==0.0.20
 
 # Motor irregular experimental, seleccionable sin reemplazar rectpack.
 spyrrow==0.9.0
+
+# PDF del presupuesto (docs/plan/1.3-pdf-del-presupuesto/diseno.md, D-16).
+# WeasyPrint usa además Pango, que no viene con pip: en Windows,
+# docs/GUIA-PRUEBAS-LOCALES.md §5; en el CI, .github/workflows/ci.yml.
+weasyprint==70.0
+jinja2==3.1.6
