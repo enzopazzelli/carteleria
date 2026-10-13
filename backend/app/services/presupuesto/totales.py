@@ -31,8 +31,12 @@ class ItemCuenta:
     `precio_base` es el escrito a mano o, si no hay, el costo más el
     margen. `precio_final` es el que sale en el presupuesto: coincide con
     el base salvo que haya un total fijado, que los ajusta a todos.
-    Los dos quedan en `None` si la línea no entra en la cuenta (sin
-    costo, o en otra moneda) o si falta el margen para calcularlos.
+
+    El final queda en `None` si la línea no entra en la cuenta (sin
+    costo, o en otra moneda) o si falta el margen para calcularlo. El
+    base calculado también; el escrito a mano se devuelve siempre, entre
+    o no en la cuenta: es lo que la pantalla muestra en el campo, y un
+    campo vacío con un precio guardado atrás se borra al salir de él.
     """
 
     linea_id: int
@@ -195,13 +199,19 @@ def calcular(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> Cuenta:
     items: list[ItemCuenta] = []
     for i, linea in enumerate(lineas):
         n = posicion.get(i)
+        if linea.precio_cliente is not None:
+            precio_base = redondear(linea.precio_cliente)
+        elif n is not None and bases:
+            precio_base = redondear(bases[n])
+        else:
+            precio_base = None
         items.append(
             ItemCuenta(
                 linea_id=linea.id,
                 rubro=linea.rubro,
                 texto=linea.texto_cliente or linea.descripcion,
                 costo=_costo_efectivo(linea),
-                precio_base=redondear(bases[n]) if n is not None and bases else None,
+                precio_base=precio_base,
                 a_mano=linea.precio_cliente is not None,
                 precio_final=finales[n] if n is not None and finales else None,
             )

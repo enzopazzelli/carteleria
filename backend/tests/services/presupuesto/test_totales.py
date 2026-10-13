@@ -162,6 +162,27 @@ def test_un_precio_a_mano_no_reemplaza_al_costo_que_falta():
     assert cuenta.items[0].a_mano is True
 
 
+def test_un_precio_a_mano_se_muestra_aunque_la_linea_no_tenga_costo():
+    # El precio final no existe (falta el costo), pero lo que se escribió
+    # tiene que verse: si el campo quedara vacío, salir de él lo borraría.
+    cuenta = calcular(_presupuesto(), [_linea(1, "Chapa", None, precio_cliente=D("500000"))])
+
+    assert cuenta.items[0].precio_base == D("500000.00")
+    assert cuenta.items[0].precio_final is None
+
+
+def test_un_precio_a_mano_se_muestra_aunque_falte_el_margen():
+    # Es el camino de «un precio a mano en cada ítem»: se cargan de a uno,
+    # y cada uno tiene que quedar a la vista mientras faltan los demás.
+    lineas = [_linea(1, "Chapa", "400000", precio_cliente=D("150000")), _linea(2, "Flete", "80000")]
+
+    cuenta = calcular(_presupuesto(margen_pct=None), lineas)
+
+    assert [item.precio_base for item in cuenta.items] == [D("150000.00"), None]
+    assert _finales(cuenta) == [None, None]
+    assert cuenta.faltantes == ["Falta cargar el margen, o un precio a mano en cada ítem."]
+
+
 def test_una_linea_en_otra_moneda_queda_afuera():
     cuenta = calcular(_presupuesto(), [_linea(1, "Chapa", "400000", moneda="USD")])
 
