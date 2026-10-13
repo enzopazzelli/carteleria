@@ -34,7 +34,10 @@
   table { width: 100%; border-collapse: collapse; }
   th { text-align: left; border-bottom: 1px solid #1b1b1b; padding: 2mm 0;
        font-size: 9pt; text-transform: uppercase; letter-spacing: .04em; }
-  td { padding: 2.2mm 0; border-bottom: 1px solid #ddd; vertical-align: top; }
+  /* `overflow-wrap`: una palabra sin espacios (un enlace pegado) se corta
+     dentro de su columna. Sin esto ensancha la tabla y empuja los importes
+     afuera de la hoja. */
+  td { padding: 2.2mm 0; border-bottom: 1px solid #ddd; vertical-align: top; overflow-wrap: anywhere; }
   tr { break-inside: avoid; }
   .importe { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; padding-left: 6mm; }
 

@@ -164,3 +164,26 @@ def test_muchos_items_ocupan_mas_de_una_hoja_y_no_se_pierde_ninguno():
         assert f"Renglón número {n}\n" in texto or f"Renglón número {n} " in texto, n
     assert "1.400.000,00" in texto
     assert f"Página 1 de {len(lector.pages)}" in texto
+
+
+@pytest.mark.pango
+def test_una_palabra_larguisima_no_saca_los_importes_de_la_hoja():
+    # Un enlace pegado, sin espacios, ensanchaba la tabla hasta empujar la
+    # columna de importes afuera de la hoja. El texto sigue en el archivo
+    # aunque no se vea, así que no alcanza con buscarlo: se mide dónde
+    # arranca cada texto dibujado, y ninguno puede arrancar fuera de la hoja.
+    items = [ItemDocumento("x" * 160, D("1234.56")), ItemDocumento("Flete", D("2000"))]
+    pagina = PdfReader(io.BytesIO(pdf.generar_pdf(_documento(items=items)))).pages[0]
+    ancho = float(pagina.mediabox.width)
+
+    inicios: list[float] = []
+
+    def anotar(operador, _argumentos, cm, tm):
+        if operador in (b"Tj", b"TJ"):
+            # En puntos, desde el borde izquierdo de la hoja.
+            inicios.append(cm[0] * tm[4] + cm[2] * tm[5] + cm[4])
+
+    pagina.extract_text(visitor_operand_before=anotar)
+
+    assert inicios, "no se encontró ningún texto dibujado"
+    assert max(inicios) < ancho, f"un texto arranca en {max(inicios):.0f} pt y la hoja mide {ancho:.0f}"
