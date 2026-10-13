@@ -969,7 +969,6 @@ def _importes(texto: str) -> set[str]:
     return set(re.findall(r"\d{1,3}(?:\.\d{3})*,\d{2}", texto))
 
 
-@pytest.mark.pango
 def test_el_pdf_trae_lo_del_cliente_y_nada_de_lo_interno(cliente):
     presupuesto, lineas = _presupuesto_del_ejemplo(cliente)
     cliente.patch(f"/lineas-costo/{lineas['Instalación']['id']}/cliente", json={"precio_cliente": "150000"})
@@ -1006,22 +1005,6 @@ def test_el_pdf_de_un_presupuesto_incompleto_da_409_y_dice_que_falta(cliente):
 
 def test_el_pdf_de_un_presupuesto_inexistente_da_404(cliente):
     assert cliente.get("/presupuestos/999/pdf").status_code == 404
-
-
-def test_sin_las_bibliotecas_la_ruta_del_pdf_da_503_y_el_resto_sigue_andando(cliente, monkeypatch):
-    from app.services.presupuesto import pdf
-
-    def _sin_pango():
-        raise OSError("cannot load library 'libgobject-2.0-0'")
-
-    monkeypatch.setattr(pdf, "_cargar_weasyprint", _sin_pango)
-    presupuesto, _lineas = _presupuesto_del_ejemplo(cliente)
-
-    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/pdf")
-
-    assert respuesta.status_code == 503
-    assert "GUIA-PRUEBAS-LOCALES" in respuesta.json()["detail"]
-    assert cliente.get(f"/presupuestos/{presupuesto['id']}/desglose").status_code == 200
 
 
 # --- Topes: un valor absurdo se rechaza al entrar ---------------------------

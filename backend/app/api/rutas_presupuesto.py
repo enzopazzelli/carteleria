@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from ..costeo import resumen_materiales
 from ..modelos.presupuesto import Cliente, LineaCosto, Presupuesto, RubroLineaCosto
 from ..services.presupuesto.documento import PresupuestoIncompleto, armar_documento, hoy_en_argentina
-from ..services.presupuesto.pdf import BibliotecasPdfFaltantes, generar_pdf
+from ..services.presupuesto.pdf import generar_pdf
 from ..services.presupuesto.totales import Cuenta, calcular
 from .dependencias import obtener_sesion
 from .esquemas_presupuesto import (
@@ -526,12 +526,8 @@ def descargar_pdf(presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
                 "faltantes": error.faltantes,
             },
         ) from error
-    try:
-        contenido = generar_pdf(documento)
-    except BibliotecasPdfFaltantes as error:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(error)) from error
     return Response(
-        contenido,
+        generar_pdf(documento),
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{presupuesto.codigo}.pdf"'},
     )

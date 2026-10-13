@@ -1,8 +1,8 @@
-"""Del documento del cliente al HTML y al PDF (`diseno.md §9` de 1.3).
+"""Del documento del cliente al PDF (`diseno.md §9` de 1.3).
 
-Las pruebas del HTML corren en cualquier máquina. Las marcadas `pango`
-generan un PDF de verdad y necesitan las bibliotecas de WeasyPrint
-(`tests/conftest.py`).
+Todas generan un PDF de verdad y leen lo que quedó escrito en él:
+ReportLab no necesita bibliotecas del sistema, así que corren en
+cualquier máquina.
 """
 from __future__ import annotations
 
@@ -67,12 +67,14 @@ def test_formatear_porcentaje(valor, esperado):
     assert pdf.formatear_porcentaje(D(valor)) == esperado
 
 
-# --- El HTML ---------------------------------------------------------------
+# --- Lo que dice el PDF ----------------------------------------------------
 
 
-def test_el_html_trae_todo_lo_del_documento():
-    html = pdf.renderizar_html(_documento())
+def test_el_pdf_trae_todo_lo_del_documento():
+    contenido = pdf.generar_pdf(_documento())
 
+    assert contenido.startswith(b"%PDF")
+    texto = _texto_del_pdf(contenido)
     for esperado in (
         "P-2026-0007",
         "Farmacia Central",
@@ -87,71 +89,54 @@ def test_el_html_trae_todo_lo_del_documento():
         "IVA 21 %",
         "$ 242.975,21",
         "$ 1.400.000,00",
+        "Página 1 de 1",
     ):
-        assert esperado in html, esperado
+        assert esperado in texto, esperado
 
 
-def test_el_html_escapa_lo_que_escribe_una_persona():
-    html = pdf.renderizar_html(
+def test_lo_que_escribe_una_persona_sale_tal_cual():
+    # Sin escapar, un «<b>» en el nombre del cliente pondría negrita, y una
+    # etiqueta que la biblioteca no conoce cortaría la generación.
+    contenido = pdf.generar_pdf(
         _documento(
             cliente_nombre="Ferretería <b>Hnos</b> & Cía",
             items=[ItemDocumento("Letras <script>alert(1)</script>", D("10"))],
         )
     )
 
-    assert "Ferretería &lt;b&gt;Hnos&lt;/b&gt; &amp; Cía" in html
-    assert "<b>Hnos</b>" not in html
-    assert "<script>" not in html
+    texto = _texto_del_pdf(contenido)
+    assert "Ferretería <b>Hnos</b> & Cía" in texto
+    assert "Letras <script>alert(1)</script>" in texto
 
 
-def test_sin_contacto_el_cliente_ocupa_un_solo_renglon():
-    html = pdf.renderizar_html(_documento(cliente_contacto=None))
+def test_sin_contacto_no_aparece_un_texto_de_relleno():
+    texto = _texto_del_pdf(pdf.generar_pdf(_documento(cliente_contacto=None)))
 
-    assert "<dd>Farmacia Central</dd>" in html
+    assert "Farmacia Central" in texto
+    assert "None" not in texto
 
 
 def test_el_importe_usa_la_moneda_del_documento():
-    html = pdf.renderizar_html(_documento(moneda="USD"))
+    texto = _texto_del_pdf(pdf.generar_pdf(_documento(moneda="USD")))
 
-    assert "US$ 1.400.000,00" in html
-
-
-# --- El PDF ----------------------------------------------------------------
+    assert "US$ 1.400.000,00" in texto
 
 
-def test_sin_las_bibliotecas_el_error_dice_que_instalar(monkeypatch):
-    def _sin_pango():
-        raise OSError("cannot load library 'libgobject-2.0-0'")
-
-    monkeypatch.setattr(pdf, "_cargar_weasyprint", _sin_pango)
-
-    with pytest.raises(pdf.BibliotecasPdfFaltantes, match="GUIA-PRUEBAS-LOCALES"):
-        pdf.generar_pdf(_documento())
+# --- Cómo se ve ------------------------------------------------------------
 
 
-@pytest.mark.pango
-def test_genera_un_pdf_con_el_texto_del_documento():
-    contenido = pdf.generar_pdf(_documento())
-
-    assert contenido.startswith(b"%PDF")
-    texto = _texto_del_pdf(contenido)
-    for esperado in ("P-2026-0007", "Farmacia Central", "Instalación", "149.101,13", "1.400.000,00", "Página 1 de 1"):
-        assert esperado in texto, esperado
-
-
-@pytest.mark.pango
 def test_la_tipografia_del_repo_queda_dentro_del_pdf():
-    # Si la plantilla no encuentra la fuente, WeasyPrint usa otra sin
-    # avisar y el PDF sale distinto en cada máquina.
+    # Si no se usa la fuente guardada en el repo, el PDF sale con otra (la
+    # de fábrica es Helvetica) y se ve distinto del diseño. Incluye el pie:
+    # «Página X de Y» se escribe aparte del resto de la hoja.
     lector = PdfReader(io.BytesIO(pdf.generar_pdf(_documento())))
 
     fuentes = {str(fuente.get_object()["/BaseFont"]) for fuente in lector.pages[0]["/Resources"]["/Font"].values()}
 
     assert fuentes, "el PDF no declara ninguna fuente"
-    assert all("Source-Sans-3" in nombre for nombre in fuentes), fuentes
+    assert all("SourceSans3" in nombre.replace("-", "") for nombre in fuentes), fuentes
 
 
-@pytest.mark.pango
 def test_muchos_items_ocupan_mas_de_una_hoja_y_no_se_pierde_ninguno():
     items = [ItemDocumento(f"Renglón número {n}", D("1000")) for n in range(1, 81)]
 
@@ -166,7 +151,6 @@ def test_muchos_items_ocupan_mas_de_una_hoja_y_no_se_pierde_ninguno():
     assert f"Página 1 de {len(lector.pages)}" in texto
 
 
-@pytest.mark.pango
 def test_una_palabra_larguisima_no_saca_los_importes_de_la_hoja():
     # Un enlace pegado, sin espacios, ensanchaba la tabla hasta empujar la
     # columna de importes afuera de la hoja. El texto sigue en el archivo
