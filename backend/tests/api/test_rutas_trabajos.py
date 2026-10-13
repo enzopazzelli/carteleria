@@ -3,6 +3,7 @@
 """
 from __future__ import annotations
 
+import json
 from decimal import Decimal
 
 import ezdxf
@@ -457,11 +458,16 @@ def _dos_franjas_que_se_pisan(msp, color=None):
     _franja(msp, 1050, 100, 1000, color=color)
 
 
-def _ver_lectura(cliente, trabajo_id, contenido, *, escala_a_mm="1"):
+def _ver_lectura(cliente, trabajo_id, contenido, *, escala_a_mm="1", correcciones=None):
+    """`correcciones`: lo que viaja en ese campo. Un diccionario se manda
+    como JSON; un texto, tal cual (para probar los que no sirven)."""
+    datos = {"escala_a_mm": escala_a_mm}
+    if correcciones is not None:
+        datos["correcciones"] = correcciones if isinstance(correcciones, str) else json.dumps(correcciones)
     return cliente.post(
         f"/trabajos/{trabajo_id}/dxf/lectura",
         files={"archivo": ("pieza.dxf", contenido, "application/dxf")},
-        data={"escala_a_mm": escala_a_mm},
+        data=datos,
     )
 
 
@@ -492,9 +498,9 @@ def test_la_lectura_trae_cada_forma_en_su_lugar_y_cuales_entran_descartadas(clie
     lectura = cuerpo["sin_unir"]
     assert (lectura["a_cortar"], lectura["descartadas"]) == (1, 1)
     formas = {round(max(x for x, _ in f["contorno_mm"]) - min(x for x, _ in f["contorno_mm"])): f for f in lectura["formas"]}
-    assert formas[600]["descartada"] is False and formas[600]["motivo"] is None
+    assert formas[600]["estado"] == "se_corta" and formas[600]["motivo"] is None
     assert len(formas[600]["agujeros_mm"]) == 1
-    assert formas[200]["descartada"] is True and "recorte" in formas[200]["motivo"]
+    assert formas[200]["estado"] == "descartada" and "recorte" in formas[200]["motivo"]
     # En la posición del dibujo, no en el marco local en que se guarda: el
     # centro de la «O» arranca en x = 100.
     assert min(x for x, _ in formas[200]["contorno_mm"]) == pytest.approx(100)
@@ -516,9 +522,9 @@ def test_la_lectura_de_formas_que_se_pisan_trae_tambien_la_unida(cliente, tmp_pa
     assert (unida["a_cortar"], unida["descartadas"]) == (1, 2)
     assert any("4 formas que se pisaban quedaron unidas en 1 pieza" in aviso for aviso in unida["advertencias"])
     pieza = next(f for f in unida["formas"] if f["id_origen"].endswith("/unida"))
-    assert pieza["descartada"] is False
+    assert pieza["estado"] == "se_corta"
     assert len(pieza["agujeros_mm"]) == 2
-    assert all(f["descartada"] for f in unida["formas"] if "/hueco" in f["id_origen"])
+    assert all(f["estado"] == "descartada" for f in unida["formas"] if "/hueco" in f["id_origen"])
 
 
 def test_cargar_uniendo_guarda_la_pieza_unida_y_sus_huecos_descartados(cliente, tmp_path):
@@ -565,7 +571,7 @@ def test_lo_que_muestra_la_lectura_es_lo_que_guarda_la_carga(cliente, tmp_path, 
 
     guardadas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
     assert sorted((p["id_origen"], p["descartada"]) for p in guardadas) == sorted(
-        (f["id_origen"], f["descartada"]) for f in lectura["formas"]
+        (f["id_origen"], f["estado"] == "descartada") for f in lectura["formas"]
     )
 
 
@@ -612,7 +618,7 @@ def test_los_huecos_de_la_pieza_unida_entran_descartados_aunque_no_se_sepa_su_co
     lectura = _ver_lectura(cliente, trabajo["id"], contenido).json()["unida"]
 
     assert (lectura["a_cortar"], lectura["descartadas"]) == (1, 2)
-    assert all(f["descartada"] for f in lectura["formas"] if "/hueco" in f["id_origen"])
+    assert all(f["estado"] == "descartada" for f in lectura["formas"] if "/hueco" in f["id_origen"])
 
 
 def test_un_hueco_rectangular_de_la_pieza_unida_entra_descartado_aunque_no_entre_en_ninguna_chapa(cliente, tmp_path):
@@ -633,7 +639,7 @@ def test_un_hueco_rectangular_de_la_pieza_unida_entra_descartado_aunque_no_entre
 
     huecos = [f for f in lectura["formas"] if "/hueco" in f["id_origen"]]
     assert len(huecos) == 2
-    assert all(f["descartada"] for f in huecos)
+    assert all(f["estado"] == "descartada" for f in huecos)
 
 
 def test_unir_un_dibujo_donde_nada_se_pisa_carga_lo_mismo(cliente, tmp_path):
@@ -678,3 +684,141 @@ def test_ver_la_lectura_con_una_escala_que_no_es_positiva_da_400(cliente, tmp_pa
 
     assert respuesta.status_code == 400
     assert "escala" in respuesta.json()["detail"]
+
+
+# --- Corregir la lectura a mano (2.1b) -----------------------------------
+#
+# `docs/plan/2.1b-corregir-la-lectura/diseno.md`. Quien carga marca formas
+# como «se corta» o «no va»; la lectura y la carga reciben la misma lista.
+
+
+def _logo_chico(msp):
+    """Como el logo de la muestra: un contorno de 900 que rodea una letra
+    de 500, y la letra con su centro de 200. Sin corregir se lee al revés:
+    el contorno se corta y la letra es su recorte."""
+    _octogono(msp, 0, 0, 900)
+    _octogono(msp, 200, 200, 500)
+    _octogono(msp, 350, 350, 200)
+
+
+def _por_ancho(formas) -> dict:
+    """Las formas de una lectura, por su ancho en mm."""
+    return {round(max(x for x, _ in f["contorno_mm"]) - min(x for x, _ in f["contorno_mm"])): f for f in formas}
+
+
+def _totales(lectura) -> tuple[int, int, int]:
+    return lectura["a_cortar"], lectura["descartadas"], lectura["no_van"]
+
+
+def _trabajo_con_el_logo(cliente, tmp_path):
+    """El trabajo, el DXF y el nombre de cada forma por su ancho."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "logo.dxf", _logo_chico)
+    formas = _por_ancho(_ver_lectura(cliente, trabajo["id"], contenido).json()["sin_unir"]["formas"])
+    return trabajo, contenido, {ancho: f["id_origen"] for ancho, f in formas.items()}
+
+
+def test_la_lectura_dice_de_cada_forma_si_se_corta_entra_descartada_o_no_va(cliente, tmp_path):
+    trabajo, contenido, _ = _trabajo_con_el_logo(cliente, tmp_path)
+
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido).json()["sin_unir"]
+
+    formas = _por_ancho(lectura["formas"])
+    assert [formas[ancho]["estado"] for ancho in (900, 500, 200)] == ["se_corta", "descartada", "se_corta"]
+    assert not any(f["corregida"] for f in lectura["formas"])
+    assert _totales(lectura) == (2, 1, 0)
+
+
+def test_marcar_un_contorno_como_que_no_va_pone_a_cortar_lo_que_encierra(cliente, tmp_path):
+    trabajo, contenido, ids = _trabajo_con_el_logo(cliente, tmp_path)
+
+    respuesta = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={ids[900]: "no_va"})
+
+    assert respuesta.status_code == 200, respuesta.text
+    lectura = respuesta.json()["sin_unir"]
+    formas = _por_ancho(lectura["formas"])
+    assert formas[900]["estado"] == "no_va" and formas[900]["corregida"] is True
+    assert "quien carga" in formas[900]["motivo"]
+    assert formas[500]["estado"] == "se_corta" and formas[500]["corregida"] is False
+    assert formas[200]["estado"] == "descartada"
+    assert _totales(lectura) == (1, 1, 1)
+    assert any("1 forma" in aviso and "no va" in aviso for aviso in lectura["advertencias"])
+
+
+def test_cargar_con_correcciones_no_guarda_lo_que_no_va(cliente, tmp_path):
+    trabajo, contenido, ids = _trabajo_con_el_logo(cliente, tmp_path)
+
+    respuesta = _subir(cliente, trabajo["id"], contenido, correcciones=json.dumps({ids[900]: "no_va"}))
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["piezas_creadas"] == 2
+    assert any("no va" in aviso for aviso in cuerpo["advertencias"])
+    piezas = {round(Decimal(p["ancho_mm"])): p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()}
+    assert sorted(piezas) == [200, 500], "el contorno no se cargó"
+    assert piezas[500]["descartada"] is False
+    assert piezas[200]["descartada"] is True
+
+
+def test_lo_que_muestra_la_lectura_corregida_es_lo_que_guarda_la_carga(cliente, tmp_path):
+    trabajo, contenido, ids = _trabajo_con_el_logo(cliente, tmp_path)
+    correcciones = {ids[900]: "no_va", ids[200]: "cortar"}
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido, correcciones=correcciones).json()["sin_unir"]
+
+    _subir(cliente, trabajo["id"], contenido, correcciones=json.dumps(correcciones))
+
+    guardadas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    assert sorted((p["id_origen"], p["descartada"]) for p in guardadas) == sorted(
+        (f["id_origen"], f["estado"] == "descartada") for f in lectura["formas"] if f["estado"] != "no_va"
+    )
+    assert _totales(lectura) == (2, 0, 1), "el centro forzado a cortar no pasa a recorte de la letra"
+
+
+def test_un_hueco_de_la_pieza_unida_se_puede_poner_a_cortar(cliente, tmp_path):
+    """Los huecos de una pieza unida entran descartados por cómo se arman;
+    lo que marca quien carga también manda sobre eso. Y la corrección
+    nombra una forma que solo existe en la lectura unida: la otra lectura
+    no hace nada con ella."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "franjas.dxf", _dos_franjas_que_se_pisan)
+    antes = _ver_lectura(cliente, trabajo["id"], contenido).json()
+    hueco = next(f["id_origen"] for f in antes["unida"]["formas"] if "/hueco" in f["id_origen"])
+
+    respuesta = _ver_lectura(cliente, trabajo["id"], contenido, correcciones={hueco: "cortar"})
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    forma = next(f for f in cuerpo["unida"]["formas"] if f["id_origen"] == hueco)
+    assert forma["estado"] == "se_corta" and forma["corregida"] is True
+    assert _totales(cuerpo["unida"]) == (2, 1, 0)
+    assert _totales(cuerpo["sin_unir"]) == _totales(antes["sin_unir"])
+
+
+@pytest.mark.parametrize(
+    "correcciones, dice",
+    [
+        ("esto no es json", "correcciones"),
+        ('["una-forma"]', "correcciones"),
+        ('{"una-forma": "hueco"}', "hueco"),
+        ('{"forma-que-no-existe": "no_va"}', "forma-que-no-existe"),
+    ],
+)
+def test_unas_correcciones_que_no_sirven_dan_400_y_dicen_por_que(cliente, tmp_path, correcciones, dice):
+    trabajo, contenido, _ = _trabajo_con_el_logo(cliente, tmp_path)
+
+    respuesta = _ver_lectura(cliente, trabajo["id"], contenido, correcciones=correcciones)
+
+    assert respuesta.status_code == 400
+    assert dice in respuesta.json()["detail"]
+
+
+def test_cargar_con_unas_correcciones_que_no_sirven_no_toca_las_piezas_del_trabajo(cliente, tmp_path):
+    trabajo, pieza = _trabajo_con_una_pieza(cliente, tmp_path)
+    contenido = _dxf_bytes(tmp_path, "logo.dxf", _logo_chico)
+
+    respuesta = _subir(cliente, trabajo["id"], contenido, correcciones='{"forma-que-no-existe": "no_va"}')
+
+    assert respuesta.status_code == 400
+    assert [p["id"] for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()] == [pieza["id"]]
