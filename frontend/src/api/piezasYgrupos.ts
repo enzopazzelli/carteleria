@@ -37,9 +37,16 @@ export function listarGrupos(trabajoId: number): Promise<GrupoDeCorte[]> {
   return apiGet<GrupoDeCorte[]>(`/trabajos/${trabajoId}/grupos`);
 }
 
-/** `unir`: cargar con las formas que se pisan vueltas una sola pieza,
- * como se vio en la lectura (`leerDxf`). */
-export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string, unir: boolean): Promise<{
+/** `unir`: cargar con las formas que se pisan vueltas una sola pieza.
+ * `correcciones`: lo que se marcó sobre el dibujo. Los dos tienen que
+ * ser los de la lectura que se vio (`leerDxf`): se carga lo que se vio. */
+export function subirDxf(
+  trabajoId: number,
+  archivo: File,
+  escalaAMm: string,
+  unir: boolean,
+  correcciones: Correcciones,
+): Promise<{
   trabajo: unknown;
   piezas_creadas: number;
   contornos_no_cerrados: number;
@@ -50,6 +57,7 @@ export function subirDxf(trabajoId: number, archivo: File, escalaAMm: string, un
   formData.append("archivo", archivo);
   formData.append("escala_a_mm", escalaAMm);
   formData.append("unir", unir ? "true" : "false");
+  formData.append("correcciones", JSON.stringify(correcciones));
   return apiPostForm(`/trabajos/${trabajoId}/dxf`, formData);
 }
 
@@ -92,11 +100,19 @@ export interface LecturaDxf {
   unida: Lectura | null;
 }
 
-/** Lee el archivo sin guardar nada: es lo que se dibuja antes de cargar. */
-export function leerDxf(trabajoId: number, archivo: File, escalaAMm: string): Promise<LecturaDxf> {
+/** Lee el archivo sin guardar nada: es lo que se dibuja antes de cargar.
+ * Con `correcciones`, el servidor fuerza lo marcado y vuelve a decidir
+ * lo demás. */
+export function leerDxf(
+  trabajoId: number,
+  archivo: File,
+  escalaAMm: string,
+  correcciones: Correcciones,
+): Promise<LecturaDxf> {
   const formData = new FormData();
   formData.append("archivo", archivo);
   formData.append("escala_a_mm", escalaAMm);
+  formData.append("correcciones", JSON.stringify(correcciones));
   return apiPostForm(`/trabajos/${trabajoId}/dxf/lectura`, formData);
 }
 

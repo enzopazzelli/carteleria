@@ -98,6 +98,35 @@ export function sinCorreccion(correcciones: Correcciones, idOrigen: string): Cor
   return Object.fromEntries(Object.entries(correcciones).filter(([id]) => id !== idOrigen));
 }
 
+const MARCA_EN_PALABRAS = { cortar: "se corta", no_va: "no va" };
+
+/**
+ * Las correcciones como se listan debajo del dibujo: «497 no va»,
+ * «519 se corta». Solo las de formas que están en la lectura que se ve:
+ * la pieza unida no existe en la lectura sin unir, y nombrarla ahí no
+ * diría nada. Su corrección no se pierde, vuelve al cambiar de lectura.
+ */
+export function correccionesALaVista(
+  correcciones: Correcciones,
+  formas: Pick<FormaLeida, "id_origen">[],
+): { id: string; texto: string }[] {
+  const aLaVista = new Set(formas.map((forma) => forma.id_origen));
+  return Object.entries(correcciones)
+    .filter(([id]) => aLaVista.has(id))
+    .map(([id, marca]) => ({ id, texto: `${nombreCorto(id)} ${MARCA_EN_PALABRAS[marca]}` }));
+}
+
+/**
+ * La cuenta de los pedidos que se pisan. Cada clic sobre el dibujo pide
+ * la lectura de nuevo, y las respuestas pueden llegar en otro orden:
+ * solo vale la del último turno. Abrir un turno sin pedir nada (al
+ * cancelar, al leer otro archivo) deja sin valor al que estaba en camino.
+ */
+export function turnos(): { nuevo: () => number; esElUltimo: (turno: number) => boolean } {
+  let ultimo = 0;
+  return { nuevo: () => ++ultimo, esElUltimo: (turno) => turno === ultimo };
+}
+
 function medida(forma: FormaLeida): { ancho: number; alto: number } {
   const { ancho, alto } = cajaDelDibujo([forma]);
   return { ancho, alto };

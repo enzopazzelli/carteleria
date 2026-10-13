@@ -5,6 +5,7 @@ import {
   acercar,
   alTocar,
   cajaDelDibujo,
+  correccionesALaVista,
   descripcion,
   enOrdenDeDibujo,
   esLaLecturaDe,
@@ -15,6 +16,7 @@ import {
   sePuedeCargar,
   sinCorreccion,
   trazo,
+  turnos,
   vistaEntera,
 } from "./dibujo";
 
@@ -291,6 +293,54 @@ describe("fueUnClic", () => {
   it("soltar después de arrastrar no: se estaba moviendo el dibujo", () => {
     expect(fueUnClic(12, 0)).toBe(false);
     expect(fueUnClic(0, -9)).toBe(false);
+  });
+});
+
+describe("correccionesALaVista", () => {
+  const formas = [cuadradoDe(100, 0, 0, { id_origen: "logo-497" }), cuadradoDe(10, 0, 0, { id_origen: "logo-519" })];
+
+  it("nombra cada una por su número y por lo que se le marcó", () => {
+    expect(correccionesALaVista({ "logo-497": "no_va", "logo-519": "cortar" }, formas)).toEqual([
+      { id: "logo-497", texto: "497 no va" },
+      { id: "logo-519", texto: "519 se corta" },
+    ]);
+  });
+
+  it("no lista la de una forma que esta lectura no tiene: es de la otra, la unida o la sin unir", () => {
+    expect(correccionesALaVista({ "logo-39/unida": "no_va", "logo-497": "no_va" }, formas)).toEqual([
+      { id: "logo-497", texto: "497 no va" },
+    ]);
+  });
+
+  it("sin correcciones no hay nada que listar", () => {
+    expect(correccionesALaVista({}, formas)).toEqual([]);
+  });
+});
+
+describe("turnos", () => {
+  it("vale la respuesta del último pedido, no la de uno anterior que llega tarde", () => {
+    const pedidos = turnos();
+    const primero = pedidos.nuevo();
+    const segundo = pedidos.nuevo();
+    expect(pedidos.esElUltimo(primero)).toBe(false);
+    expect(pedidos.esElUltimo(segundo)).toBe(true);
+  });
+
+  it("abrir un turno sin pedir nada deja sin valor al que estaba en camino: es lo que hace cancelar", () => {
+    const pedidos = turnos();
+    const enCamino = pedidos.nuevo();
+    expect(pedidos.esElUltimo(enCamino)).toBe(true);
+    pedidos.nuevo();
+    expect(pedidos.esElUltimo(enCamino)).toBe(false);
+  });
+
+  it("cada cuenta es aparte", () => {
+    const unos = turnos();
+    const otros = turnos();
+    const turno = unos.nuevo();
+    otros.nuevo();
+    otros.nuevo();
+    expect(unos.esElUltimo(turno)).toBe(true);
   });
 });
 
