@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** **a revisar por Enzo (2026-10-13).** Nada construido en el repositorio.
+> **Estado:** **construido el 2026-10-13, en la rama `feat/corregir-la-lectura`, a la espera de que Enzo lo fusione.** Las Tareas 0 a 7 se ejecutaron ese día, cada una con el ok de Enzo antes de su commit. Queda la Tarea 8, que va después de la fusión.
 >
 > **El código de este plan está probado.** Entre el 2026-10-12 y el 13 se escribió sobre una copia limpia, fuera del repositorio, tarea por tarea y con las pruebas antes que el código. Cada prueba falló y pasó donde el plan dice. El backend terminó en 500 en verde (467 antes) y el frontend en 97 (56 antes), con `tsc` y `vite build` sin errores. **La pantalla se probó en un navegador sin ventana,** con clics, rueda y arrastre de verdad, contra una copia de la base y con un DXF que trae el logo solo: son el Step 9 de la Tarea 6 y el Step 1 de la Tarea 7. Ese ensayo corrigió el diseño (`diseno.md §8`).
 
@@ -84,7 +84,7 @@ Fuera del repositorio, en `backend/local/herramientas-2.1b-2026-10-12/`, quedan 
 
 **Files:** ninguno.
 
-- [ ] **Step 1: Pararse en la rama**
+- [x] **Step 1: Pararse en la rama**
 
 ```bash
 git switch feat/corregir-la-lectura
@@ -94,12 +94,12 @@ git log --oneline -1
 
 Expected: nada modificado, y el último commit es el que guardó este plan, arriba de `bbbd758` (el diseño corregido). Puede figurar `?? Presupuesto_Cliente_Carteleria.docx`: es de Enzo, no se toca ni se suma a ningún commit.
 
-- [ ] **Step 2: Confirmar que el backend está en verde**
+- [x] **Step 2: Confirmar que el backend está en verde**
 
 Run: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest"`
 Expected: `467 passed`. Las tareas siguientes suman tests sobre ese número.
 
-- [ ] **Step 3: Confirmar que el frontend está en verde**
+- [x] **Step 3: Confirmar que el frontend está en verde**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: compila sin errores y `Tests  56 passed (56)`.
@@ -116,7 +116,7 @@ Expected: compila sin errores y `Tests  56 passed (56)`.
 - Consumes: nada de otras tareas.
 - Produces: `Rol.NO_VA` (su valor es `"no_va"`). `PiezaConRol.corregida: bool`, por defecto `False`. `sugerir_roles` conserva sus siete parámetros y suma un octavo, opcional: `correcciones: Mapping[str, Rol] | None = None`, de `id` de pieza a `Rol.CORTAR` o `Rol.NO_VA`. Una pieza con corrección sale con ese rol, el motivo `"lo marcó quien carga"` y `corregida=True`.
 
-- [ ] **Step 1: Agregar los tests**
+- [x] **Step 1: Agregar los tests**
 
 En `backend/tests/services/ingesta/test_analisis.py`:
 
@@ -234,7 +234,7 @@ def test_una_correccion_sobre_una_forma_que_no_esta_no_hace_nada():
     assert _roles_corregidos(piezas, {"otra": Rol.NO_VA}) == _roles_corregidos(piezas, {})
 ```
 
-- [ ] **Step 2: Correr los tests y verlos fallar**
+- [x] **Step 2: Correr los tests y verlos fallar**
 
 Run: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest" tests/services/ingesta/test_analisis.py`
 Expected: `7 failed, 46 passed`. Cuatro fallan con `TypeError: sugerir_roles() takes 7 positional arguments but 8 were given` y tres con `AttributeError: type object 'Rol' has no attribute 'NO_VA'`:
@@ -249,7 +249,7 @@ Expected: `7 failed, 46 passed`. Cuatro fallan con `TypeError: sugerir_roles() t
 
 El primero fija lo que pasa hoy sin corregir, pero usa el ayudante nuevo, que le pasa a `sugerir_roles` el parámetro que todavía no existe.
 
-- [ ] **Step 3: Cambiar el análisis**
+- [x] **Step 3: Cambiar el análisis**
 
 En `backend/app/services/ingesta/analisis.py`:
 
@@ -394,7 +394,7 @@ por:
         color = por_id[pieza_id].color_aci
 ```
 
-- [ ] **Step 4: Correr los tests y verlos pasar**
+- [x] **Step 4: Correr los tests y verlos pasar**
 
 Run: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest" tests/services/ingesta/test_analisis.py`
 Expected: `53 passed`.
@@ -402,7 +402,7 @@ Expected: `53 passed`.
 Y el backend entero: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest"`
 Expected: `474 passed`.
 
-- [ ] **Step 5: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 5: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add backend/app/services/ingesta/analisis.py backend/tests/services/ingesta/test_analisis.py
@@ -424,7 +424,7 @@ git commit -m "feat(ingesta): el analisis respeta lo que marco quien carga (2.1b
 - Consumes: `Rol.NO_VA`, `PiezaConRol.corregida` y el parámetro `correcciones` de `sugerir_roles` (Tarea 1).
 - Produces: el campo de formulario `correcciones` en `POST /trabajos/{id}/dxf/lectura` y en `POST /trabajos/{id}/dxf`: un texto con un objeto JSON, `{"<id de forma>": "cortar" | "no_va"}`; sin el campo, ninguna. En la respuesta de la lectura, cada forma trae `estado: "se_corta" | "descartada" | "no_va"`, `corregida: bool` y `motivo: str | None`, y ya no trae `descartada`; cada lectura trae `a_cortar`, `descartadas` y `no_van`. En las rutas: `_correcciones(texto: str | None) -> dict[str, Rol]`, `_roles(piezas, formatos, correcciones) -> dict[str, PiezaConRol]`, `_leer(ruta, escala_a_mm, tamano_maximo_agujero_mm, formatos, correcciones) -> _LecturasDeUnDXF`, y `_Lectura` con `no_van: set[str]` y `corregidas: set[str]`.
 
-- [ ] **Step 1: Cambiar y agregar los tests de las rutas**
+- [x] **Step 1: Cambiar y agregar los tests de las rutas**
 
 Seis tests que ya existen leían `forma["descartada"]`; pasan a leer `forma["estado"]`. El resto es nuevo. En `backend/tests/api/test_rutas_trabajos.py`:
 
@@ -709,7 +709,7 @@ def test_cargar_con_unas_correcciones_que_no_sirven_no_toca_las_piezas_del_traba
     assert [p["id"] for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()] == [pieza["id"]]
 ```
 
-- [ ] **Step 2: Correr los tests y verlos fallar**
+- [x] **Step 2: Correr los tests y verlos fallar**
 
 Run: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest" tests/api/test_rutas_trabajos.py`
 Expected: `16 failed, 35 passed`. Diez fallan con `KeyError: 'estado'`; los demás, porque el pedido todavía no mira el campo `correcciones`: cinco con `assert 200 == 400` y uno con una pieza guardada de más (`assert 3 == 2`). Son:
@@ -723,7 +723,7 @@ Expected: `16 failed, 35 passed`. Diez fallan con `KeyError: 'estado'`; los dem�
 - `test_unas_correcciones_que_no_sirven_dan_400_y_dicen_por_que` (cuatro casos)
 - `test_cargar_con_unas_correcciones_que_no_sirven_no_toca_las_piezas_del_trabajo`
 
-- [ ] **Step 3: Los tres estados en el esquema**
+- [x] **Step 3: Los tres estados en el esquema**
 
 En `backend/app/api/esquemas_trabajos.py`:
 
@@ -790,7 +790,7 @@ class LecturaLeer(BaseModel):
     advertencias: list[str]
 ```
 
-- [ ] **Step 4: La lista en las rutas**
+- [x] **Step 4: La lista en las rutas**
 
 En `backend/app/api/rutas_trabajos.py`:
 
@@ -1349,7 +1349,7 @@ por:
         lineas_duplicadas_descartadas=lecturas.resultado.lineas_duplicadas_descartadas,
 ```
 
-- [ ] **Step 5: El detalle del dibujo, y su fila del registro**
+- [x] **Step 5: El detalle del dibujo, y su fila del registro**
 
 En `backend/app/services/ingesta/dibujo.py`:
 
@@ -1380,7 +1380,7 @@ En `docs/REGISTRO.md`, en la fila de `PAR-52`: el valor pasa de `1/4000` a `1/20
 🟡 provisorio — 1/4000 desde el 2026-10-12; pasó a 1/20000 cuando el dibujo se pudo acercar (2.1b), en `backend/app/services/ingesta/dibujo.py`. Con este valor el dibujo de `Complejo.dxf` (7,76 m de lado) se aparta a lo sumo 0,39 mm del original, y acercado `PAR-53` veces eso es un píxel. Lo que pesa cada lectura está medido en la Tarea 7 de `plan/2.1b-corregir-la-lectura/plan.md`
 ```
 
-- [ ] **Step 6: Correr los tests y verlos pasar**
+- [x] **Step 6: Correr los tests y verlos pasar**
 
 Run: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest" tests/api/test_rutas_trabajos.py`
 Expected: `51 passed`.
@@ -1390,7 +1390,7 @@ Expected: `484 passed`.
 
 En este punto la pantalla de `main` deja de mostrar bien la lectura, porque todavía lee `descartada`: la arregla la Tarea 5. Por eso las Tareas 2 a 6 van en el mismo PR.
 
-- [ ] **Step 7: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 7: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add backend/app/api/esquemas_trabajos.py backend/app/api/rutas_trabajos.py backend/app/services/ingesta/dibujo.py backend/tests/api/test_rutas_trabajos.py docs/REGISTRO.md
@@ -1413,7 +1413,7 @@ El lector decide si un contorno es pieza o agujero por cuántos lo encierran: co
 - Consumes: `_leer(..., correcciones: Mapping[str, Rol])` (Tarea 2).
 - Produces: `parsear_dxf(ruta, escala_a_mm, tamano_maximo_agujero_mm=..., *, marcadas: Collection[str] = (), no_van: Collection[str] = ())`. Las dos colecciones son `id` de formas (`<nombre del archivo>-<número>`). Un contorno de `marcadas` sale siempre como pieza. Los agujeros de un contorno de `no_van` salen, además, como piezas. Un `id` que no es de un contorno del archivo no hace nada. Sin las dos, el resultado es el de hoy.
 
-- [ ] **Step 1: Agregar los tests del lector**
+- [x] **Step 1: Agregar los tests del lector**
 
 En `backend/tests/services/ingesta/test_dxf.py`:
 
@@ -1494,7 +1494,7 @@ def test_marcar_una_forma_que_no_es_de_este_archivo_no_cambia_nada(tmp_path):
     assert sorted(_por_id(resultado)) == ["puntos-0", "puntos-2"]
 ```
 
-- [ ] **Step 2: Agregar los tests de las rutas**
+- [x] **Step 2: Agregar los tests de las rutas**
 
 En `backend/tests/api/test_rutas_trabajos.py`:
 
@@ -1564,7 +1564,7 @@ def test_un_punto_marcado_sigue_a_la_vista_aunque_vuelva_su_contorno(cliente, tm
     assert formas[900]["estado"] == "se_corta"
 ```
 
-- [ ] **Step 3: Correr los tests y verlos fallar**
+- [x] **Step 3: Correr los tests y verlos fallar**
 
 Run: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest" tests/services/ingesta/test_dxf.py tests/api/test_rutas_trabajos.py`
 Expected: `7 failed, 72 passed`. Los cuatro del lector fallan con `TypeError: parsear_dxf() got an unexpected keyword argument 'no_van'` (o `'marcadas'`); los tres de las rutas, porque el punto no aparece (`KeyError: 20`, o `assert [500] == [20, 500]` en la carga):
@@ -1579,7 +1579,7 @@ Expected: `7 failed, 72 passed`. Los cuatro del lector fallan con `TypeError: pa
 
 `test_un_punto_adentro_de_un_contorno_es_solo_su_agujero` pasa desde ya: fija lo que el lector hace hoy, que es lo que no tiene que cambiar.
 
-- [ ] **Step 4: Cambiar el lector**
+- [x] **Step 4: Cambiar el lector**
 
 En `backend/app/services/ingesta/dxf.py`:
 
@@ -1778,7 +1778,7 @@ por:
     ]
 ```
 
-- [ ] **Step 5: Pasarle la lista desde las rutas**
+- [x] **Step 5: Pasarle la lista desde las rutas**
 
 En `backend/app/api/rutas_trabajos.py`:
 
@@ -1810,7 +1810,7 @@ por:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
 ```
 
-- [ ] **Step 6: Correr los tests y verlos pasar**
+- [x] **Step 6: Correr los tests y verlos pasar**
 
 Run: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest" tests/services/ingesta/test_dxf.py tests/api/test_rutas_trabajos.py`
 Expected: `79 passed`.
@@ -1818,7 +1818,7 @@ Expected: `79 passed`.
 Y el backend entero: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest"`
 Expected: `492 passed`.
 
-- [ ] **Step 7: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 7: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add backend/app/services/ingesta/dxf.py backend/app/api/rutas_trabajos.py backend/tests/services/ingesta/test_dxf.py backend/tests/api/test_rutas_trabajos.py
@@ -1841,7 +1841,7 @@ Dos cosas más que salen de «una forma que no va no es madre de nadie» (`disen
 - Consumes: `_leer` con las correcciones y `parsear_dxf(..., marcadas=, no_van=)` (Tareas 2 y 3).
 - Produces: `sin_los_huecos_de_lo_que_no_va(piezas: list[PiezaImportada], no_van: Collection[str]) -> list[PiezaImportada]`: las mismas piezas, y a las que tenían como agujero el contorno de una forma de `no_van` se lo saca y les recalcula `area_real_mm2`. En la lectura, lo que no va queda afuera de la unión y sigue figurando en la lectura unida con su estado. Una corrección cuyo nombre tiene `/` y cuya primera parte es una forma del archivo no da 400 aunque esa pieza unida no exista.
 
-- [ ] **Step 1: Agregar los tests del análisis**
+- [x] **Step 1: Agregar los tests del análisis**
 
 En `backend/tests/services/ingesta/test_analisis.py`:
 
@@ -1893,7 +1893,7 @@ def test_una_pieza_conserva_los_agujeros_de_las_formas_que_siguen():
     assert sin_los_huecos_de_lo_que_no_va(piezas, {"letra", "otra"}) == piezas, "sacar la letra no le saca su agujero"
 ```
 
-- [ ] **Step 2: Agregar los tests de las rutas**
+- [x] **Step 2: Agregar los tests de las rutas**
 
 En `backend/tests/api/test_rutas_trabajos.py`:
 
@@ -2005,7 +2005,7 @@ def test_un_hueco_de_la_pieza_unida_que_no_va_deja_de_ser_un_hueco(cliente, tmp_
     assert _totales(unida) == (1, 1, 1)
 ```
 
-- [ ] **Step 3: Correr los tests y verlos fallar**
+- [x] **Step 3: Correr los tests y verlos fallar**
 
 Run: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest" tests/services/ingesta/test_analisis.py`
 Expected: `1 error`, con `ImportError: cannot import name 'sin_los_huecos_de_lo_que_no_va'`. El archivo entero no llega a correr.
@@ -2021,7 +2021,7 @@ Expected: `5 failed, 55 passed`:
 
 `test_la_marca_de_una_pieza_unida_que_ya_no_se_arma_queda_sin_efecto` pasa desde ya, porque hoy la unión se arma con todo y esa pieza unida sigue existiendo. Lo pone a prueba el Step 5: sin la parte que acepta los nombres con `/`, ese test da 400. Se vio fallar así en el ensayo.
 
-- [ ] **Step 4: La función que saca los huecos**
+- [x] **Step 4: La función que saca los huecos**
 
 En `backend/app/services/ingesta/analisis.py`:
 
@@ -2081,7 +2081,7 @@ def sin_los_huecos_de_lo_que_no_va(piezas: list[PiezaImportada], no_van: Collect
     return resultado
 ```
 
-- [ ] **Step 5: Usarla en la lectura, y unir sin lo que no va**
+- [x] **Step 5: Usarla en la lectura, y unir sin lo que no va**
 
 En `backend/app/api/rutas_trabajos.py`:
 
@@ -2194,7 +2194,7 @@ por:
         [
 ```
 
-- [ ] **Step 6: Correr los tests y verlos pasar**
+- [x] **Step 6: Correr los tests y verlos pasar**
 
 Run: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest" tests/services/ingesta/test_analisis.py tests/api/test_rutas_trabajos.py`
 Expected: `115 passed`.
@@ -2202,7 +2202,7 @@ Expected: `115 passed`.
 Y el backend entero: `cd backend && CARTELERIA_DATOS="D:/temp/carteleria-datos" python -m pytest -q --basetemp="D:/temp/carteleria-pytest"`
 Expected: `500 passed`.
 
-- [ ] **Step 7: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 7: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add backend/app/services/ingesta/analisis.py backend/app/api/rutas_trabajos.py backend/tests/services/ingesta/test_analisis.py backend/tests/api/test_rutas_trabajos.py
@@ -2238,7 +2238,7 @@ Todo lo que la pantalla decide es una cuenta que se prueba sola, sin navegador: 
   - `mover(vista: Vista, entera: Vista, dx: number, dy: number): Vista`
   - `fueUnClic(dxPx: number, dyPx: number): boolean`
 
-- [ ] **Step 1: Cambiar y agregar los tests**
+- [x] **Step 1: Cambiar y agregar los tests**
 
 Cambian los ayudantes de arriba y los tests del resumen, que ahora llevan `estado` y `no_van`, y se agrega casi todo lo demás. `frontend/src/components/LecturaDxf/dibujo.test.ts` queda entero así:
 
@@ -2565,12 +2565,12 @@ describe("esLaLecturaDe", () => {
 });
 ```
 
-- [ ] **Step 2: Correr los tests y verlos fallar**
+- [x] **Step 2: Correr los tests y verlos fallar**
 
 Run: `cd frontend && npx vitest run src/components/LecturaDxf`
 Expected: `FAIL  src/components/LecturaDxf/dibujo.test.ts`, con `TypeError: vistaEntera is not a function`, y `Test Files  1 failed (1)`. El bloque de la vista arma su caja antes de cada test, así que el archivo entero no llega a correr: falta todo lo que importa.
 
-- [ ] **Step 3: Los tipos**
+- [x] **Step 3: Los tipos**
 
 En `frontend/src/api/piezasYgrupos.ts`:
 
@@ -2629,7 +2629,7 @@ export type Correcciones = Record<string, "cortar" | "no_va">;
 /** Cómo se leería un DXF. `unida` viene solo si hay formas que se pisan. */
 ```
 
-- [ ] **Step 4: Las cuentas**
+- [x] **Step 4: Las cuentas**
 
 De lo que había quedan igual `Caja`, `cajaDelDibujo`, `trazo` y, al final, `esLaLecturaDe`. `frontend/src/components/LecturaDxf/dibujo.ts` queda entero así:
 
@@ -2842,7 +2842,7 @@ export function esLaLecturaDe(
 }
 ```
 
-- [ ] **Step 5: El panel, con tres estados**
+- [x] **Step 5: El panel, con tres estados**
 
 `frontend/src/components/LecturaDxf/LecturaPanel.tsx` queda entero así:
 
@@ -3006,7 +3006,7 @@ export default function LecturaPanel({
 }
 ```
 
-- [ ] **Step 6: La fila nueva del registro**
+- [x] **Step 6: La fila nueva del registro**
 
 En `docs/REGISTRO.md`, después de la fila de `PAR-52`:
 
@@ -3014,12 +3014,12 @@ En `docs/REGISTRO.md`, después de la fila de `PAR-52`:
 | **PAR-53** | Cuánto se puede acercar el dibujo de la lectura | 20 | aumentos | Sistema | Config | `plan/2.1b-corregir-la-lectura/diseno.md` | 🟡 provisorio — propuesto el 2026-10-12, en `frontend/src/components/LecturaDxf/dibujo.ts`. Es donde lo que se aparta el dibujo con `PAR-52` llega a un píxel |
 ```
 
-- [ ] **Step 7: Correr los tests y verlos pasar**
+- [x] **Step 7: Correr los tests y verlos pasar**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: compila sin errores y `Tests  88 passed (88)`.
 
-- [ ] **Step 8: Mostrárselo a Enzo y, con su ok, commitear**
+- [x] **Step 8: Mostrárselo a Enzo y, con su ok, commitear**
 
 ```bash
 git add frontend/src/api/piezasYgrupos.ts frontend/src/components/LecturaDxf docs/REGISTRO.md
@@ -3043,7 +3043,7 @@ git commit -m "feat(frontend): la lectura con tres estados, y las cuentas para c
 - Consumes: el campo `correcciones` de los dos pedidos (Tarea 2) y todo lo que la Tarea 5 dejó en `dibujo.ts` y en `piezasYgrupos.ts`.
 - Produces: `leerDxf(trabajoId: number, archivo: File, escalaAMm: string, correcciones: Correcciones)` y `subirDxf(trabajoId: number, archivo: File, escalaAMm: string, unir: boolean, correcciones: Correcciones)`; las dos mandan la lista como texto JSON en el campo `correcciones`, también cuando está vacía. `useLeerDxf` y `useSubirDxf` reciben `correcciones` junto con lo que ya recibían. En `dibujo.ts`: `correccionesALaVista(correcciones: Correcciones, formas: Pick<FormaLeida, "id_origen">[]): { id: string; texto: string }[]` y `turnos(): { nuevo: () => number; esElUltimo: (turno: number) => boolean }`. `LecturaPanel` suma tres propiedades: `correcciones: Correcciones`, `alCorregir: (correcciones: Correcciones) => void` y `leyendo: boolean`.
 
-- [ ] **Step 1: Los tests de los dos pedidos**
+- [x] **Step 1: Los tests de los dos pedidos**
 
 `frontend/src/api/piezasYgrupos.test.ts`, nuevo:
 
@@ -3108,7 +3108,7 @@ describe("subirDxf", () => {
 });
 ```
 
-- [ ] **Step 2: Los tests de la lista y de los turnos**
+- [x] **Step 2: Los tests de la lista y de los turnos**
 
 En `frontend/src/components/LecturaDxf/dibujo.test.ts`:
 
@@ -3196,14 +3196,14 @@ describe("turnos", () => {
 });
 ```
 
-- [ ] **Step 3: Correr los tests y verlos fallar**
+- [x] **Step 3: Correr los tests y verlos fallar**
 
 Run: `cd frontend && npm test`
 Expected: `Tests  9 failed | 88 passed (97)`. Los tres de `piezasYgrupos.test.ts` fallan con `expected null to deeply equal …`, porque el campo no viaja; los tres de `correccionesALaVista` y los tres de `turnos`, con `… is not a function`.
 
 No correr `npm run build` acá: los tests llaman a los dos pedidos con un argumento que todavía no tienen, y `tsc` lo marca. Es lo esperado.
 
-- [ ] **Step 4: La lista en los dos pedidos**
+- [x] **Step 4: La lista en los dos pedidos**
 
 En `frontend/src/api/piezasYgrupos.ts`:
 
@@ -3360,7 +3360,7 @@ export function useLeerDxf(trabajoId: number) {
 }
 ```
 
-- [ ] **Step 5: La lista a la vista y los turnos**
+- [x] **Step 5: La lista a la vista y los turnos**
 
 En `frontend/src/components/LecturaDxf/dibujo.ts`:
 
@@ -3404,7 +3404,7 @@ export function turnos(): { nuevo: () => number; esElUltimo: (turno: number) => 
   return { nuevo: () => ++ultimo, esElUltimo: (turno) => turno === ultimo };
 ```
 
-- [ ] **Step 6: El panel, que ahora se toca**
+- [x] **Step 6: El panel, que ahora se toca**
 
 `frontend/src/components/LecturaDxf/LecturaPanel.tsx` queda entero así:
 
@@ -3756,7 +3756,7 @@ export default function LecturaPanel({
 }
 ```
 
-- [ ] **Step 7: La pestaña Piezas guarda la lista y vuelve a pedir la lectura**
+- [x] **Step 7: La pestaña Piezas guarda la lista y vuelve a pedir la lectura**
 
 En `frontend/src/routes/TrabajoWorkspace/PiezasTab.tsx`:
 
@@ -3950,12 +3950,12 @@ por:
           piezasQueReemplaza={piezas?.length ?? 0}
 ```
 
-- [ ] **Step 8: Correr los tests y verlos pasar**
+- [x] **Step 8: Correr los tests y verlos pasar**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: compila sin errores y `Tests  97 passed (97)`.
 
-- [ ] **Step 9: Recorrer la pantalla con clics de verdad**
+- [x] **Step 9: Recorrer la pantalla con clics de verdad**
 
 Lo que no cubre ninguna prueba automática: que el clic llegue a la forma, la rueda, el arrastre, y que lo que se carga sea lo que se ve. Se hace con un Chrome sin ventana contra una **copia** de la base. Antes, mirar que nadie escuche en 8000, 5173 ni 9223.
 
@@ -4002,7 +4002,7 @@ Mirar las cinco capturas de `D:/temp/2.1b-capturas`. La 3 tiene que mostrar la p
 
 Al terminar, cerrar los tres procesos: son los de esta prueba, no los de Enzo.
 
-- [ ] **Step 10: Mostrarle las capturas a Enzo y, con su ok, commitear**
+- [x] **Step 10: Mostrarle las capturas a Enzo y, con su ok, commitear**
 
 ```bash
 git add frontend/src/api/piezasYgrupos.ts frontend/src/api/piezasYgrupos.test.ts frontend/src/hooks/usePiezas.ts frontend/src/components/LecturaDxf frontend/src/routes/TrabajoWorkspace/PiezasTab.tsx
@@ -4020,7 +4020,7 @@ git commit -m "feat(frontend): corregir la lectura con clics, acercar y mover el
 - Consumes: los dos pedidos con correcciones (Tareas 2 a 4).
 - Produces: nada que use otra tarea.
 
-- [ ] **Step 1: Los nueve clics sobre el logo, por los pedidos de verdad**
+- [x] **Step 1: Los nueve clics sobre el logo, por los pedidos de verdad**
 
 Contra una copia de la base, que es de donde sale el catálogo de chapas:
 
@@ -4057,7 +4057,7 @@ cargado: 21 piezas para cortar, 8 descartadas [499, 517, 518, 519, 520, 521, 523
 
 La «T» (526) no figura entre las piezas con agujeros: es el criterio de éxito del `diseno.md §1`. Los números son los de la muestra; en el archivo del logo solo, cada forma lleva ese número menos 497.
 
-- [ ] **Step 2: Los DXF reales, sin correcciones, se leen igual que antes**
+- [x] **Step 2: Los DXF reales, sin correcciones, se leen igual que antes**
 
 Con el guion de 2.1a, que usa el mismo pedido que la pantalla:
 
@@ -4089,7 +4089,7 @@ En `Complejo.dxf`, la unida tiene que mostrar `trabajo-1-39/unida: 4610 x 4610 m
 
 Si una cantidad no coincide, parar y mirar por qué antes de seguir: es la única comprobación de que el lector, sin correcciones, no cambió.
 
-- [ ] **Step 3: Actualizar el diseño**
+- [x] **Step 3: Actualizar el diseño**
 
 En `docs/plan/2.1b-corregir-la-lectura/diseno.md`, la línea de estado pasa a decir, con la fecha del día:
 
@@ -4103,7 +4103,7 @@ Y en la última fila de la tabla del §7 («El dibujo pesa más»), el efecto pa
 Con `PAR-52` en 1/20000, la respuesta de `Complejo.dxf`, que trae sus dos lecturas, pesa 0,3 MB; la de `Muestra Vectores.dxf`, 3,8 MB en vez de 2,3
 ```
 
-- [ ] **Step 4: Escribir la entrada de la bitácora**
+- [x] **Step 4: Escribir la entrada de la bitácora**
 
 En `docs/BITACORA.md`, arriba de la entrada más nueva, con la fecha del día en que se termina:
 

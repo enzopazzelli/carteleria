@@ -1,6 +1,6 @@
 # 2.1b · Corregir a mano la lectura del DXF — diseño
 
-> **Estado:** **diseño, aprobado por Enzo el 2026-10-12 y corregido el 2026-10-13** después de ensayar el código sobre una copia: qué cambió está en el §8. Nada construido. El plan está en [`plan.md`](plan.md).
+> **Estado:** **construido el 2026-10-13, en la rama `feat/corregir-la-lectura`, a la espera de que Enzo lo fusione.** Lo que el código precisó del diseño está al principio de [`plan.md`](plan.md), y lo que corrigió el ensayo, en el §8.
 >
 > **De dónde sale.** [2.1a](../../historico/2.1a-lectura-con-imagen/diseno.md) dejó la pantalla que muestra cómo se lee un DXF antes de cargarlo. Ahí se vio que ninguna regla lee bien todos los dibujos: la unión acierta en el aro de `Complejo.dxf` y arruina un logo de la muestra. Enzo pidió poder corregir la lectura a mano.
 >
@@ -189,7 +189,7 @@ Una corrección es el nombre de una forma y una de dos palabras: `cortar` o `no_
 | Las correcciones se pierden al cambiar el archivo o la escala | Hay que hacerlas de nuevo | Se acepta: son pocos clics, y con otra escala u otro archivo no valdrían |
 | Una forma muy chica es difícil de tocar | No se puede corregir sin acercar | Para eso está el acercamiento, hasta `PAR-53` |
 | La respuesta de la lectura cambia de forma | El sí o no de «descartada» pasa a ser un estado de tres | Solo la usa esta pantalla, que cambia en el mismo sub-proyecto |
-| El dibujo pesa más | Con `PAR-52` en 1/20000, 170 KB por lectura en `Complejo.dxf` en vez de 79 | Se acepta. En un archivo de varios diseños pesaría varias veces más, y esos quedan afuera |
+| El dibujo pesa más | Con `PAR-52` en 1/20000, la respuesta de `Complejo.dxf`, que trae sus dos lecturas, pesa 0,3 MB; la de `Muestra Vectores.dxf`, 3,8 MB en vez de 2,3 | Se acepta. En un archivo de varios diseños pesaría varias veces más, y esos quedan afuera |
 
 ---
 

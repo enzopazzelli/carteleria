@@ -58,6 +58,38 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-13 — Corregir a mano la lectura del DXF (2.1b): clics sobre el dibujo, acercar y mover
+
+Sub-proyecto [`plan/2.1b-corregir-la-lectura/`](plan/2.1b-corregir-la-lectura/diseno.md). Rama `feat/corregir-la-lectura`.
+
+### Qué se hizo
+
+- **El dibujo de «Así se lee» ahora se corrige con clics.** Una forma que se corta pasa a «no va»; una descartada pasa a «se corta» y, con otro clic, a «no va». Lo que no va no se carga. Cada corrección figura debajo del dibujo, con una ✕ que la saca.
+- **El servidor vuelve a leer en cada clic,** con el archivo y la lista de correcciones. Lo marcado manda, y lo demás se acomoda solo: sacar un contorno pone a cortar las letras que encierra.
+- **Lo que no va no es madre ni hueco de nadie, ni se une.** Sus agujeros chicos pasan a ser formas, la pieza que lo tenía adentro queda llena, y la casilla de unir no lo junta con nada.
+- **El dibujo se acerca y se mueve:** rueda, arrastre, tres botones, hasta 20 aumentos.
+- El logo «AWADUCT / PERFECTO ETERNO» de la muestra, solo en un archivo, queda como dijo Enzo con nueve clics: 21 piezas a cortar.
+- Backend 500 tests en verde (467 antes), frontend 97 (56 antes).
+
+### Qué se decidió
+
+- **Dos opciones por forma, «se corta» y «no va», y un solo gesto.** El clic da toda la vuelta: lo contrario de lo que se ve, después «no va», después como lo leyó el sistema (Enzo, 2026-10-13).
+- **Lo que no va se dibuja al fondo.** Con el rayado encima de lo que se corta, media palabra parecía que no iba (Enzo, 2026-10-13).
+- **El código se ensayó entero antes de escribir el plan,** contra un DXF con el logo solo y en un navegador. Ahí apareció que la palabra del logo son cinco formas y no una, y tres reglas que el diseño no tenía (`diseno.md §8`).
+
+### Cambios en el registro
+
+`PAR-52` pasa de 1/4000 a 1/20000. Alta de `PAR-53`.
+
+### Pendiente
+
+- **El lector decide pieza o agujero por cuántos contornos encierran a la forma.** El mismo dibujo se lee distinto solo que junto a otros. La corrección a mano lo resuelve en cada caso; cambiar esa regla quedó afuera.
+- Al sacar una placa con tornillos, cada tornillo aparece como una forma a cortar y hay que sacarlo también. Marcar de a muchas con un recuadro quedó anotado.
+- Girar una pieza con ángulo libre en el anidado automático (pedido de Enzo del 2026-10-12): es del motor.
+- Las miniaturas de la tabla de Piezas siguen dadas vuelta.
+
+---
+
 ## 2026-10-12 — Lectura del DXF con imagen antes de cargar (2.1a), en `main` y cerrada: unir las formas que se pisan y los huecos de las piezas grandes
 
 Sub-proyecto [`historico/2.1a-lectura-con-imagen/`](historico/2.1a-lectura-con-imagen/diseno.md), en `main` desde el 2026-10-12 ([PR #18](https://github.com/enzopazzelli/carteleria/pull/18), lo fusioné yo a pedido de Enzo).
