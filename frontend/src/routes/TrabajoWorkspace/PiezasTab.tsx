@@ -7,8 +7,9 @@ import PiezaMiniPreview from "../../components/PiezaMiniPreview";
 import Banner from "../../components/Banner";
 import SeccionarPanel from "../../components/Seccionado/SeccionarPanel";
 import LecturaPanel from "../../components/LecturaDxf/LecturaPanel";
-import { esLaLecturaDe, turnos } from "../../components/LecturaDxf/dibujo";
+import { esLaLecturaDe } from "../../components/LecturaDxf/dibujo";
 import { originalesASeccionar, porQueSeccionar } from "../../components/Seccionado/geometria";
+import { crearTurnos } from "../../components/Seccionado/turnos";
 import { ApiError } from "../../api/client";
 import type { Correcciones, LecturaDxf, Pieza } from "../../api/piezasYgrupos";
 import { escalaParaCargar } from "./cargaDxf";
@@ -66,7 +67,7 @@ export default function PiezasTab() {
   // que se está viendo, y lo que se carga.
   const [correcciones, setCorrecciones] = useState<Correcciones>({});
   // Cada clic pide la lectura de nuevo: solo vale la última respuesta.
-  const [pedidos] = useState(turnos);
+  const [pedidos] = useState(crearTurnos);
   const lecturaVigente = esLaLecturaDe(lectura, archivoActual, escala) ? lectura : null;
 
   const noSePudoSubir = "No se pudo subir el archivo. Si lo modificaste después de elegirlo, volvé a elegirlo.";
@@ -75,15 +76,15 @@ export default function PiezasTab() {
    * de la lectura que se está viendo: si el pedido falla, se sigue viendo
    * esa, y la lista vuelve a ser la suya. */
   async function leer(archivo: File, escalaPedida: string, pedidas: Correcciones, aLaVista: Correcciones) {
-    const turno = pedidos.nuevo();
+    const turno = pedidos.tomar();
     setError(null);
     setCorrecciones(pedidas);
     try {
       const datos = await leerDxf.mutateAsync({ archivo, escalaAMm: escalaPedida, correcciones: pedidas });
-      if (!pedidos.esElUltimo(turno)) return;
+      if (!pedidos.vigente(turno)) return;
       setLectura({ datos, archivo, escala: escalaPedida, correcciones: pedidas });
     } catch (e) {
-      if (!pedidos.esElUltimo(turno)) return;
+      if (!pedidos.vigente(turno)) return;
       setCorrecciones(aLaVista);
       setError(e instanceof ApiError ? e.message : noSePudoSubir);
     }
@@ -104,10 +105,10 @@ export default function PiezasTab() {
     void leer(lecturaVigente.archivo, lecturaVigente.escala, nuevas, lecturaVigente.correcciones);
   }
 
-  /** Cierra el panel. El turno nuevo deja sin valor a la lectura que
+  /** Cierra el panel. Anular el turno deja sin valor a la lectura que
    * estuviera en camino: si no, al llegar lo abriría de nuevo. */
   function cerrarLectura() {
-    pedidos.nuevo();
+    pedidos.anular();
     setLectura(null);
     setCorrecciones({});
   }

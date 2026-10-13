@@ -85,11 +85,16 @@ export function nombreCorto(idOrigen: string): string {
  * para un recorte que no era un hueco, como la mitad de una letra
  * dibujada dos veces. Tocar una que se sacó le quita la corrección, y
  * vuelve a decidir el sistema.
+ *
+ * Una forma que se ve «no va» y no tiene marca es de un dibujo anterior
+ * al último clic (el segundo de un doble clic rápido): devuelve la misma
+ * lista, sin tocar.
  */
 export function alTocar(correcciones: Correcciones, forma: Pick<FormaLeida, "id_origen" | "estado">): Correcciones {
   const marca = correcciones[forma.id_origen];
   if (marca === "no_va") return sinCorreccion(correcciones, forma.id_origen);
   if (marca === "cortar") return { ...correcciones, [forma.id_origen]: "no_va" };
+  if (forma.estado === "no_va") return correcciones;
   return { ...correcciones, [forma.id_origen]: forma.estado === "se_corta" ? "no_va" : "cortar" };
 }
 
@@ -114,17 +119,6 @@ export function correccionesALaVista(
   return Object.entries(correcciones)
     .filter(([id]) => aLaVista.has(id))
     .map(([id, marca]) => ({ id, texto: `${nombreCorto(id)} ${MARCA_EN_PALABRAS[marca]}` }));
-}
-
-/**
- * La cuenta de los pedidos que se pisan. Cada clic sobre el dibujo pide
- * la lectura de nuevo, y las respuestas pueden llegar en otro orden:
- * solo vale la del último turno. Abrir un turno sin pedir nada (al
- * cancelar, al leer otro archivo) deja sin valor al que estaba en camino.
- */
-export function turnos(): { nuevo: () => number; esElUltimo: (turno: number) => boolean } {
-  let ultimo = 0;
-  return { nuevo: () => ++ultimo, esElUltimo: (turno) => turno === ultimo };
 }
 
 function medida(forma: FormaLeida): { ancho: number; alto: number } {

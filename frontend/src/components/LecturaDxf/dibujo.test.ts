@@ -16,7 +16,6 @@ import {
   sePuedeCargar,
   sinCorreccion,
   trazo,
-  turnos,
   vistaEntera,
 } from "./dibujo";
 
@@ -159,6 +158,14 @@ describe("alTocar", () => {
     const dos = alTocar(uno, { id_origen: "a", estado: "se_corta" });
     const tres = alTocar(dos, { id_origen: "a", estado: "no_va" });
     expect([uno, dos, tres]).toEqual([{ a: "cortar" }, { a: "no_va" }, {}]);
+  });
+
+  it("una que se ve «no va» y ya no tiene marca queda como está: el dibujo es de antes del último clic", () => {
+    // El segundo clic de un doble clic rápido. El primero le sacó la marca,
+    // y hasta que llegue la lectura nueva el dibujo la sigue mostrando
+    // rayada: forzarla a cortar sería decidir sobre algo que ya no es cierto.
+    const lista = { b: "cortar" as const };
+    expect(alTocar(lista, { id_origen: "a", estado: "no_va" })).toBe(lista);
   });
 
   it("no cambia la lista que recibe", () => {
@@ -314,33 +321,6 @@ describe("correccionesALaVista", () => {
 
   it("sin correcciones no hay nada que listar", () => {
     expect(correccionesALaVista({}, formas)).toEqual([]);
-  });
-});
-
-describe("turnos", () => {
-  it("vale la respuesta del último pedido, no la de uno anterior que llega tarde", () => {
-    const pedidos = turnos();
-    const primero = pedidos.nuevo();
-    const segundo = pedidos.nuevo();
-    expect(pedidos.esElUltimo(primero)).toBe(false);
-    expect(pedidos.esElUltimo(segundo)).toBe(true);
-  });
-
-  it("abrir un turno sin pedir nada deja sin valor al que estaba en camino: es lo que hace cancelar", () => {
-    const pedidos = turnos();
-    const enCamino = pedidos.nuevo();
-    expect(pedidos.esElUltimo(enCamino)).toBe(true);
-    pedidos.nuevo();
-    expect(pedidos.esElUltimo(enCamino)).toBe(false);
-  });
-
-  it("cada cuenta es aparte", () => {
-    const unos = turnos();
-    const otros = turnos();
-    const turno = unos.nuevo();
-    otros.nuevo();
-    otros.nuevo();
-    expect(unos.esElUltimo(turno)).toBe(true);
   });
 });
 

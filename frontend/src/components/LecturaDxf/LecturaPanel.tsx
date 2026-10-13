@@ -176,7 +176,10 @@ export default function LecturaPanel({
     apretado.current = null;
     if (!inicio || inicio.seMovio || inicio.id === null) return;
     const forma = leida.formas.find((candidata) => candidata.id_origen === inicio.id);
-    if (forma) alCorregir(alTocar(correcciones, forma));
+    if (!forma) return;
+    const corregidas = alTocar(correcciones, forma);
+    // La misma lista: el clic no cambió nada, y no hay qué volver a leer.
+    if (corregidas !== correcciones) alCorregir(corregidas);
   }
 
   function acercarAlCentro(factor: number) {
