@@ -88,11 +88,12 @@ Qué queda abierto y cuál es el próximo paso.
 
 - **`D-16` cerrada:** WeasyPrint.
 - **`D-20` y `D-21` nuevas:** la fecha del presupuesto y si el total fijado es con IVA. Se confirman en 4.5.
+- **`P-31` a `P-34` nuevas,** las cuatro para el dueño: qué fecha lleva el presupuesto y desde cuándo corre la validez, si el precio final que acuerdan es con IVA, si cargan descuentos como un renglón negativo, y si en el presupuesto que mandan hoy cada renglón lleva su importe o va un solo precio. Quedaron sumadas al primer encuentro del guion de relevamiento.
 
 ### Pendiente
 
 - **El recorrido de Enzo en el navegador,** sobre todo que el archivo se descargue: Chrome sin ventana no guarda descargas, y eso no se pudo ver.
-- **Preguntarle al dueño si cargan descuentos como una línea con precio negativo.** Desde la pantalla ya no se puede: los importes no aceptan negativos. Si se usa, hay que permitirlo y hacer que un total fijado con suma negativa cuente como incompleto.
+- **Preguntarle al dueño si cargan descuentos como una línea con precio negativo** (`P-33`). Desde la pantalla ya no se puede: los importes no aceptan negativos. Si se usa, hay que permitirlo y hacer que un total fijado con suma negativa cuente como incompleto.
 - **Lo que la revisión anotó y no se hizo:** está al final de los «Desvíos» de [`plan.md`](plan/1.3-pdf-del-presupuesto/plan.md).
 - **Al abrir el PR,** resolver los choques con `main` en la bitácora y el mapa: los dos lados los tocaron.
 - **Antes de usarlo sobre la base real,** respaldarla y correr `alembic upgrade head`: la migración `7f91bcd3ef15` agrega tres columnas.

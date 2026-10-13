@@ -234,7 +234,7 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 
 ## 4. Preguntas abiertas — `P-xx`
 
-Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-30`). **30 únicas.**
+Consolidación deduplicada de las 10 preguntas de la propuesta y las 14 del Proyecto Final, más las que surgieron al armar la épica y al analizar la muestra real de diseño (`P-20` a `P-30`) y al construir el PDF del presupuesto (`P-31` a `P-34`). **34 únicas.**
 
 ### 🔴 Bloqueantes de Sprint 0
 
@@ -291,6 +291,17 @@ Surgen de la muestra real de Megacarteles (ver [`ANALISIS-MUESTRA-MEGACARTELES.m
 | **P-16** | ¿Mandan por mail, WhatsApp o los dos? ¿Ya tienen WhatsApp Business? | `SUP-11`, `B-12`, `D-04` |
 | **P-17** | Cuando el dueño observa un presupuesto, ¿vuelve a quien lo armó o lo edita él? | Comportamiento de `OBSERVADO` en `CART-401`, `CART-404` |
 
+### 🟡 El presupuesto que recibe el cliente
+
+Surgen de construir el PDF del presupuesto ([`plan/1.3-pdf-del-presupuesto/`](plan/1.3-pdf-del-presupuesto/)). Las cuatro son para el dueño. Hasta que conteste, el sistema hace lo que dice cada una en «Hoy».
+
+| ID | Pregunta | Alimenta |
+|---|---|---|
+| **P-31** | ¿Qué fecha lleva el presupuesto que le llega al cliente, y desde cuándo corren los días de validez: desde que se arma, desde que se le manda, o se pone a mano? *Hoy (desde el 2026-10-12): la fecha es el día en que se genera el PDF, y «válido hasta» sale de sumarle los días de validez.* | `D-20`, `PAR-11` |
+| **P-32** | Cuando redondean o acuerdan el precio final con el cliente, ¿ese número es con IVA o sin IVA? *Hoy: el total que se fija a mano es el final, con IVA; el subtotal y el IVA salen de ahí.* | `D-21`, `PAR-13` |
+| **P-33** | Cuando hacen un descuento o una bonificación, ¿lo cargan como un renglón aparte con importe negativo, o bajan el precio de algún ítem o del total? *Hoy: la pantalla no acepta importes negativos. Un descuento se hace bajando el precio de un ítem o fijando el total. Si se usan renglones negativos hay que volver a permitirlos, y hacer que un total fijado con suma negativa cuente como incompleto (lo marcó la revisión de la rama).* | Cómo se cargan las líneas (`CART-304` a `CART-306`); «Desvíos» de `plan/1.3-pdf-del-presupuesto/plan.md` |
+| **P-34** | En el presupuesto que le mandan hoy al cliente, ¿cada renglón lleva su importe, o va el detalle y un solo precio por el cartel? ¿Juntan varias cosas en un mismo renglón? *Hoy: cada línea de costo sale como un ítem con su importe (decisión de Enzo, 2026-10-12, sin el formato real a la vista). Juntar varias líneas en un ítem quedó afuera.* | `B-13`, el formato de la empresa (4.4), `CART-309` |
+
 ### 🟢 Fotomontaje y dashboard
 
 | ID | Pregunta | Alimenta |
@@ -327,8 +338,8 @@ Desde el 2026-10-05, «Se cierra en» nombra el paso de [`plan/PLAN-MAESTRO.md`]
 | **D-17** | Cuando el cliente acepta, ¿se crea sola la nota de pedido en AppSheet? | Conversación con el dueño; cuál de `NOTAS_PEDIDO` y `NOTAS_PEDIDO_V2` es la fuente de verdad (`cliente/DASHBOARD-VISTAS.md §1.2`) | 2.4 | Se carga a mano, como hoy |
 | **D-18** | ¿El override manual (`ADR-07`) puede completar una línea de material que no tiene anidado? Si puede, se emiten presupuestos con chapa antes de que llegue el motor | Conversación con el dueño | 1.2 | `ADR-07` sigue vigente: el override alcanza a cualquier línea |
 | **D-19** | ¿Cómo propone el sistema los cortes del seccionado? | `P-21`, `P-22`, `SUP-17` | A5 | **Cerrada (Enzo, 2026-10-07):** grilla del tamaño de la chapa, que se corre y se gira; primero menos tramos, después menos soldadura. El diseñador la ajusta antes de aplicar. Se descartaron partir por lo más angosto y la búsqueda global de cortes (`historico/A5-seccionado/diseno.md`) |
-| **D-20** | ¿Qué fecha lleva el presupuesto que ve el cliente, y desde cuándo corre la validez (`PAR-11`)? | Conversación con el dueño; el envío (1.5) | 4.5 | El día en que se genera el PDF (`plan/1.3-pdf-del-presupuesto/diseno.md §4`) |
-| **D-21** | Cuando se fija a mano el total de un presupuesto, ¿ese número es con IVA o sin IVA? | Conversación con el dueño | 4.5 | Con IVA: es el número final que paga el cliente |
+| **D-20** | ¿Qué fecha lleva el presupuesto que ve el cliente, y desde cuándo corre la validez (`PAR-11`)? | `P-31`; el envío (1.5) | 4.5 | El día en que se genera el PDF (`plan/1.3-pdf-del-presupuesto/diseno.md §4`) |
+| **D-21** | Cuando se fija a mano el total de un presupuesto, ¿ese número es con IVA o sin IVA? | `P-32` | 4.5 | Con IVA: es el número final que paga el cliente |
 
 ---
 
@@ -338,7 +349,7 @@ Una sola reunión no alcanza. Tres encuentros, cada uno con sus IDs a cerrar.
 
 | Encuentro | Con quién | Duración | Preguntas | Insumos a llevarse |
 |---|---|---|---|---|
-| **1 — Negocio y proceso** | Dueño + administración | 90 min | `P-07`, `P-08`, `P-09`, `P-10`, `P-11`, `P-15`, `P-16`, `P-17`, `P-18` | `B-01`, `B-09`, `B-10`, `B-11`, `B-13`, `B-17` |
+| **1 — Negocio y proceso** | Dueño + administración | 90 min | `P-07`, `P-08`, `P-09`, `P-10`, `P-11`, `P-15`, `P-16`, `P-17`, `P-18`, `P-31`, `P-32`, `P-33`, `P-34` | `B-01`, `B-09`, `B-10`, `B-11`, `B-13`, `B-17` |
 | **2 — Taller y materiales** | Encargado de taller / operario de corte | 60 min | `P-01`, `P-02`, `P-03`, `P-04`, `P-05`, `P-23`, `P-26`, `P-28`, `P-30` | `B-02`, `B-03`, `B-04`, `B-05`, `B-06` |
 | **3 — Diseño y sistemas** | Diseñadores + autor del dashboard | 60 min | `P-12`, `P-13`, `P-14`, `P-19`, `P-20`, `P-21`, `P-22`, `P-24`, `P-25`, `P-27`, `P-29` | `B-07`, `B-08`, `B-14`, `B-15` |
 
@@ -355,7 +366,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Supuestos (`SUP`) | 17 | 11 | 4 | 2 |
 | Parámetros (`PAR`) | 49 | 12 | 25 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
-| Preguntas (`P`) | 30 | 26 | 4 | 0 |
+| Preguntas (`P`) | 34 | 30 | 4 | 0 |
 | Decisiones (`D`) | 21 | 19 | 0 | 2 |
 
 **Actualizar esta tabla es parte de cerrar cada sprint** ([`CONVENCIONES.md §8`](CONVENCIONES.md)).
