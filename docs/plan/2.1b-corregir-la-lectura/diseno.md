@@ -1,6 +1,6 @@
 # 2.1b · Corregir a mano la lectura del DXF — diseño
 
-> **Estado:** **diseño, aprobado por Enzo el 2026-10-12 y corregido el 2026-10-13** después de ensayar el código sobre una copia: qué cambió está en el §8. Nada construido. Todavía no tiene `plan.md`.
+> **Estado:** **diseño, aprobado por Enzo el 2026-10-12 y corregido el 2026-10-13** después de ensayar el código sobre una copia: qué cambió está en el §8. Nada construido. El plan está en [`plan.md`](plan.md).
 >
 > **De dónde sale.** [2.1a](../../historico/2.1a-lectura-con-imagen/diseno.md) dejó la pantalla que muestra cómo se lee un DXF antes de cargarlo. Ahí se vio que ninguna regla lee bien todos los dibujos: la unión acierta en el aro de `Complejo.dxf` y arruina un logo de la muestra. Enzo pidió poder corregir la lectura a mano.
 >
