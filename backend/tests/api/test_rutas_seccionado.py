@@ -356,6 +356,39 @@ def test_una_pieza_seccionada_se_puede_volver_a_seccionar_aunque_quede_descartad
     assert _aplicar(cliente, pieza["id"], formato["id"], dx=200).status_code == 201
 
 
+def _anidado_en_curso(cliente, grupo_id: int, estado: str) -> int:
+    with Session(cliente.motor) as sesion:
+        ejecucion = EjecucionNesting(grupo_id=grupo_id, motor="sparrow", estado=estado)
+        sesion.add(ejecucion)
+        sesion.commit()
+        return ejecucion.id
+
+
+@pytest.mark.parametrize("estado", ["encolada", "corriendo"])
+@pytest.mark.parametrize("accion", ["seccionar", "volver a seccionar", "deshacer"])
+def test_mientras_corre_un_anidado_del_grupo_no_se_secciona_ni_se_deshace(cliente, tmp_path, estado, accion):
+    """El anidado que corre usa las piezas de cuando arrancó: cambiarlas a
+    mitad de camino lo dejaba colgado o con un resultado que apunta a
+    piezas que ya no se cortan."""
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    if accion != "seccionar":
+        _aplicar(cliente, pieza["id"], formato["id"])
+    anidado_id = _anidado_en_curso(cliente, grupo["id"], estado)
+    antes = _piezas(cliente, trabajo["id"])
+
+    if accion == "deshacer":
+        respuesta = cliente.delete(f"/piezas/{pieza['id']}/seccionado")
+    else:
+        respuesta = _aplicar(cliente, pieza["id"], formato["id"], dx=200)
+
+    assert respuesta.status_code == 409
+    assert f"#{anidado_id}" in respuesta.json()["detail"]
+    assert "cancel" in respuesta.json()["detail"]
+    assert _piezas(cliente, trabajo["id"]) == antes
+
+
 def test_restaurar_una_pieza_seccionada_se_rechaza(cliente, tmp_path):
     # Si no, el metal se contaría dos veces: la original y sus tramos.
     _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)

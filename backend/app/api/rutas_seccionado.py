@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato
-from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza
+from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
 from ..services.nesting.engine import MotorNestingRectangular
 from ..services.nesting.geometria_material import poligono_material
 from ..services.nesting.models import ParametrosCorte, Plancha
@@ -163,6 +163,32 @@ def _tramos_de(sesion: Session, original: Pieza) -> list[Pieza]:
     return list(sesion.execute(select(Pieza).where(Pieza.seccionada_de_id == original.id)).scalars())
 
 
+def _sin_anidado_en_curso(sesion: Session, original: Pieza) -> None:
+    """Un anidado que corre usa las piezas de cuando arrancó: seccionar o
+    deshacer a mitad de camino lo dejaba colgado, o con un resultado que
+    apunta a piezas que ya no se cortan. Se miran el grupo de la original
+    y los de sus tramos, que pueden haberse movido a otro."""
+    grupos = {original.grupo_id, *(tramo.grupo_id for tramo in _tramos_de(sesion, original))} - {None}
+    if not grupos:
+        return
+    en_curso = sesion.execute(
+        select(GrupoDeCorte.nombre, EjecucionNesting.id)
+        .join(EjecucionNesting, EjecucionNesting.grupo_id == GrupoDeCorte.id)
+        .where(
+            EjecucionNesting.grupo_id.in_(grupos),
+            EjecucionNesting.estado.in_([EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value]),
+        )
+        .order_by(EjecucionNesting.id)
+    ).first()
+    if en_curso is not None:
+        grupo, ejecucion_id = en_curso
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Hay un anidado en curso en el grupo «{grupo}» (#{ejecucion_id}): esperá a que termine, "
+            "o cancelalo en la pestaña Anidado, antes de seccionar o deshacer.",
+        )
+
+
 def _borrar_tramos(sesion: Session, original: Pieza) -> None:
     """Rechaza si algún tramo está en un anidado guardado: las
     colocaciones apuntan a los tramos, y borrarlos dejaría ese plano sin
@@ -241,6 +267,7 @@ def aplicar_seccionado(
     pieza = _pieza_o_404(sesion, pieza_id)
     _no_es_tramo(pieza)
     _no_esta_descartada_a_mano(pieza)
+    _sin_anidado_en_curso(sesion, pieza)
     plancha, params = _chapa_y_parametros(sesion, pieza, datos.formato_id)
     _validar_que_no_entra(pieza, plancha, params)
     celda = _celda(plancha, params)
@@ -260,6 +287,7 @@ def deshacer_seccionado(pieza_id: int, sesion: Session = Depends(obtener_sesion)
     pieza = _pieza_o_404(sesion, pieza_id)
     if pieza.seccionado is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"«{pieza.id_origen}» no está seccionada.")
+    _sin_anidado_en_curso(sesion, pieza)
     _borrar_tramos(sesion, pieza)
     pieza.seccionado = None
     pieza.descartada = False
