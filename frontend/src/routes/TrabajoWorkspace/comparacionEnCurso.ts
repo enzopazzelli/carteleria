@@ -15,10 +15,12 @@ export function debeRetomar(
   return !!ultima && !buscando && ultima.grupo_id === grupoId && comparacionId === null;
 }
 
-/** Cada cuánto se pregunta cómo va. Si la última consulta falló, lo
- * guardado sigue diciendo «corriendo» pero ya no es cierto: no se insiste. */
-export function intervaloDeConsulta(comparacion: Comparacion | undefined, estadoDeLaConsulta: string): number | false {
-  return comparacion?.estado === "corriendo" && estadoDeLaConsulta !== "error" ? 1000 : false;
+/** Cada cuánto se pregunta cómo va. Si el servidor contesta que ya no la
+ * conoce, lo guardado sigue diciendo «corriendo» pero ya no es cierto: no se
+ * insiste. Ante un corte de conexión sí: mientras el servidor se reinicia
+ * no contesta, y recién cuando vuelve se sabe que la perdió. */
+export function intervaloDeConsulta(comparacion: Comparacion | undefined, error: unknown): number | false {
+  return comparacion?.estado === "corriendo" && !seEsfumo(error) ? 1000 : false;
 }
 
 /** El servidor ya no conoce la comparación: se reinició y la perdió. */

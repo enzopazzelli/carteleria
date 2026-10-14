@@ -65,7 +65,7 @@ export function useComparacion(comparacionId: number | null) {
     queryKey: ["comparacion", comparacionId],
     queryFn: () => obtenerComparacion(comparacionId as number),
     enabled: comparacionId !== null,
-    refetchInterval: (query) => intervaloDeConsulta(query.state.data as Comparacion | undefined, query.state.status),
+    refetchInterval: (query) => intervaloDeConsulta(query.state.data as Comparacion | undefined, query.state.error),
   });
 }
 

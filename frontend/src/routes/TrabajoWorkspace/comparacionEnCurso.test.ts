@@ -28,15 +28,19 @@ describe("debeRetomar", () => {
 
 describe("intervaloDeConsulta", () => {
   it("pregunta cada segundo mientras corre", () => {
-    expect(intervaloDeConsulta(comparacion({ estado: "corriendo" }), "success")).toBe(1000);
+    expect(intervaloDeConsulta(comparacion({ estado: "corriendo" }), null)).toBe(1000);
   });
 
-  it("deja de preguntar si la última consulta falló: lo guardado dice «corriendo» pero ya no es cierto", () => {
-    expect(intervaloDeConsulta(comparacion({ estado: "corriendo" }), "error")).toBe(false);
+  it("sigue preguntando si se cortó la conexión: el servidor puede volver, y recién ahí se sabe si la perdió", () => {
+    expect(intervaloDeConsulta(comparacion({ estado: "corriendo" }), new TypeError("Failed to fetch"))).toBe(1000);
+  });
+
+  it("deja de preguntar si el servidor ya no la conoce: lo guardado dice «corriendo» pero ya no es cierto", () => {
+    expect(intervaloDeConsulta(comparacion({ estado: "corriendo" }), new ApiError(404, "No existe"))).toBe(false);
   });
 
   it("deja de preguntar cuando terminó", () => {
-    expect(intervaloDeConsulta(comparacion({ estado: "lista" }), "success")).toBe(false);
+    expect(intervaloDeConsulta(comparacion({ estado: "lista" }), null)).toBe(false);
   });
 });
 
