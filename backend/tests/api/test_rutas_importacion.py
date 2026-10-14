@@ -287,3 +287,22 @@ def test_un_nombre_de_archivo_con_ruta_no_escribe_fuera_de_la_carpeta(cliente, c
 
     assert not (config.DIRECTORIO_ARCHIVOS / "afuera.dxf").exists()
     assert not (config.DIRECTORIO_ARCHIVOS.parent / "afuera.dxf").exists()
+
+
+def test_un_retazo_del_catalogo_no_vuelve_hoja_a_un_cartel_de_su_medida(cliente, chapa, tmp_path):
+    """Las hojas se reconocen por las medidas de las chapas del catálogo. Un
+    retazo (A8) es una medida que se eligió para un trabajo: no tiene que
+    cambiar cómo se leen los diseños que vengan después."""
+    retazo = cliente.post(f"/materiales/{chapa['material_id']}/formatos", json={
+        "ancho_mm": "500", "alto_mm": "500", "es_retazo": True,
+    })
+    assert retazo.status_code == 201, retazo.text
+
+    def cartel(msp):
+        _rectangulo(msp, 0, 0, 500, 500)
+        _rectangulo(msp, 100, 100, 100, 100)
+
+    [disenio] = _analizar(cliente, _dxf_bytes(tmp_path, cartel)).json()["disenios"]
+
+    assert disenio["hojas"] == []
+    assert ((500, 500), "cortar") in _roles_por_medida(disenio)

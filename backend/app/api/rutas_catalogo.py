@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato, Material, ParametrosCorteMaterial
+from ..modelos.trabajo import GrupoDeCorte
 from ..services.nesting.models import Plancha
 from .dependencias import obtener_sesion
 from .esquemas_catalogo import (
@@ -24,6 +25,7 @@ from .esquemas_catalogo import (
     MaterialLeer,
     ParametrosCorteEscribir,
     ParametrosCorteLeer,
+    RetazoCrear,
 )
 
 router = APIRouter(tags=["catalogo"])
@@ -46,13 +48,41 @@ def _formato_o_404(sesion: Session, formato_id: int) -> Formato:
 def _formatos_del_catalogo(sesion: Session) -> list[Plancha]:
     """Las medidas contra las que se reconocen hojas: formatos
     disponibles de materiales que se anidan por área (un tubo o una
-    tira de LED no son una chapa)."""
+    tira de LED no son una chapa). Sin los retazos (A8): su medida se
+    eligió para un trabajo, y no tiene que cambiar cómo se leen los
+    diseños que vengan después."""
     filas = sesion.execute(
         select(Formato.ancho_mm, Formato.alto_mm)
         .join(Material)
-        .where(Formato.disponible.is_(True), Material.nesteable_por_area.is_(True))
+        .where(
+            Formato.disponible.is_(True),
+            Formato.es_retazo.is_(False),
+            Material.nesteable_por_area.is_(True),
+        )
     ).all()
     return [Plancha(ancho_mm=ancho, alto_mm=alto) for ancho, alto in filas]
+
+
+#: Lo que un retazo copia de su chapa al crearse, y vuelve a copiar cada
+#: vez que el precio de la chapa cambia (A8, decisión de Enzo 2026-10-14).
+_CAMPOS_DEL_PRECIO = ("moneda", "costo_unidad_venta", "precio_simulado")
+
+
+def _retazos_de(sesion: Session, formato: Formato) -> list[Formato]:
+    """Los retazos que salieron de `formato`: mismo material y su código
+    con «-R» (`crear_retazo`). Uno de una chapa sin código no tiene cómo
+    reconocerse y se queda con el precio con el que se creó."""
+    if not formato.codigo:
+        return []
+    return list(
+        sesion.execute(
+            select(Formato).where(
+                Formato.material_id == formato.material_id,
+                Formato.es_retazo.is_(True),
+                Formato.codigo == f"{formato.codigo}-R",
+            )
+        ).scalars()
+    )
 
 
 def _commit_o_409(sesion: Session, mensaje: str) -> None:
@@ -70,7 +100,11 @@ def _commit_o_409(sesion: Session, mensaje: str) -> None:
 
 @router.post("/materiales", response_model=MaterialLeer, status_code=status.HTTP_201_CREATED)
 def crear_material(datos: MaterialCrear, sesion: Session = Depends(obtener_sesion)) -> Material:
-    material = Material(**datos.model_dump())
+    campos = datos.model_dump()
+    # Sin familia, el modelo la deduce del nombre (`familia_desde_nombre`).
+    if campos["familia"] is None:
+        del campos["familia"]
+    material = Material(**campos)
     sesion.add(material)
     _commit_o_409(sesion, "Ya existe un material con ese nombre y espesor.")
     return material
@@ -92,6 +126,8 @@ def actualizar_material(
 ) -> Material:
     material = _material_o_404(sesion, material_id)
     for campo, valor in datos.model_dump(exclude_unset=True).items():
+        if campo == "familia" and valor is None:
+            continue  # la familia es obligatoria: un null no la borra
         setattr(material, campo, valor)
     _commit_o_409(sesion, "Ya existe un material con ese nombre y espesor.")
     return material
@@ -150,17 +186,66 @@ def actualizar_formato(
     `PATCH {"disponible": false}`, no un `DELETE` — el histórico que ya
     lo usó tiene que seguir viéndolo."""
     formato = _formato_o_404(sesion, formato_id)
-    for campo, valor in datos.model_dump(exclude_unset=True).items():
+    cambios = datos.model_dump(exclude_unset=True)
+    for campo, valor in cambios.items():
         setattr(formato, campo, valor)
+    if not formato.es_retazo and cambios.keys() & set(_CAMPOS_DEL_PRECIO):
+        for retazo in _retazos_de(sesion, formato):
+            for campo in _CAMPOS_DEL_PRECIO:
+                setattr(retazo, campo, getattr(formato, campo))
     sesion.commit()
     return formato
 
 
 @router.delete("/formatos/{formato_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_formato(formato_id: int, sesion: Session = Depends(obtener_sesion)) -> None:
+    """No se quita un formato que usa un grupo: la base lo dejaría sin
+    material sin avisar (A8). Un retazo en uso, en cambio, se esconde
+    (`disponible = False`): sale de la lista para trabajos nuevos y el
+    grupo que lo usa lo sigue viendo (decisión de Enzo, 2026-10-14)."""
     formato = _formato_o_404(sesion, formato_id)
+    grupos = sesion.execute(select(GrupoDeCorte.nombre).where(GrupoDeCorte.formato_id == formato_id)).scalars().all()
+    if grupos and formato.es_retazo:
+        formato.disponible = False
+        sesion.commit()
+        return
+    if grupos:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Lo usan estos grupos: {', '.join(f'«{nombre}»' for nombre in grupos)}. "
+            "Elegí otra chapa para ellos antes de quitarlo.",
+        )
     sesion.delete(formato)
     sesion.commit()
+
+
+@router.post("/formatos/{formato_id}/retazos", response_model=FormatoLeer, status_code=status.HTTP_201_CREATED)
+def crear_retazo(formato_id: int, datos: RetazoCrear, sesion: Session = Depends(obtener_sesion)) -> Formato:
+    """Un retazo de medida libre del mismo material
+    (`docs/plan/A8-lista-de-materiales-y-retazos/diseno.md §5.2`). Se cobra
+    por m² al precio de la fila de la que sale: se copia acá, así la regla
+    no depende de quien lo pide."""
+    origen = _formato_o_404(sesion, formato_id)
+    if origen.unidad_venta != "M2" or origen.costo_unidad_venta is None:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"El formato «{origen.ancho_mm}×{origen.alto_mm}» no tiene precio por m²: "
+            "un retazo se cobra por m² y no habría cómo.",
+        )
+    retazo = Formato(
+        material_id=origen.material_id,
+        codigo=f"{origen.codigo}-R" if origen.codigo else None,
+        ancho_mm=datos.ancho_mm,
+        alto_mm=datos.alto_mm,
+        es_retazo=True,
+        moneda=origen.moneda,
+        unidad_venta=origen.unidad_venta,
+        costo_unidad_venta=origen.costo_unidad_venta,
+        precio_simulado=origen.precio_simulado,
+    )
+    sesion.add(retazo)
+    sesion.commit()
+    return retazo
 
 
 # --- Parámetros de corte (`CART-105`) -----------------------------------

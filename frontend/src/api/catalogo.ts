@@ -1,9 +1,10 @@
-import { apiGet, ApiError } from "./client";
+import { apiDelete, apiGet, apiPost, ApiError } from "./client";
 
 export interface Material {
   id: number;
   nombre: string;
   espesor: string | null;
+  familia: string;
 }
 
 export interface Formato {
@@ -12,6 +13,9 @@ export interface Formato {
   codigo: string | null;
   ancho_mm: string;
   alto_mm: string;
+  es_retazo: boolean;
+  // Un retazo que se quitó estando en uso queda escondido (A8).
+  disponible: boolean;
   moneda: string | null;
   costo_unidad_venta: string | null;
   unidad_venta: string | null;
@@ -31,6 +35,15 @@ export function listarFormatos(materialId: number): Promise<Formato[]> {
 
 export function obtenerFormato(formatoId: number): Promise<Formato> {
   return apiGet<Formato>(`/formatos/${formatoId}`);
+}
+
+/** Un retazo de medida libre a partir de un formato: copia su precio por m² (A8). */
+export function crearRetazo(formatoId: number, anchoMm: string, altoMm: string): Promise<Formato> {
+  return apiPost<Formato>(`/formatos/${formatoId}/retazos`, { ancho_mm: anchoMm, alto_mm: altoMm });
+}
+
+export function quitarFormato(formatoId: number): Promise<void> {
+  return apiDelete(`/formatos/${formatoId}`);
 }
 
 export interface ParametrosCorteMaterial {

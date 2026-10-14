@@ -17,8 +17,8 @@ import Banner from "../../components/Banner";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { debeRetomar, delGrupo, seEsfumo } from "./comparacionEnCurso";
 import type { OpcionFormato } from "../../api/piezasYgrupos";
-import type { Formato } from "../../api/catalogo";
 import { ApiError } from "../../api/client";
+import ListaDeFormatos from "../../components/ListaDeFormatos/ListaDeFormatos";
 
 export default function GruposTab() {
   const { trabajoId } = useParams();
@@ -83,17 +83,6 @@ export default function GruposTab() {
   }, [comparacion?.id, comparacion?.estado]);
 
   const sinAsignar = piezas?.filter((p) => p.grupo_id === null && !p.descartada) ?? [];
-
-  // Material + medida solos no alcanzan para distinguir formatos: dos
-  // calibres del mismo material comparten esas dos cosas. Sin espesor
-  // ni código, la lista de candidatos muestra checkboxes idénticos.
-  function etiquetaFormato(formato: Formato) {
-    const material = materiales.find((m) => m.id === formato.material_id);
-    const espesor = material?.espesor ? ` ${material.espesor}` : "";
-    const codigo = formato.codigo ? `${formato.codigo} — ` : "";
-    const base = `${codigo}${material?.nombre ?? "?"}${espesor} ${formato.ancho_mm}×${formato.alto_mm}`;
-    return formato.precio_simulado ? `${base} (precio simulado)` : base;
-  }
 
   function mensajeDeError(e: unknown, fallback: string): string {
     return e instanceof ApiError ? e.message : fallback;
@@ -362,38 +351,17 @@ export default function GruposTab() {
               </fieldset>
               <p className="text-sm mb-3">Se usan los parámetros de corte de cada material. La comparación no guarda un plano; luego ejecutá el mismo motor en Anidado.</p>
               {motor === "sparrow" && <p className="text-sm mb-3">Calcula siluetas reales, sin la pasada en huecos. Los formatos se procesan uno por uno{candidatos.length > 0 ? `; puede demorar hasta ${candidatos.length * limite} segundos más la validación de geometría` : ""}.</p>}
-              <label className="text-xs flex items-center gap-1 mb-2 font-medium cursor-pointer">
-                <input
-                  type="checkbox"
-                  disabled={comparando || formatos.length === 0}
-                  checked={formatos.length > 0 && candidatos.length === formatos.length}
-                  // A medio llenar cuando hay algunas tildadas, como en la lista de piezas.
-                  ref={(nodo) => {
-                    if (nodo) nodo.indeterminate = candidatos.length > 0 && candidatos.length < formatos.length;
-                  }}
-                  onChange={(e) => setCandidatos(e.target.checked ? formatos.map((f) => f.id) : [])}
+              {cargando && <p className="text-sm mb-3">Cargando materiales y formatos…</p>}
+              {!cargando && !errorCatalogo && formatos.length === 0 && <p className="text-sm mb-3">No hay formatos en el catálogo.</p>}
+              {!cargando && formatos.length > 0 && (
+                <ListaDeFormatos
+                  formatos={formatos}
+                  materiales={materiales}
+                  tildados={candidatos}
+                  alCambiar={setCandidatos}
+                  deshabilitada={comparando}
                 />
-                Seleccionar todas ({formatos.length})
-              </label>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {cargando && <p>Cargando materiales y formatos…</p>}
-                {!cargando && !errorCatalogo && formatos.length === 0 && <p>No hay formatos en el catálogo.</p>}
-                {formatos.map((formato) => (
-                  <label key={formato.id} className="text-xs flex items-center gap-1">
-                    <input
-                      type="checkbox"
-                      disabled={comparando}
-                      checked={candidatos.includes(formato.id)}
-                      onChange={(e) =>
-                        setCandidatos((prev) =>
-                          e.target.checked ? [...prev, formato.id] : prev.filter((id) => id !== formato.id)
-                        )
-                      }
-                    />
-                    {etiquetaFormato(formato)}
-                  </label>
-                ))}
-              </div>
+              )}
               <button
                 className="bg-cut text-paper rounded px-3 py-1 text-sm mb-3"
                 disabled={candidatos.length < 2 || comparando || cargando || !!errorCatalogo}

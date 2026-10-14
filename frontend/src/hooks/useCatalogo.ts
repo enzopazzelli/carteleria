@@ -1,5 +1,7 @@
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  crearRetazo,
+  quitarFormato,
   listarFormatos,
   listarMateriales,
   obtenerFormato,
@@ -47,4 +49,22 @@ export function useTodosLosFormatos() {
     await Promise.all(resultados.map((r) => r.refetch()));
   }
   return { formatos, materiales: materiales ?? [], cargando, error, reintentar };
+}
+
+/** Un retazo nuevo aparece en la lista de su material. */
+export function useCrearRetazo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ formatoId, anchoMm, altoMm }: { formatoId: number; anchoMm: string; altoMm: string; materialId: number }) =>
+      crearRetazo(formatoId, anchoMm, altoMm),
+    onSuccess: (_retazo, { materialId }) => queryClient.invalidateQueries({ queryKey: ["formatos", materialId] }),
+  });
+}
+
+export function useQuitarFormato() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ formatoId }: { formatoId: number; materialId: number }) => quitarFormato(formatoId),
+    onSuccess: (_nada, { materialId }) => queryClient.invalidateQueries({ queryKey: ["formatos", materialId] }),
+  });
 }
