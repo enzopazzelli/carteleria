@@ -19,6 +19,11 @@ from collections.abc import Callable, Iterator
 #: Las colocaciones de una chapa: `{"id", "rotation", "tx", "ty"}`, sin `sheet`.
 Chapa = list[dict]
 
+#: Margen del filtro por área, relativo al área útil. Sumar áreas con
+#: decimales de máquina puede pasarse por un pelo (0,2 + 83,9 + 15,9 da
+#: 100,00000000000001) y saltear piezas que llenan la chapa justa.
+_TOLERANCIA_RELATIVA = 1e-9
+
 
 def vaciar_chapas(
     chapas: list[Chapa],
@@ -61,7 +66,7 @@ def vaciar_chapas(
         for pieza in sorted((q["id"] for q in donante), key=area, reverse=True):
             recibida = False
             for indice in sorted(range(len(resto)), key=lambda i: ocupado(resto[i])):
-                if ocupado(resto[indice]) + area(pieza) > area_util:
+                if ocupado(resto[indice]) + area(pieza) > area_util * (1 + _TOLERANCIA_RELATIVA):
                     continue
                 if not hay_tiempo():
                     return
