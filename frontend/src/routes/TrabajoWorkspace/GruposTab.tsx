@@ -1,15 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePiezas } from "../../hooks/usePiezas";
 import {
   useAsignarFormatoAGrupo,
   useAsignarPiezaAGrupo,
-  useCompararFormatos,
+  useComparacion,
   useCrearGrupo,
   useGrupos,
+  useIniciarComparacion,
+  useUltimaComparacion,
 } from "../../hooks/useGrupos";
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
+import { cancelarComparacion } from "../../api/piezasYgrupos";
 import Banner from "../../components/Banner";
+import BarraDeProgreso from "../../components/BarraDeProgreso";
 import type { OpcionFormato } from "../../api/piezasYgrupos";
 import type { Formato } from "../../api/catalogo";
 import { ApiError } from "../../api/client";
@@ -23,10 +28,15 @@ export default function GruposTab() {
   const crearGrupo = useCrearGrupo(id);
   const asignarPieza = useAsignarPiezaAGrupo(id);
   const asignarFormato = useAsignarFormatoAGrupo(id);
-  const compararFormatos = useCompararFormatos();
+  const queryClient = useQueryClient();
+  const iniciarComparacion = useIniciarComparacion();
 
   const [nombreNuevoGrupo, setNombreNuevoGrupo] = useState("");
   const [grupoComparando, setGrupoComparando] = useState<number | null>(null);
+  const [comparacionId, setComparacionId] = useState<number | null>(null);
+  const { data: comparacion } = useComparacion(comparacionId);
+  const { data: ultima } = useUltimaComparacion(grupoComparando);
+  const comparando = iniciarComparacion.isPending || comparacion?.estado === "corriendo";
   const [candidatos, setCandidatos] = useState<number[]>([]);
   const [resultado, setResultado] = useState<OpcionFormato[] | null>(null);
   const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
@@ -45,6 +55,19 @@ export default function GruposTab() {
   // selecciona todo el rango intermedio.
   const [anclaSeleccion, setAnclaSeleccion] = useState<number | null>(null);
   const [grupoDestino, setGrupoDestino] = useState("");
+
+  // Al abrir «Comparar formatos» de un grupo se retoma su última
+  // comparación: la barra si sigue corriendo, la tabla si terminó (A7).
+  useEffect(() => {
+    if (ultima && ultima.grupo_id === grupoComparando && comparacionId === null) setComparacionId(ultima.id);
+  }, [ultima, grupoComparando, comparacionId]);
+
+  // Cuando termina, la tabla o el error pasan a la pantalla como antes.
+  useEffect(() => {
+    if (comparacion?.estado === "lista") setResultado(comparacion.opciones);
+    if (comparacion?.estado === "error") setError(comparacion.error ?? "No se pudo comparar.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comparacion?.id, comparacion?.estado]);
 
   const sinAsignar = piezas?.filter((p) => p.grupo_id === null && !p.descartada) ?? [];
 
@@ -129,12 +152,22 @@ export default function GruposTab() {
     setPiezasInvalidas([]);
     setResultado(null);
     try {
-      const opciones = await compararFormatos.mutateAsync({ grupoId, formatoIds: candidatos,
+      const arrancada = await iniciarComparacion.mutateAsync({ grupoId, formatoIds: candidatos,
         opciones: { motor, semilla, segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion, vaciar_chapas: vaciarChapas, giro_libre: giroLibre, criterio: "material" } });
-      setResultado(opciones);
+      setComparacionId(arrancada.id);
     } catch (e) {
       setError(mensajeDeError(e, "No se pudo comparar."));
       if (e instanceof ApiError) setPiezasInvalidas(e.piezasInvalidas);
+    }
+  }
+
+  async function alCancelarComparacion() {
+    if (comparacionId === null) return;
+    try {
+      await cancelarComparacion(comparacionId);
+      await queryClient.invalidateQueries({ queryKey: ["comparacion", comparacionId] });
+    } catch (e) {
+      setError(mensajeDeError(e, "No se pudo cancelar la comparación."));
     }
   }
 
@@ -259,11 +292,12 @@ export default function GruposTab() {
           <div className="mt-3">
             <button
               className="text-sm underline"
-              disabled={compararFormatos.isPending}
+              disabled={comparando}
               onClick={() => {
                 setGrupoComparando(grupo.id);
                 setResultado(null);
                 setCandidatos([]);
+                setComparacionId(null);
               }}
             >
               Comparar formatos
@@ -280,7 +314,7 @@ export default function GruposTab() {
                   Revisar las {piezasInvalidas.length} piezas con geometría inválida
                 </Link>}
               </div>}
-              <fieldset disabled={compararFormatos.isPending} className="flex flex-wrap gap-3 text-xs mb-3" onChange={() => setResultado(null)}>
+              <fieldset disabled={comparando} className="flex flex-wrap gap-3 text-xs mb-3" onChange={() => setResultado(null)}>
                 <label>Motor <select value={motor} onChange={(e) => setMotor(e.target.value as "rectpack" | "sparrow")} className="border rounded p-1">
                   <option value="sparrow">Sparrow irregular (prueba)</option><option value="rectpack">Rectangular</option>
                 </select></label>
@@ -310,7 +344,7 @@ export default function GruposTab() {
               <label className="text-xs flex items-center gap-1 mb-2 font-medium cursor-pointer">
                 <input
                   type="checkbox"
-                  disabled={compararFormatos.isPending || formatos.length === 0}
+                  disabled={comparando || formatos.length === 0}
                   checked={formatos.length > 0 && candidatos.length === formatos.length}
                   // A medio llenar cuando hay algunas tildadas, como en la lista de piezas.
                   ref={(nodo) => {
@@ -327,7 +361,7 @@ export default function GruposTab() {
                   <label key={formato.id} className="text-xs flex items-center gap-1">
                     <input
                       type="checkbox"
-                      disabled={compararFormatos.isPending}
+                      disabled={comparando}
                       checked={candidatos.includes(formato.id)}
                       onChange={(e) =>
                         setCandidatos((prev) =>
@@ -341,11 +375,20 @@ export default function GruposTab() {
               </div>
               <button
                 className="bg-cut text-paper rounded px-3 py-1 text-sm mb-3"
-                disabled={candidatos.length < 2 || compararFormatos.isPending || cargando || !!errorCatalogo}
+                disabled={candidatos.length < 2 || comparando || cargando || !!errorCatalogo}
                 onClick={() => alComparar(grupo.id)}
               >
-                {compararFormatos.isPending ? "Comparando…" : "Comparar"}
+                {comparando ? "Comparando…" : "Comparar"}
               </button>
+              {comparacion?.estado === "corriendo" && (
+                <div className="mb-3">
+                  <BarraDeProgreso progreso={comparacion.progreso} />
+                  <button className="underline text-sm" onClick={() => void alCancelarComparacion()}>
+                    Cancelar
+                  </button>
+                </div>
+              )}
+              {comparacion?.estado === "cancelada" && <p className="text-sm mb-3">Comparación cancelada.</p>}
               {candidatos.length < 2 && <p className="text-sm mb-3">Seleccioná al menos dos formatos para habilitar la comparación.</p>}
               {motor === "rectpack" && (piezas?.filter((p) => p.grupo_id === grupo.id && !p.descartada).reduce((n, p) => n + p.cantidad, 0) ?? 0) > 500 && (
                 <p className="text-sm mb-3">Comparación rápida rectangular para más de 500 piezas. El resultado es estimativo; confirmá el anidado en la etapa Anidado.</p>

@@ -3,9 +3,12 @@ import {
   actualizarParametrosGrupo,
   asignarFormatoAGrupo,
   asignarPiezaAGrupo,
-  compararFormatos,
   crearGrupo,
+  iniciarComparacion,
   listarGrupos,
+  obtenerComparacion,
+  ultimaComparacion,
+  type Comparacion,
   type ParametrosCorteOverride,
 } from "../api/piezasYgrupos";
 
@@ -48,9 +51,29 @@ export function useActualizarParametrosGrupo(trabajoId: number) {
   });
 }
 
-export function useCompararFormatos() {
+export function useIniciarComparacion() {
   return useMutation({
     mutationFn: ({ grupoId, formatoIds, opciones }: { grupoId: number; formatoIds: number[]; opciones?: import("../api/nesting").OpcionesAnidado }) =>
-      compararFormatos(grupoId, formatoIds, opciones),
+      iniciarComparacion(grupoId, formatoIds, opciones),
+  });
+}
+
+/** Pregunta cada segundo mientras la comparación corre. */
+export function useComparacion(comparacionId: number | null) {
+  return useQuery({
+    queryKey: ["comparacion", comparacionId],
+    queryFn: () => obtenerComparacion(comparacionId as number),
+    enabled: comparacionId !== null,
+    refetchInterval: (query) => ((query.state.data as Comparacion | undefined)?.estado === "corriendo" ? 1000 : false),
+  });
+}
+
+/** La última comparación del grupo, para retomarla al abrir «Comparar formatos». */
+export function useUltimaComparacion(grupoId: number | null) {
+  return useQuery({
+    queryKey: ["ultima-comparacion", grupoId],
+    queryFn: () => ultimaComparacion(grupoId as number),
+    enabled: grupoId !== null,
+    staleTime: 0,
   });
 }
