@@ -1,3 +1,5 @@
+import { puntosDeMiniatura } from "./miniatura";
+
 interface PiezaMiniPreviewProps {
   contornoMm: string[][];
   anchoMm: string;
@@ -9,7 +11,7 @@ const TAMANO_PX = 48;
 export default function PiezaMiniPreview({ contornoMm, anchoMm, altoMm }: PiezaMiniPreviewProps) {
   const ancho = Number(anchoMm);
   const alto = Number(altoMm);
-  const puntos = contornoMm.map(([x, y]) => `${x},${y}`).join(" ");
+  const puntos = puntosDeMiniatura(contornoMm, altoMm);
 
   return (
     <svg
