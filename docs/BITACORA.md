@@ -97,7 +97,9 @@ Qué queda abierto y cuál es el próximo paso.
 - **Retazos de medida libre:** «Retazo…» en una fila crea un formato del mismo material, con la medida que se escriba y el precio por m² de esa fila (`POST /formatos/{id}/retazos`). Se compara, se usa en el grupo y se cotiza como cualquier formato.
 - **Un formato que usa un grupo no se quita:** antes la base dejaba el grupo sin material, sin avisar.
 - **Recorrido en Chrome sin ventana sobre una copia de la base:** filtrar y buscar en «Complejo»; en un trabajo chico armado en la copia (seis piezas de 300 × 200 mm), un retazo de 1000 × 1000 de la chapa negra cal. 22 dio 1 chapa y ARS 13.720,40 (1 m² por su precio), contra ARS 40.842,90 de la chapa entera; el costeo salió del retazo; quitarlo en uso se rechazó.
-- Backend 705 pruebas, frontend 167.
+- **Un revisor aparte leyó la rama: «con arreglos», nada crítico.** Tres arreglos con su prueba: los retazos ya no cuentan para reconocer hojas al leer un DXF (un cartel de 1000 × 1000 se habría leído como hoja después de crear un retazo de esa medida); el buscador encuentra lo que se lee en la tabla («cal. 22», «2,4», «0.5 mm»); y una medida de retazo mal escrita se avisa en castellano en vez de «Error 422».
+- **Dos decisiones de Enzo después de la revisión:** la ✕ en un retazo que usa un grupo lo esconde de la lista (el grupo lo sigue viendo y cotizando), y un retazo sigue el precio de la chapa de la que salió cuando se carga una lista de precios nueva. Lo menor quedó en los «Desvíos» del plan.
+- Backend 709 pruebas, frontend 172.
 
 **Limpieza:**
 

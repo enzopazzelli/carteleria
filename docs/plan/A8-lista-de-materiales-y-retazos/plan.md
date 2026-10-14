@@ -1074,9 +1074,27 @@ Lo que se hizo distinto de lo escrito arriba, el 2026-10-14.
 - **Task 7, el recorrido usó además un trabajo chico armado en la copia** (seis piezas de 300 × 200 mm, `backend/local/herramientas-a8-2026-10-14/armar_trabajo_chico.py`, fuera de git): las piezas de «Complejo» no entran en 1 m × 1 m y la comparación con el retazo solo habría dicho «hay que seccionar». Con «Complejo» se probaron el filtro y la búsqueda.
 - **Task 7, el guion del recorrido se corrigió tres veces** (buscaba la medida del retazo con decimales, cambiaba el motor después de retomar la comparación, y buscaba «lista» en la pantalla en lugar de preguntarle al servidor). Ninguna fue una falla de la pantalla.
 - **La suite del backend no se volvió a correr entera en la Task 7:** desde la Task 3 (705 en verde) no cambió ningún archivo del backend.
+- **El componente no avisa con un callback cuando se crea o se quita un retazo,** como decía §5.3 del diseño: lo resuelve adentro, con los hooks del catálogo y `alCambiar`. En la pantalla no cambia nada.
+
+**La revisión aparte (2026-10-14): «con arreglos», nada crítico.** Se arregló, cada cosa con una prueba que falló primero:
+
+- **Los retazos no cuentan para reconocer hojas al leer un DXF** (`_formatos_del_catalogo`): crear un retazo de 1000 × 1000 hacía que un cartel de esa medida se leyera como hoja en los diseños que vinieran después.
+- **El buscador normaliza igual lo buscado y la fila:** la coma decimal como punto y sin el punto final de «cal.». Antes no encontraba «cal. 22», «2,4» ni «0.5 mm», que es como se leen en la tabla.
+- **La medida de un retazo se valida en la pantalla** (`medidaDeRetazo`: solo cifras y un decimal, con coma o punto, mayor que 0 y hasta 10 000): una medida mal escrita mostraba «Error 422». De paso, «1e3» ya no llega al servidor.
+- **Dos decisiones de Enzo que agregan al diseño** (§3 y §5.2): quitar un retazo que usa un grupo lo esconde (`disponible = False`) en lugar de rechazarlo, y la lista no muestra lo que no está disponible; y un retazo sigue el precio de su chapa cuando `PATCH /formatos/{id}` cambia la moneda, el precio o la marca de simulado.
 
 **Lo que quedó anotado y no se hizo:**
 
 - En la comparación y en el costeo, la medida de un retazo se escribe como se guardó («1000×1000 mm») y la de una chapa del catálogo con decimales («1220.00×2440.00 mm»).
 - Después de retomar una comparación, los formatos que se habían tildado no vuelven tildados: para comparar de nuevo hay que tildarlos otra vez.
 - El código del formato no es una columna de la tabla; se encuentra con el buscador.
+- **Se puede perder un tilde mientras se crea o se quita un retazo:** `alCambiar` usa los tildados de antes de que vuelva el pedido. Pasa solo si se tilda otra fila en ese instante.
+- **El 409 de quitar una chapa entera en uso nombra los grupos, pero no el trabajo.** Desde la pantalla no se llega: la ✕ está solo en los retazos.
+- **«Retazo…» aparece también en filas sin precio por m²;** recién al «Agregar» llega el aviso. En el catálogo de Enzo todas se venden por m².
+- **«Agregar» no se deshabilita mientras se compara;** solo «Retazo…».
+- **Una medida de 1 se acepta como 1 mm,** aunque se haya pensado en metros. No hay un mínimo.
+- **La familia no se normaliza:** «chapas» y «Chapas» saldrían como dos botones, y una de solo espacios se acepta. Hoy la familia se cambia solo por la API.
+- **El buscador no encuentra «retazo»** (la marca no está entre las palabras de la fila) **ni «1220x2440» con x.**
+- **`DELETE /materiales/{id}` deja sin chapa a los grupos que usaban sus formatos.** Ya pasaba antes de A8; desde la pantalla no se llega.
+- **Un `insert(Material).values([...])` del ORM con varias filas falla** con el valor por defecto de la familia (límite de SQLAlchemy 2.0.41). Nada del proyecto inserta así.
+- **Lo que la revisión dejó para decidir más adelante:** el selector de chapa del panel de seccionado lista los retazos sin marcarlos; pedir por la API un retazo de un retazo da el código «X-R-R»; al renombrar un material la familia no se recalcula (pisaría una corrección a mano); seccionar contra un retazo muy chico puede ser lento (ya está en el plan maestro); y llevar stock de retazos queda afuera del diseño.

@@ -28,6 +28,8 @@
 | De dónde sale la familia | **Un dato nuevo del material.** Para los que ya existen se completa solo desde el nombre y después se puede corregir |
 | Cómo se cobra un retazo | **Por m², al precio del material**: lo que mide el retazo por el precio por m² de la chapa entera |
 | Dónde se elige el retazo | **En la lista, como una fila más,** guardado en el catálogo y marcado como retazo, para compararlo y usarlo en el grupo |
+| Qué hace la ✕ con un retazo que usa un grupo (después de la revisión) | **Lo esconde:** sale de la lista para trabajos nuevos, y el grupo que lo usa lo sigue viendo y cotizando. Si nadie lo usa, se borra |
+| Qué precio tiene un retazo cuando cambian los precios (después de la revisión) | **El de su chapa:** al cargar una lista de precios nueva, el retazo toma el precio nuevo de la chapa de la que salió |
 
 ## 4. Alcance
 
@@ -47,9 +49,10 @@
 ### 5.2 El retazo
 
 - **`POST /formatos/{id}/retazos`** con `{ancho_mm, alto_mm}`: crea un formato nuevo del mismo material, con esa medida, `es_retazo = True`, y copia de la fila de origen la moneda, la unidad de venta, el precio por unidad de venta y la marca de precio simulado. Contesta **201** con el formato nuevo.
+- **El retazo sigue el precio de su chapa:** cuando `PATCH /formatos/{id}` cambia la moneda, el precio o la marca de simulado de una chapa entera, sus retazos copian el valor nuevo. Es el camino del guion que carga los precios (`scripts/_carga_catalogo.py`). Un retazo se reconoce por el código de su chapa con «-R»; el de una chapa sin código se queda con el precio con el que se creó.
 - **Rechaza:** un formato que no existe (**404**); una medida que no es un número positivo y finito, o mayor que 10 000 mm (**422**); un formato de origen que no se vende por m² o que no tiene precio (**400**: el retazo se cobra por m² y no habría cómo).
 - **El código** del retazo es el de la fila de origen con «-R» al final (o vacío si no tenía), para reconocerlo en la lista.
-- **Quitar un retazo** usa la ruta que ya existe (`DELETE /formatos/{id}`), y la pantalla la ofrece solo en las filas de retazo.
+- **Quitar un retazo** usa la ruta que ya existe (`DELETE /formatos/{id}`), y la pantalla la ofrece solo en las filas de retazo. Si un grupo lo usa, no se borra: queda `disponible = False` y la lista no lo muestra. Una chapa entera que usa un grupo, en cambio, no se quita (**409**).
 - **Lo demás no cambia:** un retazo se compara, se asigna al grupo con «Usar este» y se anida y cotiza como cualquier formato. Su costo es su área por su precio por m², por cada chapa.
 
 ### 5.3 La tabla
@@ -57,7 +60,7 @@
 - **Un componente nuevo, `ListaDeFormatos`,** que reemplaza las casillas de la comparación. Recibe los formatos, los materiales, los tildados y qué hacer al tildar, y avisa cuando se crea o se quita un retazo.
 - **Arriba:** un botón por familia (las que hay en el catálogo, más «Todas»), un buscador (busca en material, espesor, código y medida) y «Seleccionar todas», que tilda solo lo que está a la vista.
 - **Columnas:** casilla · Familia · Material · Espesor · Medida (en mm, sin decimales de más: «1220 × 2440») · Precio por m² (con moneda, y «simulado» cuando corresponde; «—» si no se vende por m²) · acciones.
-- **Orden:** por familia, material, espesor y medida; los retazos de un formato, debajo de los de su material.
+- **Orden:** por familia, material, espesor y medida; los retazos de un formato, debajo de los de su material. Los formatos que no están disponibles no se muestran.
 - **Acciones de la fila:** «Retazo…» abre, en la misma fila, dos campos (ancho y alto, en mm) y «Agregar»; una fila de retazo lleva la etiqueta «Retazo» y una ✕ para quitarlo.
 - **Las cuentas** (filtrar, ordenar, el texto de la medida y del precio) van en funciones aparte, sin React, para poder probarlas.
 
