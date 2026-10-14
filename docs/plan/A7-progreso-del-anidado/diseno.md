@@ -46,7 +46,7 @@ Un módulo nuevo del servidor, `app/progreso.py`, guarda en memoria cómo va cad
 ### 5.2 El anidado
 
 - **El worker** escribe, al lado de su resultado, un archivo de progreso (`salida.progreso.json`, nombrado por `ruta_de_progreso`, igual que el de avisos): al empezar cada pasada, al empezar a vaciar chapas y cada vez que encuentra un resultado mejor. Lo escribe aparte y lo reemplaza de una vez, como el resultado y los avisos.
-- **El supervisor** (`anidar_sparrow`) recibe un `al_avanzar` opcional. En la vuelta que ya hace cada décima de segundo, lee el archivo de progreso como mucho dos veces por segundo y llama a `al_avanzar` con lo leído más `segundos` y `maximo`. Si el archivo no está o está a medias, no llama: queda la lectura anterior.
+- **El supervisor** (`anidar_sparrow`) recibe un `al_avanzar` opcional. En la vuelta que ya hace cada décima de segundo, lee el archivo de progreso como mucho dos veces por segundo y llama a `al_avanzar` con lo leído más `segundos` y `maximo`. Si el archivo todavía no está o está a medias, se usa la última lectura buena (o ninguna): el tiempo se informa igual, para que la barra no se quede quieta.
 - **La corrida** (`_ejecutar_anidado`) pasa un `al_avanzar` que anota en el registro bajo `("ejecucion", id)`, y lo olvida al terminar, salga como salga.
 - **`GET /ejecuciones/{id}`** devuelve además `progreso`: lo anotado, o `null` si no hay (motor rectangular, o la corrida ya terminó).
 
