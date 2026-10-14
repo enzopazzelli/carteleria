@@ -22,6 +22,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import progreso
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
 from ..modelos.base import Sesion
@@ -49,6 +50,7 @@ from .esquemas_nesting import (
     EjecucionLeer,
     OpcionFormatoLeer,
     PiezaASeccionarLeer,
+    ProgresoLeer,
     ResumenMaterialesLeer,
 )
 from .rutas_trabajos import _grupo_o_404, _trabajo_o_404
@@ -241,7 +243,16 @@ def _esta_cancelada(ejecucion_id: int) -> bool:
 
 
 def _ejecutar_anidado(ejecucion_id: int) -> None:
-    """La tarea que corre en la cola (un hilo, hoy). Necesita su PROPIA
+    """La tarea que corre en la cola. El progreso (A7) se olvida al
+    terminar, salga como salga."""
+    try:
+        _correr_anidado(ejecucion_id)
+    finally:
+        progreso.olvidar(("ejecucion", ejecucion_id))
+
+
+def _correr_anidado(ejecucion_id: int) -> None:
+    """La corrida en sí (un hilo, hoy). Necesita su PROPIA
     sesión: la del request que encoló ya se cerró para cuando esto
     arranca — nunca se comparte una sesión de SQLAlchemy entre hilos.
     """
@@ -266,7 +277,8 @@ def _ejecutar_anidado(ejecucion_id: int) -> None:
             if ejecucion.motor == "sparrow":
                 opciones = OpcionesSparrow(**{k: v for k, v in (ejecucion.opciones or {}).items() if k != "usar_anidado_en_huecos"})
                 resultado = anidar_sparrow(piezas, geometrias, plancha, params, opciones,
-                    cancelada=lambda: _esta_cancelada(ejecucion_id))
+                    cancelada=lambda: _esta_cancelada(ejecucion_id),
+                    al_avanzar=lambda avance: progreso.anotar(("ejecucion", ejecucion_id), avance))
             else:
                 resultado = MotorNestingRectangular(plancha, params).anidar(
                     piezas, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
@@ -376,8 +388,16 @@ def anidar(
 
 
 @router.get("/ejecuciones/{ejecucion_id}", response_model=EjecucionLeer)
-def obtener_ejecucion(ejecucion_id: int, sesion: Session = Depends(obtener_sesion)) -> EjecucionNesting:
-    return _ejecucion_o_404(sesion, ejecucion_id)
+def obtener_ejecucion(ejecucion_id: int, sesion: Session = Depends(obtener_sesion)) -> EjecucionLeer:
+    """Con `progreso` mientras corre (A7). Una corrida terminada no lo
+    trae, aunque la memoria todavía no lo haya olvidado: entre guardar el
+    resultado y olvidar el progreso hay un instante."""
+    ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
+    leida = EjecucionLeer.model_validate(ejecucion)
+    if ejecucion.estado not in (EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value):
+        return leida
+    avance = progreso.leer(("ejecucion", ejecucion.id))
+    return leida.model_copy(update={"progreso": ProgresoLeer(**avance) if avance else None})
 
 
 @router.get("/ejecuciones/{ejecucion_id}/colocaciones", response_model=list[ColocacionLeer])
