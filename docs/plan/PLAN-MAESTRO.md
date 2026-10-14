@@ -250,11 +250,8 @@ Se detallan cuando les toque, cada una con su diseño.
 | Pendiente | De dónde sale | Depende de |
 |---|---|---|
 | Validar con el aro real exportado soldado | §7 de su diseño | `SUP-17`: que el diseñador lo mande |
-| «Volver a seccionar» abre el panel vacío, sin la grilla guardada | Revisión del 2026-10-08 | — |
 | La segunda pasada de la búsqueda repite ángulos ya probados: solo afina el corrimiento | Revisión | — |
-| Un ángulo o un corrimiento que no es un número da error 500, y por la API se puede seccionar una pieza descartada a mano | Revisión | — |
 | No hay tope para chapas chicas pero válidas, y el selector de chapa del panel lista todo el catálogo | Revisión | — |
-| Volver a seccionar mientras corre un anidado del mismo grupo puede dejar esa ejecución sin terminar | Revisión | — |
 | Una pieza tiene un solo seccionado, para una chapa: la comparación de formatos usa los tramos aunque la pieza entraría entera en una chapa más grande | Revisión | — |
 | Con veta, los tramos quedan girados respecto del dibujo | Revisión | `P-30` |
 | La comparación de formatos usa los parámetros de corte del material aunque el grupo tenga propios | Arreglo del 2026-10-09 | `CART-210` |
@@ -264,6 +261,8 @@ Se detallan cuando les toque, cada una con su diseño.
 | El botón «Seccionar» se decide con una cuenta sin márgenes ni kerf: una pieza casi del tamaño de la chapa no lo muestra | Panel | `P-28` |
 | La pieza 1009 del trabajo 4 parece un plano de referencia y no una pieza a cortar | Panel | 2.1, la revisión de la importación |
 
+**Resueltos el 2026-10-14** (rama `fix/depuracion`): «Volver a seccionar» abre con el corte guardado; un ángulo o un corrimiento infinito o que no es un número da un aviso y no un 500, y una pieza descartada a mano no se secciona; no se secciona ni se deshace mientras corre un anidado del grupo, ni se vuelve a cargar el dibujo mientras corre uno del trabajo.
+
 **Pendientes del reparto por chapa.** El reparto por chapa se cerró el 2026-10-10 y su carpeta pasó a [`historico/A6-reparto-por-chapa/`](../historico/A6-reparto-por-chapa/). Esto es lo que quedó vivo y se sigue desde acá. El detalle de cada punto está al final de su [`plan.md`](../historico/A6-reparto-por-chapa/plan.md), en «Desvíos».
 
 | Pendiente | De dónde sale | Depende de |
@@ -272,15 +271,15 @@ Se detallan cuando les toque, cada una con su diseño.
 | Medir un trabajo con muchas más piezas | Tarea 6 de su plan | Un trabajo con grupos armados: `Muestra Vectores` no los tiene en el respaldo |
 | Las preguntas a Vale: si tiene cambios en curso sobre `sparrow_worker.py` y si ya había probado otro reparto | Tarea 0 de su plan | Vale |
 | El aviso «Se alcanzó el límite de búsqueda» sale en buena parte de las corridas con la etapa prendida: el worker estima corto lo que dura una consulta | Revisión | — |
-| Si la etapa falla, queda escrito solo en el registro del worker, que se borra | Revisión | — |
-| El filtro por área puede saltear, por redondeo, una consulta de piezas que llenan la chapa exacta | Revisión | — |
 | Ningún test corre la etapa por el camino del worker aparte y su archivo de salida | Revisión | — |
-| `considerar` actualiza el mejor resultado antes de escribirlo | Revisión | — |
 | El texto de ayuda de Anidado dice «Más búsqueda por chapa no da menos planchas» como si fuera una regla | Revisión | Decisión de Enzo |
 | Una comparación de formatos es un solo pedido que puede durar varias veces `PAR-09`; no se probó si el navegador lo corta | Revisión | `D-12` |
-| Si el worker falla en una segunda pasada, el supervisor descarta el anidado de la primera | Revisión; es anterior a este sub-proyecto | — |
 | `GUIA-SPARROW-PRUEBAS.md` sugiere 120 s como punto de partida y `motor/PLAN-VALIDACION-CORTE-MANUAL.md` nombra `PAR-09` con su valor anterior | Tarea 5 bis de su plan | — |
-| Girar una pieza con ángulo libre en el anidado automático. Hoy Sparrow solo prueba cuartos de vuelta (0°, 90°, 180°, 270°); a mano, en Ajuste, ya se puede girar a cualquier ángulo | Pedido de Enzo del 2026-10-12 | `INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md` lo dejaba afuera; hablarlo con Vale |
+| Girar una pieza con ángulo libre en el anidado automático. Hoy Sparrow solo prueba cuartos de vuelta (0°, 90°, 180°, 270°); a mano, en Ajuste, ya se puede girar a cualquier ángulo | Pedido de Enzo del 2026-10-12 | Ya no depende de Vale: `spyrrow` acepta giro libre. Diseño aprobado el 2026-10-14 (casilla en cada anidado, marcada por defecto) |
+| Otras rutas cambian piezas aunque corra un anidado: editar una pieza (grupo, cantidad, descartar), borrar un grupo y borrar un trabajo. Volver a cargar el dibujo y seccionar ya lo rechazan | Revisión de `fix/depuracion`, 2026-10-14 | — |
+| La carpeta temporal de cada corrida de Sparrow sale de la carpeta temporal del sistema, en C:, que en la máquina de Enzo está casi llena. Iría mejor al lado de los datos (`CARTELERIA_DATOS`) | Revisión de `fix/depuracion`, 2026-10-14 | — |
+
+**Resueltos el 2026-10-14** (rama `fix/depuracion`): si falla la etapa de vaciar chapas, el motivo llega a los avisos del resultado; si falla una pasada posterior o el worker termina con error, vale el último anidado que dejó escrito; el worker da por mejor un resultado recién cuando quedó escrito; y el filtro por área ya no saltea, por redondeo, piezas que llenan la chapa justa.
 
 **Pendientes de la lectura con imagen (2.1a).** Se cerró el 2026-10-12 y su carpeta pasó a [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/). Esto es lo que quedó vivo y se sigue desde acá. El detalle está en los «Desvíos» de su [`plan.md`](../historico/2.1a-lectura-con-imagen/plan.md).
 
@@ -291,12 +290,10 @@ Se detallan cuando les toque, cada una con su diseño.
 | Una franja chica enganchada en otra se lee al revés, y una letra cuyo hueco se acerca a menos de `PAR-50` de su borde queda maciza al unir | Revisión de la rama | — (2.1b no tocó la regla de unir) |
 | Los huecos de una pieza unida suman filas descartadas a la tabla de Piezas (25 en el aro) | §7 de su diseño | Decisión de Enzo |
 | Si la excepción del rectángulo vale también para la forma de adentro: hoy una pieza irregular que no entra en ninguna chapa no descarta un hueco rectangular que tampoco entra | Revisión de la rama | Decisión de Enzo |
-| El panel deja cargar una lectura sin ninguna forma, y eso borra las piezas del trabajo | Revisión de la rama | — |
-| Al cargar sin unir, el aviso pide marcar una casilla que ya no está en pantalla | Revisión de la rama | — |
 | El lector toma como pieza un agujero que está adentro de dos formas a la vez: sin unir, un tornillo en el borde del aro sale como pieza a cortar | Revisión de la rama; es anterior a este sub-proyecto | — |
 | `dibujo.ts` calcula la caja con `Math.min(...)`, que con un archivo mucho más grande que la muestra puede fallar; y la lectura manda los números con todos sus decimales (2,3 MB en la muestra) | Revisión de la rama | — |
-| `pytest` levanta cualquier `test_*.py` que caiga en `backend/local/`: falta `testpaths = tests` en `backend/pytest.ini` | Revisión de la rama | — |
-| Las miniaturas de la tabla de Piezas salen dadas vuelta | Pendiente anterior | — |
+
+**Resueltos el 2026-10-14** (rama `fix/depuracion`): una carga sin nada para cortar no borra las piezas (el panel ya no lo permitía desde 2.1b; ahora tampoco la API), y un archivo que no se puede leer no pisa el DXF guardado; el aviso de las formas sin unir dice dónde está la casilla; `pytest` solo junta `tests/`; y las miniaturas ya no salen dadas vuelta.
 
 **Pendientes de corregir la lectura a mano (2.1b).** Se cerró el 2026-10-13 y su carpeta pasó a [`historico/2.1b-corregir-la-lectura/`](../historico/2.1b-corregir-la-lectura/). Esto es lo que quedó vivo y se sigue desde acá. Lo menor que señaló la revisión de la rama está en los «Desvíos» de su [`plan.md`](../historico/2.1b-corregir-la-lectura/plan.md).
 

@@ -34,6 +34,7 @@ def cliente(tmp_path, monkeypatch):
 
     app.dependency_overrides[obtener_sesion] = _sesion_de_prueba
     with TestClient(app) as cliente:
+        cliente.motor = motor  # para insertar filas directo en algún test puntual
         yield cliente
     app.dependency_overrides.clear()
 
@@ -200,20 +201,106 @@ def test_volver_a_subir_reemplaza_las_piezas_anteriores(cliente, tmp_path):
     assert len(piezas) == 2, "las piezas de la primera subida no debían quedar"
 
 
-def test_subir_dxf_con_contorno_abierto_lo_reporta_sin_crear_pieza(cliente, tmp_path):
-    contenido = _dxf_bytes(
+def _contorno_abierto(tmp_path) -> bytes:
+    return _dxf_bytes(
         tmp_path,
         "abierto.dxf",
         lambda msp: msp.add_lwpolyline([(0, 0), (10, 0), (10, 10), (0, 30)], close=False),
     )
+
+
+def test_subir_dxf_con_contorno_abierto_no_carga_y_dice_por_que(cliente, tmp_path):
+    """Sin ninguna forma cerrada no queda nada para cortar: no se carga, y
+    el aviso explica qué tenía el archivo."""
     trabajo = _crear_trabajo(cliente)
+
+    respuesta = _subir(cliente, trabajo["id"], _contorno_abierto(tmp_path))
+
+    assert respuesta.status_code == 400
+    assert "ninguna forma para cortar" in respuesta.json()["detail"]
+    assert "no se pudieron cerrar" in respuesta.json()["detail"]
+
+
+def test_cargar_sin_nada_para_cortar_no_toca_las_piezas_del_trabajo(cliente, tmp_path):
+    """Cargar reemplaza las piezas del trabajo: una lectura vacía lo dejaba
+    sin ninguna. El panel ya no la deja cargar; la API tampoco."""
+    trabajo, pieza = _trabajo_con_una_pieza(cliente, tmp_path)
+
+    respuesta = _subir(cliente, trabajo["id"], _contorno_abierto(tmp_path))
+
+    assert respuesta.status_code == 400
+    assert cliente.get(f"/trabajos/{trabajo['id']}/piezas").json() == [pieza]
+
+
+def test_cargar_con_todo_marcado_como_que_no_va_no_toca_las_piezas_del_trabajo(cliente, tmp_path):
+    trabajo, _ = _trabajo_con_una_pieza(cliente, tmp_path)
+    contenido = _dxf_bytes(
+        tmp_path, "uno.dxf", lambda msp: msp.add_lwpolyline([(0, 0), (40, 0), (40, 40), (0, 40)], close=True)
+    )
+    forma = _ver_lectura(cliente, trabajo["id"], contenido).json()["sin_unir"]["formas"][0]["id_origen"]
+
+    respuesta = _subir(cliente, trabajo["id"], contenido, correcciones=json.dumps({forma: "no_va"}))
+
+    assert respuesta.status_code == 400
+    assert len(cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()) == 1
+
+
+@pytest.mark.parametrize("estado", ["encolada", "corriendo"])
+def test_mientras_corre_un_anidado_del_trabajo_no_se_vuelve_a_cargar(cliente, tmp_path, estado):
+    """Cargar reemplaza todas las piezas: el anidado que corre se quedaba
+    con un resultado que apunta a piezas borradas."""
+    from app.modelos.trabajo import EjecucionNesting
+
+    trabajo, pieza = _trabajo_con_una_pieza(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    with Session(cliente.motor) as sesion:
+        ejecucion = EjecucionNesting(grupo_id=grupo["id"], motor="sparrow", estado=estado)
+        sesion.add(ejecucion)
+        sesion.commit()
+        ejecucion_id = ejecucion.id
+    contenido = _dxf_bytes(
+        tmp_path, "otro.dxf", lambda msp: msp.add_lwpolyline([(0, 0), (40, 0), (40, 40), (0, 40)], close=True)
+    )
 
     respuesta = _subir(cliente, trabajo["id"], contenido)
 
-    cuerpo = respuesta.json()
-    assert cuerpo["piezas_creadas"] == 0
-    assert cuerpo["contornos_no_cerrados"] == 1
-    assert cuerpo["advertencias"]
+    assert respuesta.status_code == 409
+    assert f"#{ejecucion_id}" in respuesta.json()["detail"]
+    assert cliente.get(f"/trabajos/{trabajo['id']}/piezas").json() == [pieza]
+
+
+@pytest.mark.parametrize("estado", ["lista", "error", "cancelada"])
+def test_un_anidado_terminado_del_trabajo_no_impide_volver_a_cargar(cliente, tmp_path, estado):
+    from app.modelos.trabajo import EjecucionNesting
+
+    trabajo, _ = _trabajo_con_una_pieza(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    with Session(cliente.motor) as sesion:
+        sesion.add(EjecucionNesting(grupo_id=grupo["id"], motor="sparrow", estado=estado))
+        sesion.commit()
+    contenido = _dxf_bytes(
+        tmp_path, "otro.dxf", lambda msp: msp.add_lwpolyline([(0, 0), (40, 0), (40, 40), (0, 40)], close=True)
+    )
+
+    assert _subir(cliente, trabajo["id"], contenido).status_code == 200
+
+
+@pytest.mark.parametrize("que_falla", ["no es dxf", "nada para cortar"])
+def test_una_carga_rechazada_no_pisa_el_dxf_guardado(cliente, tmp_path, que_falla):
+    """El archivo nuevo se guardaba encima del anterior antes de leerlo: si
+    la carga fallaba, el trabajo se quedaba con sus piezas viejas y el
+    dibujo de otro archivo."""
+    from app import config
+
+    trabajo, _ = _trabajo_con_una_pieza(cliente, tmp_path)
+    ruta_guardada = config.DIRECTORIO_ARCHIVOS / f"trabajo-{trabajo['id']}.dxf"
+    antes = ruta_guardada.read_bytes()
+    nuevo = b"esto no es un dxf" if que_falla == "no es dxf" else _contorno_abierto(tmp_path)
+
+    respuesta = _subir(cliente, trabajo["id"], nuevo)
+
+    assert respuesta.status_code == 400
+    assert ruta_guardada.read_bytes() == antes
 
 
 def _chapa_en_el_catalogo(cliente) -> None:
@@ -556,7 +643,10 @@ def test_cargar_sin_unir_deja_las_formas_como_vienen_y_avisa(cliente, tmp_path):
     cuerpo = _subir(cliente, trabajo["id"], contenido).json()
 
     assert cuerpo["piezas_creadas"] == 4
-    assert any("4 formas que se pisan" in aviso for aviso in cuerpo["advertencias"])
+    aviso = next(aviso for aviso in cuerpo["advertencias"] if "4 formas que se pisan" in aviso)
+    # Después de cargar el panel ya no está: el aviso dice dónde volver a
+    # encontrar la casilla.
+    assert "en «Ver cómo se lee», antes de cargar" in aviso
     assert not [p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json() if "/unida" in p["id_origen"]]
 
 

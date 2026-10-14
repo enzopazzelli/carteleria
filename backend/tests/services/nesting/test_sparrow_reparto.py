@@ -105,3 +105,19 @@ def test_cada_unidad_de_una_pieza_se_reparte_por_separado():
     repartos = list(vaciar_chapas([[_pieza("7#0")], [_pieza("7#1")]], largos.__getitem__, _CAPACIDAD, entra, lambda: True))
 
     assert [[sorted(q["id"] for q in chapa) for chapa in reparto] for reparto in repartos] == [[["7#0", "7#1"]]]
+
+
+def test_consulta_por_piezas_que_llenan_la_chapa_justa_aunque_la_suma_redondee_de_mas():
+    """0,2 + 83,9 + 15,9 es 100, pero con decimales de máquina da
+    100,00000000000001: el filtro por área lo salteaba sin preguntar."""
+    largos = {"a": 0.2, "b": 83.9, "c": 15.9}
+    consultas: list[list[str]] = []
+
+    def entra(ids: list[str]) -> list[dict] | None:
+        consultas.append(sorted(ids))
+        return [_pieza(id_) for id_ in ids]
+
+    repartos = list(vaciar_chapas(_chapas("ab", "c"), largos.__getitem__, _CAPACIDAD, entra, lambda: True))
+
+    assert consultas == [["a", "b", "c"]]
+    assert len(repartos) == 1

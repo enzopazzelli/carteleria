@@ -58,11 +58,21 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
-## 2026-10-14 — Limpieza: el PDF del presupuesto cerrado, MSYS2 desinstalado y las copias de trabajo borradas
+## 2026-10-14 — Limpieza y depuración: el PDF cerrado, MSYS2 afuera y once arreglos de la lectura, el seccionado y el anidado
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** —
 
 ### Qué se hizo
+
+**Depuración, primera tanda** (rama `fix/depuracion`, un commit por arreglo, cada uno con su prueba antes). Con los arreglos de la revisión: backend 648 pruebas (587 antes), frontend 132 (125 antes):
+
+- **La lectura del DXF:** una carga sin nada para cortar no borra las piezas del trabajo (el panel ya lo impedía; ahora también la API), y el archivo nuevo se lee antes de guardarlo, así uno roto no pisa el DXF de las piezas que quedan. El aviso de las formas sin unir dice que la casilla está en «Ver cómo se lee». Las miniaturas de la tabla de Piezas ya no salen dadas vuelta. `pytest` solo junta `tests/`.
+- **El seccionado:** «Volver a seccionar» abre con el corte guardado si la chapa es la misma. Un ángulo o un corrimiento infinito o que no es un número da 422 y no 500, y una pieza descartada a mano no se secciona. No se secciona ni se deshace mientras corre un anidado del grupo, ni se vuelve a cargar el dibujo mientras corre uno del trabajo (el mismo riesgo, que la revisión del seccionado había anotado).
+- **El anidado con Sparrow:** si falla la etapa de vaciar chapas, el motivo llega a los avisos del resultado. Si falla una pasada posterior o el worker termina con error, vale el último anidado que dejó escrito, en lugar de descartarlo. El worker da por mejor un resultado recién cuando quedó escrito. Y el filtro por área ya no saltea, por redondeo, piezas que llenan la chapa justa.
+- Las filas resueltas salieron de las tablas de pendientes del plan maestro §7, con una nota debajo de cada tabla.
+- **Un revisor aparte leyó la rama: «con arreglos», nada crítico.** Lo importante: el archivo de avisos del worker se escribía sin protección y se leía sin cuidado, y uno a medias hacía perder el anidado válido. Arreglado, más los menores: un ángulo o un corrimiento finito pero desmedido daba 500 o aplicaba tramos que no cubrían la pieza (ahora 422, y el panel avisa antes); una pasada posterior que no valida ya no tira el worker; el aviso de un worker que terminó con error dice la causa; los avisos no se repiten; la consulta del anidado en curso quedó en un solo lugar, con dos pruebas más. Lo que dejó afuera pasó a la tabla del reparto por chapa: otras rutas que cambian piezas con un anidado en curso, y la carpeta temporal de Sparrow en C:.
+
+**Limpieza:**
 
 - **El PDF del presupuesto (1.3) quedó cerrado.** Su carpeta pasó a [`historico/1.3-pdf-del-presupuesto/`](historico/1.3-pdf-del-presupuesto/diseno.md), con las rutas actualizadas en el código, el registro y esta bitácora, y lo que quedó vivo pasó a la tabla «Pendientes del PDF del presupuesto» del [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md) §6. El `README.md` ya no dice que falta el PDF.
 - **En la máquina de Enzo, lo que había quedado de WeasyPrint:** MSYS2 desinstalado con `winget` (`D:\msys64` ya no existe), la variable `WEASYPRINT_DLL_DIRECTORIES` borrada del usuario, y WeasyPrint sacado del Python del sistema junto con las cinco bibliotecas que solo él usaba. Jinja2 quedó: lo usan otros programas instalados.
@@ -70,7 +80,8 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Qué se decidió
 
-- **El orden de lo que sigue** (Enzo): limpieza primero; después los pendientes del motor, los arreglos chicos de la lectura y el presupuesto, con lo de Docker al final. La prueba del PDF en el navegador la hace Enzo al terminar.
+- **El orden de lo que sigue** (Enzo): arreglos chicos, girar piezas a cualquier ángulo en el anidado automático, barra de progreso al anidar y al comparar chapas, lista de materiales en columnas con filtros y chapa de medida libre (retazo), pantalla para retocar el presupuesto, y el recorrido de la etapa 1 con Docker al final. La prueba del PDF en el navegador la hace Enzo al terminar.
+- **Girar a cualquier ángulo no depende de Vale:** `spyrrow` acepta piezas que giran libre (`allowed_orientations=None`). Con veta no se libera.
 
 ### Cambios en el registro
 

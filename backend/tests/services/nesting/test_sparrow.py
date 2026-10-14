@@ -146,3 +146,177 @@ def test_un_reparto_que_falla_no_pierde_la_primera_etapa(monkeypatch,consulta):
     colocadas=sparrow_worker.resolver(entrada)
     assert chapas_usadas(colocadas)==4
     convertir_y_validar(entrada,colocadas)
+
+
+import json
+from pathlib import Path
+from app.services.nesting.sparrow import ruta_de_avisos
+
+
+def avisos_escritos(salida):
+    return json.loads(ruta_de_avisos(salida).read_text(encoding='utf8'))
+
+
+@pytest.mark.parametrize('consulta',[encimadas,rota,panico])
+def test_un_reparto_que_falla_queda_en_los_avisos(monkeypatch,tmp_path,consulta):
+    """Antes quedaba solo en el registro del worker, que se borra."""
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    monkeypatch.setattr(sparrow_worker,'entra_en_una_chapa',consulta)
+    salida=tmp_path/'salida.json'
+
+    sparrow_worker.resolver(entrada,salida)
+
+    [aviso]=avisos_escritos(salida)
+    assert 'vaciar chapas' in aviso
+
+
+def test_una_pasada_que_falla_despues_de_la_primera_no_pierde_lo_encontrado(monkeypatch,tmp_path):
+    """De 60 entra uno por chapa, y por área podrían ser dos: el worker
+    prueba una segunda pasada. Si esa falla, vale la primera."""
+    entrada=entrada_de_cuadrados(4,lado=60,intentos=2,tiempo_maximo_s=60,vaciar_chapas=False)
+    llamadas=[]
+    def pasada(data):
+        llamadas.append(1)
+        if len(llamadas)>1: raise Panico('pánico de prueba')
+        return una_por_chapa(data)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',pasada)
+    salida=tmp_path/'salida.json'
+
+    colocadas=sparrow_worker.resolver(entrada,salida)
+
+    assert len(llamadas)==2
+    assert chapas_usadas(colocadas)==4
+    [aviso]=avisos_escritos(salida)
+    assert 'pánico de prueba' in aviso
+
+
+def test_una_pasada_posterior_que_no_valida_no_pierde_lo_encontrado(monkeypatch,tmp_path):
+    entrada=entrada_de_cuadrados(4,lado=60,intentos=2,tiempo_maximo_s=60,vaciar_chapas=False)
+    llamadas=[]
+    def pasada(data):
+        llamadas.append(1)
+        if len(llamadas)>1:  # todas encimadas en la misma chapa: no valida
+            return [{'id':p['id'],'sheet':0,'rotation':0,'tx':data['borde'],'ty':data['borde']} for p in data['items']]
+        return una_por_chapa(data)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',pasada)
+    salida=tmp_path/'salida.json'
+
+    colocadas=sparrow_worker.resolver(entrada,salida)
+
+    assert chapas_usadas(colocadas)==4
+    [aviso]=avisos_escritos(salida)
+    assert 'pasada 2' in aviso
+
+
+def test_un_mismo_aviso_no_se_repite(monkeypatch,tmp_path):
+    """Vaciar chapas falla igual en las dos pasadas: un solo aviso."""
+    entrada=entrada_de_cuadrados(4,lado=60,intentos=2,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    monkeypatch.setattr(sparrow_worker,'entra_en_una_chapa',rota)
+    salida=tmp_path/'salida.json'
+
+    sparrow_worker.resolver(entrada,salida)
+
+    assert len(avisos_escritos(salida))==1
+
+
+def test_lo_que_el_worker_da_por_mejor_es_lo_que_quedo_escrito(monkeypatch,tmp_path):
+    """Si escribir el mejor falla, no se lo da por mejor: si no, uno peor
+    que ese pero mejor que el escrito ya no se escribiría."""
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    reemplazar=Path.replace
+    escrituras=[]
+    def replace(self,destino):
+        escrituras.append(1)
+        if len(escrituras)==2: raise OSError('disco lleno de prueba')
+        return reemplazar(self,destino)
+    monkeypatch.setattr(Path,'replace',replace)
+    salida=tmp_path/'salida.json'
+
+    colocadas=sparrow_worker.resolver(entrada,salida)
+
+    assert colocadas==json.loads(salida.read_text(encoding='utf8'))
+
+
+def worker_falso(tmp_path,codigo,avisos=(),registro=''):
+    """Un worker que deja cada pieza sola en su chapa, escribe `avisos`,
+    deja `registro` en su salida de errores y termina con `codigo`."""
+    guion=tmp_path/'worker_falso.py'
+    guion.write_text(
+        'import json,sys\n'
+        'from pathlib import Path\n'
+        f'print({registro!r},file=sys.stderr)\n'
+        'data=json.loads(Path(sys.argv[1]).read_text(encoding="utf8"))\n'
+        'salida=Path(sys.argv[2])\n'
+        'salida.write_text(json.dumps([{"id":p["id"],"sheet":n,"rotation":0,"tx":data["borde"],"ty":data["borde"]} for n,p in enumerate(data["items"])]),encoding="utf8")\n'
+        f'salida.with_suffix(".avisos.json").write_text(json.dumps({list(avisos)!r}),encoding="utf8")\n'
+        f'sys.exit({codigo})\n',
+        encoding='utf8',
+    )
+    return guion
+
+
+def con_worker(monkeypatch,guion):
+    from app.services.nesting import sparrow
+    abrir=sparrow.subprocess.Popen
+    monkeypatch.setattr(sparrow.subprocess,'Popen',lambda args,**kw:abrir([args[0],str(guion),*args[-2:]],**kw))
+
+
+def test_los_avisos_del_worker_llegan_al_resultado(monkeypatch,tmp_path):
+    con_worker(monkeypatch,worker_falso(tmp_path,0,['No se pudo terminar de vaciar chapas (prueba).']))
+
+    resultado=anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20))
+
+    assert 'No se pudo terminar de vaciar chapas (prueba).' in resultado.advertencias
+
+
+@pytest.mark.parametrize('contenido',['','["cortado'])
+def test_un_archivo_de_avisos_que_no_se_puede_leer_no_pierde_el_anidado(monkeypatch,tmp_path,contenido):
+    """Si el worker se corta mientras escribe un aviso (por tiempo, o con
+    el disco lleno), el archivo queda vacío o a medias: el anidado de
+    `salida.json` igual vale."""
+    guion=worker_falso(tmp_path,0)
+    guion.write_text(
+        guion.read_text(encoding='utf8').replace(
+            'salida.with_suffix(".avisos.json").write_text(json.dumps([]),encoding="utf8")',
+            f'salida.with_suffix(".avisos.json").write_text({contenido!r},encoding="utf8")',
+        ),
+        encoding='utf8',
+    )
+    con_worker(monkeypatch,guion)
+
+    resultado=anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20))
+
+    assert resultado.planchas_usadas==2
+    assert any('No se pudieron leer los avisos' in aviso for aviso in resultado.advertencias)
+
+
+def test_avisar_no_deja_el_archivo_de_avisos_a_medias(monkeypatch,tmp_path):
+    """Se escribe aparte y se reemplaza de una vez, como el resultado."""
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    monkeypatch.setattr(sparrow_worker,'entra_en_una_chapa',rota)
+    escribir=Path.write_text
+    def write_text(self,texto,**kw):
+        if self.name.endswith('.avisos.json'): raise AssertionError('el aviso se escribió directo sobre el archivo')
+        return escribir(self,texto,**kw)
+    monkeypatch.setattr(Path,'write_text',write_text)
+    salida=tmp_path/'salida.json'
+
+    sparrow_worker.resolver(entrada,salida)
+
+    assert len(json.loads(ruta_de_avisos(salida).read_bytes()))==1
+
+
+def test_si_el_worker_termina_con_error_vale_lo_que_dejo_escrito(monkeypatch,tmp_path):
+    """Antes se descartaba el anidado de la primera pasada. El aviso dice
+    la causa: el registro del worker se borra con su carpeta."""
+    con_worker(monkeypatch,worker_falso(tmp_path,1,registro='Traceback...\nValueError: causa de prueba'))
+
+    resultado=anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20))
+
+    assert resultado.planchas_usadas==2
+    [aviso]=[a for a in resultado.advertencias if 'terminó con un error' in a]
+    assert 'ValueError: causa de prueba' in aviso

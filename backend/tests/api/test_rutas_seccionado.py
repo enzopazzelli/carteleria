@@ -318,6 +318,120 @@ def test_borrado_el_anidado_se_puede_volver_a_seccionar_y_deshacer(cliente, tmp_
     assert cliente.delete(f"/piezas/{pieza['id']}/seccionado").status_code == 204
 
 
+@pytest.mark.parametrize("ruta", ["seccionado/propuesta", "seccionado"])
+@pytest.mark.parametrize("campo", ["angulo_grados", "desplazamiento_x_mm", "desplazamiento_y_mm"])
+@pytest.mark.parametrize("valor", ["nan", "inf", "-inf"])
+def test_un_angulo_o_un_corrimiento_que_no_es_un_numero_finito_da_422(cliente, tmp_path, ruta, campo, valor):
+    """Antes daban 500: la cuenta de la grilla no sabe qué hacer con ellos."""
+    _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    pedido = {"formato_id": formato["id"], "angulo_grados": 0, "desplazamiento_x_mm": 0, "desplazamiento_y_mm": 0}
+
+    respuesta = cliente.post(f"/piezas/{pieza['id']}/{ruta}", json={**pedido, campo: valor})
+
+    assert respuesta.status_code == 422, respuesta.text
+
+
+@pytest.mark.parametrize("ruta", ["seccionado/propuesta", "seccionado"])
+@pytest.mark.parametrize(
+    ("campo", "valor"),
+    [("angulo_grados", 1e308), ("angulo_grados", -361), ("desplazamiento_x_mm", 1.2e23), ("desplazamiento_y_mm", -2e6)],
+)
+def test_un_angulo_o_un_corrimiento_desmedido_da_422(cliente, tmp_path, ruta, campo, valor):
+    """Finitos pero absurdos: un ángulo así rompía la cuenta (500), y un
+    corrimiento así perdía precisión y aplicaba un tramo con el 14 % de la
+    pieza, descartando la original."""
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=3000)
+    pedido = {"formato_id": formato["id"], "angulo_grados": 30, "desplazamiento_x_mm": 0, "desplazamiento_y_mm": 0}
+
+    respuesta = cliente.post(f"/piezas/{pieza['id']}/{ruta}", json={**pedido, campo: valor})
+
+    assert respuesta.status_code == 422, respuesta.text
+    assert not [p for p in _piezas(cliente, trabajo["id"]) if p["seccionada_de_id"] == pieza["id"]]
+
+
+@pytest.mark.parametrize("ruta", ["seccionado/propuesta", "seccionado"])
+def test_una_pieza_descartada_a_mano_no_se_secciona(cliente, tmp_path, ruta):
+    """El panel no ofrece seccionarla; por la API se podía, y sus tramos se
+    cortaban aunque la pieza no."""
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    cliente.patch(f"/piezas/{pieza['id']}", json={"descartada": True})
+
+    respuesta = cliente.post(f"/piezas/{pieza['id']}/{ruta}", json={
+        "formato_id": formato["id"], "angulo_grados": 0, "desplazamiento_x_mm": 0, "desplazamiento_y_mm": 0,
+    })
+
+    assert respuesta.status_code == 409
+    assert "descartada" in respuesta.json()["detail"]
+    assert not [p for p in _piezas(cliente, trabajo["id"]) if p["seccionada_de_id"] == pieza["id"]]
+
+
+def test_una_pieza_seccionada_se_puede_volver_a_seccionar_aunque_quede_descartada(cliente, tmp_path):
+    """Seccionar descarta la original: eso no es «descartada a mano»."""
+    _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    _aplicar(cliente, pieza["id"], formato["id"])
+
+    assert _proponer(cliente, pieza["id"], formato_id=formato["id"]).status_code == 200
+    assert _aplicar(cliente, pieza["id"], formato["id"], dx=200).status_code == 201
+
+
+def _anidado_en_curso(cliente, grupo_id: int, estado: str) -> int:
+    with Session(cliente.motor) as sesion:
+        ejecucion = EjecucionNesting(grupo_id=grupo_id, motor="sparrow", estado=estado)
+        sesion.add(ejecucion)
+        sesion.commit()
+        return ejecucion.id
+
+
+@pytest.mark.parametrize("estado", ["encolada", "corriendo"])
+@pytest.mark.parametrize("accion", ["seccionar", "volver a seccionar", "deshacer"])
+def test_mientras_corre_un_anidado_del_grupo_no_se_secciona_ni_se_deshace(cliente, tmp_path, estado, accion):
+    """El anidado que corre usa las piezas de cuando arrancó: cambiarlas a
+    mitad de camino lo dejaba colgado o con un resultado que apunta a
+    piezas que ya no se cortan."""
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    if accion != "seccionar":
+        _aplicar(cliente, pieza["id"], formato["id"])
+    anidado_id = _anidado_en_curso(cliente, grupo["id"], estado)
+    antes = _piezas(cliente, trabajo["id"])
+
+    if accion == "deshacer":
+        respuesta = cliente.delete(f"/piezas/{pieza['id']}/seccionado")
+    else:
+        respuesta = _aplicar(cliente, pieza["id"], formato["id"], dx=200)
+
+    assert respuesta.status_code == 409
+    assert f"#{anidado_id}" in respuesta.json()["detail"]
+    assert "cancel" in respuesta.json()["detail"]
+    assert _piezas(cliente, trabajo["id"]) == antes
+
+
+def test_un_anidado_en_curso_en_el_grupo_de_un_tramo_movido_tampoco_deja_deshacer(cliente, tmp_path):
+    """Los tramos pueden pasar a otro grupo que el de la original."""
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    tramo = _aplicar(cliente, pieza["id"], formato["id"]).json()[0]
+    otro = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Otro"}).json()
+    cliente.patch(f"/piezas/{tramo['id']}", json={"grupo_id": otro["id"]})
+    anidado_id = _anidado_en_curso(cliente, otro["id"], "corriendo")
+
+    respuesta = cliente.delete(f"/piezas/{pieza['id']}/seccionado")
+
+    assert respuesta.status_code == 409
+    assert f"#{anidado_id}" in respuesta.json()["detail"]
+
+
+@pytest.mark.parametrize("estado", ["lista", "error", "cancelada"])
+def test_un_anidado_terminado_del_grupo_no_impide_seccionar(cliente, tmp_path, estado):
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    _anidado_en_curso(cliente, grupo["id"], estado)
+
+    assert _aplicar(cliente, pieza["id"], formato["id"]).status_code == 201
+    assert cliente.delete(f"/piezas/{pieza['id']}/seccionado").status_code == 204
+
+
 def test_restaurar_una_pieza_seccionada_se_rechaza(cliente, tmp_path):
     # Si no, el metal se contaría dos veces: la original y sus tramos.
     _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)

@@ -20,6 +20,7 @@ from ..services.nesting.geometria_material import poligono_material
 from ..services.nesting.models import ParametrosCorte, Plancha
 from ..services.nesting.models import Pieza as PiezaDominio
 from ..services.seccionado import Grilla, Seccionado, celda_util, mejor_grilla, seccionar_con_grilla, tramo_orientado
+from .anidado_en_curso import rechazar_si_hay_anidado_en_curso
 from .dependencias import obtener_sesion
 from .esquemas_seccionado import CorteLeer, PropuestaLeer, SeccionadoAplicar, SeccionadoPedido, TramoPropuesto
 from .esquemas_trabajos import PiezaLeer
@@ -40,6 +41,16 @@ def _no_es_tramo(pieza: Pieza) -> None:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             f"«{pieza.id_origen}» es un tramo de otra pieza: para cambiar el corte, volvé a seccionar la original.",
+        )
+
+
+def _no_esta_descartada_a_mano(pieza: Pieza) -> None:
+    """Seccionar descarta la original, y esa sí se vuelve a seccionar. Una
+    descartada a mano no: sus tramos se cortarían aunque ella no."""
+    if pieza.descartada and pieza.seccionado is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"«{pieza.id_origen}» está descartada: para seccionarla, primero tocá «Restaurar».",
         )
 
 
@@ -136,6 +147,7 @@ def proponer_seccionado(
     pide la pantalla en cada arrastre."""
     pieza = _pieza_o_404(sesion, pieza_id)
     _no_es_tramo(pieza)
+    _no_esta_descartada_a_mano(pieza)
     plancha, params = _chapa_y_parametros(sesion, pieza, datos.formato_id)
     _validar_que_no_entra(pieza, plancha, params)
     celda = _celda(plancha, params)
@@ -150,6 +162,14 @@ def proponer_seccionado(
 
 def _tramos_de(sesion: Session, original: Pieza) -> list[Pieza]:
     return list(sesion.execute(select(Pieza).where(Pieza.seccionada_de_id == original.id)).scalars())
+
+
+def _sin_anidado_en_curso(sesion: Session, original: Pieza) -> None:
+    """Se miran el grupo de la original y los de sus tramos, que pueden
+    haberse movido a otro."""
+    grupos = {original.grupo_id, *(tramo.grupo_id for tramo in _tramos_de(sesion, original))} - {None}
+    if grupos:
+        rechazar_si_hay_anidado_en_curso(sesion, GrupoDeCorte.id.in_(grupos), "seccionar o deshacer")
 
 
 def _borrar_tramos(sesion: Session, original: Pieza) -> None:
@@ -229,6 +249,8 @@ def aplicar_seccionado(
     tramos anteriores."""
     pieza = _pieza_o_404(sesion, pieza_id)
     _no_es_tramo(pieza)
+    _no_esta_descartada_a_mano(pieza)
+    _sin_anidado_en_curso(sesion, pieza)
     plancha, params = _chapa_y_parametros(sesion, pieza, datos.formato_id)
     _validar_que_no_entra(pieza, plancha, params)
     celda = _celda(plancha, params)
@@ -248,6 +270,7 @@ def deshacer_seccionado(pieza_id: int, sesion: Session = Depends(obtener_sesion)
     pieza = _pieza_o_404(sesion, pieza_id)
     if pieza.seccionado is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"«{pieza.id_origen}» no está seccionada.")
+    _sin_anidado_en_curso(sesion, pieza)
     _borrar_tramos(sesion, pieza)
     pieza.seccionado = None
     pieza.descartada = False
