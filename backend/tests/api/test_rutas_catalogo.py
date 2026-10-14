@@ -303,6 +303,39 @@ def test_un_retazo_copia_el_precio_por_m2_de_su_fila(cliente):
     assert retazo["precio_simulado"] is True
 
 
+def test_un_retazo_sigue_el_precio_de_su_chapa(cliente):
+    """Decisión de Enzo (2026-10-14): al cargar una lista de precios nueva
+    (`scripts/_carga_catalogo.py` actualiza cada chapa por su código), el
+    retazo toma el precio nuevo."""
+    origen = _formato_por_m2(cliente)
+    retazo = _retazo(cliente, origen["id"]).json()
+
+    respuesta = cliente.patch(
+        f"/formatos/{origen['id']}", json={"costo_unidad_venta": "15000.50", "moneda": "USD", "precio_simulado": True}
+    )
+
+    assert respuesta.status_code == 200, respuesta.text
+    seguido = cliente.get(f"/formatos/{retazo['id']}").json()
+    assert Decimal(seguido["costo_unidad_venta"]) == Decimal("15000.50")
+    assert (seguido["moneda"], seguido["precio_simulado"]) == ("USD", True)
+
+
+def test_el_precio_de_una_chapa_no_toca_los_retazos_de_otra(cliente):
+    """Un mismo material tiene chapas de distinta medida con distinto
+    precio por m²: el retazo sigue a la chapa de la que salió."""
+    origen = _formato_por_m2(cliente)
+    otra = cliente.post(
+        f"/materiales/{origen['material_id']}/formatos",
+        json={"codigo": "CHA0013", "ancho_mm": "1500", "alto_mm": "3000", "moneda": "ARS",
+              "unidad_venta": "M2", "costo_unidad_venta": "9999"},
+    ).json()
+    retazo_de_otra = _retazo(cliente, otra["id"]).json()
+
+    cliente.patch(f"/formatos/{origen['id']}", json={"costo_unidad_venta": "15000.50"})
+
+    assert Decimal(cliente.get(f"/formatos/{retazo_de_otra['id']}").json()["costo_unidad_venta"]) == Decimal("9999")
+
+
 def test_un_retazo_de_una_fila_sin_codigo_queda_sin_codigo(cliente):
     origen = _formato_por_m2(cliente, codigo=None)
 

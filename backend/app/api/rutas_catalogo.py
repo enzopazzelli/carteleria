@@ -63,6 +63,28 @@ def _formatos_del_catalogo(sesion: Session) -> list[Plancha]:
     return [Plancha(ancho_mm=ancho, alto_mm=alto) for ancho, alto in filas]
 
 
+#: Lo que un retazo copia de su chapa al crearse, y vuelve a copiar cada
+#: vez que el precio de la chapa cambia (A8, decisión de Enzo 2026-10-14).
+_CAMPOS_DEL_PRECIO = ("moneda", "costo_unidad_venta", "precio_simulado")
+
+
+def _retazos_de(sesion: Session, formato: Formato) -> list[Formato]:
+    """Los retazos que salieron de `formato`: mismo material y su código
+    con «-R» (`crear_retazo`). Uno de una chapa sin código no tiene cómo
+    reconocerse y se queda con el precio con el que se creó."""
+    if not formato.codigo:
+        return []
+    return list(
+        sesion.execute(
+            select(Formato).where(
+                Formato.material_id == formato.material_id,
+                Formato.es_retazo.is_(True),
+                Formato.codigo == f"{formato.codigo}-R",
+            )
+        ).scalars()
+    )
+
+
 def _commit_o_409(sesion: Session, mensaje: str) -> None:
     try:
         sesion.commit()
@@ -164,8 +186,13 @@ def actualizar_formato(
     `PATCH {"disponible": false}`, no un `DELETE` — el histórico que ya
     lo usó tiene que seguir viéndolo."""
     formato = _formato_o_404(sesion, formato_id)
-    for campo, valor in datos.model_dump(exclude_unset=True).items():
+    cambios = datos.model_dump(exclude_unset=True)
+    for campo, valor in cambios.items():
         setattr(formato, campo, valor)
+    if not formato.es_retazo and cambios.keys() & set(_CAMPOS_DEL_PRECIO):
+        for retazo in _retazos_de(sesion, formato):
+            for campo in _CAMPOS_DEL_PRECIO:
+                setattr(retazo, campo, getattr(formato, campo))
     sesion.commit()
     return formato
 
