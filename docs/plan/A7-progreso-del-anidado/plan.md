@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** escrito el 2026-10-14, sin ejecutar. **No se ensayó** sobre una copia antes de escribirlo: los bloques salen de leer el código de `main` en `43ed271`. Lo que se aparte va al final, en «Desvíos».
+> **Estado:** **ejecutado el 2026-10-14,** de la Tarea 1 a la 10, en esta sesión y con una pausa por tramo. **No se ensayó** sobre una copia antes de escribirlo: los bloques salen de leer el código de `main` en `43ed271`. Lo que se apartó está al final, en «Desvíos».
 
 **Goal:** Que al anidar con Sparrow y al comparar chapas se vea una barra que avanza contra el tiempo máximo y dice en qué anda el motor y el mejor resultado hasta ahora; y que la comparación corra en segundo plano, se pueda cancelar y se retome al volver a la pestaña.
 
@@ -1692,3 +1692,17 @@ No borrar trabajos en la copia: sus DXF apuntan a los archivos reales. Al termin
 git add docs/plan/PLAN-MAESTRO.md docs/BITACORA.md docs/plan/A7-progreso-del-anidado
 git commit -m "docs: barra de progreso (A7) construida"
 ```
+
+---
+
+## Desvíos
+
+Lo que se hizo distinto de lo escrito arriba, el 2026-10-14.
+
+- **Tarea 2: una prueba de antes contaba de más.** `test_lo_que_el_worker_da_por_mejor_es_lo_que_quedo_escrito` hacía fallar el segundo `Path.replace` del worker; con el archivo de progreso, el segundo reemplazo pasó a ser el del progreso. La prueba cuenta ahora solo los reemplazos de `salida.json`, que es lo que quiere probar. El código no cambió por esto.
+- **Tarea 5: la función se reemplazó con un guion** (de la línea del decorador al final del archivo), no con la herramienta de edición: la función entera no entraba cómoda en un solo reemplazo. El resultado es el del plan y conserva los finales de línea del archivo.
+- **Tarea 8: el registro de avance no anota un comando que no imprime nada.** La Tarea 8 se dio por cumplida con `npx vitest run` además de `npx tsc -b`.
+- **Tarea 10, Step 1: la suite del backend no se volvió a correr entera.** Desde la Tarea 6 (675 en verde) no cambió ningún archivo del backend; se comprobó con `git diff 3c3f292..HEAD -- backend`.
+- **Tarea 10, Step 2: el recorrido encontró dos avisos que confundían al retomar.** Después de recargar, el formulario de la comparación vuelve a sus valores de fábrica, y con la comparación corriendo aparecían «Seleccioná al menos dos formatos» y «puede demorar hasta 0 segundos». Se ocultan (commit aparte, sin prueba de componente: el frontend no tiene) y se comprobó de nuevo en Chrome sin ventana.
+- **Tarea 10, Step 2: la primera vuelta del recorrido usó 30 s por formato** y la comparación terminó en «Sparrow excedió el tiempo máximo»: con «Complejo» la primera pasada tarda unos 30 s. No es de este cambio (la comparación de siempre hace lo mismo cuando un formato no llega a ningún resultado); quedó en los pendientes del reparto por chapa, y el recorrido se repitió con 60 s por formato.
+- **El recorrido** (`backend/local/herramientas-progreso-2026-10-14/recorrido.mjs`, fuera de git, con sus capturas) corrió sobre una copia de la base de Enzo, con la migración `7f91bcd3ef15` aplicada en la copia. El anidado de «Complejo» dio 8 chapas en 60 s; la comparación de las chapas negras cal. 22 y cal. 20 de 1220 × 2440, 8 en las dos.

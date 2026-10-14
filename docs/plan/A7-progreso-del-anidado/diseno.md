@@ -1,6 +1,6 @@
 # A7 · Barra de progreso al anidar y al comparar chapas — diseño
 
-> **Estado:** diseño aprobado por Enzo el 2026-10-14, sin construir. Falta el plan (`plan.md`).
+> **Estado:** **construido el 2026-10-14,** con el plan de [`plan.md`](plan.md), en la rama `feat/progreso-del-anidado`. Lo que se apartó está al final de ese plan, en «Desvíos».
 >
 > **De dónde sale.** Pedido de Enzo del 2026-10-14: «cuando se están comparando chapas o anidando, ver una barra de progreso para que el tiempo de espera no sea a ciegas». Es del carril del motor, como el seccionado (A5) y el reparto por chapa (A6), y por eso lleva la letra A. Resuelve además un pendiente del reparto por chapa en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md): «una comparación de formatos es un solo pedido que puede durar varias veces `PAR-09`; no se probó si el navegador lo corta».
 >
