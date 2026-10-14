@@ -1,5 +1,5 @@
 """Comparar formatos en segundo plano, con progreso y cancelación —
-`docs/plan/A7-progreso-del-anidado/diseno.md §5.3`.
+`docs/historico/A7-progreso-del-anidado/diseno.md §5.3`.
 
 La comparación de siempre (`POST /grupos/{id}/comparar-formatos`) espera
 hasta el final dentro del pedido. Esta la arranca en la cola y contesta

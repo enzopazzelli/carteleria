@@ -1,4 +1,4 @@
-"""Comparar formatos en segundo plano (`docs/plan/A7-progreso-del-anidado/diseno.md §5.3`)."""
+"""Comparar formatos en segundo plano (`docs/historico/A7-progreso-del-anidado/diseno.md §5.3`)."""
 from __future__ import annotations
 
 import threading

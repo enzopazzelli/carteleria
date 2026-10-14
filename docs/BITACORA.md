@@ -80,7 +80,7 @@ Qué queda abierto y cuál es el próximo paso.
 - Una prueba nueva confirma que el DXF de corte sale girado a 37°: el exportador ya lo resolvía por los ajustes a mano.
 - En `main` desde el 2026-10-14 ([PR #22](https://github.com/enzopazzelli/carteleria/pull/22), lo fusioné a pedido de Enzo).
 
-**Barra de progreso (A7)** (rama `feat/progreso-del-anidado`, [`plan/A7-progreso-del-anidado/`](plan/A7-progreso-del-anidado/diseno.md)):
+**Barra de progreso (A7)** (en `main` desde el 2026-10-14, [PR #23](https://github.com/enzopazzelli/carteleria/pull/23), lo fusioné a pedido de Enzo; [`historico/A7-progreso-del-anidado/`](historico/A7-progreso-del-anidado/diseno.md)):
 
 - **Al anidar con Sparrow** aparece una barra que se llena contra el tiempo máximo y dice en qué anda: «Pasada 1 de 3, vaciando chapas · mejor: 8 chapas · 0:37 de 1:00». El worker deja un archivo chico de progreso; el servidor lo lee y lo guarda en su memoria (`app/progreso.py`), no en la base.
 - **La comparación de chapas corre de fondo:** arranca y contesta enseguida, con la misma barra («Formato 1 de 2 · …»), un «Cancelar», y se retoma al volver a la pestaña o al recargar. Rutas nuevas en `rutas_comparaciones.py`; la de siempre queda igual.

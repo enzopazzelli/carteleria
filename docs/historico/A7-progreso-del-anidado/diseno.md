@@ -1,8 +1,8 @@
 # A7 · Barra de progreso al anidar y al comparar chapas — diseño
 
-> **Estado:** **construido el 2026-10-14,** con el plan de [`plan.md`](plan.md), en la rama `feat/progreso-del-anidado`. Lo que se apartó está al final de ese plan, en «Desvíos».
+> **Estado:** **cerrado el 2026-10-14.** Construido ese día con el plan de [`plan.md`](plan.md), y en `main` desde entonces ([PR #23](https://github.com/enzopazzelli/carteleria/pull/23); lo fusioné yo a pedido de Enzo). Lo que se apartó está al final de ese plan, en «Desvíos». Esta carpeta pasó de `docs/plan/` a `docs/historico/`, y lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md).
 >
-> **De dónde sale.** Pedido de Enzo del 2026-10-14: «cuando se están comparando chapas o anidando, ver una barra de progreso para que el tiempo de espera no sea a ciegas». Es del carril del motor, como el seccionado (A5) y el reparto por chapa (A6), y por eso lleva la letra A. Resuelve además un pendiente del reparto por chapa en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md): «una comparación de formatos es un solo pedido que puede durar varias veces `PAR-09`; no se probó si el navegador lo corta».
+> **De dónde sale.** Pedido de Enzo del 2026-10-14: «cuando se están comparando chapas o anidando, ver una barra de progreso para que el tiempo de espera no sea a ciegas». Es del carril del motor, como el seccionado (A5) y el reparto por chapa (A6), y por eso lleva la letra A. Resuelve además un pendiente del reparto por chapa en el [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md): «una comparación de formatos es un solo pedido que puede durar varias veces `PAR-09`; no se probó si el navegador lo corta».
 >
 > **Sobre los valores.** Los parámetros se citan por ID y viven en [`REGISTRO.md`](../../REGISTRO.md). Este diseño no agrega ninguno: los intervalos de lectura son detalles internos, como las otras tolerancias del motor.
 
@@ -89,6 +89,6 @@ Rutas nuevas, con el mismo cuerpo que la comparación de hoy (`ComparacionFormat
 
 ## 8. Qué cambia en otros documentos
 
-- **[`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md):** sale de los pendientes del reparto por chapa la fila de la comparación que es un solo pedido largo.
+- **[`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md):** sale de los pendientes del reparto por chapa la fila de la comparación que es un solo pedido largo.
 - **[`BITACORA.md`](../../BITACORA.md):** la entrada del día en que se cierre.
 - **[`REGISTRO.md`](../../REGISTRO.md):** `D-12` (si el anidado corre con alguien esperando o en segundo plano) no se cierra, pero la comparación pasa a correr en segundo plano, como su valor por defecto.

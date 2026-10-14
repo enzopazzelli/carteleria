@@ -1,4 +1,4 @@
-"""Cómo va cada tarea larga en curso — `docs/plan/A7-progreso-del-anidado/diseno.md §5.1`.
+"""Cómo va cada tarea larga en curso — `docs/historico/A7-progreso-del-anidado/diseno.md §5.1`.
 
 Vive en la memoria del servidor, no en la base: un anidado o una
 comparación en curso tampoco sobreviven a un reinicio (límite conocido de

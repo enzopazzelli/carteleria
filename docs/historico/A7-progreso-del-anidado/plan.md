@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** **ejecutado el 2026-10-14,** de la Tarea 1 a la 10, en esta sesión y con una pausa por tramo. **No se ensayó** sobre una copia antes de escribirlo: los bloques salen de leer el código de `main` en `43ed271`. Lo que se apartó está al final, en «Desvíos».
+> **Estado:** **cerrado el 2026-10-14,** en `main` ([PR #23](https://github.com/enzopazzelli/carteleria/pull/23)). Ejecutado ese día, de la Tarea 1 a la 10, en esta sesión y con una pausa por tramo. **No se ensayó** sobre una copia antes de escribirlo: los bloques salen de leer el código de `main` en `43ed271`. Lo que se apartó está al final, en «Desvíos».
 
 **Goal:** Que al anidar con Sparrow y al comparar chapas se vea una barra que avanza contra el tiempo máximo y dice en qué anda el motor y el mejor resultado hasta ahora; y que la comparación corra en segundo plano, se pueda cancelar y se retome al volver a la pestaña.
 
@@ -49,7 +49,7 @@
 `backend/tests/test_progreso.py`:
 
 ```python
-"""El registro de progreso en memoria (`docs/plan/A7-progreso-del-anidado/diseno.md §5.1`)."""
+"""El registro de progreso en memoria (`docs/historico/A7-progreso-del-anidado/diseno.md §5.1`)."""
 from __future__ import annotations
 
 from app import progreso
@@ -91,7 +91,7 @@ Expected: FAIL con `ImportError: cannot import name 'progreso' from 'app'`.
 `backend/app/progreso.py`:
 
 ```python
-"""Cómo va cada tarea larga en curso — `docs/plan/A7-progreso-del-anidado/diseno.md §5.1`.
+"""Cómo va cada tarea larga en curso — `docs/historico/A7-progreso-del-anidado/diseno.md §5.1`.
 
 Vive en la memoria del servidor, no en la base: un anidado o una
 comparación en curso tampoco sobreviven a un reinicio (límite conocido de
@@ -837,7 +837,7 @@ git commit -m "refactor(anidado): la comparacion de formatos se parte en prepara
 `backend/tests/api/test_rutas_comparaciones.py`:
 
 ```python
-"""Comparar formatos en segundo plano (`docs/plan/A7-progreso-del-anidado/diseno.md §5.3`)."""
+"""Comparar formatos en segundo plano (`docs/historico/A7-progreso-del-anidado/diseno.md §5.3`)."""
 from __future__ import annotations
 
 import threading
@@ -1051,7 +1051,7 @@ class ComparacionLeer(BaseModel):
 
 ```python
 """Comparar formatos en segundo plano, con progreso y cancelación —
-`docs/plan/A7-progreso-del-anidado/diseno.md §5.3`.
+`docs/historico/A7-progreso-del-anidado/diseno.md §5.3`.
 
 La comparación de siempre (`POST /grupos/{id}/comparar-formatos`) espera
 hasta el final dentro del pedido. Esta la arranca en la cola y contesta
@@ -1659,7 +1659,7 @@ git commit -m "feat(frontend): comparar chapas en segundo plano, con barra, canc
 ### Task 10: Recorrido en el navegador y documentos
 
 **Files:**
-- Modify: `docs/plan/PLAN-MAESTRO.md`, `docs/BITACORA.md`, `docs/plan/A7-progreso-del-anidado/diseno.md`, `docs/plan/A7-progreso-del-anidado/plan.md`
+- Modify: `docs/plan/PLAN-MAESTRO.md`, `docs/BITACORA.md`, `docs/historico/A7-progreso-del-anidado/diseno.md`, `docs/historico/A7-progreso-del-anidado/plan.md`
 
 - [ ] **Step 1: La suite entera**
 
@@ -1689,7 +1689,7 @@ No borrar trabajos en la copia: sus DXF apuntan a los archivos reales. Al termin
 - [ ] **Step 4: Commit**
 
 ```bash
-git add docs/plan/PLAN-MAESTRO.md docs/BITACORA.md docs/plan/A7-progreso-del-anidado
+git add docs/plan/PLAN-MAESTRO.md docs/BITACORA.md docs/historico/A7-progreso-del-anidado
 git commit -m "docs: barra de progreso (A7) construida"
 ```
 

@@ -1,4 +1,4 @@
-"""El registro de progreso en memoria (`docs/plan/A7-progreso-del-anidado/diseno.md §5.1`)."""
+"""El registro de progreso en memoria (`docs/historico/A7-progreso-del-anidado/diseno.md §5.1`)."""
 from __future__ import annotations
 
 from app import progreso
