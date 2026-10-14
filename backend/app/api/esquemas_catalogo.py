@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -116,6 +117,17 @@ class FormatoLeer(BaseModel):
     factor_conversion: Decimal | None
     costo_unidad_venta: Decimal | None
     precio_simulado: bool
+
+
+#: La medida de un retazo es libre, pero no absurda (A8, §5.2).
+MedidaDeRetazo = Annotated[Decimal, Field(gt=0, le=10000, allow_inf_nan=False)]
+
+
+class RetazoCrear(BaseModel):
+    """Un retazo de medida libre, a partir de otro formato (A8)."""
+
+    ancho_mm: MedidaDeRetazo
+    alto_mm: MedidaDeRetazo
 
 
 # --- Parámetros de corte (`CART-105`) -----------------------------------

@@ -265,3 +265,92 @@ def test_la_lista_de_materiales_trae_la_familia(cliente):
     [material] = cliente.get("/materiales").json()
 
     assert material["familia"] == "Chapas"
+
+
+# --- Retazos (A8) ----------------------------------------------------------
+
+
+def _formato_por_m2(cliente, **extra) -> dict:
+    material = _crear_material(cliente)
+    datos = {
+        "codigo": "CHA0012", "ancho_mm": "1220", "alto_mm": "2440", "moneda": "ARS",
+        "unidad_venta": "M2", "costo_unidad_venta": "13720.4038",
+    } | extra
+    respuesta = cliente.post(f"/materiales/{material['id']}/formatos", json=datos)
+    assert respuesta.status_code == 201, respuesta.text
+    return respuesta.json()
+
+
+def _retazo(cliente, formato_id, ancho="1000", alto="1000"):
+    return cliente.post(f"/formatos/{formato_id}/retazos", json={"ancho_mm": ancho, "alto_mm": alto})
+
+
+def test_un_retazo_copia_el_precio_por_m2_de_su_fila(cliente):
+    origen = _formato_por_m2(cliente)
+    cliente.patch(f"/formatos/{origen['id']}", json={"precio_simulado": True})
+
+    respuesta = _retazo(cliente, origen["id"])
+
+    assert respuesta.status_code == 201, respuesta.text
+    retazo = respuesta.json()
+    assert retazo["id"] != origen["id"]
+    assert retazo["material_id"] == origen["material_id"]
+    assert (Decimal(retazo["ancho_mm"]), Decimal(retazo["alto_mm"])) == (Decimal("1000"), Decimal("1000"))
+    assert retazo["es_retazo"] is True
+    assert retazo["codigo"] == "CHA0012-R"
+    assert (retazo["moneda"], retazo["unidad_venta"]) == ("ARS", "M2")
+    assert Decimal(retazo["costo_unidad_venta"]) == Decimal("13720.4038")
+    assert retazo["precio_simulado"] is True
+
+
+def test_un_retazo_de_una_fila_sin_codigo_queda_sin_codigo(cliente):
+    origen = _formato_por_m2(cliente, codigo=None)
+
+    assert _retazo(cliente, origen["id"]).json()["codigo"] is None
+
+
+def test_un_retazo_de_un_formato_que_no_existe_da_404(cliente):
+    assert _retazo(cliente, 999).status_code == 404
+
+
+@pytest.mark.parametrize(("ancho", "alto"), [("0", "500"), ("-5", "500"), ("nan", "500"), ("500", "10001"), ("mil", "500")])
+def test_una_medida_de_retazo_invalida_da_422(cliente, ancho, alto):
+    origen = _formato_por_m2(cliente)
+
+    respuesta = _retazo(cliente, origen["id"], ancho, alto)
+
+    assert respuesta.status_code == 422
+    assert len(cliente.get(f"/materiales/{origen['material_id']}/formatos").json()) == 1
+
+
+@pytest.mark.parametrize("extra", [{"unidad_venta": "PLANCHA"}, {"costo_unidad_venta": None}])
+def test_un_retazo_de_una_fila_sin_precio_por_m2_da_400(cliente, extra):
+    origen = _formato_por_m2(cliente, **extra)
+
+    respuesta = _retazo(cliente, origen["id"])
+
+    assert respuesta.status_code == 400
+    assert "por m²" in respuesta.json()["detail"]
+
+
+def test_un_formato_que_usa_un_grupo_no_se_quita(cliente):
+    """La base dejaba el grupo sin material, sin avisar."""
+    origen = _formato_por_m2(cliente)
+    retazo = _retazo(cliente, origen["id"]).json()
+    trabajo = cliente.post("/trabajos", json={"nombre": "Prueba"}).json()
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa chica", "formato_id": retazo["id"]}).json()
+
+    respuesta = cliente.delete(f"/formatos/{retazo['id']}")
+
+    assert respuesta.status_code == 409
+    assert "«Chapa chica»" in respuesta.json()["detail"]
+    [mismo] = cliente.get(f"/trabajos/{trabajo['id']}/grupos").json()
+    assert mismo["id"] == grupo["id"] and mismo["formato_id"] == retazo["id"]
+
+
+def test_un_retazo_que_nadie_usa_se_quita(cliente):
+    origen = _formato_por_m2(cliente)
+    retazo = _retazo(cliente, origen["id"]).json()
+
+    assert cliente.delete(f"/formatos/{retazo['id']}").status_code == 204
+    assert cliente.get(f"/formatos/{retazo['id']}").status_code == 404

@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato, Material, ParametrosCorteMaterial
+from ..modelos.trabajo import GrupoDeCorte
 from ..services.nesting.models import Plancha
 from .dependencias import obtener_sesion
 from .esquemas_catalogo import (
@@ -24,6 +25,7 @@ from .esquemas_catalogo import (
     MaterialLeer,
     ParametrosCorteEscribir,
     ParametrosCorteLeer,
+    RetazoCrear,
 )
 
 router = APIRouter(tags=["catalogo"])
@@ -164,9 +166,47 @@ def actualizar_formato(
 
 @router.delete("/formatos/{formato_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_formato(formato_id: int, sesion: Session = Depends(obtener_sesion)) -> None:
+    """No se quita un formato que usa un grupo: la base lo dejaría sin
+    material sin avisar (A8)."""
     formato = _formato_o_404(sesion, formato_id)
+    grupos = sesion.execute(select(GrupoDeCorte.nombre).where(GrupoDeCorte.formato_id == formato_id)).scalars().all()
+    if grupos:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Lo usan estos grupos: {', '.join(f'«{nombre}»' for nombre in grupos)}. "
+            "Elegí otra chapa para ellos antes de quitarlo.",
+        )
     sesion.delete(formato)
     sesion.commit()
+
+
+@router.post("/formatos/{formato_id}/retazos", response_model=FormatoLeer, status_code=status.HTTP_201_CREATED)
+def crear_retazo(formato_id: int, datos: RetazoCrear, sesion: Session = Depends(obtener_sesion)) -> Formato:
+    """Un retazo de medida libre del mismo material
+    (`docs/plan/A8-lista-de-materiales-y-retazos/diseno.md §5.2`). Se cobra
+    por m² al precio de la fila de la que sale: se copia acá, así la regla
+    no depende de quien lo pide."""
+    origen = _formato_o_404(sesion, formato_id)
+    if origen.unidad_venta != "M2" or origen.costo_unidad_venta is None:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"El formato «{origen.ancho_mm}×{origen.alto_mm}» no tiene precio por m²: "
+            "un retazo se cobra por m² y no habría cómo.",
+        )
+    retazo = Formato(
+        material_id=origen.material_id,
+        codigo=f"{origen.codigo}-R" if origen.codigo else None,
+        ancho_mm=datos.ancho_mm,
+        alto_mm=datos.alto_mm,
+        es_retazo=True,
+        moneda=origen.moneda,
+        unidad_venta=origen.unidad_venta,
+        costo_unidad_venta=origen.costo_unidad_venta,
+        precio_simulado=origen.precio_simulado,
+    )
+    sesion.add(retazo)
+    sesion.commit()
+    return retazo
 
 
 # --- Parámetros de corte (`CART-105`) -----------------------------------
