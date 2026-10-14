@@ -93,7 +93,7 @@ def _motivo(error):
     return (str(error) or type(error).__name__)[:200]
 
 def resolver(data, salida=None):
-    from .sparrow import convertir_y_validar, ruta_de_avisos
+    from .sparrow import convertir_y_validar, ruta_de_avisos, ruta_de_progreso
     from .sparrow_reparto import vaciar_chapas
     opts=data['options']
     inicio=time.monotonic(); best=None; score=None; duracion=0
@@ -114,6 +114,17 @@ def resolver(data, salida=None):
             temporal.write_text(json.dumps(avisos),encoding='utf8');temporal.replace(ruta)
         except OSError as error:
             print('avisar:',error,file=sys.stderr)  # El aviso es lo de menos: el anidado sigue.
+    avance={'fase':None,'pasada':None,'pasadas':opts.get('intentos',3),'mejor_chapas':None}
+    def avanzar(**cambios):
+        # Para la barra de progreso (A7). Aparte y de una vez, como los
+        # avisos; si no se puede escribir, el anidado sigue.
+        avance.update(cambios)
+        if not salida: return
+        ruta=ruta_de_progreso(salida);temporal=ruta.with_suffix('.tmp')
+        try:
+            temporal.write_text(json.dumps(avance),encoding='utf8');temporal.replace(ruta)
+        except OSError as error:
+            print('avanzar:',error,file=sys.stderr)
     def considerar(candidato):
         nonlocal best,score
         convertir_y_validar(data,candidato)  # Nunca guardar demanda parcial o colocaciones inválidas.
@@ -126,10 +137,12 @@ def resolver(data, salida=None):
                 temporal=salida.with_suffix('.tmp')
                 temporal.write_text(json.dumps(candidato),encoding='utf8');temporal.replace(salida)
             best=candidato;score=rank
+            avanzar(mejor_chapas=score[0])
     for intento in range(opts.get('intentos',3)):
         # No empezar una pasada que no va a terminar antes del límite.
         if intento and time.monotonic()+duracion>=limite: break
         prueba={**data,'options':{**opts,'semilla':(opts['semilla']+104729*intento)%2147483648}}
+        avanzar(fase='pasada',pasada=intento+1)
         t0=time.monotonic()
         try:
             candidato=resolver_una_pasada(prueba)
@@ -145,6 +158,7 @@ def resolver(data, salida=None):
             break
         if score[0]==minimo: break
         if opts.get('vaciar_chapas',True):
+            avanzar(fase='vaciar')
             originals,shapes=formas(prueba);reserva=data['gap']/2
             try:
                 for chapas in vaciar_chapas(

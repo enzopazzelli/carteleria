@@ -35,6 +35,11 @@ def ruta_de_avisos(salida):
     en el momento: si se lo corta por tiempo, ya están."""
     return Path(salida).with_suffix('.avisos.json')
 
+def ruta_de_progreso(salida):
+    """Dónde deja el worker cómo va (A7): pasada, fase y mejor resultado.
+    Como los avisos, al lado del resultado y escrito de una vez."""
+    return Path(salida).with_suffix('.progreso.json')
+
 def _area_util(plancha, params):
     borde = float(params.margen_borde_mm + params.kerf_mm / 2)
     return borde, float(plancha.ancho_mm)-2*borde, float(plancha.alto_mm)-2*borde

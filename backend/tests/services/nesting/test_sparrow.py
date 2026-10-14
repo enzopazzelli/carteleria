@@ -228,12 +228,15 @@ def test_lo_que_el_worker_da_por_mejor_es_lo_que_quedo_escrito(monkeypatch,tmp_p
     monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
     reemplazar=Path.replace
     escrituras=[]
+    salida=tmp_path/'salida.json'
     def replace(self,destino):
-        escrituras.append(1)
-        if len(escrituras)==2: raise OSError('disco lleno de prueba')
+        # Se cuentan solo las escrituras del resultado: el worker también
+        # reemplaza su archivo de avisos y el de progreso.
+        if Path(destino)==salida:
+            escrituras.append(1)
+            if len(escrituras)==2: raise OSError('disco lleno de prueba')
         return reemplazar(self,destino)
     monkeypatch.setattr(Path,'replace',replace)
-    salida=tmp_path/'salida.json'
 
     colocadas=sparrow_worker.resolver(entrada,salida)
 
@@ -355,3 +358,35 @@ def test_worker_real_con_giro_libre():
     result=anidar_sparrow(*datos(3),OpcionesSparrow(giro_libre=True,segundos_por_busqueda=1,tiempo_maximo_s=20,simplificacion_mm=0))
     assert len(result.posiciones)==2
     assert result.planchas_usadas==1
+
+
+from app.services.nesting.sparrow import ruta_de_progreso
+
+
+def progreso_escrito(salida):
+    return json.loads(ruta_de_progreso(salida).read_text(encoding='utf8'))
+
+
+def test_el_worker_anota_la_pasada_al_empezarla(monkeypatch,tmp_path):
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60,vaciar_chapas=False)
+    salida=tmp_path/'salida.json'
+    vistos=[]
+    def pasada(data):
+        vistos.append(progreso_escrito(salida))
+        return una_por_chapa(data)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',pasada)
+
+    sparrow_worker.resolver(entrada,salida)
+
+    assert vistos==[{'fase':'pasada','pasada':1,'pasadas':1,'mejor_chapas':None}]
+
+
+def test_el_worker_anota_el_mejor_resultado_y_la_etapa_de_vaciar(monkeypatch,tmp_path):
+    """La primera etapa deja cuatro chapas y vaciar chapas las junta en una."""
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    salida=tmp_path/'salida.json'
+
+    sparrow_worker.resolver(entrada,salida)
+
+    assert progreso_escrito(salida)=={'fase':'vaciar','pasada':1,'pasadas':1,'mejor_chapas':1}
