@@ -269,6 +269,22 @@ def test_mientras_corre_un_anidado_del_trabajo_no_se_vuelve_a_cargar(cliente, tm
     assert cliente.get(f"/trabajos/{trabajo['id']}/piezas").json() == [pieza]
 
 
+@pytest.mark.parametrize("estado", ["lista", "error", "cancelada"])
+def test_un_anidado_terminado_del_trabajo_no_impide_volver_a_cargar(cliente, tmp_path, estado):
+    from app.modelos.trabajo import EjecucionNesting
+
+    trabajo, _ = _trabajo_con_una_pieza(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    with Session(cliente.motor) as sesion:
+        sesion.add(EjecucionNesting(grupo_id=grupo["id"], motor="sparrow", estado=estado))
+        sesion.commit()
+    contenido = _dxf_bytes(
+        tmp_path, "otro.dxf", lambda msp: msp.add_lwpolyline([(0, 0), (40, 0), (40, 40), (0, 40)], close=True)
+    )
+
+    assert _subir(cliente, trabajo["id"], contenido).status_code == 200
+
+
 @pytest.mark.parametrize("que_falla", ["no es dxf", "nada para cortar"])
 def test_una_carga_rechazada_no_pisa_el_dxf_guardado(cliente, tmp_path, que_falla):
     """El archivo nuevo se guardaba encima del anterior antes de leerlo: si

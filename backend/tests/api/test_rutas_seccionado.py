@@ -407,6 +407,31 @@ def test_mientras_corre_un_anidado_del_grupo_no_se_secciona_ni_se_deshace(client
     assert _piezas(cliente, trabajo["id"]) == antes
 
 
+def test_un_anidado_en_curso_en_el_grupo_de_un_tramo_movido_tampoco_deja_deshacer(cliente, tmp_path):
+    """Los tramos pueden pasar a otro grupo que el de la original."""
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    tramo = _aplicar(cliente, pieza["id"], formato["id"]).json()[0]
+    otro = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Otro"}).json()
+    cliente.patch(f"/piezas/{tramo['id']}", json={"grupo_id": otro["id"]})
+    anidado_id = _anidado_en_curso(cliente, otro["id"], "corriendo")
+
+    respuesta = cliente.delete(f"/piezas/{pieza['id']}/seccionado")
+
+    assert respuesta.status_code == 409
+    assert f"#{anidado_id}" in respuesta.json()["detail"]
+
+
+@pytest.mark.parametrize("estado", ["lista", "error", "cancelada"])
+def test_un_anidado_terminado_del_grupo_no_impide_seccionar(cliente, tmp_path, estado):
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    _anidado_en_curso(cliente, grupo["id"], estado)
+
+    assert _aplicar(cliente, pieza["id"], formato["id"]).status_code == 201
+    assert cliente.delete(f"/piezas/{pieza['id']}/seccionado").status_code == 204
+
+
 def test_restaurar_una_pieza_seccionada_se_rechaza(cliente, tmp_path):
     # Si no, el metal se contaría dos veces: la original y sus tramos.
     _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)

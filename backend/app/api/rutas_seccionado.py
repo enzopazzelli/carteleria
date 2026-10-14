@@ -14,12 +14,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato
-from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
+from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza
 from ..services.nesting.engine import MotorNestingRectangular
 from ..services.nesting.geometria_material import poligono_material
 from ..services.nesting.models import ParametrosCorte, Plancha
 from ..services.nesting.models import Pieza as PiezaDominio
 from ..services.seccionado import Grilla, Seccionado, celda_util, mejor_grilla, seccionar_con_grilla, tramo_orientado
+from .anidado_en_curso import rechazar_si_hay_anidado_en_curso
 from .dependencias import obtener_sesion
 from .esquemas_seccionado import CorteLeer, PropuestaLeer, SeccionadoAplicar, SeccionadoPedido, TramoPropuesto
 from .esquemas_trabajos import PiezaLeer
@@ -164,29 +165,11 @@ def _tramos_de(sesion: Session, original: Pieza) -> list[Pieza]:
 
 
 def _sin_anidado_en_curso(sesion: Session, original: Pieza) -> None:
-    """Un anidado que corre usa las piezas de cuando arrancó: seccionar o
-    deshacer a mitad de camino lo dejaba colgado, o con un resultado que
-    apunta a piezas que ya no se cortan. Se miran el grupo de la original
-    y los de sus tramos, que pueden haberse movido a otro."""
+    """Se miran el grupo de la original y los de sus tramos, que pueden
+    haberse movido a otro."""
     grupos = {original.grupo_id, *(tramo.grupo_id for tramo in _tramos_de(sesion, original))} - {None}
-    if not grupos:
-        return
-    en_curso = sesion.execute(
-        select(GrupoDeCorte.nombre, EjecucionNesting.id)
-        .join(EjecucionNesting, EjecucionNesting.grupo_id == GrupoDeCorte.id)
-        .where(
-            EjecucionNesting.grupo_id.in_(grupos),
-            EjecucionNesting.estado.in_([EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value]),
-        )
-        .order_by(EjecucionNesting.id)
-    ).first()
-    if en_curso is not None:
-        grupo, ejecucion_id = en_curso
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"Hay un anidado en curso en el grupo «{grupo}» (#{ejecucion_id}): esperá a que termine, "
-            "o cancelalo en la pestaña Anidado, antes de seccionar o deshacer.",
-        )
+    if grupos:
+        rechazar_si_hay_anidado_en_curso(sesion, GrupoDeCorte.id.in_(grupos), "seccionar o deshacer")
 
 
 def _borrar_tramos(sesion: Session, original: Pieza) -> None:
