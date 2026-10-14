@@ -80,3 +80,25 @@ describe("tildarVisibles", () => {
     expect(tildarVisibles([10, 12, 13], filtrarFilas(filas, "Chapas", ""), false)).toEqual([10]);
   });
 });
+
+describe("filtrarFilas, con lo que se lee en la tabla", () => {
+  const conEspesores = filasDeFormatos(
+    [formato(20, 1), formato(21, 4), formato(22, 5)],
+    [
+      materiales[0],
+      { id: 4, nombre: "ACRILICO CRISTAL", espesor: "2.4 mm", familia: "Acrílicos" },
+      { id: 5, nombre: "POLICARBONATO CRISTAL", espesor: "0.5 mm", familia: "Policarbonato" },
+    ],
+  );
+  const ids = (busqueda: string) => filtrarFilas(conEspesores, null, busqueda).map((f) => f.formato.id);
+
+  it("«cal. 22», escrito como en la columna Espesor", () => {
+    expect(ids("cal. 22")).toEqual([20]);
+  });
+
+  it("un espesor con decimales, con punto o con coma", () => {
+    expect(ids("2.4")).toEqual([21]);
+    expect(ids("2,4")).toEqual([21]);
+    expect(ids("0.5 mm")).toEqual([22]);
+  });
+});

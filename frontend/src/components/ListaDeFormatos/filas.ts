@@ -9,6 +9,16 @@ export interface Fila {
 
 const sinTildes = (texto: string) => texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
+/** Las palabras de un texto, iguales para lo que se busca y para la fila:
+ * sin tildes, la coma como punto decimal («2,4» es «2.4»), cortadas por
+ * espacios y «×», y sin el punto del final («cal.» es «cal»). */
+const palabrasDe = (texto: string) =>
+  sinTildes(texto)
+    .replace(/,/g, ".")
+    .split(/[\s×]+/)
+    .map((palabra) => palabra.replace(/\.+$/, ""))
+    .filter(Boolean);
+
 const familiaDe = (fila: Fila) => fila.material?.familia ?? "Otros";
 
 /** «1220 × 2440»: en milímetros, sin los decimales que trae la API. */
@@ -51,14 +61,12 @@ export function familiasDe(filas: Fila[]): string[] {
  * todas las palabras buscadas. Cada palabra tiene que ser el comienzo de una
  * palabra de la fila: así «22» no coincide con el «1220» de una medida. */
 export function filtrarFilas(filas: Fila[], familia: string | null, busqueda: string): Fila[] {
-  const buscadas = sinTildes(busqueda).split(/\s+/).filter(Boolean);
+  const buscadas = palabrasDe(busqueda);
   return filas.filter((fila) => {
     if (familia !== null && familiaDe(fila) !== familia) return false;
-    const palabras = sinTildes(
+    const palabras = palabrasDe(
       [fila.material?.nombre, fila.material?.espesor, fila.formato.codigo, medida(fila.formato)].filter(Boolean).join(" "),
-    )
-      .split(/[\s.×]+/)
-      .filter(Boolean);
+    );
     return buscadas.every((buscada) => palabras.some((palabra) => palabra.startsWith(buscada)));
   });
 }
