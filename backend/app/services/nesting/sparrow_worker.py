@@ -87,8 +87,11 @@ def por_chapa(placed):
     for q in placed:chapas.setdefault(q['sheet'],[]).append({k:v for k,v in q.items() if k!='sheet'})
     return [chapas[s] for s in sorted(chapas)]
 
+def _motivo(error):
+    return (str(error) or type(error).__name__)[:200]
+
 def resolver(data, salida=None):
-    from .sparrow import convertir_y_validar
+    from .sparrow import convertir_y_validar, ruta_de_avisos
     from .sparrow_reparto import vaciar_chapas
     opts=data['options']
     inicio=time.monotonic(); best=None; score=None; duracion=0
@@ -96,20 +99,38 @@ def resolver(data, salida=None):
     # Cota física por área exterior: Sparrow reserva las siluetas completas.
     area=sum(Polygon(p['shell']).area for p in data['items'])
     minimo=max(1,math.ceil(area/(data['width']*data['height'])))
+    avisos=[]
+    def avisar(texto):
+        # Se escriben en el momento: si el supervisor corta por tiempo, ya están.
+        avisos.append(texto)
+        if salida: ruta_de_avisos(salida).write_text(json.dumps(avisos),encoding='utf8')
     def considerar(candidato):
         nonlocal best,score
         convertir_y_validar(data,candidato)  # Nunca guardar demanda parcial o colocaciones inválidas.
         rank=puntaje(candidato,data)
         if score is None or rank<score:
-            best=candidato;score=rank
+            # Primero se escribe y después se lo da por mejor: si escribir
+            # falla, uno peor que este pero mejor que el escrito todavía
+            # tiene que poder escribirse.
             if salida:
                 temporal=salida.with_suffix('.tmp')
-                temporal.write_text(json.dumps(best),encoding='utf8');temporal.replace(salida)
+                temporal.write_text(json.dumps(candidato),encoding='utf8');temporal.replace(salida)
+            best=candidato;score=rank
     for intento in range(opts.get('intentos',3)):
         # No empezar una pasada que no va a terminar antes del límite.
         if intento and time.monotonic()+duracion>=limite: break
         prueba={**data,'options':{**opts,'semilla':(opts['semilla']+104729*intento)%2147483648}}
-        t0=time.monotonic();candidato=resolver_una_pasada(prueba);duracion=time.monotonic()-t0
+        t0=time.monotonic()
+        try:
+            candidato=resolver_una_pasada(prueba)
+        except (KeyboardInterrupt,SystemExit):raise
+        except BaseException as error:
+            # Una pasada que falla después de la primera no tira lo que ya
+            # se encontró. Si falla la primera, no hay nada que conservar.
+            if best is None: raise
+            avisar(f'La pasada {intento+1} de Sparrow falló ({_motivo(error)}): queda el mejor anidado de las anteriores.')
+            break
+        duracion=time.monotonic()-t0
         considerar(candidato)
         if score[0]==minimo: break
         if opts.get('vaciar_chapas',True):
@@ -131,6 +152,7 @@ def resolver(data, salida=None):
                 # `BaseException` porque spyrrow avisa sus fallas internas
                 # con `PanicException`, que no desciende de `Exception`.
                 print('vaciar_chapas:',error,file=sys.stderr)
+                avisar(f'No se pudo terminar de vaciar chapas ({_motivo(error)}): queda el mejor anidado que ya se había encontrado.')
             if score[0]==minimo: break
     return best
 

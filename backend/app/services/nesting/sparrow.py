@@ -26,6 +26,11 @@ class OpcionesSparrow:
     #: piezas en las demás, con el tiempo que sobra de `tiempo_maximo_s`.
     vaciar_chapas: bool = True
 
+def ruta_de_avisos(salida):
+    """Dónde deja el worker sus avisos, al lado de su resultado. Los escribe
+    en el momento: si se lo corta por tiempo, ya están."""
+    return Path(salida).with_suffix('.avisos.json')
+
 def _area_util(plancha, params):
     borde = float(params.margen_borde_mm + params.kerf_mm / 2)
     return borde, float(plancha.ancho_mm)-2*borde, float(plancha.alto_mm)-2*borde
@@ -132,6 +137,14 @@ def convertir_y_validar(entrada, placed):
         avisos.append(f"Se unificaron huecos superpuestos o tangentes para calcular {len(entrada['normalizadas'])} pieza(s) (IDs: {', '.join(entrada['normalizadas'])}). Se conservaron todas las piezas y los contornos guardados del DXF.")
     return ResultadoAnidado(positions,len(sheets),avisos)
 
+def _lo_que_dejo_el_worker(entrada,out,*avisos):
+    """El mejor anidado que dejó escrito el worker, validado, con los avisos
+    que escribió él y los que agrega el supervisor."""
+    result=convertir_y_validar(entrada,json.loads(out.read_text(encoding='utf8')))
+    ruta=ruta_de_avisos(out)
+    del_worker=json.loads(ruta.read_text(encoding='utf8')) if ruta.exists() else []
+    return ResultadoAnidado(result.posiciones,result.planchas_usadas,[*result.advertencias,*del_worker,*avisos])
+
 def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lambda:False):
     opciones=opciones or OpcionesSparrow()
     entrada=preparar_entrada(piezas,geometrias,plancha,params,opciones)
@@ -147,13 +160,16 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
                     if time.monotonic()-start>opciones.tiempo_maximo_s:
                         if out.exists():
                             proc.kill(); proc.wait()
-                            result=convertir_y_validar(entrada,json.loads(out.read_text(encoding='utf8')))
-                            return ResultadoAnidado(result.posiciones,result.planchas_usadas,[*result.advertencias,'Se alcanzó el límite de búsqueda: se conserva el mejor anidado completo y validado, sin omitir piezas.'])
+                            return _lo_que_dejo_el_worker(entrada,out,'Se alcanzó el límite de búsqueda: se conserva el mejor anidado completo y validado, sin omitir piezas.')
                         raise ValueError('Sparrow excedió el tiempo máximo; no se guardó un plano parcial.')
                     time.sleep(0.1)
                 if proc.returncode!=0:
+                    # Si ya había escrito un anidado, una falla posterior
+                    # no lo tira: el worker escribe solo resultados validados.
+                    if out.exists():
+                        return _lo_que_dejo_el_worker(entrada,out,'El cálculo terminó con un error: se conserva el mejor anidado completo y validado que había encontrado.')
                     log.seek(0);raise ValueError('Sparrow no pudo calcular: '+log.read()[-2000:])
-                return convertir_y_validar(entrada,json.loads(out.read_text(encoding='utf8')))
+                return _lo_que_dejo_el_worker(entrada,out)
             finally:
                 if proc.poll() is None:proc.kill()
                 proc.wait()

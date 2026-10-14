@@ -146,3 +146,106 @@ def test_un_reparto_que_falla_no_pierde_la_primera_etapa(monkeypatch,consulta):
     colocadas=sparrow_worker.resolver(entrada)
     assert chapas_usadas(colocadas)==4
     convertir_y_validar(entrada,colocadas)
+
+
+import json
+from pathlib import Path
+from app.services.nesting.sparrow import ruta_de_avisos
+
+
+def avisos_escritos(salida):
+    return json.loads(ruta_de_avisos(salida).read_text(encoding='utf8'))
+
+
+@pytest.mark.parametrize('consulta',[encimadas,rota,panico])
+def test_un_reparto_que_falla_queda_en_los_avisos(monkeypatch,tmp_path,consulta):
+    """Antes quedaba solo en el registro del worker, que se borra."""
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    monkeypatch.setattr(sparrow_worker,'entra_en_una_chapa',consulta)
+    salida=tmp_path/'salida.json'
+
+    sparrow_worker.resolver(entrada,salida)
+
+    [aviso]=avisos_escritos(salida)
+    assert 'vaciar chapas' in aviso
+
+
+def test_una_pasada_que_falla_despues_de_la_primera_no_pierde_lo_encontrado(monkeypatch,tmp_path):
+    """De 60 entra uno por chapa, y por área podrían ser dos: el worker
+    prueba una segunda pasada. Si esa falla, vale la primera."""
+    entrada=entrada_de_cuadrados(4,lado=60,intentos=2,tiempo_maximo_s=60,vaciar_chapas=False)
+    llamadas=[]
+    def pasada(data):
+        llamadas.append(1)
+        if len(llamadas)>1: raise Panico('pánico de prueba')
+        return una_por_chapa(data)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',pasada)
+    salida=tmp_path/'salida.json'
+
+    colocadas=sparrow_worker.resolver(entrada,salida)
+
+    assert len(llamadas)==2
+    assert chapas_usadas(colocadas)==4
+    [aviso]=avisos_escritos(salida)
+    assert 'pánico de prueba' in aviso
+
+
+def test_lo_que_el_worker_da_por_mejor_es_lo_que_quedo_escrito(monkeypatch,tmp_path):
+    """Si escribir el mejor falla, no se lo da por mejor: si no, uno peor
+    que ese pero mejor que el escrito ya no se escribiría."""
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    reemplazar=Path.replace
+    escrituras=[]
+    def replace(self,destino):
+        escrituras.append(1)
+        if len(escrituras)==2: raise OSError('disco lleno de prueba')
+        return reemplazar(self,destino)
+    monkeypatch.setattr(Path,'replace',replace)
+    salida=tmp_path/'salida.json'
+
+    colocadas=sparrow_worker.resolver(entrada,salida)
+
+    assert colocadas==json.loads(salida.read_text(encoding='utf8'))
+
+
+def worker_falso(tmp_path,codigo,avisos=()):
+    """Un worker que deja cada pieza sola en su chapa, escribe `avisos` y
+    termina con `codigo`."""
+    guion=tmp_path/'worker_falso.py'
+    guion.write_text(
+        'import json,sys\n'
+        'from pathlib import Path\n'
+        'data=json.loads(Path(sys.argv[1]).read_text(encoding="utf8"))\n'
+        'salida=Path(sys.argv[2])\n'
+        'salida.write_text(json.dumps([{"id":p["id"],"sheet":n,"rotation":0,"tx":data["borde"],"ty":data["borde"]} for n,p in enumerate(data["items"])]),encoding="utf8")\n'
+        f'salida.with_suffix(".avisos.json").write_text(json.dumps({list(avisos)!r}),encoding="utf8")\n'
+        f'sys.exit({codigo})\n',
+        encoding='utf8',
+    )
+    return guion
+
+
+def con_worker(monkeypatch,guion):
+    from app.services.nesting import sparrow
+    abrir=sparrow.subprocess.Popen
+    monkeypatch.setattr(sparrow.subprocess,'Popen',lambda args,**kw:abrir([args[0],str(guion),*args[-2:]],**kw))
+
+
+def test_los_avisos_del_worker_llegan_al_resultado(monkeypatch,tmp_path):
+    con_worker(monkeypatch,worker_falso(tmp_path,0,['No se pudo terminar de vaciar chapas (prueba).']))
+
+    resultado=anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20))
+
+    assert 'No se pudo terminar de vaciar chapas (prueba).' in resultado.advertencias
+
+
+def test_si_el_worker_termina_con_error_vale_lo_que_dejo_escrito(monkeypatch,tmp_path):
+    """Antes se descartaba el anidado de la primera pasada."""
+    con_worker(monkeypatch,worker_falso(tmp_path,1))
+
+    resultado=anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20))
+
+    assert resultado.planchas_usadas==2
+    assert any('terminó con un error' in aviso for aviso in resultado.advertencias)
