@@ -11,6 +11,7 @@ import {
   type Comparacion,
   type ParametrosCorteOverride,
 } from "../api/piezasYgrupos";
+import { intervaloDeConsulta } from "../routes/TrabajoWorkspace/comparacionEnCurso";
 
 export function useGrupos(trabajoId: number) {
   return useQuery({ queryKey: ["grupos", trabajoId], queryFn: () => listarGrupos(trabajoId) });
@@ -64,7 +65,7 @@ export function useComparacion(comparacionId: number | null) {
     queryKey: ["comparacion", comparacionId],
     queryFn: () => obtenerComparacion(comparacionId as number),
     enabled: comparacionId !== null,
-    refetchInterval: (query) => ((query.state.data as Comparacion | undefined)?.estado === "corriendo" ? 1000 : false),
+    refetchInterval: (query) => intervaloDeConsulta(query.state.data as Comparacion | undefined, query.state.status),
   });
 }
 

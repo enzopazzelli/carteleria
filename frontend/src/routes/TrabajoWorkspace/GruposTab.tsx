@@ -15,6 +15,7 @@ import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import { cancelarComparacion } from "../../api/piezasYgrupos";
 import Banner from "../../components/Banner";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
+import { debeRetomar, delGrupo, seEsfumo } from "./comparacionEnCurso";
 import type { OpcionFormato } from "../../api/piezasYgrupos";
 import type { Formato } from "../../api/catalogo";
 import { ApiError } from "../../api/client";
@@ -34,8 +35,9 @@ export default function GruposTab() {
   const [nombreNuevoGrupo, setNombreNuevoGrupo] = useState("");
   const [grupoComparando, setGrupoComparando] = useState<number | null>(null);
   const [comparacionId, setComparacionId] = useState<number | null>(null);
-  const { data: comparacion } = useComparacion(comparacionId);
-  const { data: ultima } = useUltimaComparacion(grupoComparando);
+  const consultaComparacion = useComparacion(comparacionId);
+  const comparacion = delGrupo(consultaComparacion.data, grupoComparando);
+  const { data: ultima, isFetching: buscandoUltima } = useUltimaComparacion(grupoComparando);
   const comparando = iniciarComparacion.isPending || comparacion?.estado === "corriendo";
   const [candidatos, setCandidatos] = useState<number[]>([]);
   const [resultado, setResultado] = useState<OpcionFormato[] | null>(null);
@@ -59,8 +61,19 @@ export default function GruposTab() {
   // Al abrir «Comparar formatos» de un grupo se retoma su última
   // comparación: la barra si sigue corriendo, la tabla si terminó (A7).
   useEffect(() => {
-    if (ultima && ultima.grupo_id === grupoComparando && comparacionId === null) setComparacionId(ultima.id);
-  }, [ultima, grupoComparando, comparacionId]);
+    if (ultima && debeRetomar(ultima, grupoComparando, buscandoUltima, comparacionId)) setComparacionId(ultima.id);
+  }, [ultima, grupoComparando, buscandoUltima, comparacionId]);
+
+  // Si el servidor se reinició, la comparación se perdió: se la suelta para
+  // que vuelva «Comparar», y se olvida como la última del grupo para no
+  // retomarla otra vez.
+  useEffect(() => {
+    if (!seEsfumo(consultaComparacion.error)) return;
+    queryClient.setQueryData(["ultima-comparacion", grupoComparando], null);
+    setComparacionId(null);
+    setError("La comparación se perdió porque se reinició el servidor. Volvé a compararla.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [consultaComparacion.error]);
 
   // Cuando termina, la tabla o el error pasan a la pantalla como antes.
   useEffect(() => {
@@ -154,6 +167,11 @@ export default function GruposTab() {
     try {
       const arrancada = await iniciarComparacion.mutateAsync({ grupoId, formatoIds: candidatos,
         opciones: { motor, semilla, segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion, vaciar_chapas: vaciarChapas, giro_libre: giroLibre, criterio: "material" } });
+      // La recién arrancada es la última del grupo, y ya está corriendo: así
+      // «Comparar» no vuelve a habilitarse hasta la primera consulta, y al
+      // volver al grupo no se retoma una anterior.
+      queryClient.setQueryData(["comparacion", arrancada.id], arrancada);
+      queryClient.setQueryData(["ultima-comparacion", grupoId], arrancada);
       setComparacionId(arrancada.id);
     } catch (e) {
       setError(mensajeDeError(e, "No se pudo comparar."));
@@ -298,6 +316,9 @@ export default function GruposTab() {
                 setResultado(null);
                 setCandidatos([]);
                 setComparacionId(null);
+                // Se vuelve a pedir la última: la guardada puede ser vieja (otra
+                // pestaña, o una comparación arrancada después).
+                void queryClient.invalidateQueries({ queryKey: ["ultima-comparacion", grupo.id] });
               }}
             >
               Comparar formatos
