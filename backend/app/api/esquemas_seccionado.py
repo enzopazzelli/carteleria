@@ -5,23 +5,28 @@ una vista previa para dibujar, no se guarda. Los tramos guardados sí
 van como strings, en `Pieza.contorno_mm`."""
 from __future__ import annotations
 
-from pydantic import BaseModel
+from typing import Annotated
+
+from pydantic import BaseModel, Field
+
+#: Infinito o «no es un número» rompían la cuenta de la grilla con un 500.
+Finito = Annotated[float, Field(allow_inf_nan=False)]
 
 
 class SeccionadoPedido(BaseModel):
     """Sin `angulo_grados`, busca la mejor grilla; con él, evalúa esa."""
 
     formato_id: int
-    angulo_grados: float | None = None
-    desplazamiento_x_mm: float = 0.0
-    desplazamiento_y_mm: float = 0.0
+    angulo_grados: Finito | None = None
+    desplazamiento_x_mm: Finito = 0.0
+    desplazamiento_y_mm: Finito = 0.0
 
 
 class SeccionadoAplicar(BaseModel):
     formato_id: int
-    angulo_grados: float
-    desplazamiento_x_mm: float
-    desplazamiento_y_mm: float
+    angulo_grados: Finito
+    desplazamiento_x_mm: Finito
+    desplazamiento_y_mm: Finito
 
 
 class CorteLeer(BaseModel):

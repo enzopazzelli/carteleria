@@ -43,6 +43,16 @@ def _no_es_tramo(pieza: Pieza) -> None:
         )
 
 
+def _no_esta_descartada_a_mano(pieza: Pieza) -> None:
+    """Seccionar descarta la original, y esa sí se vuelve a seccionar. Una
+    descartada a mano no: sus tramos se cortarían aunque ella no."""
+    if pieza.descartada and pieza.seccionado is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"«{pieza.id_origen}» está descartada: para seccionarla, primero tocá «Restaurar».",
+        )
+
+
 def _chapa_y_parametros(sesion: Session, pieza: Pieza, formato_id: int) -> tuple[Plancha, ParametrosCorte]:
     """La chapa pedida y los parámetros con los que el anidado va a
     acomodar los tramos, que quedan en el grupo de la pieza: los propios
@@ -136,6 +146,7 @@ def proponer_seccionado(
     pide la pantalla en cada arrastre."""
     pieza = _pieza_o_404(sesion, pieza_id)
     _no_es_tramo(pieza)
+    _no_esta_descartada_a_mano(pieza)
     plancha, params = _chapa_y_parametros(sesion, pieza, datos.formato_id)
     _validar_que_no_entra(pieza, plancha, params)
     celda = _celda(plancha, params)
@@ -229,6 +240,7 @@ def aplicar_seccionado(
     tramos anteriores."""
     pieza = _pieza_o_404(sesion, pieza_id)
     _no_es_tramo(pieza)
+    _no_esta_descartada_a_mano(pieza)
     plancha, params = _chapa_y_parametros(sesion, pieza, datos.formato_id)
     _validar_que_no_entra(pieza, plancha, params)
     celda = _celda(plancha, params)

@@ -318,6 +318,44 @@ def test_borrado_el_anidado_se_puede_volver_a_seccionar_y_deshacer(cliente, tmp_
     assert cliente.delete(f"/piezas/{pieza['id']}/seccionado").status_code == 204
 
 
+@pytest.mark.parametrize("ruta", ["seccionado/propuesta", "seccionado"])
+@pytest.mark.parametrize("campo", ["angulo_grados", "desplazamiento_x_mm", "desplazamiento_y_mm"])
+@pytest.mark.parametrize("valor", ["nan", "inf", "-inf"])
+def test_un_angulo_o_un_corrimiento_que_no_es_un_numero_finito_da_422(cliente, tmp_path, ruta, campo, valor):
+    """Antes daban 500: la cuenta de la grilla no sabe qué hacer con ellos."""
+    _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    pedido = {"formato_id": formato["id"], "angulo_grados": 0, "desplazamiento_x_mm": 0, "desplazamiento_y_mm": 0}
+
+    respuesta = cliente.post(f"/piezas/{pieza['id']}/{ruta}", json={**pedido, campo: valor})
+
+    assert respuesta.status_code == 422, respuesta.text
+
+
+@pytest.mark.parametrize("ruta", ["seccionado/propuesta", "seccionado"])
+def test_una_pieza_descartada_a_mano_no_se_secciona(cliente, tmp_path, ruta):
+    """El panel no ofrece seccionarla; por la API se podía, y sus tramos se
+    cortaban aunque la pieza no."""
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    cliente.patch(f"/piezas/{pieza['id']}", json={"descartada": True})
+
+    respuesta = cliente.post(f"/piezas/{pieza['id']}/{ruta}", json={
+        "formato_id": formato["id"], "angulo_grados": 0, "desplazamiento_x_mm": 0, "desplazamiento_y_mm": 0,
+    })
+
+    assert respuesta.status_code == 409
+    assert "descartada" in respuesta.json()["detail"]
+    assert not [p for p in _piezas(cliente, trabajo["id"]) if p["seccionada_de_id"] == pieza["id"]]
+
+
+def test_una_pieza_seccionada_se_puede_volver_a_seccionar_aunque_quede_descartada(cliente, tmp_path):
+    """Seccionar descarta la original: eso no es «descartada a mano»."""
+    _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
+    _aplicar(cliente, pieza["id"], formato["id"])
+
+    assert _proponer(cliente, pieza["id"], formato_id=formato["id"]).status_code == 200
+    assert _aplicar(cliente, pieza["id"], formato["id"], dx=200).status_code == 201
+
+
 def test_restaurar_una_pieza_seccionada_se_rechaza(cliente, tmp_path):
     # Si no, el metal se contaría dos veces: la original y sus tramos.
     _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path)
