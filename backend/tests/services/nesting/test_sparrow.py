@@ -390,3 +390,42 @@ def test_el_worker_anota_el_mejor_resultado_y_la_etapa_de_vaciar(monkeypatch,tmp
     sparrow_worker.resolver(entrada,salida)
 
     assert progreso_escrito(salida)=={'fase':'vaciar','pasada':1,'pasadas':1,'mejor_chapas':1}
+
+
+def worker_que_avanza(tmp_path,progreso,espera=1.5):
+    """Un worker que escribe `progreso` (texto, tal cual) como su archivo de
+    progreso, espera y recién después deja cada pieza sola en su chapa."""
+    guion=tmp_path/'worker_que_avanza.py'
+    guion.write_text(
+        'import json,sys,time\n'
+        'from pathlib import Path\n'
+        'data=json.loads(Path(sys.argv[1]).read_text(encoding="utf8"))\n'
+        'salida=Path(sys.argv[2])\n'
+        f'salida.with_suffix(".progreso.json").write_text({progreso!r},encoding="utf8")\n'
+        f'time.sleep({espera})\n'
+        'salida.write_text(json.dumps([{"id":p["id"],"sheet":n,"rotation":0,"tx":data["borde"],"ty":data["borde"]} for n,p in enumerate(data["items"])]),encoding="utf8")\n',
+        encoding='utf8',
+    )
+    return guion
+
+
+def test_el_supervisor_informa_lo_que_anota_el_worker(monkeypatch,tmp_path):
+    anotado={'fase':'pasada','pasada':2,'pasadas':3,'mejor_chapas':7}
+    con_worker(monkeypatch,worker_que_avanza(tmp_path,json.dumps(anotado)))
+    avances=[]
+
+    anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20),al_avanzar=avances.append)
+
+    assert any({k:a.get(k) for k in anotado}==anotado for a in avances)
+    assert all(a['maximo']==20 and 0<=a['segundos']<=20 for a in avances)
+
+
+def test_un_progreso_a_medias_no_frena_el_anidado_ni_la_barra(monkeypatch,tmp_path):
+    """Si el archivo está cortado, el tiempo se informa igual."""
+    con_worker(monkeypatch,worker_que_avanza(tmp_path,'{"fase": "pas'))
+    avances=[]
+
+    resultado=anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20),al_avanzar=avances.append)
+
+    assert resultado.planchas_usadas==2
+    assert avances and all(set(a)=={'segundos','maximo'} for a in avances)
