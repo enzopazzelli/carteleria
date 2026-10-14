@@ -340,7 +340,7 @@ export default function GruposTab() {
                 </>}
               </fieldset>
               <p className="text-sm mb-3">Se usan los parámetros de corte de cada material. La comparación no guarda un plano; luego ejecutá el mismo motor en Anidado.</p>
-              {motor === "sparrow" && <p className="text-sm mb-3">Calcula siluetas reales, sin la pasada en huecos. Los formatos se procesan uno por uno; puede demorar hasta {candidatos.length * limite} segundos más la validación de geometría.</p>}
+              {motor === "sparrow" && <p className="text-sm mb-3">Calcula siluetas reales, sin la pasada en huecos. Los formatos se procesan uno por uno{candidatos.length > 0 ? `; puede demorar hasta ${candidatos.length * limite} segundos más la validación de geometría` : ""}.</p>}
               <label className="text-xs flex items-center gap-1 mb-2 font-medium cursor-pointer">
                 <input
                   type="checkbox"
@@ -389,7 +389,8 @@ export default function GruposTab() {
                 </div>
               )}
               {comparacion?.estado === "cancelada" && <p className="text-sm mb-3">Comparación cancelada.</p>}
-              {candidatos.length < 2 && <p className="text-sm mb-3">Seleccioná al menos dos formatos para habilitar la comparación.</p>}
+              {/* Al retomar una comparación después de recargar no hay formatos tildados: mientras corre, el aviso confunde. */}
+              {candidatos.length < 2 && !comparando && <p className="text-sm mb-3">Seleccioná al menos dos formatos para habilitar la comparación.</p>}
               {motor === "rectpack" && (piezas?.filter((p) => p.grupo_id === grupo.id && !p.descartada).reduce((n, p) => n + p.cantidad, 0) ?? 0) > 500 && (
                 <p className="text-sm mb-3">Comparación rápida rectangular para más de 500 piezas. El resultado es estimativo; confirmá el anidado en la etapa Anidado.</p>
               )}
