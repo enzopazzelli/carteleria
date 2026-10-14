@@ -48,11 +48,17 @@ def _formato_o_404(sesion: Session, formato_id: int) -> Formato:
 def _formatos_del_catalogo(sesion: Session) -> list[Plancha]:
     """Las medidas contra las que se reconocen hojas: formatos
     disponibles de materiales que se anidan por área (un tubo o una
-    tira de LED no son una chapa)."""
+    tira de LED no son una chapa). Sin los retazos (A8): su medida se
+    eligió para un trabajo, y no tiene que cambiar cómo se leen los
+    diseños que vengan después."""
     filas = sesion.execute(
         select(Formato.ancho_mm, Formato.alto_mm)
         .join(Material)
-        .where(Formato.disponible.is_(True), Material.nesteable_por_area.is_(True))
+        .where(
+            Formato.disponible.is_(True),
+            Formato.es_retazo.is_(False),
+            Material.nesteable_por_area.is_(True),
+        )
     ).all()
     return [Plancha(ancho_mm=ancho, alto_mm=alto) for ancho, alto in filas]
 
