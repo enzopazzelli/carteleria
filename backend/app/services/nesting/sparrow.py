@@ -172,9 +172,12 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
                 if proc.returncode!=0:
                     # Si ya había escrito un anidado, una falla posterior
                     # no lo tira: el worker escribe solo resultados validados.
+                    log.seek(0);registro=log.read()
                     if out.exists():
-                        return _lo_que_dejo_el_worker(entrada,out,'El cálculo terminó con un error: se conserva el mejor anidado completo y validado que había encontrado.')
-                    log.seek(0);raise ValueError('Sparrow no pudo calcular: '+log.read()[-2000:])
+                        # El registro se borra con la carpeta: la causa va en el aviso.
+                        causa=next((l.strip() for l in reversed(registro.splitlines()) if l.strip()),'sin detalle')[:200]
+                        return _lo_que_dejo_el_worker(entrada,out,f'El cálculo terminó con un error ({causa}): se conserva el mejor anidado completo y validado que había encontrado.')
+                    raise ValueError('Sparrow no pudo calcular: '+registro[-2000:])
                 return _lo_que_dejo_el_worker(entrada,out)
             finally:
                 if proc.poll() is None:proc.kill()

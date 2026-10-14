@@ -191,6 +191,36 @@ def test_una_pasada_que_falla_despues_de_la_primera_no_pierde_lo_encontrado(monk
     assert 'pánico de prueba' in aviso
 
 
+def test_una_pasada_posterior_que_no_valida_no_pierde_lo_encontrado(monkeypatch,tmp_path):
+    entrada=entrada_de_cuadrados(4,lado=60,intentos=2,tiempo_maximo_s=60,vaciar_chapas=False)
+    llamadas=[]
+    def pasada(data):
+        llamadas.append(1)
+        if len(llamadas)>1:  # todas encimadas en la misma chapa: no valida
+            return [{'id':p['id'],'sheet':0,'rotation':0,'tx':data['borde'],'ty':data['borde']} for p in data['items']]
+        return una_por_chapa(data)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',pasada)
+    salida=tmp_path/'salida.json'
+
+    colocadas=sparrow_worker.resolver(entrada,salida)
+
+    assert chapas_usadas(colocadas)==4
+    [aviso]=avisos_escritos(salida)
+    assert 'pasada 2' in aviso
+
+
+def test_un_mismo_aviso_no_se_repite(monkeypatch,tmp_path):
+    """Vaciar chapas falla igual en las dos pasadas: un solo aviso."""
+    entrada=entrada_de_cuadrados(4,lado=60,intentos=2,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    monkeypatch.setattr(sparrow_worker,'entra_en_una_chapa',rota)
+    salida=tmp_path/'salida.json'
+
+    sparrow_worker.resolver(entrada,salida)
+
+    assert len(avisos_escritos(salida))==1
+
+
 def test_lo_que_el_worker_da_por_mejor_es_lo_que_quedo_escrito(monkeypatch,tmp_path):
     """Si escribir el mejor falla, no se lo da por mejor: si no, uno peor
     que ese pero mejor que el escrito ya no se escribiría."""
@@ -210,13 +240,14 @@ def test_lo_que_el_worker_da_por_mejor_es_lo_que_quedo_escrito(monkeypatch,tmp_p
     assert colocadas==json.loads(salida.read_text(encoding='utf8'))
 
 
-def worker_falso(tmp_path,codigo,avisos=()):
-    """Un worker que deja cada pieza sola en su chapa, escribe `avisos` y
-    termina con `codigo`."""
+def worker_falso(tmp_path,codigo,avisos=(),registro=''):
+    """Un worker que deja cada pieza sola en su chapa, escribe `avisos`,
+    deja `registro` en su salida de errores y termina con `codigo`."""
     guion=tmp_path/'worker_falso.py'
     guion.write_text(
         'import json,sys\n'
         'from pathlib import Path\n'
+        f'print({registro!r},file=sys.stderr)\n'
         'data=json.loads(Path(sys.argv[1]).read_text(encoding="utf8"))\n'
         'salida=Path(sys.argv[2])\n'
         'salida.write_text(json.dumps([{"id":p["id"],"sheet":n,"rotation":0,"tx":data["borde"],"ty":data["borde"]} for n,p in enumerate(data["items"])]),encoding="utf8")\n'
@@ -280,10 +311,12 @@ def test_avisar_no_deja_el_archivo_de_avisos_a_medias(monkeypatch,tmp_path):
 
 
 def test_si_el_worker_termina_con_error_vale_lo_que_dejo_escrito(monkeypatch,tmp_path):
-    """Antes se descartaba el anidado de la primera pasada."""
-    con_worker(monkeypatch,worker_falso(tmp_path,1))
+    """Antes se descartaba el anidado de la primera pasada. El aviso dice
+    la causa: el registro del worker se borra con su carpeta."""
+    con_worker(monkeypatch,worker_falso(tmp_path,1,registro='Traceback...\nValueError: causa de prueba'))
 
     resultado=anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20))
 
     assert resultado.planchas_usadas==2
-    assert any('terminó con un error' in aviso for aviso in resultado.advertencias)
+    [aviso]=[a for a in resultado.advertencias if 'terminó con un error' in a]
+    assert 'ValueError: causa de prueba' in aviso

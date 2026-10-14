@@ -103,7 +103,8 @@ def resolver(data, salida=None):
     def avisar(texto):
         # Se escriben en el momento: si el supervisor corta por tiempo, ya
         # están. Aparte y de una vez, como el resultado: un archivo a medias
-        # no se puede leer.
+        # no se puede leer. Uno que ya está no se repite.
+        if texto in avisos: return
         avisos.append(texto)
         if not salida: return
         ruta=ruta_de_avisos(salida);temporal=ruta.with_suffix('.tmp')
@@ -130,15 +131,16 @@ def resolver(data, salida=None):
         t0=time.monotonic()
         try:
             candidato=resolver_una_pasada(prueba)
+            duracion=time.monotonic()-t0
+            considerar(candidato)
         except (KeyboardInterrupt,SystemExit):raise
         except BaseException as error:
-            # Una pasada que falla después de la primera no tira lo que ya
-            # se encontró. Si falla la primera, no hay nada que conservar.
+            # Una pasada que falla o no valida después de la primera no tira
+            # lo que ya se encontró. Si falla la primera, no hay nada que
+            # conservar.
             if best is None: raise
             avisar(f'La pasada {intento+1} de Sparrow falló ({_motivo(error)}): queda el mejor anidado de las anteriores.')
             break
-        duracion=time.monotonic()-t0
-        considerar(candidato)
         if score[0]==minimo: break
         if opts.get('vaciar_chapas',True):
             originals,shapes=formas(prueba);reserva=data['gap']/2
@@ -159,7 +161,7 @@ def resolver(data, salida=None):
                 # `BaseException` porque spyrrow avisa sus fallas internas
                 # con `PanicException`, que no desciende de `Exception`.
                 print('vaciar_chapas:',error,file=sys.stderr)
-                avisar(f'No se pudo terminar de vaciar chapas ({_motivo(error)}): queda el mejor anidado que ya se había encontrado.')
+                avisar(f'No se pudo terminar de vaciar chapas ({_motivo(error)}): el resultado es el mejor anidado completo que se encontró.')
             if score[0]==minimo: break
     return best
 
