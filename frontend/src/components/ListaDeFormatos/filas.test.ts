@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Formato, Material } from "../../api/catalogo";
-import { familiasDe, filasDeFormatos, filtrarFilas, medida, precioPorM2, tildarVisibles } from "./filas";
+import { familiasDe, filasDeFormatos, filtrarFilas, medida, medidaDeRetazo, precioPorM2, tildarVisibles } from "./filas";
 
 const materiales: Material[] = [
   { id: 1, nombre: "CHAPA NEGRA", espesor: "cal. 22", familia: "Chapas" },
@@ -100,5 +100,20 @@ describe("filtrarFilas, con lo que se lee en la tabla", () => {
     expect(ids("2.4")).toEqual([21]);
     expect(ids("2,4")).toEqual([21]);
     expect(ids("0.5 mm")).toEqual([22]);
+  });
+});
+
+describe("medidaDeRetazo", () => {
+  it("un número de milímetros, con punto o con coma decimal", () => {
+    expect(medidaDeRetazo("1000")).toBe("1000");
+    expect(medidaDeRetazo(" 500 ")).toBe("500");
+    expect(medidaDeRetazo("1000,5")).toBe("1000.5");
+    expect(medidaDeRetazo("10000")).toBe("10000");
+  });
+
+  it("vacío, letras, cero, negativo o más de 10 000: no es una medida", () => {
+    for (const texto of ["", "abc", "0", "-5", "10001", "1e3", "1.000,5"]) {
+      expect(medidaDeRetazo(texto)).toBeNull();
+    }
   });
 });

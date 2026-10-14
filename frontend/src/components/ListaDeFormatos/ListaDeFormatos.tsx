@@ -2,7 +2,16 @@ import { useState } from "react";
 import { ApiError } from "../../api/client";
 import type { Formato, Material } from "../../api/catalogo";
 import { useCrearRetazo, useQuitarFormato } from "../../hooks/useCatalogo";
-import { familiasDe, filasDeFormatos, filtrarFilas, medida, precioPorM2, tildarVisibles } from "./filas";
+import {
+  familiasDe,
+  filasDeFormatos,
+  filtrarFilas,
+  MEDIDA_MAXIMA_DE_RETAZO_MM,
+  medida,
+  medidaDeRetazo,
+  precioPorM2,
+  tildarVisibles,
+} from "./filas";
 
 interface ListaDeFormatosProps {
   formatos: Formato[];
@@ -33,8 +42,16 @@ export default function ListaDeFormatos({ formatos, materiales, tildados, alCamb
 
   async function alAgregarRetazo(formato: Formato) {
     setError(null);
+    const anchoMm = medidaDeRetazo(ancho);
+    const altoMm = medidaDeRetazo(alto);
+    if (anchoMm === null || altoMm === null) {
+      setError(
+        `Ancho y alto del retazo en mm: números mayores que 0 y hasta ${MEDIDA_MAXIMA_DE_RETAZO_MM.toLocaleString("es-AR")}.`,
+      );
+      return;
+    }
     try {
-      const nuevo = await crear.mutateAsync({ formatoId: formato.id, anchoMm: ancho, altoMm: alto, materialId: formato.material_id });
+      const nuevo = await crear.mutateAsync({ formatoId: formato.id, anchoMm, altoMm, materialId: formato.material_id });
       // Se lo crea para compararlo: queda tildado.
       alCambiar([...tildados, nuevo.id]);
       setRetazoDe(null);

@@ -71,6 +71,20 @@ export function filtrarFilas(filas: Fila[], familia: string | null, busqueda: st
   });
 }
 
+/** El mayor lado de un retazo, igual que el servidor (`MedidaDeRetazo`). */
+export const MEDIDA_MAXIMA_DE_RETAZO_MM = 10000;
+
+/** Lo que se escribió como ancho o alto de un retazo, listo para mandar
+ * («1000,5» es «1000.5»), o `null` si no es un número de milímetros mayor
+ * que 0 y hasta el máximo. Solo cifras y un decimal: «1e3» o «1.000,5» no
+ * pasan, para no mandar algo distinto de lo que se leyó. */
+export function medidaDeRetazo(texto: string): string | null {
+  const limpio = texto.trim().replace(",", ".");
+  if (!/^\d+(\.\d+)?$/.test(limpio)) return null;
+  const valor = Number(limpio);
+  return valor > 0 && valor <= MEDIDA_MAXIMA_DE_RETAZO_MM ? limpio : null;
+}
+
 /** «Seleccionar todas»: suma o saca solo las filas a la vista, sin tocar lo
  * tildado que el filtro esconde. */
 export function tildarVisibles(tildados: number[], visibles: Fila[], tildar: boolean): number[] {
