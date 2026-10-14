@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** escrito el 2026-10-14, sin ejecutar. No se ensayó sobre una copia: los bloques salen de leer el código de `main` en `3f2982d`. Lo que se aparte va al final, en «Desvíos».
+> **Estado:** **ejecutado el 2026-10-14,** de la Tarea 1 a la 7, en esta sesión y con una pausa por tramo. No se ensayó sobre una copia: los bloques salen de leer el código de `main` en `3f2982d`. Lo que se aparte va al final, en «Desvíos».
 
 **Goal:** Que al comparar chapas se elija desde una tabla con familia, material, espesor, medida y precio por m², con filtros y buscador; y que se pueda agregar un retazo de medida libre que se cobra por m² al precio de su fila.
 
@@ -1062,3 +1062,21 @@ Capturas de cada paso. Al terminar, cerrar solo los procesos propios y borrar la
 git add docs/plan/PLAN-MAESTRO.md docs/MAPA-DEL-PROYECTO.md docs/BITACORA.md docs/plan/A8-lista-de-materiales-y-retazos
 git commit -m "docs: lista de materiales y retazos (A8) construida"
 ```
+
+---
+
+## Desvíos
+
+Lo que se hizo distinto de lo escrito arriba, el 2026-10-14.
+
+- **Un agregado al diseño, ya anotado arriba:** `DELETE /formatos/{id}` rechaza con 409 un formato que usa un grupo, para cualquier formato.
+- **Task 3: la prueba del formato que no existe pasaba antes del cambio,** con 404 porque la ruta tampoco existía. Después del cambio da 404 por el motivo correcto; no sirvió para verla fallar.
+- **Task 7, el recorrido usó además un trabajo chico armado en la copia** (seis piezas de 300 × 200 mm, `backend/local/herramientas-a8-2026-10-14/armar_trabajo_chico.py`, fuera de git): las piezas de «Complejo» no entran en 1 m × 1 m y la comparación con el retazo solo habría dicho «hay que seccionar». Con «Complejo» se probaron el filtro y la búsqueda.
+- **Task 7, el guion del recorrido se corrigió tres veces** (buscaba la medida del retazo con decimales, cambiaba el motor después de retomar la comparación, y buscaba «lista» en la pantalla en lugar de preguntarle al servidor). Ninguna fue una falla de la pantalla.
+- **La suite del backend no se volvió a correr entera en la Task 7:** desde la Task 3 (705 en verde) no cambió ningún archivo del backend.
+
+**Lo que quedó anotado y no se hizo:**
+
+- En la comparación y en el costeo, la medida de un retazo se escribe como se guardó («1000×1000 mm») y la de una chapa del catálogo con decimales («1220.00×2440.00 mm»).
+- Después de retomar una comparación, los formatos que se habían tildado no vuelven tildados: para comparar de nuevo hay que tildarlos otra vez.
+- El código del formato no es una columna de la tabla; se encuentra con el buscador.

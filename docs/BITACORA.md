@@ -90,6 +90,15 @@ Qué queda abierto y cuál es el próximo paso.
 - **Un revisor aparte leyó la rama: «con arreglos», nada crítico.** Lo importante estaba en la pantalla de Grupos: volver a abrir «Comparar formatos» podía retomar una comparación vieja, y si el servidor se reiniciaba con una comparación en curso la pantalla quedaba trabada. Las dos se arreglaron con sus pruebas y se comprobaron en Chrome sin ventana; el primer arreglo de la segunda tenía una falla que mostró ese recorrido (con el servidor caído dejaba de preguntar) y se corrigió. También se clavó con pruebas el caso «justo cuando termina» y se escribió la nota de `D-12`. Lo menor quedó en los «Desvíos» del plan.
 - Backend 677 pruebas, frontend 156.
 
+**Lista de materiales y retazos (A8)** (rama `feat/lista-de-materiales`, [`plan/A8-lista-de-materiales-y-retazos/`](plan/A8-lista-de-materiales-y-retazos/diseno.md)):
+
+- **Al comparar chapas se elige desde una tabla:** familia, material, espesor, medida y precio por m², con botones por familia (Acrílicos, Alto impacto, Chapas, Corrugado, Policarbonato) y un buscador; «Seleccionar todas» tilda solo lo visible. Reemplaza las 29 casillas en renglón.
+- **La familia es un dato nuevo del material:** sale del nombre si no se da, y se corrige por la API. La migración `a8f2c61b9d04` la completó para los 23 materiales de Enzo (en una copia): 10 chapas, 10 acrílicos y uno de cada otra familia, ninguno en «Otros».
+- **Retazos de medida libre:** «Retazo…» en una fila crea un formato del mismo material, con la medida que se escriba y el precio por m² de esa fila (`POST /formatos/{id}/retazos`). Se compara, se usa en el grupo y se cotiza como cualquier formato.
+- **Un formato que usa un grupo no se quita:** antes la base dejaba el grupo sin material, sin avisar.
+- **Recorrido en Chrome sin ventana sobre una copia de la base:** filtrar y buscar en «Complejo»; en un trabajo chico armado en la copia (seis piezas de 300 × 200 mm), un retazo de 1000 × 1000 de la chapa negra cal. 22 dio 1 chapa y ARS 13.720,40 (1 m² por su precio), contra ARS 40.842,90 de la chapa entera; el costeo salió del retazo; quitarlo en uso se rechazó.
+- Backend 705 pruebas, frontend 167.
+
 **Limpieza:**
 
 - **El PDF del presupuesto (1.3) quedó cerrado.** Su carpeta pasó a [`historico/1.3-pdf-del-presupuesto/`](historico/1.3-pdf-del-presupuesto/diseno.md), con las rutas actualizadas en el código, el registro y esta bitácora, y lo que quedó vivo pasó a la tabla «Pendientes del PDF del presupuesto» del [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md) §6. El `README.md` ya no dice que falta el PDF.

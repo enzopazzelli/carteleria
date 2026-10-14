@@ -1,6 +1,6 @@
 # A8 · Lista de materiales con filtros y retazos de medida libre — diseño
 
-> **Estado:** diseño aprobado por Enzo el 2026-10-14, sin construir. Falta el plan (`plan.md`).
+> **Estado:** **construido el 2026-10-14,** con el plan de [`plan.md`](plan.md), en la rama `feat/lista-de-materiales`. Lo que se apartó está al final de ese plan, en «Desvíos».
 >
 > **De dónde sale.** Pedidos de Enzo del 2026-10-14: «mejorar la parte del menú de chapas a la hora de comparar […] quizá sea mejor una lista de materiales con filtros para chapas, acrílicos, etc., y que no estén en línea, sino en columnas», y «hay veces que existen diseños pequeños que los imprimirán en un retazo de chapa de 1 m × 1 m (por ejemplo; en realidad debería ser libre)». Va en el carril del motor, después de la barra de progreso (A7).
 >
