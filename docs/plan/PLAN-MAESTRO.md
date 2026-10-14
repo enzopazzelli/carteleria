@@ -193,7 +193,20 @@ Sin código de producto.
 | **1.4 Aprobación mínima** | Estados borrador, pendiente, observado y aprobado. Aviso al dueño por mail con link firmado (`PAR-17`). El dueño aprueba u observa sin iniciar sesión. Historial de quién cambió qué estado | Vencimiento automático, anulación, resumen agrupado de avisos | `CART-401` a `CART-404` | Usuario de prueba que aprueba; buzón de prueba |
 | **1.5 Envío por mail** | Al aprobar sale el PDF al cliente y el presupuesto queda como enviado, con el PDF y las líneas congelados. Se puede aprobar sin enviar. El cliente tiene un email cargado | WhatsApp, reintentos, respuesta del cliente por link | `CART-405`, `CART-406`, `CART-004` | Buzón de prueba |
 
-**1.3 quedó construido el 2026-10-12,** en la rama `feat/pdf-presupuesto` ([PR #19](https://github.com/enzopazzelli/carteleria/pull/19)): [`1.3-pdf-del-presupuesto/`](1.3-pdf-del-presupuesto/). El 2026-10-13, antes de fusionar, el PDF pasó de WeasyPrint a ReportLab (`D-16`). Tomó de 1.2 la edición del presupuesto: el texto y el precio de cada ítem para el cliente, el total fijado, editar y borrar líneas, y cambiar la validez y el cliente, todo desde la pestaña Costeo. De 1.2 queda la lista de presupuestos fuera del trabajo.
+**1.3 quedó construido el 2026-10-12, está en `main` desde el 2026-10-13** ([PR #19](https://github.com/enzopazzelli/carteleria/pull/19)) **y se cerró el 2026-10-14:** [`historico/1.3-pdf-del-presupuesto/`](../historico/1.3-pdf-del-presupuesto/). El 2026-10-13, antes de fusionar, el PDF pasó de WeasyPrint a ReportLab (`D-16`). Tomó de 1.2 la edición del presupuesto: el texto y el precio de cada ítem para el cliente, el total fijado, editar y borrar líneas, y cambiar la validez y el cliente, todo desde la pestaña Costeo. De 1.2 queda la lista de presupuestos fuera del trabajo.
+
+**Pendientes del PDF del presupuesto (1.3).** Lo que quedó vivo y se sigue desde acá. El detalle está en los «Desvíos» de su [`plan.md`](../historico/1.3-pdf-del-presupuesto/plan.md).
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| Una pantalla para retocar el presupuesto: a un lado los campos, al otro el PDF de verdad, que se vuelve a dibujar con cada cambio. Editar los textos, agregar textos libres (condiciones, forma de pago, plazo) y elegir qué se muestra | Pedido de Enzo del 2026-10-13 | — |
+| El recorrido de Enzo en un navegador con ventana, sobre todo que el archivo se descargue: Chrome sin ventana no guarda descargas | Cierre del PR #19 | — |
+| Un descuento como renglón con precio negativo: hoy la pantalla no lo acepta, y un total fijado con suma negativa invierte los signos en lugar de contar como incompleto | Revisión de la rama | `P-33` |
+| Juntar varias líneas de costo en un solo ítem, y registrar quién cambió un precio | §3 de su diseño | `P-34` |
+| Los botones «a mano · quitar» y «fijado · quitar» pueden perder un clic, como le pasaba al de descargar | Revisión de la rama | — |
+| Los campos «Margen %» e «IVA %» de «Líneas por rubro» mandan el texto tal cual: «10,5» vuelve como error | Revisión de la rama; es anterior a 1.3 | — |
+| Sin total fijado, «Precio base» y «En el presupuesto» pueden diferir en centavos, y todos los centavos del redondeo van a un solo ítem | Revisión de la rama | — |
+| La prueba de muchos renglones no comprueba que el bloque de totales quede entero, y dos líneas sin costo con la misma descripción repiten la clave de la lista de lo que falta | Revisión de la rama | — |
 
 **Regla para mandar a aprobar.** El presupuesto tiene cliente, al menos una línea de costo y ningún material pendiente. **Material pendiente** es una línea de rubro material sin valor efectivo: ni calculado ni cargado por override. Si falta algo, el sistema lo rechaza diciendo qué falta.
 

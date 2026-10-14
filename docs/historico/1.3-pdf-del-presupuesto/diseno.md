@@ -1,10 +1,10 @@
 # 1.3 · PDF del presupuesto — diseño
 
-> **Estado:** **construido el 2026-10-12,** en la rama `worktree-pdf-presupuesto`, con el plan de [`plan.md`](plan.md). Lo que se apartó está al final de ese plan, en «Desvíos». Se trabajó en una carpeta aparte del repositorio, en paralelo a la lectura del DXF (2.1a), que no tocó ninguno de estos archivos.
+> **Estado:** **cerrado el 2026-10-14.** Construido el 2026-10-12, en la rama `worktree-pdf-presupuesto`, con el plan de [`plan.md`](plan.md), y en `main` desde el 2026-10-13 ([PR #19](https://github.com/enzopazzelli/carteleria/pull/19)). Lo que se apartó está al final de ese plan, en «Desvíos». Se trabajó en una carpeta aparte del repositorio, en paralelo a la lectura del DXF (2.1a), que no tocó ninguno de estos archivos. Esta carpeta pasó de `docs/plan/` a `docs/historico/`, y lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §6`](../../plan/PLAN-MAESTRO.md).
 >
 > **Cambio del 2026-10-13: el PDF pasó de WeasyPrint a ReportLab.** Lo decidió Enzo antes de fusionar, para no depender de MSYS2 en su máquina ni de Pango en el servidor, y quedó construido ese mismo día. Esta página ya describe ReportLab; lo que se apartó del plan está en sus «Desvíos». Enzo pidió además una pantalla para retocar el presupuesto con el PDF real al lado: va aparte, con su propio diseño.
 >
-> **De dónde sale.** Es el sub-proyecto 1.3 de [`PLAN-MAESTRO.md §6`](../PLAN-MAESTRO.md), «PDF mínimo» (`CART-309`). Al diseñarlo, Enzo pidió que antes de sacar el PDF se puedan cambiar el texto y el precio de cada ítem y el total, así que el alcance creció: toma de 1.2 la edición del presupuesto (§3).
+> **De dónde sale.** Es el sub-proyecto 1.3 de [`PLAN-MAESTRO.md §6`](../../plan/PLAN-MAESTRO.md), «PDF mínimo» (`CART-309`). Al diseñarlo, Enzo pidió que antes de sacar el PDF se puedan cambiar el texto y el precio de cada ítem y el total, así que el alcance creció: toma de 1.2 la edición del presupuesto (§3).
 >
 > **Sobre los valores.** Los parámetros se citan por ID y viven en [`REGISTRO.md`](../../REGISTRO.md). Los números del ejemplo del §5 son inventados, para mostrar la cuenta.
 

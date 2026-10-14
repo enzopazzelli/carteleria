@@ -84,8 +84,8 @@ class Presupuesto(Base):
     #: del margen, este default es un parámetro de sistema ya acordado,
     #: no un número inventado.
     iva_pct: Mapped[Decimal | None] = mapped_column(Milimetros(), default=Decimal("21"))
-    #: El total final, con IVA, escrito a mano (`docs/plan/1.3-pdf-del-
-    #: presupuesto/diseno.md §5`). `None` = el total sale de la suma de
+    #: El total final, con IVA, escrito a mano (`docs/historico/1.3-pdf-
+    #: del-presupuesto/diseno.md §5`). `None` = el total sale de la suma de
     #: los ítems más IVA. Con un valor, todos los ítems se ajustan para
     #: sumar ese total; lo que se escribió a mano en cada línea no se pisa.
     total_fijado: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)

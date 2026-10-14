@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** **ejecutado el 2026-10-12,** de la Tarea 1 a la 10. Lo que se apartó del plan está al final, en «Desvíos». **El 2026-10-13 el PDF pasó de WeasyPrint a ReportLab:** las Tareas 5 y 6 describen la versión con WeasyPrint, y lo que quedó está al final de «Desvíos».
+> **Estado:** **cerrado el 2026-10-14.** Ejecutado el 2026-10-12, de la Tarea 1 a la 10, y en `main` desde el 2026-10-13 ([PR #19](https://github.com/enzopazzelli/carteleria/pull/19)). Lo que se apartó del plan está al final, en «Desvíos». **El 2026-10-13 el PDF pasó de WeasyPrint a ReportLab:** las Tareas 5 y 6 describen la versión con WeasyPrint, y lo que quedó está al final de «Desvíos».
 >
 > **El código de este plan está probado, con un límite.** El 2026-10-12 los bloques de las Tareas 1 a 9 se aplicaron, tal como están escritos acá, sobre una copia del backend y otra del frontend fuera del repositorio. Se aplicó todo junto y se probó el estado final: backend **492 pruebas en verde** (423 antes), con el PDF generado de verdad y la migración de ida y vuelta; frontend **60** (40 antes) y `npm run build` sin errores. **No se probó:** cada tarea por separado (las corridas de «falla primero» son las esperadas, no las vistas), el recorrido en pantalla del tramo 3 (compila, nadie lo usó en un navegador), el paso de GitHub de la Tarea 5 y el enlace provisorio de la Tarea 6.
 
@@ -86,7 +86,7 @@ Al terminar este tramo no cambia nada a la vista: Costeo muestra los mismos tota
 Agregar al final de `backend/tests/api/test_rutas_presupuesto.py`:
 
 ```python
-# --- Lo que lee el cliente (1.3: docs/plan/1.3-pdf-del-presupuesto/diseno.md) ---
+# --- Lo que lee el cliente (1.3: docs/historico/1.3-pdf-del-presupuesto/diseno.md) ---
 
 
 def _linea_libre(cliente, presupuesto_id: int, descripcion: str, precio: str, rubro: str = "OTRO") -> dict:
@@ -128,8 +128,8 @@ por:
 
 ```python
     iva_pct: Mapped[Decimal | None] = mapped_column(Milimetros(), default=Decimal("21"))
-    #: El total final, con IVA, escrito a mano (`docs/plan/1.3-pdf-del-
-    #: presupuesto/diseno.md §5`). `None` = el total sale de la suma de
+    #: El total final, con IVA, escrito a mano (`docs/historico/1.3-pdf-
+    #: del-presupuesto/diseno.md §5`). `None` = el total sale de la suma de
     #: los ítems más IVA. Con un valor, todos los ítems se ajustan para
     #: sumar ese total; lo que se escribió a mano en cada línea no se pisa.
     total_fijado: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
@@ -583,7 +583,7 @@ Crear `backend/app/services/presupuesto/__init__.py`:
 
 ```python
 """El presupuesto que ve el cliente: la cuenta, el documento y el PDF
-(`docs/plan/1.3-pdf-del-presupuesto/diseno.md`)."""
+(`docs/historico/1.3-pdf-del-presupuesto/diseno.md`)."""
 ```
 
 Crear `backend/app/services/presupuesto/totales.py`:
@@ -591,7 +591,7 @@ Crear `backend/app/services/presupuesto/totales.py`:
 ```python
 """La cuenta del presupuesto: de los costos a lo que paga el cliente.
 
-Las reglas están en `docs/plan/1.3-pdf-del-presupuesto/diseno.md §5`.
+Las reglas están en `docs/historico/1.3-pdf-del-presupuesto/diseno.md §5`.
 Es la única cuenta: la usan los totales de la pantalla y el PDF, así
 los dos muestran el mismo número.
 
@@ -1356,7 +1356,7 @@ def actualizar_linea_para_el_cliente(
     linea_id: int, datos: LineaClienteActualizar, sesion: Session = Depends(obtener_sesion)
 ) -> LineaCosto:
     """El texto y el precio que lee el cliente en esta línea
-    (`docs/plan/1.3-pdf-del-presupuesto/diseno.md §5`) — de cualquier
+    (`docs/historico/1.3-pdf-del-presupuesto/diseno.md §5`) — de cualquier
     rubro, incluido `MATERIAL`. Son una capa encima del costo, como el
     override: `valor_calculado` y `valor_override` no se tocan."""
     linea = _linea_costo_o_404(sesion, linea_id)
@@ -1605,7 +1605,7 @@ Crear `backend/app/services/presupuesto/documento.py`:
 """El documento del cliente: lo que sale en el presupuesto, y nada más.
 
 No tiene ningún campo de costo ni de margen, a propósito
-(`docs/plan/1.3-pdf-del-presupuesto/diseno.md §7`): la plantilla no puede
+(`docs/historico/1.3-pdf-del-presupuesto/diseno.md §7`): la plantilla no puede
 mostrar lo que el documento no trae. Es el último criterio de `CART-309`.
 """
 from __future__ import annotations
@@ -1718,7 +1718,7 @@ git commit -m "feat(presupuesto): el documento del cliente, sin costos ni margen
 Agregar al final de `backend/requirements.txt`:
 
 ```
-# PDF del presupuesto (docs/plan/1.3-pdf-del-presupuesto/diseno.md, D-16).
+# PDF del presupuesto (docs/historico/1.3-pdf-del-presupuesto/diseno.md, D-16).
 # WeasyPrint usa además Pango, que no viene con pip: en Windows,
 # docs/GUIA-PRUEBAS-LOCALES.md §5; en el CI, .github/workflows/ci.yml.
 weasyprint==70.0
@@ -2436,7 +2436,7 @@ Y agregar al final del archivo:
 @router.get("/presupuestos/{presupuesto_id}/pdf")
 def descargar_pdf(presupuesto_id: int, sesion: Session = Depends(obtener_sesion)) -> Response:
     """El presupuesto como lo ve el cliente
-    (`docs/plan/1.3-pdf-del-presupuesto/diseno.md`). Se genera cada vez
+    (`docs/historico/1.3-pdf-del-presupuesto/diseno.md`). Se genera cada vez
     que se pide y no se guarda: el congelado llega con el envío (1.5).
 
     Si al presupuesto le falta algo responde 409 con la lista
@@ -3086,7 +3086,7 @@ function bajarArchivo(contenido: Blob, nombre: string) {
 }
 
 /** Lo que va a leer el cliente: el texto y el precio de cada ítem y el
- * total, editables, y el PDF (`docs/plan/1.3-pdf-del-presupuesto/diseno.md §8`).
+ * total, editables, y el PDF (`docs/historico/1.3-pdf-del-presupuesto/diseno.md §8`).
  * Cada campo se guarda al salir de él, igual que el margen y el IVA. */
 export default function PresupuestoClienteSeccion({ presupuestoId }: { presupuestoId: number }) {
   const { data: desglose } = useDesglose(presupuestoId);
@@ -3838,7 +3838,7 @@ git commit -m "feat(presupuesto): editar y borrar las lineas cargadas a mano"
 - Modify: `docs/plan/PLAN-MAESTRO.md`
 - Modify: `docs/MAPA-DEL-PROYECTO.md`
 - Modify: `docs/BITACORA.md`
-- Modify: `docs/plan/1.3-pdf-del-presupuesto/diseno.md`, `plan.md`
+- Modify: `docs/historico/1.3-pdf-del-presupuesto/diseno.md`, `plan.md`
 
 En estos archivos, AAAA-MM-DD es la fecha del día en que se cierra. La otra rama en curso puede haber tocado el plan maestro, el mapa o la bitácora: si al fusionar hay choque, se resuelve conservando los dos cambios.
 
@@ -3847,13 +3847,13 @@ En estos archivos, AAAA-MM-DD es la fecha del día en que se cierra. La otra ram
 En `docs/REGISTRO.md §5`, en la fila de `D-16`, reemplazar la última celda (`Sin elegir. `ADR-05` nombra WeasyPrint`) por:
 
 ```
-**Cerrada (Enzo, 2026-10-12):** WeasyPrint, con la plantilla en HTML y CSS. En Windows necesita MSYS2 con Pango (`GUIA-PRUEBAS-LOCALES.md §5`); en el servidor, Pango en la imagen de Docker (`plan/1.3-pdf-del-presupuesto/diseno.md §10`)
+**Cerrada (Enzo, 2026-10-12):** WeasyPrint, con la plantilla en HTML y CSS. En Windows necesita MSYS2 con Pango (`GUIA-PRUEBAS-LOCALES.md §5`); en el servidor, Pango en la imagen de Docker (`historico/1.3-pdf-del-presupuesto/diseno.md §10`)
 ```
 
 Después de la fila de `D-19`, agregar:
 
 ```
-| **D-20** | ¿Qué fecha lleva el presupuesto que ve el cliente, y desde cuándo corre la validez (`PAR-11`)? | Conversación con el dueño; el envío (1.5) | 4.5 | El día en que se genera el PDF (`plan/1.3-pdf-del-presupuesto/diseno.md §4`) |
+| **D-20** | ¿Qué fecha lleva el presupuesto que ve el cliente, y desde cuándo corre la validez (`PAR-11`)? | Conversación con el dueño; el envío (1.5) | 4.5 | El día en que se genera el PDF (`historico/1.3-pdf-del-presupuesto/diseno.md §4`) |
 | **D-21** | Cuando se fija a mano el total de un presupuesto, ¿ese número es con IVA o sin IVA? | Conversación con el dueño | 4.5 | Con IVA: es el número final que paga el cliente |
 ```
 
@@ -3938,7 +3938,7 @@ Expected: solo los cinco documentos de esta tarea.
 - [ ] **Step 7: Commit** (con el ok de Enzo)
 
 ```bash
-git add docs/REGISTRO.md docs/plan/PLAN-MAESTRO.md docs/MAPA-DEL-PROYECTO.md docs/BITACORA.md docs/plan/1.3-pdf-del-presupuesto
+git add docs/REGISTRO.md docs/plan/PLAN-MAESTRO.md docs/MAPA-DEL-PROYECTO.md docs/BITACORA.md docs/historico/1.3-pdf-del-presupuesto
 git commit -m "docs: pdf del presupuesto (1.3) construido"
 ```
 
@@ -3958,7 +3958,7 @@ Después de fusionar, y **solo con el ok explícito de Enzo**, la base real: cop
 
 ## Desvíos
 
-Lo que se hizo distinto de lo escrito arriba, el 2026-10-12. El registro paso a paso está en `.superpowers/sdd/plan/progress.md` (fuera de git).
+Lo que se hizo distinto de lo escrito arriba, el 2026-10-12. El registro paso a paso estaba en `.superpowers/sdd/plan/progress.md` de la carpeta aparte (fuera de git); se borró con ella el 2026-10-14.
 
 **En el código:**
 

@@ -50,7 +50,7 @@ function falloAlgunGuardado(queryClient: QueryClient, desde: number): boolean {
 }
 
 /** Lo que va a leer el cliente: el texto y el precio de cada ítem y el
- * total, editables, y el PDF (`docs/plan/1.3-pdf-del-presupuesto/diseno.md §8`).
+ * total, editables, y el PDF (`docs/historico/1.3-pdf-del-presupuesto/diseno.md §8`).
  * Cada campo se guarda al salir de él, igual que el margen y el IVA. */
 export default function PresupuestoClienteSeccion({ presupuestoId }: { presupuestoId: number }) {
   const { data: desglose } = useDesglose(presupuestoId);

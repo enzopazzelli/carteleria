@@ -3,7 +3,7 @@
 La hoja se arma en código y no con una plantilla HTML: ReportLab es
 Python puro, y no necesita bibliotecas del sistema ni en Windows ni en
 el servidor (`D-16`). Las medidas y los colores son los del diseño
-(`docs/plan/1.3-pdf-del-presupuesto/diseno.md §4`).
+(`docs/historico/1.3-pdf-del-presupuesto/diseno.md §4`).
 """
 from __future__ import annotations
 

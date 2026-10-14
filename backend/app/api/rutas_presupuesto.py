@@ -373,7 +373,7 @@ def actualizar_linea_para_el_cliente(
     linea_id: int, datos: LineaClienteActualizar, sesion: Session = Depends(obtener_sesion)
 ) -> LineaCosto:
     """El texto y el precio que lee el cliente en esta línea
-    (`docs/plan/1.3-pdf-del-presupuesto/diseno.md §5`) — de cualquier
+    (`docs/historico/1.3-pdf-del-presupuesto/diseno.md §5`) — de cualquier
     rubro, incluido `MATERIAL`. Son una capa encima del costo, como el
     override: `valor_calculado` y `valor_override` no se tocan."""
     linea = _linea_costo_o_404(sesion, linea_id)
@@ -509,7 +509,7 @@ def obtener_desglose(
 @router.get("/presupuestos/{presupuesto_id}/pdf")
 def descargar_pdf(presupuesto_id: int, sesion: Session = Depends(obtener_sesion)) -> Response:
     """El presupuesto como lo ve el cliente
-    (`docs/plan/1.3-pdf-del-presupuesto/diseno.md`). Se genera cada vez
+    (`docs/historico/1.3-pdf-del-presupuesto/diseno.md`). Se genera cada vez
     que se pide y no se guarda: el congelado llega con el envío (1.5).
 
     Si al presupuesto le falta algo responde 409 con la lista

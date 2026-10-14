@@ -58,6 +58,31 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-14 — Limpieza: el PDF del presupuesto cerrado, MSYS2 desinstalado y las copias de trabajo borradas
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** —
+
+### Qué se hizo
+
+- **El PDF del presupuesto (1.3) quedó cerrado.** Su carpeta pasó a [`historico/1.3-pdf-del-presupuesto/`](historico/1.3-pdf-del-presupuesto/diseno.md), con las rutas actualizadas en el código, el registro y esta bitácora, y lo que quedó vivo pasó a la tabla «Pendientes del PDF del presupuesto» del [`plan/PLAN-MAESTRO.md`](plan/PLAN-MAESTRO.md) §6. El `README.md` ya no dice que falta el PDF.
+- **En la máquina de Enzo, lo que había quedado de WeasyPrint:** MSYS2 desinstalado con `winget` (`D:\msys64` ya no existe), la variable `WEASYPRINT_DLL_DIRECTORIES` borrada del usuario, y WeasyPrint sacado del Python del sistema junto con las cinco bibliotecas que solo él usaba. Jinja2 quedó: lo usan otros programas instalados.
+- **Copias de trabajo borradas:** la carpeta aparte donde se hizo el PDF (`.claude/worktrees/pdf-presupuesto`, con su rama local `worktree-pdf-presupuesto`, que estaba entera en `main`), y la copia de ensayo y el registro de avance de la corrección de la lectura (2.1b), fuera de git. La rama `feat/pdf-presupuesto` de GitHub no se tocó.
+
+### Qué se decidió
+
+- **El orden de lo que sigue** (Enzo): limpieza primero; después los pendientes del motor, los arreglos chicos de la lectura y el presupuesto, con lo de Docker al final. La prueba del PDF en el navegador la hace Enzo al terminar.
+
+### Cambios en el registro
+
+Sin cambios en los valores. Las rutas a la carpeta del PDF pasan de `plan/` a `historico/`.
+
+### Pendiente
+
+- **La base real de Enzo todavía no tiene la migración `7f91bcd3ef15`** (columnas del presupuesto para el cliente): se aplica la próxima vez que levante el backend con la guía del escritorio. Hay respaldo de antes.
+- El resto, en las tablas de pendientes del plan maestro.
+
+---
+
 ## 2026-10-13 — PDF del presupuesto: pasó de WeasyPrint a ReportLab, sin nada que instalar fuera de `pip`
 
 **Quién:** Enzo · **Carril:** Producto · **Sprint:** — (sub-proyecto 1.3)
@@ -187,7 +212,7 @@ Lo que sigue vivo pasó a la tabla «Pendientes de corregir la lectura a mano» 
 
 - **El recorrido de Enzo en el navegador,** sobre todo que el archivo se descargue: Chrome sin ventana no guarda descargas, y eso no se pudo ver.
 - **Preguntarle al dueño si cargan descuentos como una línea con precio negativo** (`P-33`). Desde la pantalla ya no se puede: los importes no aceptan negativos. Si se usa, hay que permitirlo y hacer que un total fijado con suma negativa cuente como incompleto.
-- **Lo que la revisión anotó y no se hizo:** está al final de los «Desvíos» de [`plan.md`](plan/1.3-pdf-del-presupuesto/plan.md).
+- **Lo que la revisión anotó y no se hizo:** está al final de los «Desvíos» de [`plan.md`](historico/1.3-pdf-del-presupuesto/plan.md).
 - **Al abrir el PR,** resolver los choques con `main` en la bitácora y el mapa: los dos lados los tocaron.
 - **Antes de usarlo sobre la base real,** respaldarla y correr `alembic upgrade head`: la migración `7f91bcd3ef15` agrega tres columnas.
 - **La imagen de Docker de 1.1** tiene que instalar Pango.

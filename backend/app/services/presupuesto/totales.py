@@ -1,6 +1,6 @@
 """La cuenta del presupuesto: de los costos a lo que paga el cliente.
 
-Las reglas están en `docs/plan/1.3-pdf-del-presupuesto/diseno.md §5`.
+Las reglas están en `docs/historico/1.3-pdf-del-presupuesto/diseno.md §5`.
 Es la única cuenta: la usan los totales de la pantalla y el PDF, así
 los dos muestran el mismo número.
 

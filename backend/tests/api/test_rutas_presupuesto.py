@@ -738,7 +738,7 @@ def test_desglose_de_presupuesto_inexistente_da_404(cliente):
     assert cliente.get("/presupuestos/999/desglose").status_code == 404
 
 
-# --- Lo que lee el cliente (1.3: docs/plan/1.3-pdf-del-presupuesto/diseno.md) ---
+# --- Lo que lee el cliente (1.3: docs/historico/1.3-pdf-del-presupuesto/diseno.md) ---
 
 
 def _linea_libre(cliente, presupuesto_id: int, descripcion: str, precio: str, rubro: str = "OTRO") -> dict:
