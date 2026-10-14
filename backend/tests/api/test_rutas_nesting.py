@@ -526,9 +526,9 @@ def test_comparar_formatos_sparrow_real_sin_modificar_grupo(cliente, tmp_path, m
     llamadas = []
     original = rutas_nesting.anidar_sparrow
 
-    def registrar(piezas, geometrias, plancha, params, opciones):
+    def registrar(piezas, geometrias, plancha, params, opciones, **kw):
         llamadas.append((geometrias, opciones))
-        return original(piezas, geometrias, plancha, params, opciones)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
@@ -564,9 +564,9 @@ def test_comparar_sparrow_un_formato_donde_no_entran_piezas_no_frena_a_los_demas
     planchas_buscadas = []
     original = rutas_nesting.anidar_sparrow
 
-    def registrar(piezas, geometrias, plancha, params, opciones):
+    def registrar(piezas, geometrias, plancha, params, opciones, **kw):
         planchas_buscadas.append(plancha)
-        return original(piezas, geometrias, plancha, params, opciones)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
@@ -753,9 +753,9 @@ def test_comparar_formatos_sparrow_pasa_la_opcion_de_vaciar_chapas(cliente, tmp_
     recibidas = []
     original = rutas_nesting.anidar_sparrow
 
-    def registrar(piezas, geometrias, plancha, params, opciones):
+    def registrar(piezas, geometrias, plancha, params, opciones, **kw):
         recibidas.append(opciones)
-        return original(piezas, geometrias, plancha, params, opciones)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
@@ -789,9 +789,9 @@ def test_comparar_formatos_sparrow_pasa_la_opcion_de_girar_libre(cliente, tmp_pa
     recibidas = []
     original = rutas_nesting.anidar_sparrow
 
-    def registrar(piezas, geometrias, plancha, params, opciones):
+    def registrar(piezas, geometrias, plancha, params, opciones, **kw):
         recibidas.append(opciones)
-        return original(piezas, geometrias, plancha, params, opciones)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
@@ -815,3 +815,69 @@ def test_sparrow_por_api_guarda_la_opcion_de_girar_libre(cliente, tmp_path, envi
     resultado = _esperar_estado(cliente, respuesta.json()["id"], timeout=20)
     assert resultado["estado"] == "lista", resultado.get("error")
     assert resultado["opciones"].get("giro_libre") is esperado
+
+
+def test_mientras_corre_el_anidado_trae_su_progreso_y_al_terminar_no(cliente, tmp_path, monkeypatch):
+    import threading
+    from app.api import rutas_nesting
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    informado, seguir = threading.Event(), threading.Event()
+    original = rutas_nesting.anidar_sparrow
+    avance = {"segundos": 3.0, "maximo": 20, "fase": "pasada", "pasada": 1, "pasadas": 3, "mejor_chapas": 2}
+
+    def con_progreso(piezas, geometrias, plancha, params, opciones, **kw):
+        kw["al_avanzar"](avance)
+        informado.set()
+        seguir.wait(10)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", con_progreso)
+    ejecucion = cliente.post(f"/grupos/{grupo['id']}/anidar", json={
+        "motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20,
+    }).json()
+    assert informado.wait(10)
+
+    en_curso = cliente.get(f"/ejecuciones/{ejecucion['id']}").json()
+    seguir.set()
+    final = _esperar_estado(cliente, ejecucion["id"], timeout=20)
+
+    assert en_curso["progreso"] == {**avance, "formato": None, "formatos": None, "descripcion": None}
+    assert final["estado"] == "lista", final.get("error")
+    assert final["progreso"] is None
+
+
+def test_un_anidado_rectangular_no_trae_progreso(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    ejecucion = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()
+    final = _esperar_estado(cliente, ejecucion["id"])
+
+    assert final["progreso"] is None
+
+
+def test_una_corrida_terminada_no_trae_progreso_aunque_la_memoria_no_lo_haya_olvidado(cliente, tmp_path, monkeypatch):
+    """Entre guardar el resultado y olvidar el progreso hay un instante: en
+    ese instante la consulta no puede devolver `lista` con progreso viejo."""
+    from app import progreso
+    from app.api import rutas_nesting
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    olvidar = progreso.olvidar
+    monkeypatch.setattr(progreso, "olvidar", lambda clave: None)
+    original = rutas_nesting.anidar_sparrow
+
+    def con_progreso(piezas, geometrias, plancha, params, opciones, **kw):
+        kw["al_avanzar"]({"segundos": 1.0, "maximo": 20})
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", con_progreso)
+    ejecucion = cliente.post(f"/grupos/{grupo['id']}/anidar", json={
+        "motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20,
+    }).json()
+
+    final = _esperar_estado(cliente, ejecucion["id"], timeout=20)
+    en_memoria = progreso.leer(("ejecucion", ejecucion["id"]))
+    olvidar(("ejecucion", ejecucion["id"]))
+
+    assert final["estado"] == "lista", final.get("error")
+    assert en_memoria is not None, "la prueba necesita que la memoria todavía lo tenga"
+    assert final["progreso"] is None

@@ -35,6 +35,11 @@ def ruta_de_avisos(salida):
     en el momento: si se lo corta por tiempo, ya están."""
     return Path(salida).with_suffix('.avisos.json')
 
+def ruta_de_progreso(salida):
+    """Dónde deja el worker cómo va (A7): pasada, fase y mejor resultado.
+    Como los avisos, al lado del resultado y escrito de una vez."""
+    return Path(salida).with_suffix('.progreso.json')
+
 def _area_util(plancha, params):
     borde = float(params.margen_borde_mm + params.kerf_mm / 2)
     return borde, float(plancha.ancho_mm)-2*borde, float(plancha.alto_mm)-2*borde
@@ -167,7 +172,21 @@ def _lo_que_dejo_el_worker(entrada,out,*avisos):
         del_worker=['No se pudieron leer los avisos del cálculo: el anidado es válido, pero puede faltar algún aviso.']
     return ResultadoAnidado(result.posiciones,result.planchas_usadas,[*result.advertencias,*del_worker,*avisos])
 
-def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lambda:False):
+#: Cada cuánto el supervisor lee el progreso del worker: la barra no
+#: necesita más, y así no se lee el archivo en cada vuelta.
+_LEER_PROGRESO_CADA_S=0.5
+
+def _leer_progreso(out):
+    """Lo que dejó escrito el worker sobre cómo va, o `None` si todavía no
+    está o está a medias: la barra de progreso no vale un error."""
+    try:
+        datos=json.loads(ruta_de_progreso(out).read_text(encoding='utf8'))
+    except (OSError,ValueError):
+        return None
+    if not isinstance(datos,dict): return None
+    return {k:datos[k] for k in ('fase','pasada','pasadas','mejor_chapas') if k in datos}
+
+def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lambda:False,al_avanzar=None):
     opciones=opciones or OpcionesSparrow()
     entrada=preparar_entrada(piezas,geometrias,plancha,params,opciones)
     with tempfile.TemporaryDirectory(prefix='carteleria-sparrow-') as d:
@@ -176,14 +195,22 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
         with (Path(d)/'worker.log').open('w+',encoding='utf8') as log:
             proc=subprocess.Popen([sys.executable,'-m','app.services.nesting.sparrow_worker',str(inp),str(out)],stdout=log,stderr=log)
             start=time.monotonic()
+            # Lo último que se leyó bien del progreso: si el archivo está a
+            # medias, queda esto y el tiempo se informa igual.
+            leido={};ultima_lectura=None
             try:
                 while proc.poll() is None:
                     if cancelada():raise ValueError('Anidado cancelado.')
-                    if time.monotonic()-start>opciones.tiempo_maximo_s:
+                    ahora=time.monotonic()
+                    if ahora-start>opciones.tiempo_maximo_s:
                         if out.exists():
                             proc.kill(); proc.wait()
                             return _lo_que_dejo_el_worker(entrada,out,'Se alcanzó el límite de búsqueda: se conserva el mejor anidado completo y validado, sin omitir piezas.')
                         raise ValueError('Sparrow excedió el tiempo máximo; no se guardó un plano parcial.')
+                    if al_avanzar is not None and (ultima_lectura is None or ahora-ultima_lectura>=_LEER_PROGRESO_CADA_S):
+                        ultima_lectura=ahora
+                        leido=_leer_progreso(out) or leido
+                        al_avanzar({**leido,'segundos':round(ahora-start,1),'maximo':opciones.tiempo_maximo_s})
                     time.sleep(0.1)
                 if proc.returncode!=0:
                     # Si ya había escrito un anidado, una falla posterior

@@ -1,5 +1,20 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "./client";
 
+/** Cómo va un anidado o una comparación en curso (A7). Lo que el motor
+ * todavía no informó viene en `null`. */
+export interface Progreso {
+  segundos: number;
+  maximo: number;
+  fase: "pasada" | "vaciar" | null;
+  pasada: number | null;
+  pasadas: number | null;
+  mejor_chapas: number | null;
+  /** Solo en una comparación. */
+  formato: number | null;
+  formatos: number | null;
+  descripcion: string | null;
+}
+
 export interface Ejecucion {
   id: number;
   grupo_id: number;
@@ -13,6 +28,8 @@ export interface Ejecucion {
   error: string | null;
   es_definitiva: boolean;
   creado_en: string;
+  /** Solo mientras corre (A7). */
+  progreso?: Progreso | null;
   parametros?: { formato?: { id?: number; ancho_mm: string; alto_mm: string; material_nombre: string; espesor: string | null } } | null;
 }
 

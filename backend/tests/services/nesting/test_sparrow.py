@@ -228,12 +228,15 @@ def test_lo_que_el_worker_da_por_mejor_es_lo_que_quedo_escrito(monkeypatch,tmp_p
     monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
     reemplazar=Path.replace
     escrituras=[]
+    salida=tmp_path/'salida.json'
     def replace(self,destino):
-        escrituras.append(1)
-        if len(escrituras)==2: raise OSError('disco lleno de prueba')
+        # Se cuentan solo las escrituras del resultado: el worker también
+        # reemplaza su archivo de avisos y el de progreso.
+        if Path(destino)==salida:
+            escrituras.append(1)
+            if len(escrituras)==2: raise OSError('disco lleno de prueba')
         return reemplazar(self,destino)
     monkeypatch.setattr(Path,'replace',replace)
-    salida=tmp_path/'salida.json'
 
     colocadas=sparrow_worker.resolver(entrada,salida)
 
@@ -355,3 +358,74 @@ def test_worker_real_con_giro_libre():
     result=anidar_sparrow(*datos(3),OpcionesSparrow(giro_libre=True,segundos_por_busqueda=1,tiempo_maximo_s=20,simplificacion_mm=0))
     assert len(result.posiciones)==2
     assert result.planchas_usadas==1
+
+
+from app.services.nesting.sparrow import ruta_de_progreso
+
+
+def progreso_escrito(salida):
+    return json.loads(ruta_de_progreso(salida).read_text(encoding='utf8'))
+
+
+def test_el_worker_anota_la_pasada_al_empezarla(monkeypatch,tmp_path):
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60,vaciar_chapas=False)
+    salida=tmp_path/'salida.json'
+    vistos=[]
+    def pasada(data):
+        vistos.append(progreso_escrito(salida))
+        return una_por_chapa(data)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',pasada)
+
+    sparrow_worker.resolver(entrada,salida)
+
+    assert vistos==[{'fase':'pasada','pasada':1,'pasadas':1,'mejor_chapas':None}]
+
+
+def test_el_worker_anota_el_mejor_resultado_y_la_etapa_de_vaciar(monkeypatch,tmp_path):
+    """La primera etapa deja cuatro chapas y vaciar chapas las junta en una."""
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    salida=tmp_path/'salida.json'
+
+    sparrow_worker.resolver(entrada,salida)
+
+    assert progreso_escrito(salida)=={'fase':'vaciar','pasada':1,'pasadas':1,'mejor_chapas':1}
+
+
+def worker_que_avanza(tmp_path,progreso,espera=1.5):
+    """Un worker que escribe `progreso` (texto, tal cual) como su archivo de
+    progreso, espera y recién después deja cada pieza sola en su chapa."""
+    guion=tmp_path/'worker_que_avanza.py'
+    guion.write_text(
+        'import json,sys,time\n'
+        'from pathlib import Path\n'
+        'data=json.loads(Path(sys.argv[1]).read_text(encoding="utf8"))\n'
+        'salida=Path(sys.argv[2])\n'
+        f'salida.with_suffix(".progreso.json").write_text({progreso!r},encoding="utf8")\n'
+        f'time.sleep({espera})\n'
+        'salida.write_text(json.dumps([{"id":p["id"],"sheet":n,"rotation":0,"tx":data["borde"],"ty":data["borde"]} for n,p in enumerate(data["items"])]),encoding="utf8")\n',
+        encoding='utf8',
+    )
+    return guion
+
+
+def test_el_supervisor_informa_lo_que_anota_el_worker(monkeypatch,tmp_path):
+    anotado={'fase':'pasada','pasada':2,'pasadas':3,'mejor_chapas':7}
+    con_worker(monkeypatch,worker_que_avanza(tmp_path,json.dumps(anotado)))
+    avances=[]
+
+    anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20),al_avanzar=avances.append)
+
+    assert any({k:a.get(k) for k in anotado}==anotado for a in avances)
+    assert all(a['maximo']==20 and 0<=a['segundos']<=20 for a in avances)
+
+
+def test_un_progreso_a_medias_no_frena_el_anidado_ni_la_barra(monkeypatch,tmp_path):
+    """Si el archivo está cortado, el tiempo se informa igual."""
+    con_worker(monkeypatch,worker_que_avanza(tmp_path,'{"fase": "pas'))
+    avances=[]
+
+    resultado=anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20),al_avanzar=avances.append)
+
+    assert resultado.planchas_usadas==2
+    assert avances and all(set(a)=={'segundos','maximo'} for a in avances)

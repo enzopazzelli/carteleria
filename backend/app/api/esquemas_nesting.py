@@ -36,6 +36,22 @@ class AnidarCrear(BaseModel):
     usar_anidado_en_huecos: bool = False
 
 
+class ProgresoLeer(BaseModel):
+    """Cómo va un anidado o una comparación en curso (A7). Lo que el motor
+    todavía no informó viene vacío."""
+
+    segundos: float
+    maximo: int
+    fase: Literal["pasada", "vaciar"] | None = None
+    pasada: int | None = None
+    pasadas: int | None = None
+    mejor_chapas: int | None = None
+    #: Solo en una comparación: qué formato corre, cuántos hay y cuál es.
+    formato: int | None = None
+    formatos: int | None = None
+    descripcion: str | None = None
+
+
 class EjecucionLeer(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -55,6 +71,9 @@ class EjecucionLeer(BaseModel):
     es_definitiva: bool
     creado_en: datetime
     actualizado_en: datetime
+    #: Mientras corre (A7): lo que anotó la corrida en la memoria del
+    #: servidor. No sale de la base: `obtener_ejecucion` lo agrega.
+    progreso: ProgresoLeer | None = None
 
 
 class ColocacionLeer(BaseModel):
@@ -160,3 +179,16 @@ class OpcionFormatoLeer(BaseModel):
     #: se secciona en tramos que se sueldan después (A5, desde la pestaña
     #: Piezas). Hasta que se seccionen, el formato queda sin anidar.
     piezas_a_seccionar: list[PiezaASeccionarLeer] = Field(default_factory=list)
+
+
+class ComparacionLeer(BaseModel):
+    """Una comparación de formatos en segundo plano (A7)."""
+
+    id: int
+    grupo_id: int
+    estado: Literal["corriendo", "lista", "cancelada", "error"]
+    progreso: ProgresoLeer | None = None
+    #: La tabla de la comparación, cuando terminó bien: la misma que
+    #: devuelve `POST /grupos/{id}/comparar-formatos`.
+    opciones: list[OpcionFormatoLeer] | None = None
+    error: str | None = None

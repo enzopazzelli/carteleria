@@ -17,6 +17,7 @@ import { cancelarEjecucion, type Ejecucion } from "../../api/nesting";
 import { ApiError } from "../../api/client";
 import type { GrupoDeCorte, ParametrosCorteOverride } from "../../api/piezasYgrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
+import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { giroLibreSeAplica } from "./giroLibre";
 
 const ESTADOS_TERMINALES = new Set(["lista", "error", "cancelada"]);
@@ -319,6 +320,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
           {enCurso.error && <span className="ml-2 text-conflict">{enCurso.error}</span>}
         </p>
       )}
+      {enCurso && !ESTADOS_TERMINALES.has(enCurso.estado) && <BarraDeProgreso progreso={enCurso.progreso} />}
 
       <table className="w-full text-sm mt-2">
         <thead>

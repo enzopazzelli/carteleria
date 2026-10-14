@@ -78,6 +78,17 @@ Qué queda abierto y cuál es el próximo paso.
 - **Con veta no se aplica:** el material solo gira media vuelta. En Anidado la casilla se apaga y dice por qué.
 - **Si una pieza entra en la chapa se sigue decidiendo con cuartos de vuelta:** una que solo entra en diagonal se manda a seccionar.
 - Una prueba nueva confirma que el DXF de corte sale girado a 37°: el exportador ya lo resolvía por los ajustes a mano.
+- En `main` desde el 2026-10-14 ([PR #22](https://github.com/enzopazzelli/carteleria/pull/22), lo fusioné a pedido de Enzo).
+
+**Barra de progreso (A7)** (rama `feat/progreso-del-anidado`, [`plan/A7-progreso-del-anidado/`](plan/A7-progreso-del-anidado/diseno.md)):
+
+- **Al anidar con Sparrow** aparece una barra que se llena contra el tiempo máximo y dice en qué anda: «Pasada 1 de 3, vaciando chapas · mejor: 8 chapas · 0:37 de 1:00». El worker deja un archivo chico de progreso; el servidor lo lee y lo guarda en su memoria (`app/progreso.py`), no en la base.
+- **La comparación de chapas corre de fondo:** arranca y contesta enseguida, con la misma barra («Formato 1 de 2 · …»), un «Cancelar», y se retoma al volver a la pestaña o al recargar. Rutas nuevas en `rutas_comparaciones.py`; la de siempre queda igual.
+- **Recorrido en Chrome sin ventana sobre una copia de la base:** el anidado de «Complejo» dio 8 chapas en 60 s; la comparación de dos chapas negras de 1220 × 2440 dio 8 en las dos; recargar a mitad de camino retomó la barra; cancelar la cortó. El recorrido mostró dos avisos que confundían al retomar y se arreglaron.
+- **Lo que encontró el recorrido y no es de este cambio:** con 30 s por formato, la comparación de «Complejo» termina en error, porque la primera pasada de Sparrow tarda unos 30 s y un formato sin ningún resultado tira la comparación entera. Quedó en los pendientes del reparto por chapa.
+- La copia de la base se armó con la migración del presupuesto (`7f91bcd3ef15`) aplicada: anduvo sobre los datos reales de Enzo.
+- **Un revisor aparte leyó la rama: «con arreglos», nada crítico.** Lo importante estaba en la pantalla de Grupos: volver a abrir «Comparar formatos» podía retomar una comparación vieja, y si el servidor se reiniciaba con una comparación en curso la pantalla quedaba trabada. Las dos se arreglaron con sus pruebas y se comprobaron en Chrome sin ventana; el primer arreglo de la segunda tenía una falla que mostró ese recorrido (con el servidor caído dejaba de preguntar) y se corrigió. También se clavó con pruebas el caso «justo cuando termina» y se escribió la nota de `D-12`. Lo menor quedó en los «Desvíos» del plan.
+- Backend 677 pruebas, frontend 156.
 
 **Limpieza:**
 

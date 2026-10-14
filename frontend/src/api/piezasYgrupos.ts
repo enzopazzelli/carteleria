@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPatch, apiPost, apiPostForm } from "./client";
+import { ApiError, apiDelete, apiGet, apiPatch, apiPost, apiPostForm } from "./client";
 
 export interface Pieza {
   id: number;
@@ -175,8 +175,40 @@ export function actualizarParametrosGrupo(
   return apiPatch<GrupoDeCorte>(`/grupos/${grupoId}`, { parametros_usados: parametros });
 }
 
-export function compararFormatos(grupoId: number, formatoIds: number[], opciones: import("./nesting").OpcionesAnidado = {}): Promise<OpcionFormato[]> {
-  return apiPost<OpcionFormato[]>(`/grupos/${grupoId}/comparar-formatos`, { formato_ids: formatoIds, ...opciones });
+/** Una comparación de formatos en segundo plano (A7). */
+export interface Comparacion {
+  id: number;
+  grupo_id: number;
+  estado: "corriendo" | "lista" | "cancelada" | "error";
+  progreso: import("./nesting").Progreso | null;
+  opciones: OpcionFormato[] | null;
+  error: string | null;
+}
+
+export function iniciarComparacion(
+  grupoId: number,
+  formatoIds: number[],
+  opciones: import("./nesting").OpcionesAnidado = {},
+): Promise<Comparacion> {
+  return apiPost<Comparacion>(`/grupos/${grupoId}/comparaciones`, { formato_ids: formatoIds, ...opciones });
+}
+
+export function obtenerComparacion(comparacionId: number): Promise<Comparacion> {
+  return apiGet<Comparacion>(`/comparaciones/${comparacionId}`);
+}
+
+export function cancelarComparacion(comparacionId: number): Promise<Comparacion> {
+  return apiPost<Comparacion>(`/comparaciones/${comparacionId}/cancelar`);
+}
+
+/** La última comparación del grupo, o `null` si no tiene. */
+export async function ultimaComparacion(grupoId: number): Promise<Comparacion | null> {
+  try {
+    return await apiGet<Comparacion>(`/grupos/${grupoId}/comparacion`);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
 }
 
 export interface CorteSeccionado {
