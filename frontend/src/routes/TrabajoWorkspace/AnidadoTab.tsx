@@ -17,6 +17,7 @@ import { cancelarEjecucion, type Ejecucion } from "../../api/nesting";
 import { ApiError } from "../../api/client";
 import type { GrupoDeCorte, ParametrosCorteOverride } from "../../api/piezasYgrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
+import { giroLibreSeAplica } from "./giroLibre";
 
 const ESTADOS_TERMINALES = new Set(["lista", "error", "cancelada"]);
 
@@ -163,9 +164,16 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const [limite, setLimite] = useState(240);
   const [simplificacion, setSimplificacion] = useState(0.3);
   const [vaciarChapas, setVaciarChapas] = useState(true);
+  // Marcada por defecto (Enzo, 2026-10-14). Con veta no se aplica.
+  const [giroLibre, setGiroLibre] = useState(true);
+  const { data: formato } = useFormato(grupo.formato_id);
+  const { data: parametrosMaterial } = useParametrosCorteMaterial(formato?.material_id ?? null);
+  const giroLibreAplica = giroLibreSeAplica(
+    (grupo.parametros_usados ?? parametrosMaterial)?.rotaciones_permitidas,
+  );
   const opciones = { motor, usar_anidado_en_huecos: usarHuecos, semilla,
     segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion,
-    vaciar_chapas: vaciarChapas };
+    vaciar_chapas: vaciarChapas, giro_libre: giroLibre && giroLibreAplica };
 
   const definitiva = historial?.find((e) => e.es_definitiva) ?? null;
   const { data: colocacionesDefinitiva } = useColocaciones(definitiva?.id ?? null);
@@ -278,6 +286,22 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
           >
             <input type="checkbox" checked={vaciarChapas} onChange={(e) => setVaciarChapas(e.target.checked)} />
             Vaciar chapas
+          </label>
+          <label
+            className={`flex items-center gap-1 ${giroLibreAplica ? "cursor-pointer" : "opacity-60"}`}
+            title={
+              giroLibreAplica
+                ? "Sparrow prueba las piezas a cualquier ángulo, no solo de a cuartos de vuelta."
+                : "El material tiene veta: las piezas solo giran media vuelta."
+            }
+          >
+            <input
+              type="checkbox"
+              checked={giroLibre && giroLibreAplica}
+              disabled={!giroLibreAplica}
+              onChange={(e) => setGiroLibre(e.target.checked)}
+            />
+            Girar a cualquier ángulo
           </label>
           <p>Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que quedaron a medio llenar. Conserva el anidado validado con menos planchas. Más búsqueda por chapa no da menos planchas. No se garantiza el óptimo global.</p>
         </>}

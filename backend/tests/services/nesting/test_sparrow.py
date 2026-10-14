@@ -43,7 +43,7 @@ def test_timeout_mata_worker():
 
 
 def test_canoniza_ruido_de_rotacion_pero_rechaza_angulo_libre():
-    entry=preparar_entrada(*datos(),OpcionesSparrow())
+    entry=preparar_entrada(*datos(),OpcionesSparrow(giro_libre=False))
     placed=[{'id':'1#0','sheet':0,'rotation':0,'tx':0,'ty':0},{'id':'1#1','sheet':0,'rotation':179.99999,'tx':60,'ty':20}]
     assert convertir_y_validar(entry,placed).posiciones[1].angulo_libre_grados==D(180)
     placed[1]['rotation']=170
@@ -320,3 +320,38 @@ def test_si_el_worker_termina_con_error_vale_lo_que_dejo_escrito(monkeypatch,tmp
     assert resultado.planchas_usadas==2
     [aviso]=[a for a in resultado.advertencias if 'terminó con un error' in a]
     assert 'ValueError: causa de prueba' in aviso
+
+
+def dos_piezas_una_girada(angulo):
+    return [{'id':'1#0','sheet':0,'rotation':angulo,'tx':10,'ty':1},{'id':'1#1','sheet':0,'rotation':0,'tx':60,'ty':60}]
+
+
+def test_con_giro_libre_acepta_cualquier_angulo():
+    entry=preparar_entrada(*datos(),OpcionesSparrow(giro_libre=True))
+    assert entry['rotations'] is None
+    resultado=convertir_y_validar(entry,dos_piezas_una_girada(37))
+    assert resultado.posiciones[0].angulo_libre_grados==D(37)
+
+
+def test_con_giro_libre_un_angulo_negativo_queda_entre_0_y_360():
+    entry=preparar_entrada(*datos(),OpcionesSparrow(giro_libre=True))
+    resultado=convertir_y_validar(entry,dos_piezas_una_girada(-323))
+    assert resultado.posiciones[0].angulo_libre_grados==D(37)
+
+
+def test_con_veta_no_gira_libre_aunque_se_pida():
+    pieces,g,plancha,_=datos()
+    params=ParametrosCorte(D(0),D(0),D(0),RotacionPermitida.SOLO_0_180)
+    entry=preparar_entrada(pieces,g,plancha,params,OpcionesSparrow(giro_libre=True))
+    assert entry['rotations']==[0,180]
+    with pytest.raises(ValueError,match='Rotación'):convertir_y_validar(entry,dos_piezas_una_girada(37))
+
+
+def test_giro_libre_esta_marcado_por_defecto():
+    assert OpcionesSparrow().giro_libre is True
+
+
+def test_worker_real_con_giro_libre():
+    result=anidar_sparrow(*datos(3),OpcionesSparrow(giro_libre=True,segundos_por_busqueda=1,tiempo_maximo_s=20,simplificacion_mm=0))
+    assert len(result.posiciones)==2
+    assert result.planchas_usadas==1

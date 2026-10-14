@@ -35,6 +35,9 @@ export default function GruposTab() {
   const [limite, setLimite] = useState(240);
   const [simplificacion, setSimplificacion] = useState(0.3);
   const [vaciarChapas, setVaciarChapas] = useState(true);
+  // Marcada por defecto (Enzo, 2026-10-14). En los materiales con veta el
+  // servidor no la aplica.
+  const [giroLibre, setGiroLibre] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [piezasInvalidas, setPiezasInvalidas] = useState<number[]>([]);
   const [seleccionadas, setSeleccionadas] = useState<Set<number>>(new Set());
@@ -127,7 +130,7 @@ export default function GruposTab() {
     setResultado(null);
     try {
       const opciones = await compararFormatos.mutateAsync({ grupoId, formatoIds: candidatos,
-        opciones: { motor, semilla, segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion, vaciar_chapas: vaciarChapas, criterio: "material" } });
+        opciones: { motor, semilla, segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion, vaciar_chapas: vaciarChapas, giro_libre: giroLibre, criterio: "material" } });
       setResultado(opciones);
     } catch (e) {
       setError(mensajeDeError(e, "No se pudo comparar."));
@@ -292,6 +295,13 @@ export default function GruposTab() {
                   >
                     <input type="checkbox" checked={vaciarChapas} onChange={(e) => setVaciarChapas(e.target.checked)} />
                     Vaciar chapas
+                  </label>
+                  <label
+                    className="flex items-center gap-1 cursor-pointer"
+                    title="Sparrow prueba las piezas a cualquier ángulo, no solo de a cuartos de vuelta. En los materiales con veta no se aplica: solo giran media vuelta."
+                  >
+                    <input type="checkbox" checked={giroLibre} onChange={(e) => setGiroLibre(e.target.checked)} />
+                    Girar a cualquier ángulo
                   </label>
                 </>}
               </fieldset>

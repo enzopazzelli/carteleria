@@ -25,6 +25,10 @@ class OpcionesSparrow:
     #: Segunda etapa (`sparrow_reparto.py`): vaciar chapas repartiendo sus
     #: piezas en las demás, con el tiempo que sobra de `tiempo_maximo_s`.
     vaciar_chapas: bool = True
+    #: Girar las piezas a cualquier ángulo, no solo de a cuartos de vuelta.
+    #: Marcada por defecto (Enzo, 2026-10-14). Con veta no se aplica: el
+    #: material solo gira media vuelta.
+    giro_libre: bool = True
 
 def ruta_de_avisos(salida):
     """Dónde deja el worker sus avisos, al lado de su resultado. Los escribe
@@ -37,6 +41,13 @@ def _area_util(plancha, params):
 
 def _rotaciones(params):
     return [0,180] if params.rotaciones_permitidas is RotacionPermitida.SOLO_0_180 else [0,90,180,270]
+
+def _rotaciones_para_buscar(params, opciones):
+    """Lo que se le pasa a Sparrow: `None` es cualquier ángulo. Con veta,
+    siempre media vuelta."""
+    if opciones.giro_libre and params.rotaciones_permitidas is not RotacionPermitida.SOLO_0_180:
+        return None
+    return _rotaciones(params)
 
 def _entra(shell, rotations, width, height):
     for a in rotations:
@@ -83,7 +94,9 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
     if blocked:
         raise ValueError('Piezas que no entran con el kerf y margen actuales: '+', '.join(blocked)+'. Revisar formato o seccionado; no se omiten piezas.')
     if not items: raise ValueError('No hay piezas para anidar.')
-    return {'items':items,'width':width,'height':height,'borde':borde,'gap':gap,'rotations':rotations,'options':vars(opciones),'normalizadas':normalizadas}
+    # «¿Entra en la chapa?» se decide con cuartos de vuelta aunque gire
+    # libre: una pieza que solo entra en diagonal se sigue mandando a seccionar.
+    return {'items':items,'width':width,'height':height,'borde':borde,'gap':gap,'rotations':_rotaciones_para_buscar(params,opciones),'options':vars(opciones),'normalizadas':normalizadas}
 
 def convertir_y_validar(entrada, placed):
     expected={p['id'] for p in entrada['items']}
@@ -100,10 +113,13 @@ def convertir_y_validar(entrada, placed):
             raise ValueError('Colocación inválida devuelta por Sparrow.')
         q = dict(q)
         angle = q['rotation'] % 360
-        allowed = min(entrada['rotations'], key=lambda a: abs((angle-a+180)%360-180))
-        if abs((angle-allowed+180)%360-180)>0.001:
-            raise ValueError('Rotación no permitida devuelta por Sparrow.')
-        q['rotation'] = allowed
+        if entrada['rotations'] is None:
+            q['rotation'] = angle  # giro libre: cualquier ángulo, entre 0 y 360
+        else:
+            allowed = min(entrada['rotations'], key=lambda a: abs((angle-a+180)%360-180))
+            if abs((angle-allowed+180)%360-180)>0.001:
+                raise ValueError('Rotación no permitida devuelta por Sparrow.')
+            q['rotation'] = allowed
         original=originals[q['id']]
         rotated=affinity.rotate(original,q['rotation'],origin=(0,0))
         poly=affinity.translate(rotated,q['tx'],q['ty'])
