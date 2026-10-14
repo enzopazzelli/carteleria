@@ -14,6 +14,7 @@ entero.
 from __future__ import annotations
 
 import enum
+import unicodedata
 from decimal import Decimal
 
 from sqlalchemy import Boolean, Date, ForeignKey, String, UniqueConstraint
@@ -49,6 +50,33 @@ class CotizacionMoneda(Base):
     __table_args__ = (UniqueConstraint("moneda", "fecha", name="uq_cotizacion_moneda_fecha"),)
 
 
+#: Cómo empieza el nombre → familia (A8). Lo que no empieza con ninguno, «Otros».
+_FAMILIAS_POR_PREFIJO = (
+    ("CHAPA", "Chapas"),
+    ("ACRILICO", "Acrílicos"),
+    ("ALTO IMPACTO", "Alto impacto"),
+    ("CORRUGADO", "Corrugado"),
+    ("POLICARBONATO", "Policarbonato"),
+)
+
+
+def familia_desde_nombre(nombre: str | None) -> str:
+    """La familia de un material según cómo empieza su nombre, sin importar
+    mayúsculas ni tildes (`docs/plan/A8-lista-de-materiales-y-retazos/diseno.md §5.1`).
+    La migración que completa la familia de los materiales que ya existían
+    tiene una copia de esta regla: si se cambia acá, aquella no cambia."""
+    plano = unicodedata.normalize("NFKD", nombre or "").encode("ascii", "ignore").decode().upper().strip()
+    for prefijo, familia in _FAMILIAS_POR_PREFIJO:
+        if plano.startswith(prefijo):
+            return familia
+    return "Otros"
+
+
+def _familia_por_defecto(contexto) -> str:
+    """Un material que se guarda sin familia la toma de su nombre."""
+    return familia_desde_nombre(contexto.get_current_parameters().get("nombre"))
+
+
 class Material(Base):
     """Un material que el taller compra y corta.
 
@@ -66,6 +94,9 @@ class Material(Base):
     nombre: Mapped[str] = mapped_column(String(120))
     #: Calibre o espesor. Texto porque el taller dice "cal. 22" y "0,70 mm".
     espesor: Mapped[str | None] = mapped_column(String(40), default=None)
+    #: Chapas, Acrílicos… (A8): para filtrar la lista al comparar. Si no se
+    #: da, sale del nombre (`familia_desde_nombre`).
+    familia: Mapped[str] = mapped_column(String(40), default=_familia_por_defecto)
     nesteable_por_area: Mapped[bool] = mapped_column(Boolean, default=True)
     #: A veces el material principal lo pone el cliente y el taller solo
     #: cobra la mano de obra; la pieza igual entra al plano de corte.

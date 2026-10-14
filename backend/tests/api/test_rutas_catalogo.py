@@ -231,3 +231,37 @@ def test_escribir_parametros_dos_veces_actualiza_no_duplica(cliente):
     assert segunda.json()["kerf_mm"] == "3"
     lectura = cliente.get(f"/materiales/{material['id']}/parametros-corte")
     assert lectura.json()["kerf_mm"] == "3", "tiene que haber actualizado, no agregado una fila nueva"
+
+
+# --- Familia del material (A8) -------------------------------------------
+
+
+def test_un_material_sin_familia_la_toma_del_nombre(cliente):
+    material = _crear_material(cliente, nombre="ACRILICO CRISTAL", espesor="3 mm")
+
+    assert material["familia"] == "Acrílicos"
+
+
+def test_un_material_con_familia_la_respeta(cliente):
+    material = _crear_material(cliente, nombre="MDF crudo", espesor="9 mm", familia="Maderas")
+
+    assert material["familia"] == "Maderas"
+
+
+def test_la_familia_se_corrige_y_no_se_borra(cliente):
+    material = _crear_material(cliente, nombre="MDF crudo", espesor="9 mm")
+
+    corregida = cliente.patch(f"/materiales/{material['id']}", json={"familia": "Maderas"}).json()
+    sin_tocar = cliente.patch(f"/materiales/{material['id']}", json={"familia": None}).json()
+
+    assert material["familia"] == "Otros"
+    assert corregida["familia"] == "Maderas"
+    assert sin_tocar["familia"] == "Maderas"
+
+
+def test_la_lista_de_materiales_trae_la_familia(cliente):
+    _crear_material(cliente)
+
+    [material] = cliente.get("/materiales").json()
+
+    assert material["familia"] == "Chapas"

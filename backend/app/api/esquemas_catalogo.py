@@ -16,7 +16,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..modelos.catalogo import Moneda
 from ..services.nesting.models import RotacionPermitida
@@ -27,6 +27,8 @@ from ..services.nesting.models import RotacionPermitida
 class MaterialCrear(BaseModel):
     nombre: str
     espesor: str | None = None
+    #: Sin familia, la deduce el nombre (A8).
+    familia: str | None = Field(default=None, min_length=1, max_length=40)
     nesteable_por_area: bool = True
     provisto_por_cliente: bool = False
 
@@ -34,6 +36,7 @@ class MaterialCrear(BaseModel):
 class MaterialActualizar(BaseModel):
     nombre: str | None = None
     espesor: str | None = None
+    familia: str | None = Field(default=None, min_length=1, max_length=40)
     nesteable_por_area: bool | None = None
     provisto_por_cliente: bool | None = None
 
@@ -44,6 +47,7 @@ class MaterialLeer(BaseModel):
     id: int
     nombre: str
     espesor: str | None
+    familia: str
     nesteable_por_area: bool
     provisto_por_cliente: bool
     creado_en: datetime

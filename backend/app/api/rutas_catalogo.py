@@ -70,7 +70,11 @@ def _commit_o_409(sesion: Session, mensaje: str) -> None:
 
 @router.post("/materiales", response_model=MaterialLeer, status_code=status.HTTP_201_CREATED)
 def crear_material(datos: MaterialCrear, sesion: Session = Depends(obtener_sesion)) -> Material:
-    material = Material(**datos.model_dump())
+    campos = datos.model_dump()
+    # Sin familia, el modelo la deduce del nombre (`familia_desde_nombre`).
+    if campos["familia"] is None:
+        del campos["familia"]
+    material = Material(**campos)
     sesion.add(material)
     _commit_o_409(sesion, "Ya existe un material con ese nombre y espesor.")
     return material
@@ -92,6 +96,8 @@ def actualizar_material(
 ) -> Material:
     material = _material_o_404(sesion, material_id)
     for campo, valor in datos.model_dump(exclude_unset=True).items():
+        if campo == "familia" and valor is None:
+            continue  # la familia es obligatoria: un null no la borra
         setattr(material, campo, valor)
     _commit_o_409(sesion, "Ya existe un material con ese nombre y espesor.")
     return material
