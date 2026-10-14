@@ -27,6 +27,7 @@ export interface OpcionesAnidado {
   workers?: number;
   simplificacion_mm?: number;
   vaciar_chapas?: boolean;
+  giro_libre?: boolean;
 }
 
 export function anidar(grupoId: number, opciones: OpcionesAnidado = {}): Promise<Ejecucion> {
