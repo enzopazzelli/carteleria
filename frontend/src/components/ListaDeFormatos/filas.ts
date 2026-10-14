@@ -37,10 +37,12 @@ export function precioPorM2(formato: Pick<Formato, "moneda" | "costo_unidad_vent
 }
 
 /** Por familia, material y espesor; los retazos debajo de los formatos de
- * su material; después, por medida. */
+ * su material; después, por medida. Sin los que no están disponibles: un
+ * retazo quitado mientras un grupo lo usaba queda escondido. */
 export function filasDeFormatos(formatos: Formato[], materiales: Material[]): Fila[] {
   const porId = new Map(materiales.map((material) => [material.id, material]));
   return formatos
+    .filter((formato) => formato.disponible)
     .map((formato) => ({ formato, material: porId.get(formato.material_id) }))
     .sort(
       (a, b) =>

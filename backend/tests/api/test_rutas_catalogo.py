@@ -333,17 +333,37 @@ def test_un_retazo_de_una_fila_sin_precio_por_m2_da_400(cliente, extra):
     assert "por m²" in respuesta.json()["detail"]
 
 
+def _grupo_con(cliente, formato_id) -> tuple[dict, dict]:
+    trabajo = cliente.post("/trabajos", json={"nombre": "Prueba"}).json()
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa chica", "formato_id": formato_id}).json()
+    return trabajo, grupo
+
+
 def test_un_formato_que_usa_un_grupo_no_se_quita(cliente):
     """La base dejaba el grupo sin material, sin avisar."""
     origen = _formato_por_m2(cliente)
-    retazo = _retazo(cliente, origen["id"]).json()
-    trabajo = cliente.post("/trabajos", json={"nombre": "Prueba"}).json()
-    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa chica", "formato_id": retazo["id"]}).json()
+    trabajo, grupo = _grupo_con(cliente, origen["id"])
 
-    respuesta = cliente.delete(f"/formatos/{retazo['id']}")
+    respuesta = cliente.delete(f"/formatos/{origen['id']}")
 
     assert respuesta.status_code == 409
     assert "«Chapa chica»" in respuesta.json()["detail"]
+    [mismo] = cliente.get(f"/trabajos/{trabajo['id']}/grupos").json()
+    assert mismo["id"] == grupo["id"] and mismo["formato_id"] == origen["id"]
+
+
+def test_un_retazo_que_usa_un_grupo_se_esconde(cliente):
+    """Decisión de Enzo (2026-10-14): sale de la lista para trabajos
+    nuevos, pero el grupo que lo usa lo sigue viendo y cotizando."""
+    origen = _formato_por_m2(cliente)
+    retazo = _retazo(cliente, origen["id"]).json()
+    trabajo, grupo = _grupo_con(cliente, retazo["id"])
+
+    assert cliente.delete(f"/formatos/{retazo['id']}").status_code == 204
+
+    escondido = cliente.get(f"/formatos/{retazo['id']}")
+    assert escondido.status_code == 200
+    assert escondido.json()["disponible"] is False
     [mismo] = cliente.get(f"/trabajos/{trabajo['id']}/grupos").json()
     assert mismo["id"] == grupo["id"] and mismo["formato_id"] == retazo["id"]
 

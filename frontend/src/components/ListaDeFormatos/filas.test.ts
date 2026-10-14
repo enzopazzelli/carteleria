@@ -11,7 +11,8 @@ const materiales: Material[] = [
 function formato(id: number, material_id: number, extra: Partial<Formato> = {}): Formato {
   return {
     id, material_id, codigo: null, ancho_mm: "1220.00", alto_mm: "2440.00", moneda: "ARS",
-    costo_unidad_venta: "13720.4038", unidad_venta: "M2", precio_simulado: false, es_retazo: false, ...extra,
+    costo_unidad_venta: "13720.4038", unidad_venta: "M2", precio_simulado: false, es_retazo: false,
+    disponible: true, ...extra,
   };
 }
 
@@ -40,6 +41,11 @@ describe("medida y precioPorM2", () => {
 describe("filasDeFormatos", () => {
   it("ordena por familia, material y espesor, y los retazos van debajo de su material", () => {
     expect(filasDeFormatos(formatos, materiales).map((f) => f.formato.id)).toEqual([10, 13, 12, 11]);
+  });
+
+  it("no muestra lo que no está disponible: un retazo escondido por estar en uso", () => {
+    const conEscondido = [...formatos, formato(14, 1, { es_retazo: true, disponible: false })];
+    expect(filasDeFormatos(conEscondido, materiales).map((f) => f.formato.id)).not.toContain(14);
   });
 
   it("las familias son las que hay, en orden", () => {

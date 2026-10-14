@@ -173,9 +173,15 @@ def actualizar_formato(
 @router.delete("/formatos/{formato_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_formato(formato_id: int, sesion: Session = Depends(obtener_sesion)) -> None:
     """No se quita un formato que usa un grupo: la base lo dejaría sin
-    material sin avisar (A8)."""
+    material sin avisar (A8). Un retazo en uso, en cambio, se esconde
+    (`disponible = False`): sale de la lista para trabajos nuevos y el
+    grupo que lo usa lo sigue viendo (decisión de Enzo, 2026-10-14)."""
     formato = _formato_o_404(sesion, formato_id)
     grupos = sesion.execute(select(GrupoDeCorte.nombre).where(GrupoDeCorte.formato_id == formato_id)).scalars().all()
+    if grupos and formato.es_retazo:
+        formato.disponible = False
+        sesion.commit()
+        return
     if grupos:
         raise HTTPException(
             status.HTTP_409_CONFLICT,

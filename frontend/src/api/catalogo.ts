@@ -14,6 +14,8 @@ export interface Formato {
   ancho_mm: string;
   alto_mm: string;
   es_retazo: boolean;
+  // Un retazo que se quitó estando en uso queda escondido (A8).
+  disponible: boolean;
   moneda: string | null;
   costo_unidad_venta: string | null;
   unidad_venta: string | null;
