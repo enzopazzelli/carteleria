@@ -19,7 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import config
-from ..modelos.trabajo import GrupoDeCorte, Pieza, Trabajo
+from ..modelos.trabajo import EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza, Trabajo
 from ..services.ingesta.analisis import (
     AREA_MINIMA_GEMELA_MM2,
     COLORES_DE_ROTULO,
@@ -468,6 +468,24 @@ async def subir_dxf(
     """
     trabajo = _trabajo_o_404(sesion, trabajo_id)
     marcadas = _correcciones(correcciones)
+    # Cargar reemplaza todas las piezas: un anidado que corre se quedaría
+    # con un resultado que apunta a piezas borradas.
+    en_curso = sesion.execute(
+        select(GrupoDeCorte.nombre, EjecucionNesting.id)
+        .join(EjecucionNesting, EjecucionNesting.grupo_id == GrupoDeCorte.id)
+        .where(
+            GrupoDeCorte.trabajo_id == trabajo_id,
+            EjecucionNesting.estado.in_([EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value]),
+        )
+        .order_by(EjecucionNesting.id)
+    ).first()
+    if en_curso is not None:
+        grupo, ejecucion_id = en_curso
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Hay un anidado en curso en el grupo «{grupo}» (#{ejecucion_id}): esperá a que termine, "
+            "o cancelalo en la pestaña Anidado, antes de volver a cargar el dibujo.",
+        )
 
     contenido = await archivo.read()
     sufijo = Path(archivo.filename or "trabajo.dxf").suffix or ".dxf"

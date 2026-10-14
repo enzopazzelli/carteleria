@@ -34,6 +34,7 @@ def cliente(tmp_path, monkeypatch):
 
     app.dependency_overrides[obtener_sesion] = _sesion_de_prueba
     with TestClient(app) as cliente:
+        cliente.motor = motor  # para insertar filas directo en algún test puntual
         yield cliente
     app.dependency_overrides.clear()
 
@@ -242,6 +243,30 @@ def test_cargar_con_todo_marcado_como_que_no_va_no_toca_las_piezas_del_trabajo(c
 
     assert respuesta.status_code == 400
     assert len(cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()) == 1
+
+
+@pytest.mark.parametrize("estado", ["encolada", "corriendo"])
+def test_mientras_corre_un_anidado_del_trabajo_no_se_vuelve_a_cargar(cliente, tmp_path, estado):
+    """Cargar reemplaza todas las piezas: el anidado que corre se quedaba
+    con un resultado que apunta a piezas borradas."""
+    from app.modelos.trabajo import EjecucionNesting
+
+    trabajo, pieza = _trabajo_con_una_pieza(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    with Session(cliente.motor) as sesion:
+        ejecucion = EjecucionNesting(grupo_id=grupo["id"], motor="sparrow", estado=estado)
+        sesion.add(ejecucion)
+        sesion.commit()
+        ejecucion_id = ejecucion.id
+    contenido = _dxf_bytes(
+        tmp_path, "otro.dxf", lambda msp: msp.add_lwpolyline([(0, 0), (40, 0), (40, 40), (0, 40)], close=True)
+    )
+
+    respuesta = _subir(cliente, trabajo["id"], contenido)
+
+    assert respuesta.status_code == 409
+    assert f"#{ejecucion_id}" in respuesta.json()["detail"]
+    assert cliente.get(f"/trabajos/{trabajo['id']}/piezas").json() == [pieza]
 
 
 @pytest.mark.parametrize("que_falla", ["no es dxf", "nada para cortar"])
