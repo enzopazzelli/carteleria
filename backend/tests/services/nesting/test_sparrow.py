@@ -241,6 +241,44 @@ def test_los_avisos_del_worker_llegan_al_resultado(monkeypatch,tmp_path):
     assert 'No se pudo terminar de vaciar chapas (prueba).' in resultado.advertencias
 
 
+@pytest.mark.parametrize('contenido',['','["cortado'])
+def test_un_archivo_de_avisos_que_no_se_puede_leer_no_pierde_el_anidado(monkeypatch,tmp_path,contenido):
+    """Si el worker se corta mientras escribe un aviso (por tiempo, o con
+    el disco lleno), el archivo queda vacío o a medias: el anidado de
+    `salida.json` igual vale."""
+    guion=worker_falso(tmp_path,0)
+    guion.write_text(
+        guion.read_text(encoding='utf8').replace(
+            'salida.with_suffix(".avisos.json").write_text(json.dumps([]),encoding="utf8")',
+            f'salida.with_suffix(".avisos.json").write_text({contenido!r},encoding="utf8")',
+        ),
+        encoding='utf8',
+    )
+    con_worker(monkeypatch,guion)
+
+    resultado=anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20))
+
+    assert resultado.planchas_usadas==2
+    assert any('No se pudieron leer los avisos' in aviso for aviso in resultado.advertencias)
+
+
+def test_avisar_no_deja_el_archivo_de_avisos_a_medias(monkeypatch,tmp_path):
+    """Se escribe aparte y se reemplaza de una vez, como el resultado."""
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    monkeypatch.setattr(sparrow_worker,'entra_en_una_chapa',rota)
+    escribir=Path.write_text
+    def write_text(self,texto,**kw):
+        if self.name.endswith('.avisos.json'): raise AssertionError('el aviso se escribió directo sobre el archivo')
+        return escribir(self,texto,**kw)
+    monkeypatch.setattr(Path,'write_text',write_text)
+    salida=tmp_path/'salida.json'
+
+    sparrow_worker.resolver(entrada,salida)
+
+    assert len(json.loads(ruta_de_avisos(salida).read_bytes()))==1
+
+
 def test_si_el_worker_termina_con_error_vale_lo_que_dejo_escrito(monkeypatch,tmp_path):
     """Antes se descartaba el anidado de la primera pasada."""
     con_worker(monkeypatch,worker_falso(tmp_path,1))

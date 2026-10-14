@@ -101,9 +101,16 @@ def resolver(data, salida=None):
     minimo=max(1,math.ceil(area/(data['width']*data['height'])))
     avisos=[]
     def avisar(texto):
-        # Se escriben en el momento: si el supervisor corta por tiempo, ya están.
+        # Se escriben en el momento: si el supervisor corta por tiempo, ya
+        # están. Aparte y de una vez, como el resultado: un archivo a medias
+        # no se puede leer.
         avisos.append(texto)
-        if salida: ruta_de_avisos(salida).write_text(json.dumps(avisos),encoding='utf8')
+        if not salida: return
+        ruta=ruta_de_avisos(salida);temporal=ruta.with_suffix('.tmp')
+        try:
+            temporal.write_text(json.dumps(avisos),encoding='utf8');temporal.replace(ruta)
+        except OSError as error:
+            print('avisar:',error,file=sys.stderr)  # El aviso es lo de menos: el anidado sigue.
     def considerar(candidato):
         nonlocal best,score
         convertir_y_validar(data,candidato)  # Nunca guardar demanda parcial o colocaciones inválidas.

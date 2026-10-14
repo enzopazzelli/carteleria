@@ -142,7 +142,13 @@ def _lo_que_dejo_el_worker(entrada,out,*avisos):
     que escribió él y los que agrega el supervisor."""
     result=convertir_y_validar(entrada,json.loads(out.read_text(encoding='utf8')))
     ruta=ruta_de_avisos(out)
-    del_worker=json.loads(ruta.read_text(encoding='utf8')) if ruta.exists() else []
+    try:
+        del_worker=json.loads(ruta.read_text(encoding='utf8')) if ruta.exists() else []
+        if not isinstance(del_worker,list) or not all(isinstance(a,str) for a in del_worker):
+            raise ValueError('avisos sin forma de lista de textos')
+    except (OSError,ValueError):
+        # Los avisos no valen el anidado: el resultado ya está validado.
+        del_worker=['No se pudieron leer los avisos del cálculo: el anidado es válido, pero puede faltar algún aviso.']
     return ResultadoAnidado(result.posiciones,result.planchas_usadas,[*result.advertencias,*del_worker,*avisos])
 
 def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lambda:False):
