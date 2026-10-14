@@ -275,7 +275,9 @@ Se detallan cuando les toque, cada una con su diseño.
 | El texto de ayuda de Anidado dice «Más búsqueda por chapa no da menos planchas» como si fuera una regla | Revisión | Decisión de Enzo |
 | Una comparación de formatos es un solo pedido que puede durar varias veces `PAR-09`; no se probó si el navegador lo corta | Revisión | `D-12` |
 | `GUIA-SPARROW-PRUEBAS.md` sugiere 120 s como punto de partida y `motor/PLAN-VALIDACION-CORTE-MANUAL.md` nombra `PAR-09` con su valor anterior | Tarea 5 bis de su plan | — |
-| Girar una pieza con ángulo libre en el anidado automático. Hoy Sparrow solo prueba cuartos de vuelta (0°, 90°, 180°, 270°); a mano, en Ajuste, ya se puede girar a cualquier ángulo | Pedido de Enzo del 2026-10-12 | `INCORPORACION-SPARROW-Y-COMPARACION-RECTANGULAR.md` lo dejaba afuera; hablarlo con Vale |
+| Girar una pieza con ángulo libre en el anidado automático. Hoy Sparrow solo prueba cuartos de vuelta (0°, 90°, 180°, 270°); a mano, en Ajuste, ya se puede girar a cualquier ángulo | Pedido de Enzo del 2026-10-12 | Ya no depende de Vale: `spyrrow` acepta giro libre. Diseño aprobado el 2026-10-14 (casilla en cada anidado, marcada por defecto) |
+| Otras rutas cambian piezas aunque corra un anidado: editar una pieza (grupo, cantidad, descartar), borrar un grupo y borrar un trabajo. Volver a cargar el dibujo y seccionar ya lo rechazan | Revisión de `fix/depuracion`, 2026-10-14 | — |
+| La carpeta temporal de cada corrida de Sparrow sale de la carpeta temporal del sistema, en C:, que en la máquina de Enzo está casi llena. Iría mejor al lado de los datos (`CARTELERIA_DATOS`) | Revisión de `fix/depuracion`, 2026-10-14 | — |
 
 **Resueltos el 2026-10-14** (rama `fix/depuracion`): si falla la etapa de vaciar chapas, el motivo llega a los avisos del resultado; si falla una pasada posterior o el worker termina con error, vale el último anidado que dejó escrito; el worker da por mejor un resultado recién cuando quedó escrito; y el filtro por área ya no saltea, por redondeo, piezas que llenan la chapa justa.
 

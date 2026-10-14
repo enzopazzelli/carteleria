@@ -64,12 +64,13 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Qué se hizo
 
-**Depuración, primera tanda** (rama `fix/depuracion`, un commit por arreglo, cada uno con su prueba antes). Backend 628 pruebas (587 antes), frontend 130 (125 antes):
+**Depuración, primera tanda** (rama `fix/depuracion`, un commit por arreglo, cada uno con su prueba antes). Con los arreglos de la revisión: backend 648 pruebas (587 antes), frontend 132 (125 antes):
 
 - **La lectura del DXF:** una carga sin nada para cortar no borra las piezas del trabajo (el panel ya lo impedía; ahora también la API), y el archivo nuevo se lee antes de guardarlo, así uno roto no pisa el DXF de las piezas que quedan. El aviso de las formas sin unir dice que la casilla está en «Ver cómo se lee». Las miniaturas de la tabla de Piezas ya no salen dadas vuelta. `pytest` solo junta `tests/`.
 - **El seccionado:** «Volver a seccionar» abre con el corte guardado si la chapa es la misma. Un ángulo o un corrimiento infinito o que no es un número da 422 y no 500, y una pieza descartada a mano no se secciona. No se secciona ni se deshace mientras corre un anidado del grupo, ni se vuelve a cargar el dibujo mientras corre uno del trabajo (el mismo riesgo, que la revisión del seccionado había anotado).
 - **El anidado con Sparrow:** si falla la etapa de vaciar chapas, el motivo llega a los avisos del resultado. Si falla una pasada posterior o el worker termina con error, vale el último anidado que dejó escrito, en lugar de descartarlo. El worker da por mejor un resultado recién cuando quedó escrito. Y el filtro por área ya no saltea, por redondeo, piezas que llenan la chapa justa.
 - Las filas resueltas salieron de las tablas de pendientes del plan maestro §7, con una nota debajo de cada tabla.
+- **Un revisor aparte leyó la rama: «con arreglos», nada crítico.** Lo importante: el archivo de avisos del worker se escribía sin protección y se leía sin cuidado, y uno a medias hacía perder el anidado válido. Arreglado, más los menores: un ángulo o un corrimiento finito pero desmedido daba 500 o aplicaba tramos que no cubrían la pieza (ahora 422, y el panel avisa antes); una pasada posterior que no valida ya no tira el worker; el aviso de un worker que terminó con error dice la causa; los avisos no se repiten; la consulta del anidado en curso quedó en un solo lugar, con dos pruebas más. Lo que dejó afuera pasó a la tabla del reparto por chapa: otras rutas que cambian piezas con un anidado en curso, y la carpeta temporal de Sparrow en C:.
 
 **Limpieza:**
 
