@@ -134,6 +134,43 @@ def test_una_pieza_a_180_grados_se_exporta_girada(tmp_path):
     assert puntos == {(100, 60), (0, 60), (100, 0)}, f"la rotación no se aplicó: {sorted(puntos)}"
 
 
+def test_una_pieza_a_cualquier_angulo_se_exporta_girada(tmp_path):
+    """Con «Girar a cualquier ángulo», Sparrow devuelve ángulos como 37°."""
+    import math
+
+    triangulo = [(0, 0), (100, 0), (0, 60)]
+    asimetrica = GeometriaPieza(
+        ancho_mm=Decimal(100),
+        alto_mm=Decimal(60),
+        contorno_local_mm=[(Decimal(x), Decimal(y)) for x, y in triangulo],
+        agujeros_local_mm=[],
+    )
+    posicion = PosicionPieza(
+        pieza_id="cuna", plancha_indice=0, x_mm=Decimal(0), y_mm=Decimal(0),
+        ancho_colocado_mm=Decimal(100), alto_colocado_mm=Decimal(60), rotada_90=False,
+        angulo_libre_grados=Decimal(37), centro_libre_x_mm=Decimal(250), centro_libre_y_mm=Decimal(250),
+    )
+    texto = exportar_plancha_a_dxf(
+        _resultado([posicion]), Plancha(ancho_mm=Decimal(500), alto_mm=Decimal(500)), 0, {"cuna": asimetrica}
+    )
+    ruta = tmp_path / "girada.dxf"
+    ruta.write_text(texto, encoding="utf-8")
+    resultado = parsear_dxf(ruta, escala_a_mm=Decimal(1))
+
+    [exportado] = [p for p in resultado.piezas if p.ancho_mm < Decimal(200)]
+
+    def desde_el_origen(puntos):
+        x0, y0 = min(x for x, _ in puntos), min(y for _, y in puntos)
+        return {(round(x - x0), round(y - y0)) for x, y in puntos}
+
+    # Se compara la forma, sin importar dónde quedó en la chapa: el
+    # triángulo girado 37°, llevado al origen.
+    c, s = math.cos(math.radians(37)), math.sin(math.radians(37))
+    esperado = desde_el_origen([(x * c - y * s, x * s + y * c) for x, y in triangulo])
+    puntos = desde_el_origen([(float(x), float(y)) for x, y in exportado.contorno_mm])
+    assert puntos == esperado, f"la rotación de 37° no se aplicó: {sorted(puntos)}"
+
+
 def test_el_nombre_avisa_cuantas_planchas_hay():
     assert nombre_de_archivo("corte-tanda1", 0, 5) == "corte-tanda1-plancha-1-de-5.dxf"
     assert nombre_de_archivo("corte-tanda1", 9, 12) == "corte-tanda1-plancha-10-de-12.dxf"
