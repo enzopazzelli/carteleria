@@ -53,6 +53,8 @@ class _SparrowQueEspera:
         self.informado = threading.Event()
         self.seguir = threading.Event()
         self.salio = threading.Event()
+        #: Al terminar la prueba: que ninguna búsqueda siga de fondo.
+        self.abortar = False
 
     def __call__(self, piezas, geometrias, plancha, params, opciones, **kw):
         self.llamadas += 1
@@ -62,6 +64,8 @@ class _SparrowQueEspera:
             while not self.seguir.wait(0.05):
                 if kw["cancelada"]():
                     raise ValueError("Anidado cancelado.")
+            if self.abortar:
+                raise ValueError("Fin de la prueba.")
             return self.original(piezas, geometrias, plancha, params, opciones, **kw)
         finally:
             self.salio.set()
@@ -74,7 +78,8 @@ def sparrow_que_espera(monkeypatch):
     falso = _SparrowQueEspera(rutas_nesting.anidar_sparrow)
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", falso)
     yield falso
-    falso.seguir.set()  # que ningún hilo quede esperando
+    falso.abortar = True  # que ningún hilo quede esperando ni buscando de fondo
+    falso.seguir.set()
 
 
 def test_la_comparacion_arranca_enseguida_y_termina_con_la_misma_tabla_de_siempre(cliente, tmp_path):
@@ -183,3 +188,25 @@ def test_una_falla_a_mitad_de_camino_queda_en_la_comparacion(cliente, tmp_path, 
 def test_una_comparacion_que_no_existe_da_404(cliente):
     assert cliente.get("/comparaciones/999").status_code == 404
     assert cliente.post("/comparaciones/999/cancelar").status_code == 404
+
+
+def test_una_comparacion_terminada_no_trae_progreso_aunque_la_memoria_no_lo_haya_olvidado(
+    cliente, tmp_path, sparrow_que_espera, monkeypatch
+):
+    from app import progreso
+
+    olvidar = progreso.olvidar
+    monkeypatch.setattr(progreso, "olvidar", lambda clave: None)
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    sparrow_que_espera.seguir.set()
+    arrancada = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json={
+        "formato_ids": _dos_formatos(cliente), **_SPARROW_RAPIDO,
+    }).json()
+
+    final = _esperar_comparacion(cliente, arrancada["id"])
+    en_memoria = progreso.leer(("comparacion", arrancada["id"]))
+    olvidar(("comparacion", arrancada["id"]))
+
+    assert final["estado"] == "lista", final["error"]
+    assert en_memoria is not None, "la prueba necesita que la memoria todavía lo tenga"
+    assert final["progreso"] is None

@@ -853,3 +853,31 @@ def test_un_anidado_rectangular_no_trae_progreso(cliente, tmp_path):
     final = _esperar_estado(cliente, ejecucion["id"])
 
     assert final["progreso"] is None
+
+
+def test_una_corrida_terminada_no_trae_progreso_aunque_la_memoria_no_lo_haya_olvidado(cliente, tmp_path, monkeypatch):
+    """Entre guardar el resultado y olvidar el progreso hay un instante: en
+    ese instante la consulta no puede devolver `lista` con progreso viejo."""
+    from app import progreso
+    from app.api import rutas_nesting
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    olvidar = progreso.olvidar
+    monkeypatch.setattr(progreso, "olvidar", lambda clave: None)
+    original = rutas_nesting.anidar_sparrow
+
+    def con_progreso(piezas, geometrias, plancha, params, opciones, **kw):
+        kw["al_avanzar"]({"segundos": 1.0, "maximo": 20})
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", con_progreso)
+    ejecucion = cliente.post(f"/grupos/{grupo['id']}/anidar", json={
+        "motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20,
+    }).json()
+
+    final = _esperar_estado(cliente, ejecucion["id"], timeout=20)
+    en_memoria = progreso.leer(("ejecucion", ejecucion["id"]))
+    olvidar(("ejecucion", ejecucion["id"]))
+
+    assert final["estado"] == "lista", final.get("error")
+    assert en_memoria is not None, "la prueba necesita que la memoria todavía lo tenga"
+    assert final["progreso"] is None
