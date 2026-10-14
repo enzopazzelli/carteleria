@@ -179,3 +179,16 @@ class OpcionFormatoLeer(BaseModel):
     #: se secciona en tramos que se sueldan después (A5, desde la pestaña
     #: Piezas). Hasta que se seccionen, el formato queda sin anidar.
     piezas_a_seccionar: list[PiezaASeccionarLeer] = Field(default_factory=list)
+
+
+class ComparacionLeer(BaseModel):
+    """Una comparación de formatos en segundo plano (A7)."""
+
+    id: int
+    grupo_id: int
+    estado: Literal["corriendo", "lista", "cancelada", "error"]
+    progreso: ProgresoLeer | None = None
+    #: La tabla de la comparación, cuando terminó bien: la misma que
+    #: devuelve `POST /grupos/{id}/comparar-formatos`.
+    opciones: list[OpcionFormatoLeer] | None = None
+    error: str | None = None
