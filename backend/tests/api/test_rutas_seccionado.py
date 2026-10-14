@@ -332,6 +332,24 @@ def test_un_angulo_o_un_corrimiento_que_no_es_un_numero_finito_da_422(cliente, t
 
 
 @pytest.mark.parametrize("ruta", ["seccionado/propuesta", "seccionado"])
+@pytest.mark.parametrize(
+    ("campo", "valor"),
+    [("angulo_grados", 1e308), ("angulo_grados", -361), ("desplazamiento_x_mm", 1.2e23), ("desplazamiento_y_mm", -2e6)],
+)
+def test_un_angulo_o_un_corrimiento_desmedido_da_422(cliente, tmp_path, ruta, campo, valor):
+    """Finitos pero absurdos: un ángulo así rompía la cuenta (500), y un
+    corrimiento así perdía precisión y aplicaba un tramo con el 14 % de la
+    pieza, descartando la original."""
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=3000)
+    pedido = {"formato_id": formato["id"], "angulo_grados": 30, "desplazamiento_x_mm": 0, "desplazamiento_y_mm": 0}
+
+    respuesta = cliente.post(f"/piezas/{pieza['id']}/{ruta}", json={**pedido, campo: valor})
+
+    assert respuesta.status_code == 422, respuesta.text
+    assert not [p for p in _piezas(cliente, trabajo["id"]) if p["seccionada_de_id"] == pieza["id"]]
+
+
+@pytest.mark.parametrize("ruta", ["seccionado/propuesta", "seccionado"])
 def test_una_pieza_descartada_a_mano_no_se_secciona(cliente, tmp_path, ruta):
     """El panel no ofrece seccionarla; por la API se podía, y sus tramos se
     cortaban aunque la pieza no."""

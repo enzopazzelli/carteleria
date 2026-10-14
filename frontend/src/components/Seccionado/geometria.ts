@@ -97,6 +97,16 @@ export function desplazamientoEnGrilla(dxMm: number, dyMm: number, anguloGrados:
   return girar(dxMm, dyMm, (-anguloGrados * Math.PI) / 180);
 }
 
+/** El ángulo escrito en el panel, o `null` si el servidor lo rechazaría:
+ * vacío (antes se leía como 0), infinito o fuera de −360 a 360. La coma
+ * vale como decimal. */
+export function leerAngulo(texto: string): number | null {
+  const limpio = texto.trim().replace(",", ".");
+  if (limpio === "") return null;
+  const grados = Number(limpio);
+  return Number.isFinite(grados) && Math.abs(grados) <= 360 ? grados : null;
+}
+
 /** El corte con que abre «Volver a seccionar»: el guardado, si es para la
  * misma chapa. Para otra chapa no sirve (sus tramos no entran), y el
  * panel arranca vacío. */

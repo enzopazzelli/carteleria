@@ -9,24 +9,29 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-#: Infinito o «no es un número» rompían la cuenta de la grilla con un 500.
-Finito = Annotated[float, Field(allow_inf_nan=False)]
+#: Infinito o «no es un número» rompían la cuenta de la grilla con un 500,
+#: y un valor finito pero desmedido también: un ángulo enorme da error, y
+#: un corrimiento enorme pierde precisión y deja tramos que no cubren la
+#: pieza. La búsqueda da ángulos entre 0 y 180 y corrimientos menores que
+#: una celda; los topes dejan margen de sobra.
+Angulo = Annotated[float, Field(allow_inf_nan=False, ge=-360, le=360)]
+Corrimiento = Annotated[float, Field(allow_inf_nan=False, ge=-1_000_000, le=1_000_000)]
 
 
 class SeccionadoPedido(BaseModel):
     """Sin `angulo_grados`, busca la mejor grilla; con él, evalúa esa."""
 
     formato_id: int
-    angulo_grados: Finito | None = None
-    desplazamiento_x_mm: Finito = 0.0
-    desplazamiento_y_mm: Finito = 0.0
+    angulo_grados: Angulo | None = None
+    desplazamiento_x_mm: Corrimiento = 0.0
+    desplazamiento_y_mm: Corrimiento = 0.0
 
 
 class SeccionadoAplicar(BaseModel):
     formato_id: int
-    angulo_grados: Finito
-    desplazamiento_x_mm: Finito
-    desplazamiento_y_mm: Finito
+    angulo_grados: Angulo
+    desplazamiento_x_mm: Corrimiento
+    desplazamiento_y_mm: Corrimiento
 
 
 class CorteLeer(BaseModel):

@@ -3,10 +3,25 @@ import {
   desplazamientoEnGrilla,
   entraEnAlgunFormato,
   grillaGuardada,
+  leerAngulo,
   lineasDeGrilla,
   originalesASeccionar,
   porQueSeccionar,
 } from "./geometria";
+
+describe("leerAngulo", () => {
+  it("lee un número, con coma o con punto", () => {
+    expect(leerAngulo("12,5")).toBe(12.5);
+    expect(leerAngulo(" -30 ")).toBe(-30);
+  });
+
+  it("no lee lo que el servidor rechaza: vacío, infinito o fuera de −360 a 360", () => {
+    expect(leerAngulo("")).toBeNull();
+    expect(leerAngulo("Infinity")).toBeNull();
+    expect(leerAngulo("400")).toBeNull();
+    expect(leerAngulo("treinta")).toBeNull();
+  });
+});
 
 describe("grillaGuardada", () => {
   const seccionado = {

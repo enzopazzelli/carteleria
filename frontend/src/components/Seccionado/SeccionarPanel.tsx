@@ -6,7 +6,7 @@ import { proponerSeccionado, type GrillaSeccionado, type Pieza, type PropuestaSe
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import { useAplicarSeccionado } from "../../hooks/usePiezas";
 import Banner from "../Banner";
-import { desplazamientoEnGrilla, grillaGuardada, lineasDeGrilla } from "./geometria";
+import { desplazamientoEnGrilla, grillaGuardada, leerAngulo, lineasDeGrilla } from "./geometria";
 import { crearTurnos } from "./turnos";
 
 const LADO_DIBUJO_PX = 560;
@@ -87,8 +87,13 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
   }
 
   function alCambiarAngulo() {
-    const grados = Number(angulo);
-    if (!propuesta || Number.isNaN(grados) || grados === propuesta.angulo_grados) return;
+    if (!propuesta) return;
+    const grados = leerAngulo(angulo);
+    if (grados === null) {
+      setError("El ángulo tiene que ser un número entre −360 y 360.");
+      return;
+    }
+    if (grados === propuesta.angulo_grados) return;
     void pedir({
       angulo_grados: grados,
       desplazamiento_x_mm: propuesta.desplazamiento_x_mm,
