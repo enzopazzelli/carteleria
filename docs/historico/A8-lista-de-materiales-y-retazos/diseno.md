@@ -1,6 +1,6 @@
 # A8 · Lista de materiales con filtros y retazos de medida libre — diseño
 
-> **Estado:** **construido el 2026-10-14,** con el plan de [`plan.md`](plan.md), en la rama `feat/lista-de-materiales`. Lo que se apartó está al final de ese plan, en «Desvíos».
+> **Estado:** **cerrado el 2026-10-14.** Construido ese día con el plan de [`plan.md`](plan.md), y en `main` desde entonces ([PR #24](https://github.com/enzopazzelli/carteleria/pull/24); lo fusioné yo a pedido de Enzo). Lo que se apartó, la revisión y lo menor que quedó anotado están al final de ese plan, en «Desvíos». Esta carpeta pasó de `docs/plan/` a `docs/historico/`, y lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md).
 >
 > **De dónde sale.** Pedidos de Enzo del 2026-10-14: «mejorar la parte del menú de chapas a la hora de comparar […] quizá sea mejor una lista de materiales con filtros para chapas, acrílicos, etc., y que no estén en línea, sino en columnas», y «hay veces que existen diseños pequeños que los imprimirán en un retazo de chapa de 1 m × 1 m (por ejemplo; en realidad debería ser libre)». Va en el carril del motor, después de la barra de progreso (A7).
 >
@@ -81,6 +81,6 @@
 
 ## 8. Qué cambia en otros documentos
 
-- **[`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md):** en los pendientes del seccionado, la fila «el selector de chapa del panel lista todo el catálogo» suma que la tabla de A8 sirve para eso.
+- **[`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md):** en los pendientes del seccionado, la fila «el selector de chapa del panel lista todo el catálogo» suma que la tabla de A8 sirve para eso.
 - **[`BITACORA.md`](../../BITACORA.md):** la entrada del día en que se cierre.
 - **[`MAPA-DEL-PROYECTO.md`](../../MAPA-DEL-PROYECTO.md):** la fila Catálogo suma la familia y los retazos.

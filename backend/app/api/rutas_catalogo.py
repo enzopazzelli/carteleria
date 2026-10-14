@@ -222,7 +222,7 @@ def eliminar_formato(formato_id: int, sesion: Session = Depends(obtener_sesion))
 @router.post("/formatos/{formato_id}/retazos", response_model=FormatoLeer, status_code=status.HTTP_201_CREATED)
 def crear_retazo(formato_id: int, datos: RetazoCrear, sesion: Session = Depends(obtener_sesion)) -> Formato:
     """Un retazo de medida libre del mismo material
-    (`docs/plan/A8-lista-de-materiales-y-retazos/diseno.md §5.2`). Se cobra
+    (`docs/historico/A8-lista-de-materiales-y-retazos/diseno.md §5.2`). Se cobra
     por m² al precio de la fila de la que sale: se copia acá, así la regla
     no depende de quien lo pide."""
     origen = _formato_o_404(sesion, formato_id)

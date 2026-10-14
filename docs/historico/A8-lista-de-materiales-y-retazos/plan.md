@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** **ejecutado el 2026-10-14,** de la Tarea 1 a la 7, en esta sesión y con una pausa por tramo. No se ensayó sobre una copia: los bloques salen de leer el código de `main` en `3f2982d`. Lo que se aparte va al final, en «Desvíos».
+> **Estado:** **cerrado el 2026-10-14,** en `main` ([PR #24](https://github.com/enzopazzelli/carteleria/pull/24)). Ejecutado ese día, de la Tarea 1 a la 7, en esta sesión y con una pausa por tramo. No se ensayó sobre una copia: los bloques salen de leer el código de `main` en `3f2982d`. Lo que se aparte va al final, en «Desvíos».
 
 **Goal:** Que al comparar chapas se elija desde una tabla con familia, material, espesor, medida y precio por m², con filtros y buscador; y que se pueda agregar un retazo de medida libre que se cobra por m² al precio de su fila.
 
@@ -52,7 +52,7 @@
 
 ```python
 """La familia de un material sale de cómo empieza su nombre
-(`docs/plan/A8-lista-de-materiales-y-retazos/diseno.md §5.1`)."""
+(`docs/historico/A8-lista-de-materiales-y-retazos/diseno.md §5.1`)."""
 from __future__ import annotations
 
 import pytest
@@ -139,7 +139,7 @@ _FAMILIAS_POR_PREFIJO = (
 
 def familia_desde_nombre(nombre: str | None) -> str:
     """La familia de un material según cómo empieza su nombre, sin importar
-    mayúsculas ni tildes (`docs/plan/A8-lista-de-materiales-y-retazos/diseno.md §5.1`).
+    mayúsculas ni tildes (`docs/historico/A8-lista-de-materiales-y-retazos/diseno.md §5.1`).
     La migración que completa la familia de los materiales que ya existían
     tiene una copia de esta regla: si se cambia acá, aquella no cambia."""
     plano = unicodedata.normalize("NFKD", nombre or "").encode("ascii", "ignore").decode().upper().strip()
@@ -509,7 +509,7 @@ def eliminar_formato(formato_id: int, sesion: Session = Depends(obtener_sesion))
 @router.post("/formatos/{formato_id}/retazos", response_model=FormatoLeer, status_code=status.HTTP_201_CREATED)
 def crear_retazo(formato_id: int, datos: RetazoCrear, sesion: Session = Depends(obtener_sesion)) -> Formato:
     """Un retazo de medida libre del mismo material
-    (`docs/plan/A8-lista-de-materiales-y-retazos/diseno.md §5.2`). Se cobra
+    (`docs/historico/A8-lista-de-materiales-y-retazos/diseno.md §5.2`). Se cobra
     por m² al precio de la fila de la que sale: se copia acá, así la regla
     no depende de quien lo pide."""
     origen = _formato_o_404(sesion, formato_id)
@@ -1029,7 +1029,7 @@ git commit -m "feat(frontend): la comparacion de chapas elige desde la lista con
 ### Task 7: Recorrido en el navegador y documentos
 
 **Files:**
-- Modify: `docs/plan/PLAN-MAESTRO.md`, `docs/MAPA-DEL-PROYECTO.md`, `docs/BITACORA.md`, `docs/plan/A8-lista-de-materiales-y-retazos/diseno.md`, `docs/plan/A8-lista-de-materiales-y-retazos/plan.md`
+- Modify: `docs/plan/PLAN-MAESTRO.md`, `docs/MAPA-DEL-PROYECTO.md`, `docs/BITACORA.md`, `docs/historico/A8-lista-de-materiales-y-retazos/diseno.md`, `docs/historico/A8-lista-de-materiales-y-retazos/plan.md`
 
 - [ ] **Step 1: Las suites enteras**
 
@@ -1059,7 +1059,7 @@ Capturas de cada paso. Al terminar, cerrar solo los procesos propios y borrar la
 - [ ] **Step 4: Commit**
 
 ```bash
-git add docs/plan/PLAN-MAESTRO.md docs/MAPA-DEL-PROYECTO.md docs/BITACORA.md docs/plan/A8-lista-de-materiales-y-retazos
+git add docs/plan/PLAN-MAESTRO.md docs/MAPA-DEL-PROYECTO.md docs/BITACORA.md docs/historico/A8-lista-de-materiales-y-retazos
 git commit -m "docs: lista de materiales y retazos (A8) construida"
 ```
 

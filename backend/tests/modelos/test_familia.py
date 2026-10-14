@@ -1,5 +1,5 @@
 """La familia de un material sale de cómo empieza su nombre
-(`docs/plan/A8-lista-de-materiales-y-retazos/diseno.md §5.1`)."""
+(`docs/historico/A8-lista-de-materiales-y-retazos/diseno.md §5.1`)."""
 from __future__ import annotations
 
 import pytest

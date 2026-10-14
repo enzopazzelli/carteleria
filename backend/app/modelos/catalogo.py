@@ -62,7 +62,7 @@ _FAMILIAS_POR_PREFIJO = (
 
 def familia_desde_nombre(nombre: str | None) -> str:
     """La familia de un material según cómo empieza su nombre, sin importar
-    mayúsculas ni tildes (`docs/plan/A8-lista-de-materiales-y-retazos/diseno.md §5.1`).
+    mayúsculas ni tildes (`docs/historico/A8-lista-de-materiales-y-retazos/diseno.md §5.1`).
     La migración que completa la familia de los materiales que ya existían
     tiene una copia de esta regla: si se cambia acá, aquella no cambia."""
     plano = unicodedata.normalize("NFKD", nombre or "").encode("ascii", "ignore").decode().upper().strip()

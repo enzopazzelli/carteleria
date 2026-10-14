@@ -90,7 +90,7 @@ Qué queda abierto y cuál es el próximo paso.
 - **Un revisor aparte leyó la rama: «con arreglos», nada crítico.** Lo importante estaba en la pantalla de Grupos: volver a abrir «Comparar formatos» podía retomar una comparación vieja, y si el servidor se reiniciaba con una comparación en curso la pantalla quedaba trabada. Las dos se arreglaron con sus pruebas y se comprobaron en Chrome sin ventana; el primer arreglo de la segunda tenía una falla que mostró ese recorrido (con el servidor caído dejaba de preguntar) y se corrigió. También se clavó con pruebas el caso «justo cuando termina» y se escribió la nota de `D-12`. Lo menor quedó en los «Desvíos» del plan.
 - Backend 677 pruebas, frontend 156.
 
-**Lista de materiales y retazos (A8)** (rama `feat/lista-de-materiales`, [`plan/A8-lista-de-materiales-y-retazos/`](plan/A8-lista-de-materiales-y-retazos/diseno.md)):
+**Lista de materiales y retazos (A8)** (en `main` desde el 2026-10-14, [PR #24](https://github.com/enzopazzelli/carteleria/pull/24), lo fusioné a pedido de Enzo; [`historico/A8-lista-de-materiales-y-retazos/`](historico/A8-lista-de-materiales-y-retazos/diseno.md)):
 
 - **Al comparar chapas se elige desde una tabla:** familia, material, espesor, medida y precio por m², con botones por familia (Acrílicos, Alto impacto, Chapas, Corrugado, Policarbonato) y un buscador; «Seleccionar todas» tilda solo lo visible. Reemplaza las 29 casillas en renglón.
 - **La familia es un dato nuevo del material:** sale del nombre si no se da, y se corrige por la API. La migración `a8f2c61b9d04` la completó para los 23 materiales de Enzo (en una copia): 10 chapas, 10 acrílicos y uno de cada otra familia, ninguno en «Otros».

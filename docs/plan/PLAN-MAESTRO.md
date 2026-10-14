@@ -251,7 +251,7 @@ Se detallan cuando les toque, cada una con su diseño.
 |---|---|---|
 | Validar con el aro real exportado soldado | §7 de su diseño | `SUP-17`: que el diseñador lo mande |
 | La segunda pasada de la búsqueda repite ángulos ya probados: solo afina el corrimiento | Revisión | — |
-| No hay tope para chapas chicas pero válidas, y el selector de chapa del panel lista todo el catálogo | Revisión | La tabla de A8 (`ListaDeFormatos`, con filtros y buscador) sirve para el selector |
+| No hay tope para chapas chicas pero válidas, y el selector de chapa del panel lista todo el catálogo | Revisión | La tabla de A8 (`ListaDeFormatos`, con filtros y buscador; [`historico/A8-lista-de-materiales-y-retazos/`](../historico/A8-lista-de-materiales-y-retazos/diseno.md)) sirve para el selector |
 | Una pieza tiene un solo seccionado, para una chapa: la comparación de formatos usa los tramos aunque la pieza entraría entera en una chapa más grande | Revisión | — |
 | Con veta, los tramos quedan girados respecto del dibujo | Revisión | `P-30` |
 | La comparación de formatos usa los parámetros de corte del material aunque el grupo tenga propios | Arreglo del 2026-10-09 | `CART-210` |
