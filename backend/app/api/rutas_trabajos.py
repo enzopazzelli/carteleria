@@ -468,19 +468,40 @@ async def subir_dxf(
     marcadas = _correcciones(correcciones)
 
     contenido = await archivo.read()
-    config.DIRECTORIO_ARCHIVOS.mkdir(parents=True, exist_ok=True)
     sufijo = Path(archivo.filename or "trabajo.dxf").suffix or ".dxf"
-    ruta_guardada = config.DIRECTORIO_ARCHIVOS / f"trabajo-{trabajo_id}{sufijo}"
-    ruta_guardada.write_bytes(contenido)
-
-    lecturas = _leer(ruta_guardada, escala_a_mm, tamano_maximo_agujero_mm, _formatos_del_catalogo(sesion), marcadas)
+    nombre = f"trabajo-{trabajo_id}{sufijo}"
+    with tempfile.TemporaryDirectory() as carpeta:
+        # Se lee antes de guardarlo: si la carga se rechaza, el trabajo se
+        # queda con el archivo de sus piezas. Con el nombre que va a tener
+        # guardado, porque de ahí salen los `id` de las piezas.
+        ruta = Path(carpeta) / nombre
+        ruta.write_bytes(contenido)
+        lecturas = _leer(ruta, escala_a_mm, tamano_maximo_agujero_mm, _formatos_del_catalogo(sesion), marcadas)
     lectura = lecturas.elegida(unir)
+
+    a_guardar = [p for p in lectura.piezas if p.id not in lectura.no_van]
+    if all(p.id in lectura.recortes for p in a_guardar):
+        # Cargar reemplaza las piezas del trabajo: sin nada para cortar
+        # lo dejaría vacío. El panel ya no lo permite; la API tampoco.
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            " ".join(
+                [
+                    "No se cargó: la lectura no tiene ninguna forma para cortar, "
+                    "y las piezas del trabajo quedan como estaban.",
+                    *lectura.advertencias,
+                ]
+            ),
+        )
+
+    config.DIRECTORIO_ARCHIVOS.mkdir(parents=True, exist_ok=True)
+    ruta_guardada = config.DIRECTORIO_ARCHIVOS / nombre
+    ruta_guardada.write_bytes(contenido)
 
     for pieza_existente in list(trabajo.piezas):
         sesion.delete(pieza_existente)
     sesion.flush()
 
-    a_guardar = [p for p in lectura.piezas if p.id not in lectura.no_van]
     for pieza_importada in a_guardar:
         pieza = _pieza_orm_desde_importada(trabajo_id, pieza_importada)
         # Descartada y no omitida: queda a la vista, y si en este dibujo
