@@ -2,10 +2,39 @@ import { describe, expect, it } from "vitest";
 import {
   desplazamientoEnGrilla,
   entraEnAlgunFormato,
+  grillaGuardada,
   lineasDeGrilla,
   originalesASeccionar,
   porQueSeccionar,
 } from "./geometria";
+
+describe("grillaGuardada", () => {
+  const seccionado = {
+    formato_id: 7,
+    angulo_grados: 12.5,
+    desplazamiento_x_mm: 30,
+    desplazamiento_y_mm: -4,
+    tramos: 6,
+    soldadura_mm: 900,
+    cortes: [],
+  };
+
+  it("es el corte guardado, si se vuelve a seccionar para la misma chapa", () => {
+    expect(grillaGuardada({ seccionado }, 7)).toEqual({
+      angulo_grados: 12.5,
+      desplazamiento_x_mm: 30,
+      desplazamiento_y_mm: -4,
+    });
+  });
+
+  it("ninguna, si se pide otra chapa: ese corte no sirve para ella", () => {
+    expect(grillaGuardada({ seccionado }, 8)).toBeNull();
+  });
+
+  it("ninguna, si la pieza no está seccionada", () => {
+    expect(grillaGuardada({ seccionado: null }, 7)).toBeNull();
+  });
+});
 
 describe("originalesASeccionar", () => {
   // La 1 está entera; la 2 ya se seccionó en los tramos 3 y 4.

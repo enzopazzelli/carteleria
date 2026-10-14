@@ -1,5 +1,6 @@
 /** Cuentas de la pantalla del seccionado (`docs/historico/A5-seccionado/diseno.md §5.5`).
  * Sin React, para poder probarlas solas. */
+import type { GrillaSeccionado, SeccionadoGuardado } from "../../api/piezasYgrupos";
 
 export interface Segmento {
   x1: number;
@@ -94,4 +95,20 @@ export function lineasDeGrilla(
  * marco girado de la grilla, que es donde vive el desplazamiento. */
 export function desplazamientoEnGrilla(dxMm: number, dyMm: number, anguloGrados: number): [number, number] {
   return girar(dxMm, dyMm, (-anguloGrados * Math.PI) / 180);
+}
+
+/** El corte con que abre «Volver a seccionar»: el guardado, si es para la
+ * misma chapa. Para otra chapa no sirve (sus tramos no entran), y el
+ * panel arranca vacío. */
+export function grillaGuardada(
+  pieza: { seccionado: SeccionadoGuardado | null },
+  formatoId: number | null,
+): GrillaSeccionado | null {
+  const guardado = pieza.seccionado;
+  if (guardado === null || guardado.formato_id !== formatoId) return null;
+  return {
+    angulo_grados: guardado.angulo_grados,
+    desplazamiento_x_mm: guardado.desplazamiento_x_mm,
+    desplazamiento_y_mm: guardado.desplazamiento_y_mm,
+  };
 }

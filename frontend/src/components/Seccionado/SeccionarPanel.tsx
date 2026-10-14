@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type React from "react";
 import { ApiError } from "../../api/client";
 import type { Formato } from "../../api/catalogo";
@@ -6,7 +6,7 @@ import { proponerSeccionado, type GrillaSeccionado, type Pieza, type PropuestaSe
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import { useAplicarSeccionado } from "../../hooks/usePiezas";
 import Banner from "../Banner";
-import { desplazamientoEnGrilla, lineasDeGrilla } from "./geometria";
+import { desplazamientoEnGrilla, grillaGuardada, lineasDeGrilla } from "./geometria";
 import { crearTurnos } from "./turnos";
 
 const LADO_DIBUJO_PX = 560;
@@ -39,6 +39,15 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
   // quedaría dibujada la propuesta de una chapa con otra elegida, y
   // «Aplicar» cortaría con la elegida.
   const [turnos] = useState(crearTurnos);
+
+  // «Volver a seccionar» abre con el corte guardado, dibujado y listo para
+  // ajustar, en lugar del panel vacío. Solo al abrir: después manda lo
+  // que se elija.
+  useEffect(() => {
+    const guardada = grillaGuardada(pieza, formatoInicial);
+    if (guardada !== null) void pedir(guardada);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const ancho = Number(pieza.ancho_mm);
   const alto = Number(pieza.alto_mm);
