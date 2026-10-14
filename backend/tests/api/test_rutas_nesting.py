@@ -778,3 +778,40 @@ def test_sparrow_por_api_guarda_la_opcion_de_vaciar_chapas(cliente, tmp_path):
     resultado = _esperar_estado(cliente, respuesta.json()["id"], timeout=20)
     assert resultado["estado"] == "lista", resultado.get("error")
     assert resultado["opciones"].get("vaciar_chapas") is False
+
+
+@pytest.mark.parametrize("enviado, esperado", [({}, True), ({"giro_libre": False}, False)])
+def test_comparar_formatos_sparrow_pasa_la_opcion_de_girar_libre(cliente, tmp_path, monkeypatch, enviado, esperado):
+    """Marcada por defecto (Enzo, 2026-10-14)."""
+    from app.api import rutas_nesting
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    _material, formato = _material_con_formato_y_parametros(cliente)
+    recibidas = []
+    original = rutas_nesting.anidar_sparrow
+
+    def registrar(piezas, geometrias, plancha, params, opciones):
+        recibidas.append(opciones)
+        return original(piezas, geometrias, plancha, params, opciones)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
+        "formato_ids": [formato["id"]], "motor": "sparrow",
+        "segundos_por_busqueda": 1, "tiempo_maximo_s": 30, **enviado,
+    })
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert [o.giro_libre for o in recibidas] == [esperado]
+
+
+@pytest.mark.parametrize("enviado, esperado", [({}, True), ({"giro_libre": False}, False)])
+def test_sparrow_por_api_guarda_la_opcion_de_girar_libre(cliente, tmp_path, enviado, esperado):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={
+        "motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20, **enviado,
+    })
+
+    assert respuesta.status_code == 202
+    resultado = _esperar_estado(cliente, respuesta.json()["id"], timeout=20)
+    assert resultado["estado"] == "lista", resultado.get("error")
+    assert resultado["opciones"].get("giro_libre") is esperado

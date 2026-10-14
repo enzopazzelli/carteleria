@@ -24,6 +24,9 @@ class AnidarCrear(BaseModel):
     #: para comparar contra el reparto de antes o para que ese tiempo se
     #: use en probar otras semillas.
     vaciar_chapas: bool = True
+    #: Sparrow gira las piezas a cualquier ángulo, no solo de a cuartos de
+    #: vuelta. Marcada por defecto (Enzo, 2026-10-14); con veta no se aplica.
+    giro_libre: bool = True
     #: Segunda pasada opcional (`anidado_huecos.py`, Capa 2 de
     #: `docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`): reubica piezas ya
     #: anidadas adentro de agujeros reales de otras piezas. Apagada por

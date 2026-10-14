@@ -16,7 +16,9 @@ def formas(data):
         shell=Polygon(p['shell']);tol=opts['simplificacion_mm']
         candidate=shell.buffer(tol).simplify(tol,preserve_topology=True) if tol else shell
         fits=False
-        for a in data['rotations']:
+        # Con giro libre (`None`) se prueba con cuartos de vuelta, como al
+        # decidir si la pieza entra en la chapa.
+        for a in data['rotations'] or [0,90,180,270]:
             b=affinity.rotate(candidate,a,origin=(0,0)).bounds
             fits |= b[2]-b[0]<=width+1e-8 and b[3]-b[1]<=height+1e-8
         shape=candidate if candidate.geom_type=='Polygon' and candidate.covers(shell) and fits else shell
