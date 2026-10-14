@@ -1706,3 +1706,21 @@ Lo que se hizo distinto de lo escrito arriba, el 2026-10-14.
 - **Tarea 10, Step 2: el recorrido encontró dos avisos que confundían al retomar.** Después de recargar, el formulario de la comparación vuelve a sus valores de fábrica, y con la comparación corriendo aparecían «Seleccioná al menos dos formatos» y «puede demorar hasta 0 segundos». Se ocultan (commit aparte, sin prueba de componente: el frontend no tiene) y se comprobó de nuevo en Chrome sin ventana.
 - **Tarea 10, Step 2: la primera vuelta del recorrido usó 30 s por formato** y la comparación terminó en «Sparrow excedió el tiempo máximo»: con «Complejo» la primera pasada tarda unos 30 s. No es de este cambio (la comparación de siempre hace lo mismo cuando un formato no llega a ningún resultado); quedó en los pendientes del reparto por chapa, y el recorrido se repitió con 60 s por formato.
 - **El recorrido** (`backend/local/herramientas-progreso-2026-10-14/recorrido.mjs`, fuera de git, con sus capturas) corrió sobre una copia de la base de Enzo, con la migración `7f91bcd3ef15` aplicada en la copia. El anidado de «Complejo» dio 8 chapas en 60 s; la comparación de las chapas negras cal. 22 y cal. 20 de 1220 × 2440, 8 en las dos.
+
+**Lo que cambió con la revisión de la rama.** Un revisor independiente leyó la rama entera: «con arreglos», nada crítico, y la ruta de siempre de la comparación responde igual. Lo importante estaba en la pantalla de Grupos, y se arregló con sus pruebas primero (las decisiones pasaron a `routes/TrabajoWorkspace/comparacionEnCurso.ts`, que sí se puede probar):
+
+- **Volver a abrir «Comparar formatos» retomaba una comparación vieja:** la pantalla tomaba la primera respuesta guardada sin esperar la nueva. Ahora vuelve a pedir la última al abrir el panel y espera la respuesta fresca; y al arrancar una comparación queda guardada enseguida como la última y como corriendo.
+- **Si el servidor se reiniciaba con una comparación en curso, la pantalla quedaba trabada** hasta recargar. Ahora, cuando el servidor contesta que ya no la conoce, se suelta, se avisa («se reinició el servidor») y vuelve «Comparar»; y no se muestra una comparación de otro grupo. **El primer arreglo tenía una falla que mostró el recorrido:** dejaba de preguntar ante cualquier falla, y con el servidor caído (falla por corte, no por «no existe») nunca se enteraba. Se corrigió: ante un corte se sigue preguntando.
+- **El caso «justo cuando termina» del Review Focus no quedaba clavado:** dos pruebas nuevas reemplazan `olvidar` por una que no hace nada; rompiendo a propósito el chequeo de estado, fallan. Y el reemplazo de Sparrow de las pruebas corta su búsqueda al terminar la prueba.
+- **La nota de `D-12`** que pedía el §8 del diseño, en `REGISTRO.md`.
+- Los dos casos se comprobaron en Chrome sin ventana sobre una copia de la base: comparar dos veces, ir y volver (se ve la segunda), y reiniciar el servidor a mitad de una comparación (aviso, sin barra, «Comparar» habilitado).
+
+Con esto, backend 677 pruebas y frontend 156.
+
+**Lo que quedó anotado y no se hizo:**
+
+- La barra nunca muestra el «100 % al terminar» del diseño: desaparece al terminar y en su lugar aparece el resultado (el plan ya lo decía así). La propiedad `terminado` de `BarraDeProgreso` queda sin uso.
+- Cancelar justo cuando la comparación termina puede dejar un estado inconsistente: las transiciones no van dentro del candado. La ventana es de microsegundos.
+- En Windows, si el supervisor lee el archivo de progreso justo cuando el worker lo reemplaza, esa actualización se pierde (el error se ataja); el «mejor: N chapas» puede quedar viejo hasta la próxima.
+- En la comparación, el tiempo puede pasarse del máximo («16:04 de 16:00»): suma lo que tarda cada formato fuera de la búsqueda.
+- La ruta de siempre de la comparación lee el archivo de progreso dos veces por segundo sin que nadie lo use.
