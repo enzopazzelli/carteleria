@@ -70,7 +70,14 @@ Qué queda abierto y cuál es el próximo paso.
 - **El seccionado:** «Volver a seccionar» abre con el corte guardado si la chapa es la misma. Un ángulo o un corrimiento infinito o que no es un número da 422 y no 500, y una pieza descartada a mano no se secciona. No se secciona ni se deshace mientras corre un anidado del grupo, ni se vuelve a cargar el dibujo mientras corre uno del trabajo (el mismo riesgo, que la revisión del seccionado había anotado).
 - **El anidado con Sparrow:** si falla la etapa de vaciar chapas, el motivo llega a los avisos del resultado. Si falla una pasada posterior o el worker termina con error, vale el último anidado que dejó escrito, en lugar de descartarlo. El worker da por mejor un resultado recién cuando quedó escrito. Y el filtro por área ya no saltea, por redondeo, piezas que llenan la chapa justa.
 - Las filas resueltas salieron de las tablas de pendientes del plan maestro §7, con una nota debajo de cada tabla.
-- **Un revisor aparte leyó la rama: «con arreglos», nada crítico.** Lo importante: el archivo de avisos del worker se escribía sin protección y se leía sin cuidado, y uno a medias hacía perder el anidado válido. Arreglado, más los menores: un ángulo o un corrimiento finito pero desmedido daba 500 o aplicaba tramos que no cubrían la pieza (ahora 422, y el panel avisa antes); una pasada posterior que no valida ya no tira el worker; el aviso de un worker que terminó con error dice la causa; los avisos no se repiten; la consulta del anidado en curso quedó en un solo lugar, con dos pruebas más. Lo que dejó afuera pasó a la tabla del reparto por chapa: otras rutas que cambian piezas con un anidado en curso, y la carpeta temporal de Sparrow en C:.
+- **Un revisor aparte leyó la rama: «con arreglos», nada crítico.** Lo importante: el archivo de avisos del worker se escribía sin protección y se leía sin cuidado, y uno a medias hacía perder el anidado válido. Arreglado, más los menores: un ángulo o un corrimiento finito pero desmedido daba 500 o aplicaba tramos que no cubrían la pieza (ahora 422, y el panel avisa antes); una pasada posterior que no valida ya no tira el worker; el aviso de un worker que terminó con error dice la causa; los avisos no se repiten; la consulta del anidado en curso quedó en un solo lugar, con dos pruebas más. Lo que dejó afuera pasó a la tabla del reparto por chapa: otras rutas que cambian piezas con un anidado en curso, y la carpeta temporal de Sparrow en C:. En `main` desde el 2026-10-14 ([PR #21](https://github.com/enzopazzelli/carteleria/pull/21), lo fusioné a pedido de Enzo).
+
+**Girar a cualquier ángulo** (rama `feat/giro-libre`):
+
+- **Sparrow gira las piezas a cualquier ángulo** cuando está marcada la casilla «Girar a cualquier ángulo», en Anidado y en la comparación de chapas. Se le pasa `allowed_orientations=None` en lugar de los cuartos de vuelta, y la validación final acepta cualquier ángulo y lo deja entre 0° y 360°. Queda guardada en las opciones de cada anidado.
+- **Con veta no se aplica:** el material solo gira media vuelta. En Anidado la casilla se apaga y dice por qué.
+- **Si una pieza entra en la chapa se sigue decidiendo con cuartos de vuelta:** una que solo entra en diagonal se manda a seccionar.
+- Una prueba nueva confirma que el DXF de corte sale girado a 37°: el exportador ya lo resolvía por los ajustes a mano.
 
 **Limpieza:**
 
@@ -81,7 +88,7 @@ Qué queda abierto y cuál es el próximo paso.
 ### Qué se decidió
 
 - **El orden de lo que sigue** (Enzo): arreglos chicos, girar piezas a cualquier ángulo en el anidado automático, barra de progreso al anidar y al comparar chapas, lista de materiales en columnas con filtros y chapa de medida libre (retazo), pantalla para retocar el presupuesto, y el recorrido de la etapa 1 con Docker al final. La prueba del PDF en el navegador la hace Enzo al terminar.
-- **Girar a cualquier ángulo no depende de Vale:** `spyrrow` acepta piezas que giran libre (`allowed_orientations=None`). Con veta no se libera.
+- **Girar a cualquier ángulo no depende de Vale:** `spyrrow` acepta piezas que giran libre (`allowed_orientations=None`). Con veta no se libera. **Va con una casilla en cada anidado, marcada por defecto** (Enzo; yo había recomendado desmarcada hasta medirlo).
 
 ### Cambios en el registro
 
