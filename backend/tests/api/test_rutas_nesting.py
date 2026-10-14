@@ -526,9 +526,9 @@ def test_comparar_formatos_sparrow_real_sin_modificar_grupo(cliente, tmp_path, m
     llamadas = []
     original = rutas_nesting.anidar_sparrow
 
-    def registrar(piezas, geometrias, plancha, params, opciones):
+    def registrar(piezas, geometrias, plancha, params, opciones, **kw):
         llamadas.append((geometrias, opciones))
-        return original(piezas, geometrias, plancha, params, opciones)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
@@ -564,9 +564,9 @@ def test_comparar_sparrow_un_formato_donde_no_entran_piezas_no_frena_a_los_demas
     planchas_buscadas = []
     original = rutas_nesting.anidar_sparrow
 
-    def registrar(piezas, geometrias, plancha, params, opciones):
+    def registrar(piezas, geometrias, plancha, params, opciones, **kw):
         planchas_buscadas.append(plancha)
-        return original(piezas, geometrias, plancha, params, opciones)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
@@ -753,9 +753,9 @@ def test_comparar_formatos_sparrow_pasa_la_opcion_de_vaciar_chapas(cliente, tmp_
     recibidas = []
     original = rutas_nesting.anidar_sparrow
 
-    def registrar(piezas, geometrias, plancha, params, opciones):
+    def registrar(piezas, geometrias, plancha, params, opciones, **kw):
         recibidas.append(opciones)
-        return original(piezas, geometrias, plancha, params, opciones)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={
@@ -789,9 +789,9 @@ def test_comparar_formatos_sparrow_pasa_la_opcion_de_girar_libre(cliente, tmp_pa
     recibidas = []
     original = rutas_nesting.anidar_sparrow
 
-    def registrar(piezas, geometrias, plancha, params, opciones):
+    def registrar(piezas, geometrias, plancha, params, opciones, **kw):
         recibidas.append(opciones)
-        return original(piezas, geometrias, plancha, params, opciones)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={

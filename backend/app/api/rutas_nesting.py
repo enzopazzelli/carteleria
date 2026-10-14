@@ -16,6 +16,8 @@ no una concesión al modo local.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
+from dataclasses import dataclass
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -498,16 +500,37 @@ def obtener_costeo(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -
     return ResumenMaterialesLeer.model_validate(resumen_materiales(sesion, trabajo_id))
 
 
-@router.post("/grupos/{grupo_id}/comparar-formatos", response_model=list[OpcionFormatoLeer])
-def comparar_formatos_de_grupo(
-    grupo_id: int, datos: ComparacionFormatosCrear, sesion: Session = Depends(obtener_sesion)
-) -> list[OpcionFormatoLeer]:
-    """Compara las piezas de un grupo contra varios formatos candidatos
-    SIN persistir nada — ni tocar `grupo.formato_id` ni crear una
-    `EjecucionNesting`. Es el paso previo a elegir un material cuando
-    se quiere ofrecer una variante más económica o en otro material
-    (`docs/historico/frontend-cotizador/diseno.md §5.2`).
-    """
+@dataclass
+class _ComparacionPreparada:
+    """Lo que hace falta para correr una comparación sin la sesión de la
+    base: así puede correr en la cola (A7), además de dentro del pedido."""
+
+    motor: str
+    criterio: str
+    piezas: list[PiezaDominio]
+    geometrias: dict[str, GeometriaPieza]
+    opciones_sparrow: OpcionesSparrow | None
+    #: Uno por formato pedido, en el orden en que se pidieron: los datos
+    #: de su fila de la tabla, la opción a anidar, y las piezas que no
+    #: entran (a seccionar; vacía si entran todas).
+    comunes: list[dict]
+    opciones: list[OpcionFormato]
+    a_seccionar: list[list[PiezaASeccionarLeer]]
+
+
+def _error_de_comparacion(error: ValueError) -> HTTPException:
+    """El 400 de siempre: con las piezas que Sparrow no puede leer, si es eso."""
+    if isinstance(error, ErrorGeometriaSparrow):
+        return HTTPException(status.HTTP_400_BAD_REQUEST, {
+            "mensaje": str(error),
+            "piezas_invalidas": [int(i) for i in error.piezas_invalidas],
+        })
+    return HTTPException(status.HTTP_400_BAD_REQUEST, str(error))
+
+
+def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionFormatosCrear) -> _ComparacionPreparada:
+    """Todo lo que se valida antes de buscar, con la sesión de la base. Lo
+    que falla acá es un 400 o un 404, sin haber arrancado nada."""
     grupo = _grupo_o_404(sesion, grupo_id)
     piezas = [p for p in grupo.piezas if not p.descartada]
     if not piezas:
@@ -575,48 +598,97 @@ def comparar_formatos_de_grupo(
         no_entran = [piezas_que_no_entran(piezas_dominio, geometrias, o.plancha, o.params) for o in opciones]
     else:
         no_entran = [MotorNestingRectangular(o.plancha, o.params).piezas_que_no_entran(piezas_dominio) for o in opciones]
-    a_anidar = [opcion for opcion, ids in zip(opciones, no_entran) if not ids]
 
-    try:
-        if datos.motor == "sparrow":
-            from ..services.nesting.comparador import ResultadoComparacionFormato
-            opciones_sparrow = OpcionesSparrow(**datos.model_dump(exclude={"motor", "formato_ids", "usar_anidado_en_huecos", "criterio"}))
-            # Validar todos antes de iniciar búsquedas costosas.
-            for opcion in a_anidar:
-                preparar_entrada(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
-            resultados = []
-            for opcion in a_anidar:
-                resultado = anidar_sparrow(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
-                resultados.append(ResultadoComparacionFormato(
-                    opcion, resultado, calcular_aprovechamiento(resultado, opcion.plancha, geometrias),
-                    resultado.planchas_usadas * opcion.precio_por_plancha,
-                ))
-        else:
-            resultados = comparar_formatos(
-                piezas_dominio, a_anidar, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
-            )
-    except ErrorGeometriaSparrow as error:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, {
-            "mensaje": str(error),
-            "piezas_invalidas": [int(i) for i in error.piezas_invalidas],
-        }) from error
-    except ValueError as error:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
-    recomendado = formato_recomendado(resultados, datos.criterio) if resultados else None
+    opciones_sparrow = None
+    if datos.motor == "sparrow":
+        opciones_sparrow = OpcionesSparrow(**datos.model_dump(exclude={"motor", "formato_ids", "usar_anidado_en_huecos", "criterio"}))
+        # Validar todos antes de iniciar búsquedas costosas.
+        try:
+            for opcion, ids in zip(opciones, no_entran):
+                if not ids:
+                    preparar_entrada(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
+        except ValueError as error:
+            raise _error_de_comparacion(error) from error
 
     por_id = {str(p.id): p for p in piezas}
+    return _ComparacionPreparada(
+        motor=datos.motor,
+        criterio=datos.criterio,
+        piezas=piezas_dominio,
+        geometrias=geometrias,
+        opciones_sparrow=opciones_sparrow,
+        comunes=[
+            dict(
+                motor=datos.motor,
+                formato_id=formato.id,
+                formato_descripcion=f"{formato.ancho_mm}×{formato.alto_mm} mm",
+                material_nombre=formato.material.nombre,
+                moneda=formato.moneda,
+                precio_simulado=formato.precio_simulado,
+            )
+            for formato in formatos
+        ],
+        opciones=opciones,
+        a_seccionar=[
+            [
+                PiezaASeccionarLeer(
+                    id=por_id[i].id, id_origen=por_id[i].id_origen,
+                    ancho_mm=por_id[i].ancho_mm, alto_mm=por_id[i].alto_mm,
+                )
+                for i in ids
+            ]
+            for ids in no_entran
+        ],
+    )
+
+
+def _correr_comparacion(
+    preparada: _ComparacionPreparada,
+    al_avanzar: Callable[[dict], None] | None = None,
+    cancelada: Callable[[], bool] = lambda: False,
+) -> list[OpcionFormatoLeer]:
+    """Anida cada formato y arma la tabla. No usa la base: corre igual en
+    el pedido y en la cola (A7)."""
+    a_anidar = [
+        (opcion, comunes)
+        for opcion, comunes, a_seccionar in zip(preparada.opciones, preparada.comunes, preparada.a_seccionar)
+        if not a_seccionar
+    ]
+    if preparada.motor == "sparrow":
+        from ..services.nesting.comparador import ResultadoComparacionFormato
+        inicio = time.monotonic()
+        maximo = len(a_anidar) * preparada.opciones_sparrow.tiempo_maximo_s
+        resultados = []
+        for numero, (opcion, comunes) in enumerate(a_anidar, start=1):
+            if cancelada():
+                raise ValueError("Comparación cancelada.")
+
+            def avanzar(avance: dict, numero: int = numero, descripcion: str = comunes["formato_descripcion"]) -> None:
+                if al_avanzar is not None:
+                    al_avanzar({
+                        **avance,
+                        "segundos": round(time.monotonic() - inicio, 1), "maximo": maximo,
+                        "formato": numero, "formatos": len(a_anidar), "descripcion": descripcion,
+                    })
+
+            resultado = anidar_sparrow(
+                preparada.piezas, preparada.geometrias, opcion.plancha, opcion.params, preparada.opciones_sparrow,
+                cancelada=cancelada, al_avanzar=avanzar,
+            )
+            resultados.append(ResultadoComparacionFormato(
+                opcion, resultado, calcular_aprovechamiento(resultado, opcion.plancha, preparada.geometrias),
+                resultado.planchas_usadas * opcion.precio_por_plancha,
+            ))
+    else:
+        resultados = comparar_formatos(
+            preparada.piezas, [opcion for opcion, _ in a_anidar], tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
+        )
+    recomendado = formato_recomendado(resultados, preparada.criterio) if resultados else None
+
     resultados_en_orden = iter(resultados)
     filas = []
-    for formato, ids in zip(formatos, no_entran):
-        comunes = dict(
-            motor=datos.motor,
-            formato_id=formato.id,
-            formato_descripcion=f"{formato.ancho_mm}×{formato.alto_mm} mm",
-            material_nombre=formato.material.nombre,
-            moneda=formato.moneda,
-            precio_simulado=formato.precio_simulado,
-        )
-        if ids:
+    for comunes, a_seccionar in zip(preparada.comunes, preparada.a_seccionar):
+        if a_seccionar:
             filas.append(OpcionFormatoLeer(
                 **comunes,
                 area_total_m2=None,
@@ -624,13 +696,7 @@ def comparar_formatos_de_grupo(
                 aprovechamiento_pct=None,
                 costo_total=None,
                 recomendado=False,
-                piezas_a_seccionar=[
-                    PiezaASeccionarLeer(
-                        id=por_id[i].id, id_origen=por_id[i].id_origen,
-                        ancho_mm=por_id[i].ancho_mm, alto_mm=por_id[i].alto_mm,
-                    )
-                    for i in ids
-                ],
+                piezas_a_seccionar=a_seccionar,
             ))
             continue
         resultado = next(resultados_en_orden)
@@ -644,3 +710,24 @@ def comparar_formatos_de_grupo(
             recomendado=resultado is recomendado,
         ))
     return filas
+
+
+@router.post("/grupos/{grupo_id}/comparar-formatos", response_model=list[OpcionFormatoLeer])
+def comparar_formatos_de_grupo(
+    grupo_id: int, datos: ComparacionFormatosCrear, sesion: Session = Depends(obtener_sesion)
+) -> list[OpcionFormatoLeer]:
+    """Compara las piezas de un grupo contra varios formatos candidatos
+    SIN persistir nada — ni tocar `grupo.formato_id` ni crear una
+    `EjecucionNesting`. Es el paso previo a elegir un material cuando
+    se quiere ofrecer una variante más económica o en otro material
+    (`docs/historico/frontend-cotizador/diseno.md §5.2`).
+
+    Espera hasta el final dentro del pedido. La pantalla usa la
+    comparación en segundo plano (`rutas_comparaciones.py`, A7), que hace
+    lo mismo con progreso y cancelación.
+    """
+    preparada = _preparar_comparacion(sesion, grupo_id, datos)
+    try:
+        return _correr_comparacion(preparada)
+    except ValueError as error:
+        raise _error_de_comparacion(error) from error
