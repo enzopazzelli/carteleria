@@ -602,7 +602,10 @@ def test_cargar_sin_unir_deja_las_formas_como_vienen_y_avisa(cliente, tmp_path):
     cuerpo = _subir(cliente, trabajo["id"], contenido).json()
 
     assert cuerpo["piezas_creadas"] == 4
-    assert any("4 formas que se pisan" in aviso for aviso in cuerpo["advertencias"])
+    aviso = next(aviso for aviso in cuerpo["advertencias"] if "4 formas que se pisan" in aviso)
+    # Después de cargar el panel ya no está: el aviso dice dónde volver a
+    # encontrar la casilla.
+    assert "en «Ver cómo se lee», antes de cargar" in aviso
     assert not [p for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json() if "/unida" in p["id_origen"]]
 
 

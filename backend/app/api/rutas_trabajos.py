@@ -353,8 +353,10 @@ def _leer(
         formatos,
         [
             *avisos,
+            # El mismo texto sirve en el panel y después de cargar, cuando
+            # el panel ya se cerró: dice dónde está la casilla.
             f"Hay {se_pisan} formas que se pisan entre sí, sin unir. Si son franjas de una misma pieza, "
-            "se unen con la casilla «Unir las formas que se pisan», al ver cómo se lee.",
+            "se unen marcando «Unir las formas que se pisan» en «Ver cómo se lee», antes de cargar.",
         ],
         correcciones,
     )
