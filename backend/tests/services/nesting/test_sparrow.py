@@ -325,6 +325,33 @@ def test_si_el_worker_termina_con_error_vale_lo_que_dejo_escrito(monkeypatch,tmp
     assert 'ValueError: causa de prueba' in aviso
 
 
+def worker_que_falla(tmp_path,escribir_error):
+    """Un worker que no deja ningún anidado: escribe su error con
+    `escribir_error` (código Python) y termina con 1."""
+    guion=tmp_path/'worker_que_falla.py'
+    guion.write_text('import sys\n'+escribir_error+'\nsys.exit(1)\n',encoding='utf8')
+    return guion
+
+
+def test_un_error_del_worker_con_acentos_llega_entero(monkeypatch,tmp_path):
+    """En Windows el worker escribía su error en cp1252 y se leía en UTF-8:
+    la «í» de la carpeta `cartelería` en el traceback tapaba la causa con
+    «'utf-8' codec can't decode byte 0xed»."""
+    con_worker(monkeypatch,worker_que_falla(tmp_path,"print('ValueError: ninguna pieza entró en la chapa',file=sys.stderr)"))
+
+    with pytest.raises(ValueError,match='ninguna pieza entró en la chapa'):
+        anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20))
+
+
+def test_un_registro_del_worker_que_no_es_utf8_no_tapa_el_error(monkeypatch,tmp_path):
+    """Una biblioteca nativa puede escribir directo en la salida de errores,
+    sin pasar por Python: un byte que no es UTF-8 no puede tapar la causa."""
+    con_worker(monkeypatch,worker_que_falla(tmp_path,r"sys.stderr.buffer.write(b'causa de prueba \xed\n')"))
+
+    with pytest.raises(ValueError,match='causa de prueba'):
+        anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20))
+
+
 def dos_piezas_una_girada(angulo):
     return [{'id':'1#0','sheet':0,'rotation':angulo,'tx':10,'ty':1},{'id':'1#1','sheet':0,'rotation':0,'tx':60,'ty':60}]
 

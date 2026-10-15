@@ -1,6 +1,6 @@
 """Motor Sparrow experimental con proceso aislado y validación original."""
 from __future__ import annotations
-import json, math, subprocess, sys, tempfile, time
+import json, math, os, subprocess, sys, tempfile, time
 from pathlib import Path
 from decimal import Decimal
 from dataclasses import dataclass
@@ -192,8 +192,12 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
     with tempfile.TemporaryDirectory(prefix='carteleria-sparrow-') as d:
         inp,out=Path(d)/'entrada.json',Path(d)/'salida.json'
         inp.write_text(json.dumps(entrada),encoding='utf8')
-        with (Path(d)/'worker.log').open('w+',encoding='utf8') as log:
-            proc=subprocess.Popen([sys.executable,'-m','app.services.nesting.sparrow_worker',str(inp),str(out)],stdout=log,stderr=log)
+        # En Windows el worker escribiría su error en cp1252, y la «í» de
+        # `cartelería` en el traceback rompía la lectura y tapaba la causa.
+        # `replace`: lo que escriba una biblioteca nativa sin pasar por
+        # Python tampoco puede taparla.
+        with (Path(d)/'worker.log').open('w+',encoding='utf8',errors='replace') as log:
+            proc=subprocess.Popen([sys.executable,'-m','app.services.nesting.sparrow_worker',str(inp),str(out)],stdout=log,stderr=log,env={**os.environ,'PYTHONIOENCODING':'utf-8'})
             start=time.monotonic()
             # Lo último que se leyó bien del progreso: si el archivo está a
             # medias, queda esto y el tiempo se informa igual.
