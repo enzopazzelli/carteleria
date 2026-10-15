@@ -1,6 +1,6 @@
 # A9 · Mensajes entendibles — diseño
 
-> **Estado:** diseño escrito el 2026-10-15, para la revisión de Enzo. Todavía sin plan.
+> **Estado:** diseño aprobado por Enzo el 2026-10-15, con su plan ([`plan.md`](plan.md)), también aprobado. La implementación quedó para más adelante.
 >
 > **De dónde sale.** Pedido de Enzo del 2026-10-15: «me dio un error que mencionaba algo como utc8 y en ese sentido quiero ver las causas pero también poder generar mensajes más entendibles para los usuarios». La causa de ese error ya está arreglada en la rama `fix/error-utf8-sparrow` (§2). Va antes de la página de inicio con materiales y presupuestos y de la vista de todas las chapas, en el orden que eligió Enzo ese día.
 >

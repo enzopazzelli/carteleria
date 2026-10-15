@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** escrito el 2026-10-15, para la revisión de Enzo. No se ensayó sobre una copia: los bloques salen de leer el código de `feat/mensajes-entendibles` en `0457cac` (que incluye el arreglo del «utf-8», `aef764f`, [PR #25](https://github.com/enzopazzelli/carteleria/pull/25)). Lo que se aparte va al final, en «Desvíos».
+> **Estado:** escrito y aprobado por Enzo el 2026-10-15, con ejecución nativa y una pausa por tramo. **La implementación quedó para más adelante, a pedido de Enzo:** ninguna tarea empezada. No se ensayó sobre una copia: los bloques salen de leer el código de `feat/mensajes-entendibles` en `0457cac` (que incluye el arreglo del «utf-8», `aef764f`, [PR #25](https://github.com/enzopazzelli/carteleria/pull/25)). Lo que se aparte va al final, en «Desvíos».
 
 **Goal:** Que todo error y aviso que ve una persona diga qué pasó y qué hacer, en palabras del taller, con la miniatura de las piezas y chapas que nombra y el detalle técnico aparte, en un desplegable y en un registro del servidor.
 
