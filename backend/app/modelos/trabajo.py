@@ -193,6 +193,9 @@ class EjecucionNesting(Base):
     #: Advertencias y errores, para que no se pierdan al recargar.
     mensajes: Mapped[list | None] = mapped_column(JSON, default=None)
     error: Mapped[str | None] = mapped_column(Text, default=None)
+    #: Lo que no entra en `error` (A9): `detalle`, `piezas`, `chapas` y, si
+    #: hay, `piezas_invalidas`. `error` sigue siendo el mensaje.
+    error_datos: Mapped[dict | None] = mapped_column(JSON, default=None)
     #: Un grupo puede tener varias ejecuciones (probar rectpack y
     #: deepnest, o recalcular con otros parámetros). El costeo necesita
     #: saber CUÁL usar — esta marca lo dice, en vez de asumir "la última"
@@ -203,6 +206,14 @@ class EjecucionNesting(Base):
     colocaciones: Mapped[list[Colocacion]] = relationship(
         back_populates="ejecucion", cascade="all, delete-orphan"
     )
+
+    @property
+    def error_completo(self) -> dict | None:
+        """El error como lo publica la API (`ErrorLeer`). Una corrida de
+        antes de A9 tiene solo el mensaje."""
+        if self.error is None:
+            return None
+        return {**(self.error_datos or {}), "mensaje": self.error}
 
 
 class Colocacion(Base):

@@ -1,4 +1,5 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "./client";
+import type { Aviso, ErrorDelServidor } from "./mensajes";
 
 /** Cómo va un anidado o una comparación en curso (A7). Lo que el motor
  * todavía no informó viene en `null`. */
@@ -24,8 +25,8 @@ export interface Ejecucion {
   planchas_usadas: number | null;
   aprovechamiento_pct: string | null;
   milisegundos: number | null;
-  mensajes: string[] | null;
-  error: string | null;
+  mensajes: Aviso[] | null;
+  error: ErrorDelServidor | null;
   es_definitiva: boolean;
   creado_en: string;
   /** Solo mientras corre (A7). */

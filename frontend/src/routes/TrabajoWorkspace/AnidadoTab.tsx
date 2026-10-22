@@ -317,7 +317,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
             try { await cancelarEjecucion(enCurso.id); await queryClient.invalidateQueries({ queryKey: ["ejecucion", enCurso.id] }); }
             catch (e) { setError(e instanceof ApiError ? e.message : "No se pudo cancelar."); }
           }}>Cancelar</button>}
-          {enCurso.error && <span className="ml-2 text-conflict">{enCurso.error}</span>}
+          {enCurso.error && <span className="ml-2 text-conflict">{enCurso.error.mensaje}</span>}
         </p>
       )}
       {enCurso && !ESTADOS_TERMINALES.has(enCurso.estado) && <BarraDeProgreso progreso={enCurso.progreso} />}

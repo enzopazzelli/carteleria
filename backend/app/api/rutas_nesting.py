@@ -27,9 +27,11 @@ from sqlalchemy.orm import Session
 from .. import progreso
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
+from ..mensajes import error_para_guardar
 from ..modelos.base import Sesion
 from ..modelos.catalogo import Formato, Material
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
+from ..registro import registro
 from ..services.nesting.anidado_huecos import anidar_en_huecos
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.comparador import OpcionFormato, comparar_formatos, formato_recomendado
@@ -45,6 +47,7 @@ from ..services.nesting.models import (
 from ..services.nesting.models import Pieza as PiezaDominio
 from ..services.nesting.validacion_manual import GeometriaPieza
 from .dependencias import obtener_sesion
+from .esquemas_mensajes import avisos_leer
 from .esquemas_nesting import (
     AnidarCrear,
     ColocacionLeer,
@@ -304,8 +307,11 @@ def _correr_anidado(ejecucion_id: int) -> None:
             sesion.refresh(ejecucion)
             if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
                 return  # se canceló mientras corría: no pisar esa decisión con un error
+            falla = error_para_guardar(error)
+            registro().warning("El anidado #%s terminó en error: %s\n%s", ejecucion_id, falla.mensaje, falla.detalle or "")
             ejecucion.estado = EstadoEjecucion.ERROR.value
-            ejecucion.error = str(error)
+            ejecucion.error = falla.mensaje
+            ejecucion.error_datos = {k: v for k, v in falla.como_dict().items() if k != "mensaje"}
             sesion.commit()
             return
         milisegundos = int((time.monotonic() - inicio) * 1000)
@@ -337,7 +343,7 @@ def _correr_anidado(ejecucion_id: int) -> None:
         ejecucion.planchas_usadas = resultado.planchas_usadas
         ejecucion.aprovechamiento_pct = aprovechamiento.porcentaje_aprovechamiento
         ejecucion.milisegundos = milisegundos
-        ejecucion.mensajes = resultado.advertencias
+        ejecucion.mensajes = avisos_leer(resultado.advertencias)
         if not (ejecucion.parametros or {}).get("formato"):
             ejecucion.parametros = _parametros_snapshot(params)
         ejecucion.estado = EstadoEjecucion.LISTA.value

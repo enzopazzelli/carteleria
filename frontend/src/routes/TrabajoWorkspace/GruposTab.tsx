@@ -78,7 +78,7 @@ export default function GruposTab() {
   // Cuando termina, la tabla o el error pasan a la pantalla como antes.
   useEffect(() => {
     if (comparacion?.estado === "lista") setResultado(comparacion.opciones);
-    if (comparacion?.estado === "error") setError(comparacion.error ?? "No se pudo comparar.");
+    if (comparacion?.estado === "error") setError(comparacion.error?.mensaje ?? "No se pudo comparar.");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comparacion?.id, comparacion?.estado]);
 
@@ -386,7 +386,7 @@ export default function GruposTab() {
 
               {resultado && (
                 <div>
-                {Array.from(new Set(resultado.flatMap((opcion) => opcion.advertencias ?? []))).map((aviso) => <p key={aviso} className="text-sm mb-2">{aviso}</p>)}
+                {Array.from(new Set(resultado.flatMap((opcion) => (opcion.advertencias ?? []).map((aviso) => aviso.mensaje)))).map((aviso) => <p key={aviso} className="text-sm mb-2">{aviso}</p>)}
                 <table className="w-full text-sm mt-2">
                   <thead>
                     <tr className="text-left border-b border-line">

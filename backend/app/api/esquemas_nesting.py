@@ -7,7 +7,9 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+
+from .esquemas_mensajes import AvisoLeer, ErrorLeer, avisos_leer
 
 
 class AnidarCrear(BaseModel):
@@ -66,14 +68,26 @@ class EjecucionLeer(BaseModel):
     aprovechamiento_pct: Decimal | None
     largo_corte_compartido_mm: Decimal | None
     milisegundos: int | None
-    mensajes: list | None
-    error: str | None
+    mensajes: list[AvisoLeer] | None
+    #: La corrida guarda el mensaje en `error` y el resto en `error_datos`;
+    #: `error_completo` los junta (A9).
+    error: ErrorLeer | None = Field(default=None, validation_alias=AliasChoices("error_completo", "error"))
     es_definitiva: bool
     creado_en: datetime
     actualizado_en: datetime
     #: Mientras corre (A7): lo que anotó la corrida en la memoria del
     #: servidor. No sale de la base: `obtener_ejecucion` lo agrega.
     progreso: ProgresoLeer | None = None
+
+    @field_validator("mensajes", mode="before")
+    @classmethod
+    def _avisos_de_antes_y_de_ahora(cls, valor):
+        return None if valor is None else avisos_leer(valor)
+
+    @field_validator("error", mode="before")
+    @classmethod
+    def _error_de_texto(cls, valor):
+        return {"mensaje": valor} if isinstance(valor, str) else valor
 
 
 class ColocacionLeer(BaseModel):
@@ -159,7 +173,7 @@ class PiezaASeccionarLeer(BaseModel):
 
 class OpcionFormatoLeer(BaseModel):
     motor: str = "rectpack"
-    advertencias: list[str] = Field(default_factory=list)
+    advertencias: list[AvisoLeer] = Field(default_factory=list)
     #: Vacíos (`None`) cuando hay `piezas_a_seccionar`: ese formato no se
     #: anidó, así que no tiene planchas, consumo, aprovechamiento ni costo.
     area_total_m2: Decimal | None = Decimal(0)
@@ -180,6 +194,11 @@ class OpcionFormatoLeer(BaseModel):
     #: Piezas). Hasta que se seccionen, el formato queda sin anidar.
     piezas_a_seccionar: list[PiezaASeccionarLeer] = Field(default_factory=list)
 
+    @field_validator("advertencias", mode="before")
+    @classmethod
+    def _avisos(cls, valor):
+        return avisos_leer(valor)
+
 
 class ComparacionLeer(BaseModel):
     """Una comparación de formatos en segundo plano (A7)."""
@@ -191,4 +210,4 @@ class ComparacionLeer(BaseModel):
     #: La tabla de la comparación, cuando terminó bien: la misma que
     #: devuelve `POST /grupos/{id}/comparar-formatos`.
     opciones: list[OpcionFormatoLeer] | None = None
-    error: str | None = None
+    error: ErrorLeer | None = None

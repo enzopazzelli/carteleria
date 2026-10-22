@@ -18,7 +18,10 @@ from sqlalchemy.orm import Session
 
 from .. import progreso
 from ..cola import cola_de_trabajos
+from ..mensajes import error_para_guardar
+from ..registro import registro
 from .dependencias import obtener_sesion
+from .esquemas_mensajes import ErrorLeer
 from .esquemas_nesting import ComparacionFormatosCrear, ComparacionLeer, OpcionFormatoLeer, ProgresoLeer
 from .rutas_nesting import _ComparacionPreparada, _correr_comparacion, _preparar_comparacion
 from .rutas_trabajos import _grupo_o_404
@@ -32,7 +35,7 @@ class _Comparacion:
     grupo_id: int
     estado: str = "corriendo"
     opciones: list[OpcionFormatoLeer] | None = None
-    error: str | None = None
+    error: ErrorLeer | None = None
     cancelar: threading.Event = field(default_factory=threading.Event)
 
 
@@ -77,7 +80,9 @@ def _correr(comparacion: _Comparacion, preparada: _ComparacionPreparada) -> None
             comparacion.estado = "lista"
     except Exception as error:  # noqa: BLE001 - cualquier falla queda en la comparación, no se pierde
         if not comparacion.cancelar.is_set():
-            comparacion.error = str(error)
+            falla = error_para_guardar(error)
+            registro().warning("La comparación #%s terminó en error: %s\n%s", comparacion.id, falla.mensaje, falla.detalle or "")
+            comparacion.error = ErrorLeer(**falla.como_dict())
             comparacion.estado = "error"
     finally:
         progreso.olvidar(clave)

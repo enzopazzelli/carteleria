@@ -1,4 +1,5 @@
 import { ApiError, apiDelete, apiGet, apiPatch, apiPost, apiPostForm } from "./client";
+import type { Aviso, ErrorDelServidor } from "./mensajes";
 
 export interface Pieza {
   id: number;
@@ -133,7 +134,7 @@ export interface PiezaASeccionar {
 export interface OpcionFormato {
   area_total_m2: string | null;
   motor: "rectpack" | "sparrow";
-  advertencias: string[];
+  advertencias: Aviso[];
   formato_id: number;
   formato_descripcion: string;
   material_nombre: string;
@@ -182,7 +183,7 @@ export interface Comparacion {
   estado: "corriendo" | "lista" | "cancelada" | "error";
   progreso: import("./nesting").Progreso | null;
   opciones: OpcionFormato[] | null;
-  error: string | null;
+  error: ErrorDelServidor | null;
 }
 
 export function iniciarComparacion(

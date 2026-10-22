@@ -883,3 +883,43 @@ def test_una_corrida_terminada_no_trae_progreso_aunque_la_memoria_no_lo_haya_olv
     assert final["estado"] == "lista", final.get("error")
     assert en_memoria is not None, "la prueba necesita que la memoria todavía lo tenga"
     assert final["progreso"] is None
+
+
+def test_un_anidado_que_falla_sin_que_nadie_lo_prevea_guarda_el_mensaje_general_y_la_traza(
+    cliente, tmp_path, monkeypatch, caplog
+):
+    from app.api import rutas_nesting
+    from app.mensajes import MENSAJE_INESPERADO
+
+    def bum(self, piezas, tope_planchas_advertencia):
+        raise RuntimeError("bum")
+
+    monkeypatch.setattr(rutas_nesting.MotorNestingRectangular, "anidar", bum)
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    with caplog.at_level("WARNING", logger="carteleria"):
+        ejecucion_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+        final = _esperar_estado(cliente, ejecucion_id)
+
+    assert final["estado"] == "error"
+    assert final["error"]["mensaje"] == MENSAJE_INESPERADO
+    assert "RuntimeError: bum" in final["error"]["detalle"]
+    assert "RuntimeError: bum" in caplog.text
+
+
+def test_una_corrida_de_antes_de_a9_se_lee_igual(cliente, tmp_path):
+    from sqlalchemy.orm import Session
+
+    from app.modelos.trabajo import EjecucionNesting
+
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    with Session(cliente.motor) as sesion:
+        vieja = EjecucionNesting(grupo_id=grupo["id"], motor="rectpack", estado="error", error="texto viejo", mensajes=["aviso viejo"])
+        sesion.add(vieja)
+        sesion.commit()
+        vieja_id = vieja.id
+
+    leida = cliente.get(f"/ejecuciones/{vieja_id}").json()
+
+    assert leida["error"] == {"mensaje": "texto viejo", "detalle": None, "piezas": [], "chapas": [], "piezas_invalidas": []}
+    assert leida["mensajes"] == [{"mensaje": "aviso viejo", "piezas": [], "chapas": []}]

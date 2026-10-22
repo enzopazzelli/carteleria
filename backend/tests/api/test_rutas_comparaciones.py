@@ -184,7 +184,7 @@ def test_una_falla_a_mitad_de_camino_queda_en_la_comparacion(cliente, tmp_path, 
     final = _esperar_comparacion(cliente, arrancada["id"])
 
     assert final["estado"] == "error"
-    assert "falla de prueba" in final["error"]
+    assert "falla de prueba" in final["error"]["mensaje"]
 
 
 def test_una_comparacion_que_no_existe_da_404(cliente):
