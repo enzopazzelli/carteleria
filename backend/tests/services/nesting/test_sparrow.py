@@ -456,3 +456,65 @@ def test_un_progreso_a_medias_no_frena_el_anidado_ni_la_barra(monkeypatch,tmp_pa
 
     assert resultado.planchas_usadas==2
     assert avances and all(set(a)=={'segundos','maximo'} for a in avances)
+
+
+from app.services.nesting.sparrow import (
+    CalculoInterrumpido,
+    PiezaSinContorno,
+    PiezasQueNoEntran,
+    ResultadoQueNoPasaElControl,
+    SinLugarUtil,
+    TiempoAgotado,
+)
+
+
+def test_una_pieza_que_no_entra_dice_cual_es():
+    piezas, geometrias, _, params = datos()
+
+    with pytest.raises(PiezasQueNoEntran) as error:
+        preparar_entrada(piezas, geometrias, Plancha(D(15), D(15)), params, OpcionesSparrow())
+
+    assert error.value.ids == ["1"]
+
+
+def test_una_pieza_sin_contorno_dice_cual_es():
+    piezas, _, plancha, params = datos()
+
+    with pytest.raises(PiezaSinContorno) as error:
+        preparar_entrada(piezas, {}, plancha, params, OpcionesSparrow())
+
+    assert error.value.pieza_id == "1"
+
+
+def test_una_chapa_sin_lugar_util_tiene_nombre():
+    piezas, geometrias, _, _ = datos()
+    params = ParametrosCorte(D(0), D(10), D(0), RotacionPermitida.LIBRE_0_90)
+
+    with pytest.raises(SinLugarUtil):
+        preparar_entrada(piezas, geometrias, Plancha(D(20), D(20)), params, OpcionesSparrow())
+
+
+def test_sin_tiempo_dice_cuantos_segundos_tenia():
+    with pytest.raises(TiempoAgotado) as error:
+        anidar_sparrow(*datos(), OpcionesSparrow(segundos_por_busqueda=10, tiempo_maximo_s=0.01))
+
+    assert error.value.segundos == 0.01
+
+
+def test_un_resultado_que_no_pasa_el_control_lleva_el_motivo():
+    entrada = preparar_entrada(*datos(), OpcionesSparrow())
+    q = {'id': '1#0', 'sheet': 0, 'rotation': 0, 'tx': 0, 'ty': 0}
+
+    with pytest.raises(ResultadoQueNoPasaElControl) as error:
+        convertir_y_validar(entrada, [q, q])
+
+    assert "duplicadas" in error.value.motivo
+
+
+def test_un_worker_que_se_corta_lleva_su_registro(monkeypatch, tmp_path):
+    con_worker(monkeypatch, worker_que_falla(tmp_path, "print('ValueError: causa de prueba', file=sys.stderr)"))
+
+    with pytest.raises(CalculoInterrumpido) as error:
+        anidar_sparrow(*datos(3), OpcionesSparrow(tiempo_maximo_s=20))
+
+    assert "causa de prueba" in error.value.registro

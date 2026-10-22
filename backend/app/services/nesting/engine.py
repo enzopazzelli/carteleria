@@ -44,6 +44,16 @@ def _a_mm(valor_micrones: int) -> Decimal:
     return Decimal(valor_micrones) / _MICRONES_POR_MM
 
 
+class PiezasSinUbicar(ValueError):
+    """El motor rectangular no ubicó todas las piezas (A9). Fallar acá, en
+    vez de descartarlas en silencio, es la corrección de
+    `DECISIONES-Y-BLOQUEANTES.md §1.2`."""
+
+    def __init__(self, ids):
+        self.ids = sorted(str(i) for i in ids)
+        super().__init__(f"El motor no pudo ubicar todas las piezas (no colocadas: {self.ids}).")
+
+
 class MotorNestingRectangular:
     """Empaqueta piezas rectangulares sobre planchas de un único formato.
 
@@ -140,12 +150,7 @@ class MotorNestingRectangular:
         colocadas = {rect.rid for bin_ in packer for rect in bin_}
         faltantes = {pieza.id for pieza in piezas_expandidas} - colocadas
         if faltantes:
-            raise ValueError(
-                "El motor no pudo ubicar todas las piezas sobre el formato "
-                f"elegido (no colocadas: {sorted(faltantes)}). Fallar acá, "
-                "en vez de descartarlas en silencio, es la corrección de "
-                "DECISIONES-Y-BLOQUEANTES.md §1.2 sobre el bug original."
-            )
+            raise PiezasSinUbicar(faltantes)
 
     def _extraer_posiciones(self, packer, piezas_expandidas: list[Pieza]) -> list[PosicionPieza]:
         por_id = {pieza.id: pieza for pieza in piezas_expandidas}
