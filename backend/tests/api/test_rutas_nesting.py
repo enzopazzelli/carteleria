@@ -433,7 +433,7 @@ def test_anidar_sin_el_flag_no_usa_huecos_y_guarda_la_opcion_en_falso(cliente, t
 
     assert final["estado"] == "lista"
     assert final["opciones"] == {"usar_anidado_en_huecos": False}
-    assert not any("reubicada" in mensaje for mensaje in (final["mensajes"] or []))
+    assert not any("reubicada" in aviso["mensaje"] for aviso in (final["mensajes"] or []))
 
 
 def test_anidar_con_el_flag_reubica_la_pieza_chica_dentro_del_agujero(cliente, tmp_path):
@@ -444,7 +444,7 @@ def test_anidar_con_el_flag_reubica_la_pieza_chica_dentro_del_agujero(cliente, t
 
     assert final["estado"] == "lista"
     assert final["opciones"] == {"usar_anidado_en_huecos": True}
-    assert any("reubicada" in mensaje for mensaje in (final["mensajes"] or []))
+    assert any("reubicada" in aviso["mensaje"] for aviso in (final["mensajes"] or []))
 
     piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
     chica = next(p for p in piezas if Decimal(p["ancho_mm"]) == Decimal("30"))
