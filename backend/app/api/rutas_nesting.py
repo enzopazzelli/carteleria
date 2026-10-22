@@ -213,6 +213,33 @@ def _marcar_error_inesperado(ejecucion_id: int, error: Exception) -> None:
         sesion.commit()
 
 
+#: Lo que dice una corrida que el programa cortó al cerrarse (A10).
+CORTADA_AL_CERRAR = "Se cortó porque el programa se cerró mientras calculaba: volvé a calcularlo."
+
+
+def cortar_corridas_colgadas() -> int:
+    """Al arrancar el servidor (A10): ningún anidado sobrevive a un reinicio
+    (la cola corre adentro del servidor), así que uno «encolado» o
+    «corriendo» ya no sigue. Pasa a error: si no, queda «corriendo» para
+    siempre y bloquea volver a cargar el dibujo de su grupo. Devuelve
+    cuántas cortó."""
+    with Sesion() as sesion:
+        colgadas = sesion.execute(
+            select(EjecucionNesting).where(
+                EjecucionNesting.estado.in_([EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value])
+            )
+        ).scalars().all()
+        for ejecucion in colgadas:
+            ejecucion.estado = EstadoEjecucion.ERROR.value
+            ejecucion.error = CORTADA_AL_CERRAR
+            ejecucion.error_datos = None
+        sesion.commit()
+        ids = [e.id for e in colgadas]
+    if ids:
+        registro().warning("Al arrancar, %s anidado(s) que quedaron a medio calcular pasaron a error: %s", len(ids), ids)
+    return len(ids)
+
+
 def _correr_anidado(ejecucion_id: int) -> None:
     """La corrida en sí (un hilo, hoy). Necesita su PROPIA
     sesión: la del request que encoló ya se cerró para cuando esto

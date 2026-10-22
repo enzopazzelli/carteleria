@@ -996,3 +996,56 @@ def test_si_falla_algo_despues_del_calculo_la_corrida_igual_termina_en_error(cli
     assert final["error"]["mensaje"] == MENSAJE_INESPERADO
     assert "falla al medir" in final["error"]["detalle"]
     assert "falla al medir" in caplog.text
+
+
+# --- Corridas colgadas al arrancar (A10) --------------------------------------
+
+CORTADA_AL_CERRAR = "Se cortó porque el programa se cerró mientras calculaba: volvé a calcularlo."
+
+
+def test_al_arrancar_las_corridas_colgadas_pasan_a_error(cliente, tmp_path):
+    from app.api.rutas_nesting import cortar_corridas_colgadas
+
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    with Sesion() as sesion:
+        corridas = [
+            EjecucionNesting(grupo_id=grupo["id"], motor="sparrow", estado=estado.value)
+            for estado in (EstadoEjecucion.CORRIENDO, EstadoEjecucion.ENCOLADA, EstadoEjecucion.LISTA)
+        ]
+        sesion.add_all(corridas)
+        sesion.commit()
+        ids = [c.id for c in corridas]
+
+    assert cortar_corridas_colgadas() == 2
+
+    for colgada in ids[:2]:
+        cuerpo = cliente.get(f"/ejecuciones/{colgada}").json()
+        assert cuerpo["estado"] == "error"
+        assert cuerpo["error"]["mensaje"] == CORTADA_AL_CERRAR
+    assert cliente.get(f"/ejecuciones/{ids[2]}").json()["estado"] == "lista"
+
+
+def test_el_arranque_corta_las_colgadas_solo_con_la_base_de_verdad(monkeypatch):
+    """Una prueba arranca la app con otra base (`dependency_overrides`):
+    ahí no se toca la base de `Sesion`, que puede ser la real."""
+    import importlib
+
+    from app.api import rutas_nesting
+
+    modulo = importlib.import_module("app.api.app")
+    llamadas = []
+    monkeypatch.setattr(rutas_nesting, "cortar_corridas_colgadas", lambda: llamadas.append(1) or 0)
+    monkeypatch.setattr(modulo, "inicializar", lambda: None)
+    monkeypatch.setattr(modulo, "configurar_registro", lambda *args: None)
+
+    with TestClient(modulo.app):
+        pass
+    assert llamadas == [1]
+
+    modulo.app.dependency_overrides[obtener_sesion] = lambda: None
+    try:
+        with TestClient(modulo.app):
+            pass
+    finally:
+        modulo.app.dependency_overrides.pop(obtener_sesion, None)
+    assert llamadas == [1]
