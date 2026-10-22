@@ -84,3 +84,27 @@ def test_un_campo_sin_etiqueta_da_un_mensaje_general(cliente):
 
     assert respuesta.status_code == 422
     assert respuesta.json()["detail"]["mensaje"] == "Uno de los datos no tiene la forma esperada."
+
+
+def test_un_error_inesperado_sale_con_permiso_para_que_la_pantalla_lo_lea():
+    """El 500 de un error que nadie previó tiene que traer el encabezado de
+    CORS: sin él el navegador no deja leer la respuesta y la pantalla dice
+    «No se pudo conectar» en lugar del mensaje (recorrido de A9)."""
+    from app.api.app import app
+    from app.api.dependencias import obtener_sesion
+
+    def rota():
+        raise RuntimeError("bum")
+
+    app.dependency_overrides[obtener_sesion] = rota
+    try:
+        respuesta = TestClient(app, raise_server_exceptions=False).get(
+            "/trabajos", headers={"Origin": "http://localhost:5173"}
+        )
+    finally:
+        app.dependency_overrides.pop(obtener_sesion, None)
+
+    assert respuesta.status_code == 500
+    assert respuesta.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    assert respuesta.json()["detail"]["mensaje"] == MENSAJE_INESPERADO
+    assert "RuntimeError: bum" in respuesta.json()["detail"]["detalle"]
