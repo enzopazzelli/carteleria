@@ -1,5 +1,5 @@
 """Mensajes para quien usa el sistema: errores y avisos, con las piezas y
-chapas que nombran (A9, `docs/plan/A9-mensajes-entendibles/diseno.md §5.2`).
+chapas que nombran (A9, `docs/historico/A9-mensajes-entendibles/diseno.md §5.2`).
 
 El texto es para una persona del taller (la regla está en
 `CONVENCIONES.md`); lo técnico va en `detalle`, nunca en el mensaje."""

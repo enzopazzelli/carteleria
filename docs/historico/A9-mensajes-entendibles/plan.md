@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** escrito y aprobado por Enzo el 2026-10-15. **Construido el 2026-10-22**, las 15 tareas, en la rama `feat/mensajes-entendibles`: tramo 1 con pausa; 2 y 3 de corrido, y 4 y 5 sin pausa, a pedido de Enzo. Backend 767 pruebas, frontend 192, después de la revisión aparte. Recorrido en Chrome sobre una copia de la base, con ocho casos. Lo que se apartó del plan está al final, en «Desvíos».
+> **Estado:** **cerrado el 2026-10-22**, en `main` ([PR #26](https://github.com/enzopazzelli/carteleria/pull/26)). Escrito y aprobado por Enzo el 2026-10-15. **Construido el 2026-10-22**, las 15 tareas, en la rama `feat/mensajes-entendibles`: tramo 1 con pausa; 2 y 3 de corrido, y 4 y 5 sin pausa, a pedido de Enzo. Backend 767 pruebas, frontend 192, después de la revisión aparte. Recorrido en Chrome sobre una copia de la base, con ocho casos. Lo que se apartó del plan está al final, en «Desvíos».
 
 **Goal:** Que todo error y aviso que ve una persona diga qué pasó y qué hacer, en palabras del taller, con la miniatura de las piezas y chapas que nombra y el detalle técnico aparte, en un desplegable y en un registro del servidor.
 

@@ -66,7 +66,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 **El arreglo del «utf-8»** ([PR #25](https://github.com/enzopazzelli/carteleria/pull/25)) quedó en `main`: un error del cálculo de Sparrow ya no queda tapado por «'utf-8' codec can't decode».
 
-**Mensajes entendibles (A9)**, en la rama `feat/mensajes-entendibles`, los cinco tramos del plan ([`plan/A9-mensajes-entendibles/`](plan/A9-mensajes-entendibles/diseno.md)). Backend 767 pruebas (709 antes de A9), frontend 192 (172 antes):
+**Mensajes entendibles (A9)**, los cinco tramos del plan, en `main` desde el mismo día ([PR #26](https://github.com/enzopazzelli/carteleria/pull/26), lo fusioné a pedido de Enzo) y cerrado ([`historico/A9-mensajes-entendibles/`](historico/A9-mensajes-entendibles/diseno.md)). Backend 767 pruebas (709 antes de A9), frontend 192 (172 antes):
 
 - **Una sola forma para errores y avisos** (`app/mensajes.py`): el mensaje para la persona, el detalle técnico aparte, y las piezas y chapas que nombra. Un solo lugar ataja todo error (`app/api/manejadores.py`): un dato mal escrito dice el campo como en pantalla («Margen %: escribí un número.»), y un error que nadie previó da «Algo falló en el servidor…» con la traza en el detalle.
 - **Registro del servidor** en `CARTELERIA_DATOS/registro/servidor.log`, que rota por tamaño (`PAR-54`, `PAR-55`): cada falla de una corrida o una comparación, y lo técnico de los avisos.
@@ -90,7 +90,7 @@ Sin cambios (`PAR-54` y `PAR-55` se dieron de alta con el diseño, el 2026-10-15
 
 ### Pendiente
 
-Fusionar el PR es de Enzo; al fusionar, la carpeta del plan pasa a `historico/`. Lo que quedó vivo está en la tabla «Pendientes de los mensajes entendibles (A9)» del plan maestro §7.
+Lo que quedó vivo está en la tabla «Pendientes de los mensajes entendibles (A9)» del plan maestro §7. La base real se vació de trabajos a pedido de Enzo, para probar desde cero (respaldo en `backend/local/respaldo-2026-10-22-antes-de-borrar-trabajos/`), y se migró a `c3a91f4e7b20`. Lo que quedó vivo está en la tabla «Pendientes de los mensajes entendibles (A9)» del plan maestro §7.
 
 ---
 

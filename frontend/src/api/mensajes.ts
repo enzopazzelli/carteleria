@@ -1,4 +1,4 @@
-/** Errores y avisos del servidor (A9, docs/plan/A9-mensajes-entendibles/diseno.md §5.2). */
+/** Errores y avisos del servidor (A9, docs/historico/A9-mensajes-entendibles/diseno.md §5.2). */
 
 /** Una chapa de un resultado: la `plancha` (desde 0) del anidado `ejecucion_id`. */
 export interface ChapaNombrada {

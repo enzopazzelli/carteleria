@@ -1,4 +1,4 @@
-"""El registro del servidor (A9, `docs/plan/A9-mensajes-entendibles/diseno.md §5.3`).
+"""El registro del servidor (A9, `docs/historico/A9-mensajes-entendibles/diseno.md §5.3`).
 
 Guarda, con fecha y hora, cada error inesperado y cada corrida o
 comparación que falla, con su traza: lo que la pantalla muestra en «Ver
