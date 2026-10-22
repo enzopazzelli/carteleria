@@ -50,8 +50,11 @@ class PiezasSinUbicar(ValueError):
     `DECISIONES-Y-BLOQUEANTES.md §1.2`."""
 
     def __init__(self, ids):
-        self.ids = sorted(str(i) for i in ids)
-        super().__init__(f"El motor no pudo ubicar todas las piezas (no colocadas: {self.ids}).")
+        copias = sorted(str(i) for i in ids)
+        # Cada copia de una pieza viaja como «<id de pieza>#<copia>»: el
+        # mensaje nombra la pieza, el detalle conserva las copias.
+        self.ids = sorted({c.split("#")[0] for c in copias})
+        super().__init__(f"El motor no pudo ubicar todas las piezas (no colocadas: {copias}).")
 
 
 class MotorNestingRectangular:

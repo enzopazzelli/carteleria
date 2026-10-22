@@ -262,3 +262,10 @@ def test_las_piezas_que_el_motor_rectangular_no_ubica_tienen_nombre():
         motor._validar_todas_colocadas([], [Pieza("7", Decimal(10), Decimal(10))])
 
     assert error.value.ids == ["7"]
+
+
+def test_las_piezas_sin_ubicar_se_nombran_por_pieza_y_no_por_copia():
+    error = PiezasSinUbicar(["7#1", "7#0", "12#0"])
+
+    assert error.ids == ["12", "7"]
+    assert "7#1" in str(error)
