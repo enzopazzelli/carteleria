@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { apiGet, ApiError } from "./client";
+import { apiGet, ApiError, errorDesdeCuerpo, SIN_CONEXION } from "./client";
 
 describe("apiGet", () => {
   it("conserva el diagnóstico y los IDs de piezas inválidas", async () => {
@@ -40,5 +40,39 @@ describe("apiGet", () => {
 
     await expect(apiGet("/trabajos/999")).rejects.toBeInstanceOf(ApiError);
     await expect(apiGet("/trabajos/999")).rejects.toThrow("No existe el trabajo 999.");
+  });
+});
+
+describe("errorDesdeCuerpo", () => {
+  it("toma el error entero: mensaje, detalle, piezas y chapas", () => {
+    const error = errorDesdeCuerpo(400, {
+      detail: { mensaje: "Estas piezas no entran…", detalle: "técnico", piezas: [3], chapas: [{ ejecucion_id: 7, plancha: 0 }] },
+    });
+
+    expect(error).toMatchObject({
+      status: 400, message: "Estas piezas no entran…", detalle: "técnico", piezas: [3], chapas: [{ ejecucion_id: 7, plancha: 0 }],
+    });
+  });
+
+  it("un error de texto (antes de A9) queda sin detalle ni piezas", () => {
+    expect(errorDesdeCuerpo(404, { detail: "No existe el trabajo 9." })).toMatchObject({
+      message: "No existe el trabajo 9.", detalle: null, piezas: [], chapas: [],
+    });
+  });
+
+  it("sin cuerpo legible dice el código en castellano", () => {
+    expect(errorDesdeCuerpo(502, null).message).toBe("El servidor respondió con un error (502).");
+  });
+});
+
+describe("sin servidor", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("un pedido que no llega dice que el servidor no responde", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+
+    await expect(apiGet("/trabajos")).rejects.toMatchObject({ status: 0, message: SIN_CONEXION });
   });
 });
