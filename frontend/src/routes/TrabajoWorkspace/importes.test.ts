@@ -6,6 +6,7 @@ import {
   leerCantidad,
   leerDias,
   leerImporte,
+  leerPorcentaje,
   mismoImporte,
   mostrarImporte,
   mostrarPorcentaje,
@@ -209,5 +210,20 @@ describe("cambiosDeLinea", () => {
 
   it("devuelve null si la descripción queda vacía", () => {
     expect(cambiosDeLinea(antes, { ...antes, descripcion: "   " })).toBeNull();
+  });
+});
+
+describe("leerPorcentaje", () => {
+  it("acepta coma o punto, y el signo de por ciento", () => {
+    expect(leerPorcentaje("10,5")).toBe("10.5");
+    expect(leerPorcentaje("10.5")).toBe("10.5");
+    expect(leerPorcentaje(" 21 % ")).toBe("21");
+  });
+
+  it("rechaza lo que no es un porcentaje", () => {
+    expect(leerPorcentaje("diez")).toBeNull();
+    expect(leerPorcentaje("")).toBeNull();
+    expect(leerPorcentaje("-5")).toBeNull();
+    expect(leerPorcentaje("1.000,5")).toBeNull();
   });
 });

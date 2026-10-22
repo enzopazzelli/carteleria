@@ -12,13 +12,13 @@ import {
 } from "../../hooks/useNesting";
 import { useFormato, useParametrosCorteMaterial } from "../../hooks/useCatalogo";
 import EstadoBadge from "../../components/EstadoBadge";
-import Banner from "../../components/Banner";
 import { cancelarEjecucion, type Ejecucion } from "../../api/nesting";
-import { ApiError } from "../../api/client";
 import type { GrupoDeCorte, ParametrosCorteOverride } from "../../api/piezasYgrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { giroLibreSeAplica } from "./giroLibre";
+import Mensaje from "../../components/Mensaje/Mensaje";
+import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
 const ESTADOS_TERMINALES = new Set(["lista", "error", "cancelada"]);
 
@@ -156,7 +156,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const [ejecucionEnCurso, setEjecucionEnCurso] = useState<number | null>(null);
   const activa = historial?.find((e) => !ESTADOS_TERMINALES.has(e.estado));
   const { data: enCurso } = useEjecucion(ejecucionEnCurso ?? activa?.id ?? null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<QueMostrar | null>(null);
   const [usarHuecos, setUsarHuecos] = useState(false);
   const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
   const [verEjecucion, setVerEjecucion] = useState<number | undefined>();
@@ -197,7 +197,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
       const ejecucion = await anidar.mutateAsync(opciones);
       setEjecucionEnCurso(ejecucion.id);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo anidar.");
+      setError(falla(e, "No se pudo anidar."));
     }
   }
 
@@ -218,7 +218,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
       const ejecucion = await anidar.mutateAsync(opciones);
       setEjecucionEnCurso(ejecucion.id);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo recalcular.");
+      setError(falla(e, "No se pudo recalcular."));
     }
   }
 
@@ -227,7 +227,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
     try {
       await marcarDefinitiva.mutateAsync(ejecucionId);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo marcar como definitiva.");
+      setError(falla(e, "No se pudo marcar como definitiva."));
     }
   }
 
@@ -246,7 +246,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
       if (verEjecucion === ejecucion.id) setVerEjecucion(undefined);
       if (ejecucionEnCurso === ejecucion.id) setEjecucionEnCurso(null);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo borrar el anidado.");
+      setError(falla(e, "No se pudo borrar el anidado."));
     }
   }
 
@@ -310,17 +310,19 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
       </div>
       <ParametrosCorteForm grupo={grupo} onCambio={alCambiarParametros} />
 
-      {error && <Banner variante="error">{error}</Banner>}
+      {error && <Mensaje variante="error" que={error} trabajoId={trabajoId} />}
       {enCurso && (
         <p className="text-sm mb-2">
           Ejecución #{enCurso.id}: <EstadoBadge estado={enCurso.estado} />
           {!ESTADOS_TERMINALES.has(enCurso.estado) && <button className="underline ml-3" onClick={async () => {
             try { await cancelarEjecucion(enCurso.id); await queryClient.invalidateQueries({ queryKey: ["ejecucion", enCurso.id] }); }
-            catch (e) { setError(e instanceof ApiError ? e.message : "No se pudo cancelar."); }
+            catch (e) { setError(falla(e, "No se pudo cancelar.")); }
           }}>Cancelar</button>}
-          {enCurso.error && <span className="ml-2 text-conflict">{enCurso.error.mensaje}</span>}
         </p>
       )}
+      {enCurso?.error && <Mensaje variante="error" que={enCurso.error} trabajoId={trabajoId} />}
+      {enCurso?.estado === "lista" &&
+        (enCurso.mensajes ?? []).map((aviso, i) => <Mensaje key={i} variante="aviso" que={aviso} trabajoId={trabajoId} />)}
       {enCurso && !ESTADOS_TERMINALES.has(enCurso.estado) && <BarraDeProgreso progreso={enCurso.progreso} />}
 
       <table className="w-full text-sm mt-2">

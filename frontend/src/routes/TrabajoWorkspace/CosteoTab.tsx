@@ -16,7 +16,6 @@ import {
   useRecalcularMateriales,
 } from "../../hooks/usePresupuestos";
 import Banner from "../../components/Banner";
-import { ApiError } from "../../api/client";
 import { urlPlano } from "../../api/nesting";
 import { useGrupos } from "../../hooks/useGrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
@@ -28,8 +27,11 @@ import {
   importeParaEditar,
   leerCantidad,
   leerImporte,
+  leerPorcentaje,
   type TextosDeLinea,
 } from "./importes";
+import Mensaje from "../../components/Mensaje/Mensaje";
+import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
 export default function CosteoTab() {
   const { trabajoId } = useParams();
@@ -47,7 +49,7 @@ export default function CosteoTab() {
   // string) de un cliente existente — nunca se asume el primero de la
   // lista: un trabajo nuevo puede ser de cualquier cliente.
   const [clienteSeleccion, setClienteSeleccion] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<QueMostrar | null>(null);
 
   // Antes de un click explícito en un chip, `presupuestoActivoId` sigue en
   // null y el activo "de hecho" es el primero de la lista (ver el chip
@@ -56,10 +58,6 @@ export default function CosteoTab() {
   // "Recalcular materiales" apunta al id -1 y devuelve 404.
   const presupuestoActivo = presupuestos?.find((p) => p.id === presupuestoActivoId) ?? presupuestos?.[0];
   const recalcular = useRecalcularMateriales(presupuestoActivo?.id ?? -1);
-
-  function mensajeDeError(e: unknown, fallback: string): string {
-    return e instanceof ApiError ? e.message : fallback;
-  }
 
   async function alCrearOpcion() {
     setError(null);
@@ -74,7 +72,7 @@ export default function CosteoTab() {
       const presupuesto = await crearPresupuesto.mutateAsync({ clienteId, validezDias: 15 });
       setPresupuestoActivoId(presupuesto.id);
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo crear la opción de presupuesto."));
+      setError(falla(e, "No se pudo crear la opción de presupuesto."));
     }
   }
 
@@ -85,7 +83,7 @@ export default function CosteoTab() {
       const copia = await duplicar.mutateAsync(presupuestoActivo.id);
       setPresupuestoActivoId(copia.id);
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo duplicar la opción."));
+      setError(falla(e, "No se pudo duplicar la opción."));
     }
   }
 
@@ -94,7 +92,7 @@ export default function CosteoTab() {
     try {
       await recalcular.mutateAsync();
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo recalcular."));
+      setError(falla(e, "No se pudo recalcular."));
     }
   }
 
@@ -105,7 +103,7 @@ export default function CosteoTab() {
 
       {error && (
         <div className="mb-4">
-          <Banner variante="error">{error}</Banner>
+          <Mensaje variante="error" que={error} trabajoId={id} />
         </div>
       )}
 
@@ -225,11 +223,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
     cantidad: "1",
     precio_unitario: "0",
   });
-  const [error, setError] = useState<string | null>(null);
-
-  function mensajeDeError(e: unknown, fallback: string): string {
-    return e instanceof ApiError ? e.message : fallback;
-  }
+  const [error, setError] = useState<QueMostrar | null>(null);
 
   const NUMEROS_INVALIDOS = "La cantidad y el precio unitario tienen que ser números, como 2 o 1.500,50.";
 
@@ -246,7 +240,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
       await crearLinea.mutateAsync({ ...nuevaLinea, cantidad, precio_unitario: precio });
       setNuevaLinea((n) => ({ ...n, descripcion: "" }));
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo agregar la línea."));
+      setError(falla(e, "No se pudo agregar la línea."));
     }
   }
 
@@ -280,7 +274,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
       await actualizarLinea.mutateAsync({ lineaId: edicion.id, datos: cambios });
       setEdicion(null);
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo guardar la línea."));
+      setError(falla(e, "No se pudo guardar la línea."));
     }
   }
 
@@ -290,7 +284,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
     try {
       await eliminarLinea.mutateAsync(linea.id);
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo borrar la línea."));
+      setError(falla(e, "No se pudo borrar la línea."));
     }
   }
 
@@ -305,7 +299,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
         overridePor: "Enzo",
       });
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo aplicar el override."));
+      setError(falla(e, "No se pudo aplicar el override."));
     }
   }
 
@@ -314,8 +308,18 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
     try {
       await margenEIva.mutateAsync(datos);
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo actualizar margen/IVA."));
+      setError(falla(e, "No se pudo actualizar margen/IVA."));
     }
+  }
+
+  async function alCambiarPorcentaje(campo: "margen_pct" | "iva_pct", etiqueta: string, texto: string) {
+    if (texto.trim() === "") return;
+    const valor = leerPorcentaje(texto);
+    if (valor === null) {
+      setError(`«${etiqueta}»: escribí un número, como 10,5.`);
+      return;
+    }
+    await alCambiarMargenOIva({ [campo]: valor });
   }
 
   if (!desglose) return null;
@@ -327,7 +331,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
 
       {error && (
         <div className="mb-4">
-          <Banner variante="error">{error}</Banner>
+          <Mensaje variante="error" que={error} />
         </div>
       )}
 
@@ -441,7 +445,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
           <input
             className="border border-line rounded px-2 py-1 w-20 font-mono bg-paper"
             defaultValue={totales.margen_pct ?? ""}
-            onBlur={(e) => alCambiarMargenOIva({ margen_pct: e.target.value })}
+            onBlur={(e) => alCambiarPorcentaje("margen_pct", "Margen %", e.target.value)}
           />
         </label>
         <label>
@@ -449,7 +453,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
           <input
             className="border border-line rounded px-2 py-1 w-20 font-mono bg-paper"
             defaultValue={totales.iva_pct ?? "21"}
-            onBlur={(e) => alCambiarMargenOIva({ iva_pct: e.target.value })}
+            onBlur={(e) => alCambiarPorcentaje("iva_pct", "IVA %", e.target.value)}
           />
         </label>
       </div>

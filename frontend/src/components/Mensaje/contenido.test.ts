@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../api/client";
-import { contenidoDe, falla, piezasNombradas, textoParaCopiar } from "./mensaje";
+import { contenidoDe, falla, piezasNombradas, textoParaCopiar } from "./contenido";
 
 describe("contenidoDe", () => {
   it("un texto de la pantalla no trae detalle ni piezas", () => {

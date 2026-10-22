@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OpcionFormato } from "../../api/piezasYgrupos";
-import { ordenarFilas } from "./filasComparacion";
+import { ordenarFilas, unicosPorMensaje } from "./filasComparacion";
 
 function opcion(formato_id: number, extra: Partial<OpcionFormato> = {}): OpcionFormato {
   return {
@@ -20,5 +20,12 @@ describe("ordenarFilas", () => {
     ];
 
     expect(ordenarFilas(filas).map((f) => f.formato_id)).toEqual([2, 4, 1, 3]);
+  });
+});
+
+describe("unicosPorMensaje", () => {
+  it("no repite el mismo texto", () => {
+    const a = { mensaje: "a", piezas: [], chapas: [] };
+    expect(unicosPorMensaje([a, { ...a }, { mensaje: "b", piezas: [], chapas: [] }]).map((x) => x.mensaje)).toEqual(["a", "b"]);
   });
 });

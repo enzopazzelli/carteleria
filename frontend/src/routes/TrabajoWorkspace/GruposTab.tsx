@@ -16,10 +16,12 @@ import { cancelarComparacion } from "../../api/piezasYgrupos";
 import Banner from "../../components/Banner";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { debeRetomar, delGrupo, seEsfumo } from "./comparacionEnCurso";
-import { ordenarFilas } from "./filasComparacion";
+import { ordenarFilas, unicosPorMensaje } from "./filasComparacion";
 import type { OpcionFormato } from "../../api/piezasYgrupos";
 import { ApiError } from "../../api/client";
 import ListaDeFormatos from "../../components/ListaDeFormatos/ListaDeFormatos";
+import Mensaje from "../../components/Mensaje/Mensaje";
+import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
 export default function GruposTab() {
   const { trabajoId } = useParams();
@@ -51,7 +53,7 @@ export default function GruposTab() {
   // Marcada por defecto (Enzo, 2026-10-14). En los materiales con veta el
   // servidor no la aplica.
   const [giroLibre, setGiroLibre] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<QueMostrar | null>(null);
   const [piezasInvalidas, setPiezasInvalidas] = useState<number[]>([]);
   const [seleccionadas, setSeleccionadas] = useState<Set<number>>(new Set());
   // Última pieza tildada a mano: el ancla desde la que shift-click
@@ -79,15 +81,11 @@ export default function GruposTab() {
   // Cuando termina, la tabla o el error pasan a la pantalla como antes.
   useEffect(() => {
     if (comparacion?.estado === "lista") setResultado(comparacion.opciones);
-    if (comparacion?.estado === "error") setError(comparacion.error?.mensaje ?? "No se pudo comparar.");
+    if (comparacion?.estado === "error") setError(comparacion.error ?? "No se pudo comparar.");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comparacion?.id, comparacion?.estado]);
 
   const sinAsignar = piezas?.filter((p) => p.grupo_id === null && !p.descartada) ?? [];
-
-  function mensajeDeError(e: unknown, fallback: string): string {
-    return e instanceof ApiError ? e.message : fallback;
-  }
 
   async function alCrearGrupo() {
     if (!nombreNuevoGrupo.trim()) return;
@@ -96,7 +94,7 @@ export default function GruposTab() {
       await crearGrupo.mutateAsync(nombreNuevoGrupo.trim());
       setNombreNuevoGrupo("");
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo crear el grupo."));
+      setError(falla(e, "No se pudo crear el grupo."));
     }
   }
 
@@ -146,7 +144,7 @@ export default function GruposTab() {
       setSeleccionadas(new Set());
       setAnclaSeleccion(null);
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudieron mover todas las piezas."));
+      setError(falla(e, "No se pudieron mover todas las piezas."));
     }
   }
 
@@ -164,7 +162,7 @@ export default function GruposTab() {
       queryClient.setQueryData(["ultima-comparacion", grupoId], arrancada);
       setComparacionId(arrancada.id);
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo comparar."));
+      setError(falla(e, "No se pudo comparar."));
       if (e instanceof ApiError) setPiezasInvalidas(e.piezasInvalidas);
     }
   }
@@ -175,7 +173,7 @@ export default function GruposTab() {
       await cancelarComparacion(comparacionId);
       await queryClient.invalidateQueries({ queryKey: ["comparacion", comparacionId] });
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo cancelar la comparación."));
+      setError(falla(e, "No se pudo cancelar la comparación."));
     }
   }
 
@@ -185,7 +183,7 @@ export default function GruposTab() {
       await asignarFormato.mutateAsync({ grupoId, formatoId });
       setGrupoComparando(null);
     } catch (e) {
-      setError(mensajeDeError(e, "No se pudo asignar el formato."));
+      setError(falla(e, "No se pudo asignar el formato."));
     }
   }
 
@@ -199,7 +197,7 @@ export default function GruposTab() {
 
       {error && (
         <div className="mb-4">
-          <Banner variante="error">{error}</Banner>
+          <Mensaje variante="error" que={error} trabajoId={id} />
         </div>
       )}
 
@@ -320,7 +318,7 @@ export default function GruposTab() {
               <p className="text-sm mb-2">Elegí 2 o más formatos candidatos:</p>
               <p className="text-sm mb-3">Recomendación: menor superficie total de material consumido (m²); después, menos planchas. El costo se muestra por separado.</p>
               {error && <div className="mb-3" role="alert">
-                <Banner variante="error">{error}</Banner>
+                <Mensaje variante="error" que={error} trabajoId={id} />
                 {piezasInvalidas.length > 0 && <Link className="underline text-sm" to={`/trabajos/${id}/piezas?revisar=${piezasInvalidas.join(",")}`}>
                   Revisar las {piezasInvalidas.length} piezas con geometría inválida
                 </Link>}
@@ -387,7 +385,9 @@ export default function GruposTab() {
 
               {resultado && (
                 <div>
-                {Array.from(new Set(resultado.flatMap((opcion) => (opcion.advertencias ?? []).map((aviso) => aviso.mensaje)))).map((aviso) => <p key={aviso} className="text-sm mb-2">{aviso}</p>)}
+                {unicosPorMensaje(resultado.flatMap((opcion) => opcion.advertencias ?? [])).map((aviso) => (
+                  <Mensaje key={aviso.mensaje} variante="aviso" que={aviso} trabajoId={id} />
+                ))}
                 <table className="w-full text-sm mt-2">
                   <thead>
                     <tr className="text-left border-b border-line">
@@ -408,7 +408,7 @@ export default function GruposTab() {
                         <td>{opcion.material_nombre}</td>
                         <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
                         <td>{opcion.formato_descripcion}</td>
-                        <td colSpan={5} className="text-conflict">{opcion.error.mensaje}</td>
+                        <td colSpan={5}><Mensaje variante="error" que={opcion.error} trabajoId={id} /></td>
                       </tr>
                     ) : opcion.piezas_a_seccionar.length > 0 ? (
                       <tr key={opcion.formato_id} className="border-b border-line text-ink/70">

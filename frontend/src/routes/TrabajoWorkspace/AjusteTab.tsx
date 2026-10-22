@@ -7,7 +7,7 @@ import { urlPlano, urlDxf } from "../../api/nesting";
 import type { Aviso } from "../../api/mensajes";
 import { useFormato } from "../../hooks/useCatalogo";
 import PlanoEditor from "../../components/PlanoEditor/PlanoEditor";
-import Banner from "../../components/Banner";
+import Mensaje from "../../components/Mensaje/Mensaje";
 
 export default function AjusteTab() {
   const { trabajoId } = useParams();
@@ -27,6 +27,7 @@ export default function AjusteTab() {
   const [resultadosAjuste, setResultadosAjuste] = useState<Map<number, { valida: boolean; motivo: Aviso | null }>>(
     new Map()
   );
+  const motivos = [...resultadosAjuste.values()].flatMap((r) => (!r.valida && r.motivo ? [r.motivo] : []));
 
   const grupoActivo = grupos?.find((g) => g.id === grupoId);
   // Las medidas reales de la plancha salen del catálogo (mapeado del
@@ -120,9 +121,9 @@ export default function AjusteTab() {
             </a>
           </div>
 
-          {[...resultadosAjuste.values()].some((r) => !r.valida) && (
-            <div className="mb-3">
-              <Banner variante="aviso">Hay colocaciones marcadas en rojo — pasá el cursor para ver el motivo.</Banner>
+          {motivos.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {motivos.map((motivo, i) => <Mensaje key={i} variante="aviso" que={motivo} trabajoId={id} />)}
             </div>
           )}
 

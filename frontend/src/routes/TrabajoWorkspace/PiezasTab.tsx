@@ -10,9 +10,10 @@ import LecturaPanel from "../../components/LecturaDxf/LecturaPanel";
 import { esLaLecturaDe } from "../../components/LecturaDxf/dibujo";
 import { originalesASeccionar, porQueSeccionar } from "../../components/Seccionado/geometria";
 import { crearTurnos } from "../../components/Seccionado/turnos";
-import { ApiError } from "../../api/client";
 import type { Correcciones, LecturaDxf, Pieza } from "../../api/piezasYgrupos";
 import { escalaParaCargar } from "./cargaDxf";
+import Mensaje from "../../components/Mensaje/Mensaje";
+import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
 export default function PiezasTab() {
   const { trabajoId } = useParams();
@@ -38,7 +39,7 @@ export default function PiezasTab() {
   // La pieza cuyo panel de seccionar está abierto.
   const [seccionando, setSeccionando] = useState<number | null>(null);
   const [escalaAMm, setEscalaAMm] = useState("1");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<QueMostrar | null>(null);
   // Lo que el importador avisó del último archivo: entidades que no son
   // contornos cortables (texto, imágenes...) o contornos que no cerraron.
   // Sin esto, un dibujo que "no se ve" no tiene ninguna explicación.
@@ -86,7 +87,7 @@ export default function PiezasTab() {
     } catch (e) {
       if (!pedidos.vigente(turno)) return;
       setCorrecciones(aLaVista);
-      setError(e instanceof ApiError ? e.message : noSePudoSubir);
+      setError(falla(e, noSePudoSubir));
     }
   }
 
@@ -130,7 +131,7 @@ export default function PiezasTab() {
         ...resultado.advertencias,
       ]);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : noSePudoSubir);
+      setError(falla(e, noSePudoSubir));
     }
   }
 
@@ -159,7 +160,7 @@ export default function PiezasTab() {
     try {
       await descartarPieza.mutateAsync({ piezaId, descartada });
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo actualizar la pieza.");
+      setError(falla(e, "No se pudo actualizar la pieza."));
     }
   }
 
@@ -168,7 +169,7 @@ export default function PiezasTab() {
     try {
       await deshacerSeccionado.mutateAsync(piezaId);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo deshacer el seccionado.");
+      setError(falla(e, "No se pudo deshacer el seccionado."));
     }
   }
 
@@ -318,7 +319,7 @@ export default function PiezasTab() {
 
       {error && (
         <div className="mb-4">
-          <Banner variante="error">{error}</Banner>
+          <Mensaje variante="error" que={error} trabajoId={id} />
         </div>
       )}
 

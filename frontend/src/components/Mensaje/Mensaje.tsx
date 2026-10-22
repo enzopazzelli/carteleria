@@ -3,7 +3,7 @@ import Banner from "../Banner";
 import PiezaMiniPreview from "../PiezaMiniPreview";
 import ChapaMiniatura from "./ChapaMiniatura";
 import { usePiezas } from "../../hooks/usePiezas";
-import { contenidoDe, piezasNombradas, textoParaCopiar, type QueMostrar } from "./mensaje";
+import { contenidoDe, piezasNombradas, textoParaCopiar, type QueMostrar } from "./contenido";
 
 interface MensajeProps {
   variante: "error" | "aviso";

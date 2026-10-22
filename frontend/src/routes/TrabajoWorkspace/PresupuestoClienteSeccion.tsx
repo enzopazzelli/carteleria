@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import Banner from "../../components/Banner";
-import { ApiError } from "../../api/client";
 import { descargarPdf, type ItemCliente, type LineaCosto } from "../../api/presupuestos";
 import {
   useActualizarLineaCliente,
@@ -17,6 +16,8 @@ import {
   mostrarImporte,
   mostrarPorcentaje,
 } from "./importes";
+import Mensaje from "../../components/Mensaje/Mensaje";
+import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
 function bajarArchivo(contenido: Blob, nombre: string) {
   const url = URL.createObjectURL(contenido);
@@ -57,7 +58,7 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
   const { data: clientes } = useClientes();
   const actualizarPresupuesto = useActualizarPresupuesto(presupuestoId);
   const actualizarLinea = useActualizarLineaCliente(presupuestoId);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<QueMostrar | null>(null);
   const [descargando, setDescargando] = useState(false);
   const queryClient = useQueryClient();
   // Si lo último que se escribió en un campo no era un valor que sirva.
@@ -76,7 +77,7 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
 
   function guardar(accion: () => Promise<unknown>, fallback: string) {
     setError(null);
-    accion().catch((e: unknown) => setError(e instanceof ApiError ? e.message : fallback));
+    accion().catch((e: unknown) => setError(falla(e, fallback)));
   }
 
   function rechazar(mensaje: string) {
@@ -189,7 +190,7 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
       }
       bajarArchivo(await descargarPdf(presupuestoId), `${presupuesto.codigo}.pdf`);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo generar el PDF.");
+      setError(falla(e, "No se pudo generar el PDF."));
     } finally {
       setDescargando(false);
     }
@@ -231,7 +232,7 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
 
       {error && (
         <div className="mb-4">
-          <Banner variante="error">{error}</Banner>
+          <Mensaje variante="error" que={error} />
         </div>
       )}
 

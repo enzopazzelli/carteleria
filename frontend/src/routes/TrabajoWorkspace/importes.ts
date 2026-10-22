@@ -140,3 +140,10 @@ export function cambiosDeLinea(
   }
   return cambios;
 }
+
+/** Un porcentaje como se escribe acá («10,5», «10.5», «21 %») → el número
+ * que espera la API, o `null` si no lo es. Vacío también es `null`. */
+export function leerPorcentaje(texto: string): string | null {
+  const limpio = texto.trim().replace(/\s*%$/, "").replace(",", ".");
+  return /^\d+(\.\d+)?$/.test(limpio) ? limpio : null;
+}
