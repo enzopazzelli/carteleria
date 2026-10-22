@@ -29,6 +29,7 @@ from decimal import Decimal
 from io import StringIO
 
 import ezdxf
+from shapely.geometry import Polygon, box
 
 from .models import Plancha, PosicionPieza, ResultadoAnidado
 from .validacion_manual import GeometriaPieza
@@ -60,6 +61,39 @@ def _anillos_en_plancha(
     transformar = transformador_de_pieza(posicion, geometria)
     anillos = [geometria.contorno_local_mm, *geometria.agujeros_local_mm]
     return [[tuple(float(c) for c in transformar(x, y)) for x, y in anillo] for anillo in anillos]
+
+
+def _geometria_de(posicion: PosicionPieza, geometrias: dict[str, GeometriaPieza]) -> GeometriaPieza | None:
+    return geometrias.get(posicion.pieza_id) or geometrias.get(posicion.pieza_id.split("#")[0])
+
+
+def _de_adentro_hacia_afuera(
+    posiciones: list[PosicionPieza], geometrias: dict[str, GeometriaPieza]
+) -> list[PosicionPieza]:
+    """Las piezas de la chapa de la más profunda a la menos (A10): la
+    profundidad de una es cuántas otras la tienen entera adentro de un
+    hueco. Si la máquina corta en el orden del archivo, corta primero lo de
+    adentro y después el contorno que lo rodea; al revés, la de afuera se
+    suelta antes y lo de adentro se corre. A igual profundidad, el orden
+    de siempre."""
+    exteriores, huecos = [], []
+    for posicion in posiciones:
+        geometria = _geometria_de(posicion, geometrias)
+        if geometria is None or not geometria.contorno_local_mm:
+            x, y = float(posicion.x_mm), float(posicion.y_mm)
+            exteriores.append(box(x, y, x + float(posicion.ancho_colocado_mm), y + float(posicion.alto_colocado_mm)))
+            huecos.append([])
+        else:
+            contorno, *agujeros = _anillos_en_plancha(posicion, geometria)
+            exteriores.append(Polygon(contorno))
+            huecos.append([Polygon(anillo) for anillo in agujeros])
+    if not any(huecos):
+        return posiciones
+    profundidad = [
+        sum(1 for j, de_otra in enumerate(huecos) if j != i and any(h.contains(exterior) for h in de_otra))
+        for i, exterior in enumerate(exteriores)
+    ]
+    return [posiciones[i] for i in sorted(range(len(posiciones)), key=lambda i: -profundidad[i])]
 
 
 def exportar_plancha_a_dxf(
@@ -97,10 +131,9 @@ def exportar_plancha_a_dxf(
         dxfattribs={"layer": CAPA_GUIA},
     )
 
-    for posicion in resultado.posiciones:
-        if posicion.plancha_indice != plancha_indice:
-            continue
-        geometria = geometrias.get(posicion.pieza_id) or geometrias.get(posicion.pieza_id.split("#")[0])
+    de_la_chapa = [p for p in resultado.posiciones if p.plancha_indice == plancha_indice]
+    for posicion in _de_adentro_hacia_afuera(de_la_chapa, geometrias):
+        geometria = _geometria_de(posicion, geometrias)
 
         if geometria is None or not geometria.contorno_local_mm:
             x, y = float(posicion.x_mm), float(posicion.y_mm)

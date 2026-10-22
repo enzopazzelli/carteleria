@@ -174,3 +174,27 @@ def test_una_pieza_a_cualquier_angulo_se_exporta_girada(tmp_path):
 def test_el_nombre_avisa_cuantas_planchas_hay():
     assert nombre_de_archivo("corte-tanda1", 0, 5) == "corte-tanda1-plancha-1-de-5.dxf"
     assert nombre_de_archivo("corte-tanda1", 9, 12) == "corte-tanda1-plancha-10-de-12.dxf"
+
+
+def test_lo_de_adentro_se_escribe_antes_que_su_contenedora(marco_con_agujero):
+    """Si la máquina corta en el orden del archivo, corta primero lo que va
+    en un hueco y después el contorno que lo rodea (A10): al revés, la de
+    afuera se suelta antes y lo de adentro se corre."""
+    from io import StringIO
+
+    import ezdxf
+
+    chica = GeometriaPieza(ancho_mm=Decimal(20), alto_mm=Decimal(20), contorno_local_mm=_cuadrado(Decimal(20)))
+    marco = PosicionPieza(pieza_id="marco", plancha_indice=0, x_mm=Decimal(200), y_mm=Decimal(300),
+                          ancho_colocado_mm=Decimal(100), alto_colocado_mm=Decimal(100), rotada_90=False)
+    adentro = PosicionPieza(pieza_id="chica", plancha_indice=0, x_mm=Decimal(240), y_mm=Decimal(340),
+                            ancho_colocado_mm=Decimal(20), alto_colocado_mm=Decimal(20), rotada_90=False)
+    texto = exportar_plancha_a_dxf(
+        _resultado([marco, adentro]), Plancha(ancho_mm=Decimal(1000), alto_mm=Decimal(1000)), 0,
+        {"marco": marco_con_agujero, "chica": chica},
+    )
+
+    cortes = [e for e in ezdxf.read(StringIO(texto)).modelspace().query("LWPOLYLINE") if e.dxf.layer == CAPA_CORTE]
+    xs = [p[0] for p in cortes[0].get_points("xy")]
+    assert (min(xs), max(xs)) == pytest.approx((240, 260))
+    assert len(cortes) == 3  # la chica, y el contorno y el hueco del marco
