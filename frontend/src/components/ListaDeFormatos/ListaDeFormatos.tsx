@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { ApiError } from "../../api/client";
 import type { Formato, Material } from "../../api/catalogo";
 import { useCrearRetazo, useQuitarFormato } from "../../hooks/useCatalogo";
 import {
@@ -12,6 +11,8 @@ import {
   precioPorM2,
   tildarVisibles,
 } from "./filas";
+import Mensaje from "../Mensaje/Mensaje";
+import { falla, type QueMostrar } from "../Mensaje/contenido";
 
 interface ListaDeFormatosProps {
   formatos: Formato[];
@@ -29,7 +30,7 @@ export default function ListaDeFormatos({ formatos, materiales, tildados, alCamb
   const [retazoDe, setRetazoDe] = useState<number | null>(null);
   const [ancho, setAncho] = useState("");
   const [alto, setAlto] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<QueMostrar | null>(null);
   const crear = useCrearRetazo();
   const quitar = useQuitarFormato();
 
@@ -58,7 +59,7 @@ export default function ListaDeFormatos({ formatos, materiales, tildados, alCamb
       setAncho("");
       setAlto("");
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo agregar el retazo.");
+      setError(falla(e, "No se pudo agregar el retazo."));
     }
   }
 
@@ -69,7 +70,7 @@ export default function ListaDeFormatos({ formatos, materiales, tildados, alCamb
       await quitar.mutateAsync({ formatoId: formato.id, materialId: formato.material_id });
       alCambiar(tildados.filter((id) => id !== formato.id));
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo quitar el retazo.");
+      setError(falla(e, "No se pudo quitar el retazo."));
     }
   }
 
@@ -94,7 +95,7 @@ export default function ListaDeFormatos({ formatos, materiales, tildados, alCamb
           />
         </label>
       </div>
-      {error && <p className="text-sm text-conflict mb-2">{error}</p>}
+      {error && <div className="mb-2"><Mensaje variante="error" que={error} /></div>}
       <table className="w-full text-xs">
         <thead>
           <tr className="text-left border-b border-line">

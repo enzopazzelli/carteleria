@@ -431,7 +431,7 @@ def test_recalcular_avisa_si_el_costo_cambio_con_override_activo(cliente, tmp_pa
 
     assert Decimal(recalculada["valor_calculado"]) == Decimal("8000")
     assert Decimal(recalculada["valor_override"]) == Decimal("4500"), "el override sigue ahí"
-    assert "desactualizado" in recalculada["advertencia"]
+    assert "puede haber quedado viejo" in recalculada["advertencia"]
 
 
 def test_recalcular_elimina_linea_de_un_grupo_borrado(cliente, tmp_path):

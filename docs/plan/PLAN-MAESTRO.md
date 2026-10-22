@@ -204,7 +204,6 @@ Sin código de producto.
 | Un descuento como renglón con precio negativo: hoy la pantalla no lo acepta, y un total fijado con suma negativa invierte los signos en lugar de contar como incompleto | Revisión de la rama | `P-33` |
 | Juntar varias líneas de costo en un solo ítem, y registrar quién cambió un precio | §3 de su diseño | `P-34` |
 | Los botones «a mano · quitar» y «fijado · quitar» pueden perder un clic, como le pasaba al de descargar | Revisión de la rama | — |
-| Los campos «Margen %» e «IVA %» de «Líneas por rubro» mandan el texto tal cual: «10,5» vuelve como error | Revisión de la rama; es anterior a 1.3 | — |
 | Sin total fijado, «Precio base» y «En el presupuesto» pueden diferir en centavos, y todos los centavos del redondeo van a un solo ítem | Revisión de la rama | — |
 | La prueba de muchos renglones no comprueba que el bloque de totales quede entero, y dos líneas sin costo con la misma descripción repiten la clave de la lista de lo que falta | Revisión de la rama | — |
 
@@ -273,7 +272,6 @@ Se detallan cuando les toque, cada una con su diseño.
 | El aviso «Se alcanzó el límite de búsqueda» sale en buena parte de las corridas con la etapa prendida: el worker estima corto lo que dura una consulta | Revisión | — |
 | Ningún test corre la etapa por el camino del worker aparte y su archivo de salida | Revisión | — |
 | El texto de ayuda de Anidado dice «Más búsqueda por chapa no da menos planchas» como si fuera una regla | Revisión | Decisión de Enzo |
-| Si un formato de la comparación no llega a ningún resultado dentro de su tiempo máximo, la comparación entera termina en error. Con «Complejo» la primera pasada tarda unos 30 s: con 30 s por formato no llega | Recorrido de A7, 2026-10-14 | — |
 | `GUIA-SPARROW-PRUEBAS.md` sugiere 120 s como punto de partida y `motor/PLAN-VALIDACION-CORTE-MANUAL.md` nombra `PAR-09` con su valor anterior | Tarea 5 bis de su plan | — |
 | Medir «Girar a cualquier ángulo» con «Complejo», con la casilla marcada y sin marcar: si con el mismo tiempo da mejor o peor | Rama `feat/giro-libre`, 2026-10-14 | La prueba de Enzo |
 | Con giro libre, si una pieza entra en la chapa se sigue decidiendo con cuartos de vuelta: una que solo entra en diagonal se manda a seccionar | Rama `feat/giro-libre`, 2026-10-14 | Que aparezca un caso |
@@ -281,6 +279,21 @@ Se detallan cuando les toque, cada una con su diseño.
 | La carpeta temporal de cada corrida de Sparrow sale de la carpeta temporal del sistema, en C:, que en la máquina de Enzo está casi llena. Iría mejor al lado de los datos (`CARTELERIA_DATOS`) | Revisión de `fix/depuracion`, 2026-10-14 | — |
 
 **Resueltos el 2026-10-14** (rama `fix/depuracion`): si falla la etapa de vaciar chapas, el motivo llega a los avisos del resultado; si falla una pasada posterior o el worker termina con error, vale el último anidado que dejó escrito; el worker da por mejor un resultado recién cuando quedó escrito; y el filtro por área ya no saltea, por redondeo, piezas que llenan la chapa justa. **Y en la rama `feat/giro-libre`:** Sparrow gira las piezas a cualquier ángulo, con la casilla «Girar a cualquier ángulo» en Anidado y en la comparación de chapas, marcada por defecto (Enzo) y sin efecto con veta. **Y la barra de progreso (A7), en `main` desde el 2026-10-14 ([`historico/A7-progreso-del-anidado/`](../historico/A7-progreso-del-anidado/diseno.md)):** barra de progreso al anidar y al comparar chapas, y la comparación en segundo plano, con cancelar y retomar; con eso deja de ser un solo pedido largo que el navegador podía cortar.
+
+**Pendientes de los mensajes entendibles (A9).** Construido el 2026-10-22 en la rama `feat/mensajes-entendibles` ([`plan/A9-mensajes-entendibles/`](A9-mensajes-entendibles/diseno.md); pasa a `historico/` al fusionarse). Resolvió dos pendientes de otras tablas: una chapa de la comparación que no llega a tiempo **falla sola en su fila** y las demás se muestran (antes la comparación entera terminaba en error), y **«Margen %» e «IVA %» aceptan coma** («10,5»). Lo que quedó vivo:
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| Con el servidor apagado al abrir una pestaña, la pantalla queda en blanco: solo avisan las acciones (anidar, guardar), no las consultas que cargan la pestaña | Recorrido de A9 | — |
+| Un mensaje que nombra muchas piezas escribe todos los nombres: con 32 piezas el texto se hace largo. Mostrar los primeros y «y N más», con las miniaturas al lado | Recorrido de A9 | — |
+| En la comparación, dos chapas de la misma medida y distinto espesor se ven iguales: la fila no dice el espesor | Recorrido de A9; es anterior | — |
+| La miniatura de una chapa en Ajuste puede mostrar el plano de antes del movimiento: la dirección es la misma y el navegador la guarda | Recorrido de A9 | — |
+| El error y los avisos de un anidado del historial no se ven al volver a la pestaña: solo los del que está en curso, aunque el error queda guardado entero | Revisión de A9 | — |
+| Que el aviso de un error en la comparación distinga «el servidor se reinició» de «la reemplazó una comparación más nueva» | Revisión de A9 | — |
+| El mensaje del motor rectangular cuando no ubica piezas no dice qué hacer ni la medida de la chapa | Revisión de A9; texto del diseño | — |
+| En Ajuste, varias piezas en rojo por el margen dan varios avisos iguales: no nombran la pieza | Revisión de A9 | — |
+| Las trazas de un error inesperado ya no salen por la consola del servidor, solo en el registro; y la línea de lo que escribió el cálculo no dice de qué anidado es | Revisión de A9 | — |
+| Los mensajes de la importación de varios diseños (`/importaciones/dxf/...`) solo se revisaron con la regla, sin miniaturas; la comparación con el motor rectangular de prueba sigue cayéndose entera si falla un formato | §4 de su diseño | Que una pantalla los use |
 
 **Pendientes de la lectura con imagen (2.1a).** Se cerró el 2026-10-12 y su carpeta pasó a [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/). Esto es lo que quedó vivo y se sigue desde acá. El detalle está en los «Desvíos» de su [`plan.md`](../historico/2.1a-lectura-con-imagen/plan.md).
 

@@ -6,6 +6,8 @@ import time
 
 import pytest
 
+from .ayudas import mensaje_de
+
 from .test_rutas_nesting import _grupo_con_piezas_sin_formato, _material_con_formato_y_parametros, cliente  # noqa: F401
 
 
@@ -139,7 +141,7 @@ def test_no_se_arranca_una_segunda_comparacion_en_el_mismo_grupo(cliente, tmp_pa
     segunda = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json=pedido)
 
     assert segunda.status_code == 409
-    assert f"#{primera['id']}" in segunda.json()["detail"]
+    assert f"#{primera['id']}" in mensaje_de(segunda)
 
 
 def test_la_ultima_comparacion_del_grupo_se_retoma(cliente, tmp_path):
@@ -163,15 +165,46 @@ def test_una_comparacion_que_no_se_puede_arrancar_da_el_mismo_error_de_siempre(c
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json={"formato_ids": []})
 
     assert respuesta.status_code == 400
-    assert "al menos un formato" in respuesta.json()["detail"]
+    assert "al menos un formato" in mensaje_de(respuesta)
     assert cliente.get(f"/grupos/{grupo['id']}/comparacion").status_code == 404
 
 
-def test_una_falla_a_mitad_de_camino_queda_en_la_comparacion(cliente, tmp_path, monkeypatch):
+def test_una_chapa_que_no_llega_queda_en_su_fila_y_las_demas_se_muestran(cliente, tmp_path, monkeypatch):
     from app.api import rutas_nesting
+    from app.services.nesting.sparrow import TiempoAgotado
+
+    original = rutas_nesting.anidar_sparrow
+
+    def falla_la_chica(piezas, geometrias, plancha, params, opciones, **kw):
+        if plancha.ancho_mm == 500:
+            raise TiempoAgotado(opciones.tiempo_maximo_s)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", falla_la_chica)
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    grande, chica = _dos_formatos(cliente)
+    arrancada = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json={
+        "formato_ids": [grande, chica], **_SPARROW_RAPIDO,
+    }).json()
+
+    final = _esperar_comparacion(cliente, arrancada["id"])
+
+    por_formato = {o["formato_id"]: o for o in final["opciones"]}
+    assert final["estado"] == "lista"
+    assert por_formato[chica]["error"]["mensaje"] == "No llegó a un resultado en 20 s. Probá con más tiempo."
+    assert por_formato[chica]["planchas_usadas"] is None
+    assert por_formato[chica]["recomendado"] is False
+    assert por_formato[grande]["error"] is None
+    assert por_formato[grande]["planchas_usadas"] == 1
+    assert por_formato[grande]["recomendado"] is True
+
+
+def test_si_fallan_todas_las_chapas_cada_fila_dice_su_motivo(cliente, tmp_path, monkeypatch):
+    from app.api import rutas_nesting
+    from app.services.nesting.sparrow import CalculoInterrumpido
 
     def falla(*args, **kw):
-        raise ValueError("Sparrow no pudo calcular: falla de prueba")
+        raise CalculoInterrumpido("falla de prueba")
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", falla)
     grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
@@ -181,8 +214,32 @@ def test_una_falla_a_mitad_de_camino_queda_en_la_comparacion(cliente, tmp_path, 
 
     final = _esperar_comparacion(cliente, arrancada["id"])
 
+    assert final["estado"] == "lista"
+    assert [o["error"]["mensaje"] for o in final["opciones"]] == [
+        "El cálculo se interrumpió por un error interno. Probá de nuevo; si se repite, avisá."
+    ] * 2
+    assert all(o["error"]["detalle"] == "falla de prueba" for o in final["opciones"])
+    assert not any(o["recomendado"] for o in final["opciones"])
+
+
+def test_una_falla_que_nadie_previo_deja_la_comparacion_en_error_con_su_traza(cliente, tmp_path, monkeypatch):
+    from app.api import rutas_nesting
+    from app.mensajes import MENSAJE_INESPERADO
+
+    def bum(*args, **kw):
+        raise RuntimeError("bum")
+
+    monkeypatch.setattr(rutas_nesting, "formato_recomendado", bum)
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    arrancada = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json={
+        "formato_ids": _dos_formatos(cliente), **_SPARROW_RAPIDO,
+    }).json()
+
+    final = _esperar_comparacion(cliente, arrancada["id"])
+
     assert final["estado"] == "error"
-    assert "falla de prueba" in final["error"]
+    assert final["error"]["mensaje"] == MENSAJE_INESPERADO
+    assert "RuntimeError: bum" in final["error"]["detalle"]
 
 
 def test_una_comparacion_que_no_existe_da_404(cliente):

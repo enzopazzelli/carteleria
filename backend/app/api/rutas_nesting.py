@@ -27,14 +27,16 @@ from sqlalchemy.orm import Session
 from .. import progreso
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
+from ..mensajes import ErrorParaElUsuario, ErrorPrevisto, aviso_desde, error_para_guardar
 from ..modelos.base import Sesion
 from ..modelos.catalogo import Formato, Material
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
+from ..registro import registro
 from ..services.nesting.anidado_huecos import anidar_en_huecos
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.comparador import OpcionFormato, comparar_formatos, formato_recomendado
 from ..services.nesting.engine import MotorNestingRectangular
-from ..services.nesting.sparrow import anidar_sparrow, piezas_que_no_entran, preparar_entrada, OpcionesSparrow, ErrorGeometriaSparrow
+from ..services.nesting.sparrow import anidar_sparrow, piezas_que_no_entran, preparar_entrada, OpcionesSparrow
 from ..services.nesting.models import (
     ParametrosCorte,
     Plancha,
@@ -45,6 +47,7 @@ from ..services.nesting.models import (
 from ..services.nesting.models import Pieza as PiezaDominio
 from ..services.nesting.validacion_manual import GeometriaPieza
 from .dependencias import obtener_sesion
+from .esquemas_mensajes import ErrorLeer, avisos_leer
 from .esquemas_nesting import (
     AnidarCrear,
     ColocacionLeer,
@@ -56,6 +59,7 @@ from .esquemas_nesting import (
     ResumenMaterialesLeer,
 )
 from .rutas_trabajos import _grupo_o_404, _trabajo_o_404
+from .traducir_errores import con_nombres, medida, nombres_de_piezas, para_el_usuario
 
 router = APIRouter(tags=["nesting"])
 
@@ -95,7 +99,7 @@ def geometria_desde_pieza(pieza: Pieza) -> GeometriaPieza:
 def _ejecucion_o_404(sesion: Session, ejecucion_id: int) -> EjecucionNesting:
     ejecucion = sesion.get(EjecucionNesting, ejecucion_id)
     if ejecucion is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe la ejecución {ejecucion_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese anidado ya no existe: volvé a cargar la pestaña.")
     return ejecucion
 
 
@@ -121,8 +125,8 @@ def _parametros_de_corte(grupo: GrupoDeCorte | None, material: Material) -> Para
             separacion_piezas_mm=material.parametros.separacion_piezas_mm,
             rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
         )
-    raise ValueError(
-        f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105)."
+    raise ErrorPrevisto(
+        f"«{material.nombre}» todavía no tiene cargados el kerf, el margen y la separación: cargalos antes de anidar."
     )
 
 
@@ -130,17 +134,17 @@ def _datos_para_anidar(
     sesion: Session, grupo: GrupoDeCorte
 ) -> tuple[Plancha, ParametrosCorte, list[PiezaDominio]]:
     """Junta lo que `MotorNestingRectangular` necesita, o levanta
-    `ValueError` con un mensaje presentable si el grupo no está listo
+    `ErrorPrevisto` (un `ValueError`) con un mensaje presentable si el grupo no está listo
     todavía — nunca inventa un formato o un parámetro que falte."""
     if grupo.formato_id is None:
-        raise ValueError(f"El grupo «{grupo.nombre}» no tiene un formato asignado.")
+        raise ErrorPrevisto(f"El grupo «{grupo.nombre}» todavía no tiene chapa: elegila en la pestaña Grupos.")
     formato = sesion.get(Formato, grupo.formato_id)
 
     plancha = Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm)
     params = _parametros_de_corte(grupo, formato.material)
     piezas = [p for p in grupo.piezas if not p.descartada]
     if not piezas:
-        raise ValueError(f"El grupo «{grupo.nombre}» no tiene piezas para anidar.")
+        raise ErrorPrevisto(f"El grupo «{grupo.nombre}» no tiene piezas para anidar.")
     piezas_dominio = [
         PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad)
         for p in piezas
@@ -246,11 +250,28 @@ def _esta_cancelada(ejecucion_id: int) -> bool:
 
 def _ejecutar_anidado(ejecucion_id: int) -> None:
     """La tarea que corre en la cola. El progreso (A7) se olvida al
-    terminar, salga como salga."""
+    terminar, salga como salga. Si algo revienta fuera de lo que
+    `_correr_anidado` ataja, la corrida no queda «corriendo» para siempre:
+    pasa a error y queda en el registro (revisión de A9)."""
     try:
         _correr_anidado(ejecucion_id)
+    except Exception as error:  # noqa: BLE001 - la red: ninguna corrida queda colgada
+        _marcar_error_inesperado(ejecucion_id, error)
     finally:
         progreso.olvidar(("ejecucion", ejecucion_id))
+
+
+def _marcar_error_inesperado(ejecucion_id: int, error: Exception) -> None:
+    falla = error_para_guardar(error)
+    registro().error("El anidado #%s se cortó sin terminar: %s\n%s", ejecucion_id, falla.mensaje, falla.detalle or "")
+    with Sesion() as sesion:
+        ejecucion = sesion.get(EjecucionNesting, ejecucion_id)
+        if ejecucion is None or ejecucion.estado != EstadoEjecucion.CORRIENDO.value:
+            return
+        ejecucion.estado = EstadoEjecucion.ERROR.value
+        ejecucion.error = falla.mensaje
+        ejecucion.error_datos = {k: v for k, v in falla.como_dict().items() if k != "mensaje"}
+        sesion.commit()
 
 
 def _correr_anidado(ejecucion_id: int) -> None:
@@ -267,6 +288,9 @@ def _correr_anidado(ejecucion_id: int) -> None:
 
         inicio = time.monotonic()
         geometrias: dict[str, GeometriaPieza] = {}
+        nombres = nombres_de_piezas(ejecucion.grupo.piezas)
+        plancha = None
+        material = ((ejecucion.parametros or {}).get("formato") or {}).get("material_nombre")
         try:
             plancha, params, piezas = _datos_para_anidar(sesion, ejecucion.grupo)
             if (ejecucion.parametros or {}).get("formato"):
@@ -296,16 +320,23 @@ def _correr_anidado(ejecucion_id: int) -> None:
                         borde = float(params.margen_borde_mm + params.kerf_mm / 2)
                         util = box(borde, borde, float(plancha.ancho_mm)-borde, float(plancha.alto_mm)-borde)
                         if poligono_colocado(posicion, geometria).difference(util).area > 0.01:
-                            raise ValueError("El ajuste en huecos invade la reserva de borde/kerf.")
+                            raise ErrorParaElUsuario("Al meter piezas en los huecos, una quedó pisando el margen de la chapa: probá sin esa opción.")
                         validacion = validar_posicion_manual(posicion, geometria, posiciones, plancha, params)
                         if not validacion.valida:
-                            raise ValueError(validacion.motivo)
+                            raise ErrorParaElUsuario("Al meter piezas en los huecos, una quedó pisando otra: probá sin esa opción.", detalle=validacion.motivo)
         except Exception as error:  # noqa: BLE001 - cualquier falla del motor se reporta, no se pierde
             sesion.refresh(ejecucion)
             if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
                 return  # se canceló mientras corría: no pisar esa decisión con un error
+            try:
+                falla = para_el_usuario(error, nombres, plancha=plancha, material=material)
+            except Exception:  # noqa: BLE001 - traducir no puede dejar la corrida colgada
+                registro().exception("No se pudo traducir el error del anidado #%s", ejecucion_id)
+                falla = error_para_guardar(error)
+            registro().warning("El anidado #%s terminó en error: %s\n%s", ejecucion_id, falla.mensaje, falla.detalle or "")
             ejecucion.estado = EstadoEjecucion.ERROR.value
-            ejecucion.error = str(error)
+            ejecucion.error = falla.mensaje
+            ejecucion.error_datos = {k: v for k, v in falla.como_dict().items() if k != "mensaje"}
             sesion.commit()
             return
         milisegundos = int((time.monotonic() - inicio) * 1000)
@@ -337,7 +368,7 @@ def _correr_anidado(ejecucion_id: int) -> None:
         ejecucion.planchas_usadas = resultado.planchas_usadas
         ejecucion.aprovechamiento_pct = aprovechamiento.porcentaje_aprovechamiento
         ejecucion.milisegundos = milisegundos
-        ejecucion.mensajes = resultado.advertencias
+        ejecucion.mensajes = avisos_leer(con_nombres(aviso_desde(a), nombres) for a in resultado.advertencias)
         if not (ejecucion.parametros or {}).get("formato"):
             ejecucion.parametros = _parametros_snapshot(params)
         ejecucion.estado = EstadoEjecucion.LISTA.value
@@ -357,12 +388,17 @@ def anidar(
     parámetros, piezas) antes de encolar: un 400 acá es mejor que una
     ejecución que nace condenada a terminar en `error`."""
     grupo = _grupo_o_404(sesion, grupo_id)
+    plancha = None
     try:
         plancha, params, piezas = _datos_para_anidar(sesion, grupo)
         if datos.motor == "sparrow":
             preparar_entrada(piezas, _geometrias_del_grupo(grupo), plancha, params, OpcionesSparrow())
     except ValueError as error:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
+        formato = sesion.get(Formato, grupo.formato_id) if grupo.formato_id else None
+        raise para_el_usuario(
+            error, nombres_de_piezas(grupo.piezas), plancha=plancha,
+            material=formato.material.nombre if formato else None,
+        ) from error
 
     formato = sesion.get(Formato, grupo.formato_id)
     snapshot = {**_parametros_snapshot(params), "formato": {
@@ -440,7 +476,7 @@ def cancelar_ejecucion(
     if ejecucion.estado not in (EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"La ejecución ya está en estado «{ejecucion.estado}», no se puede cancelar.",
+            "Ese anidado ya terminó: no hay nada que cancelar.",
         )
     ejecucion.estado = EstadoEjecucion.CANCELADA.value
     sesion.commit()
@@ -457,7 +493,7 @@ def marcar_definitiva(
     ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
     if ejecucion.estado != EstadoEjecucion.LISTA.value:
         raise HTTPException(
-            status.HTTP_409_CONFLICT, "Solo una ejecución en estado «lista» puede marcarse definitiva."
+            status.HTTP_409_CONFLICT, "Solo un anidado terminado puede quedar como el que se usa para cotizar."
         )
     for otra in ejecucion.grupo.ejecuciones:
         if otra.id != ejecucion.id:
@@ -486,7 +522,7 @@ def borrar_ejecucion(ejecucion_id: int, sesion: Session = Depends(obtener_sesion
     if ejecucion.estado in (EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"La ejecución {ejecucion_id} todavía se está calculando: cancelala antes de borrarla.",
+            f"El anidado #{ejecucion_id} todavía se está calculando: cancelalo antes de borrarlo.",
         )
     sesion.delete(ejecucion)
     sesion.commit()
@@ -516,16 +552,8 @@ class _ComparacionPreparada:
     comunes: list[dict]
     opciones: list[OpcionFormato]
     a_seccionar: list[list[PiezaASeccionarLeer]]
-
-
-def _error_de_comparacion(error: ValueError) -> HTTPException:
-    """El 400 de siempre: con las piezas que Sparrow no puede leer, si es eso."""
-    if isinstance(error, ErrorGeometriaSparrow):
-        return HTTPException(status.HTTP_400_BAD_REQUEST, {
-            "mensaje": str(error),
-            "piezas_invalidas": [int(i) for i in error.piezas_invalidas],
-        })
-    return HTTPException(status.HTTP_400_BAD_REQUEST, str(error))
+    #: De `str(Pieza.id)` al nombre del dibujo, para decir los errores (A9).
+    nombres: dict[str, str]
 
 
 def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionFormatosCrear) -> _ComparacionPreparada:
@@ -538,7 +566,7 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
     if not datos.formato_ids:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Hace falta indicar al menos un formato para comparar.")
     if datos.usar_anidado_en_huecos:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "La comparación todavía no admite la pasada en huecos.")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "La comparación todavía no puede meter piezas adentro de los huecos: destildá esa opción.")
     piezas_dominio = [
         PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad) for p in piezas
     ]
@@ -548,12 +576,12 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
     for formato_id in datos.formato_ids:
         formato = sesion.get(Formato, formato_id)
         if formato is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el formato {formato_id}.")
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa chapa ya no existe: volvé a cargar la página.")
         material = formato.material
         if material.parametros is None:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105).",
+                f"«{material.nombre}» todavía no tiene cargados el kerf, el margen y la separación: cargalos antes de anidar.",
             )
         # Dos causas distintas de "no se puede calcular un precio por
         # plancha" (ver costeo.py::_linea_de_grupo, misma distinción):
@@ -564,13 +592,13 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
         if formato.costo_unidad_venta is None:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                f"El formato «{formato.ancho_mm}×{formato.alto_mm}» no tiene precio de referencia cargado.",
+                f"La chapa de {medida(formato)} no tiene precio cargado: no se puede calcular su costo.",
             )
         if formato.unidad_venta != "M2":
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                f"El formato «{formato.ancho_mm}×{formato.alto_mm}» se vende por «{formato.unidad_venta}», "
-                "no por m² — el costo no se calcula solo, hay que cargarlo a mano.",
+                f"La chapa de {medida(formato)} se vende por «{formato.unidad_venta}» y no por m²: "
+                "su costo no se calcula solo, cargalo a mano en Costeo.",
             )
         precio_por_plancha = (formato.ancho_mm / Decimal(1000)) * (formato.alto_mm / Decimal(1000)) * formato.costo_unidad_venta
         params = ParametrosCorte(
@@ -600,15 +628,17 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
         no_entran = [MotorNestingRectangular(o.plancha, o.params).piezas_que_no_entran(piezas_dominio) for o in opciones]
 
     opciones_sparrow = None
+    nombres = nombres_de_piezas(piezas)
     if datos.motor == "sparrow":
         opciones_sparrow = OpcionesSparrow(**datos.model_dump(exclude={"motor", "formato_ids", "usar_anidado_en_huecos", "criterio"}))
         # Validar todos antes de iniciar búsquedas costosas.
-        try:
-            for opcion, ids in zip(opciones, no_entran):
-                if not ids:
-                    preparar_entrada(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
-        except ValueError as error:
-            raise _error_de_comparacion(error) from error
+        for opcion, formato, ids in zip(opciones, formatos, no_entran):
+            if ids:
+                continue
+            try:
+                preparar_entrada(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
+            except ValueError as error:
+                raise para_el_usuario(error, nombres, plancha=opcion.plancha, material=formato.material.nombre) from error
 
     por_id = {str(p.id): p for p in piezas}
     return _ComparacionPreparada(
@@ -639,6 +669,7 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
             ]
             for ids in no_entran
         ],
+        nombres=nombres,
     )
 
 
@@ -648,20 +679,24 @@ def _correr_comparacion(
     cancelada: Callable[[], bool] = lambda: False,
 ) -> list[OpcionFormatoLeer]:
     """Anida cada formato y arma la tabla. No usa la base: corre igual en
-    el pedido y en la cola (A7)."""
+    el pedido y en la cola (A7). Un formato que falla queda en su fila con
+    el motivo, y los demás se muestran (A9)."""
     a_anidar = [
-        (opcion, comunes)
-        for opcion, comunes, a_seccionar in zip(preparada.opciones, preparada.comunes, preparada.a_seccionar)
+        (indice, opcion, comunes)
+        for indice, (opcion, comunes, a_seccionar) in enumerate(
+            zip(preparada.opciones, preparada.comunes, preparada.a_seccionar)
+        )
         if not a_seccionar
     ]
+    resultados: dict[int, object] = {}
+    fallas: dict[int, ErrorLeer] = {}
     if preparada.motor == "sparrow":
         from ..services.nesting.comparador import ResultadoComparacionFormato
         inicio = time.monotonic()
         maximo = len(a_anidar) * preparada.opciones_sparrow.tiempo_maximo_s
-        resultados = []
-        for numero, (opcion, comunes) in enumerate(a_anidar, start=1):
+        for numero, (indice, opcion, comunes) in enumerate(a_anidar, start=1):
             if cancelada():
-                raise ValueError("Comparación cancelada.")
+                raise ErrorPrevisto("Comparación cancelada.")
 
             def avanzar(avance: dict, numero: int = numero, descripcion: str = comunes["formato_descripcion"]) -> None:
                 if al_avanzar is not None:
@@ -671,24 +706,34 @@ def _correr_comparacion(
                         "formato": numero, "formatos": len(a_anidar), "descripcion": descripcion,
                     })
 
-            resultado = anidar_sparrow(
-                preparada.piezas, preparada.geometrias, opcion.plancha, opcion.params, preparada.opciones_sparrow,
-                cancelada=cancelada, al_avanzar=avanzar,
-            )
-            resultados.append(ResultadoComparacionFormato(
+            try:
+                resultado = anidar_sparrow(
+                    preparada.piezas, preparada.geometrias, opcion.plancha, opcion.params, preparada.opciones_sparrow,
+                    cancelada=cancelada, al_avanzar=avanzar,
+                )
+            except Exception as error:  # noqa: BLE001 - la falla de un formato queda en su fila
+                if cancelada():
+                    raise ErrorPrevisto("Comparación cancelada.") from error
+                falla = para_el_usuario(error, preparada.nombres, plancha=opcion.plancha, material=comunes["material_nombre"])
+                registro().warning(
+                    "La comparación no pudo anidar %s: %s\n%s", comunes["formato_descripcion"], falla.mensaje, falla.detalle or ""
+                )
+                fallas[indice] = ErrorLeer(**falla.como_dict())
+                continue
+            resultados[indice] = ResultadoComparacionFormato(
                 opcion, resultado, calcular_aprovechamiento(resultado, opcion.plancha, preparada.geometrias),
                 resultado.planchas_usadas * opcion.precio_por_plancha,
-            ))
+            )
     else:
-        resultados = comparar_formatos(
-            preparada.piezas, [opcion for opcion, _ in a_anidar], tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
+        en_orden = comparar_formatos(
+            preparada.piezas, [opcion for _, opcion, _ in a_anidar], tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
         )
-    recomendado = formato_recomendado(resultados, preparada.criterio) if resultados else None
+        resultados = {indice: resultado for (indice, _, _), resultado in zip(a_anidar, en_orden)}
+    recomendado = formato_recomendado(list(resultados.values()), preparada.criterio) if resultados else None
 
-    resultados_en_orden = iter(resultados)
     filas = []
-    for comunes, a_seccionar in zip(preparada.comunes, preparada.a_seccionar):
-        if a_seccionar:
+    for indice, (comunes, a_seccionar) in enumerate(zip(preparada.comunes, preparada.a_seccionar)):
+        if a_seccionar or indice in fallas:
             filas.append(OpcionFormatoLeer(
                 **comunes,
                 area_total_m2=None,
@@ -697,12 +742,13 @@ def _correr_comparacion(
                 costo_total=None,
                 recomendado=False,
                 piezas_a_seccionar=a_seccionar,
+                error=fallas.get(indice),
             ))
             continue
-        resultado = next(resultados_en_orden)
+        resultado = resultados[indice]
         filas.append(OpcionFormatoLeer(
             **comunes,
-            advertencias=resultado.resultado_anidado.advertencias,
+            advertencias=[con_nombres(aviso_desde(a), preparada.nombres) for a in resultado.resultado_anidado.advertencias],
             area_total_m2=resultado.reporte_aprovechamiento.area_total_planchas_mm2 / Decimal(1000000),
             planchas_usadas=resultado.resultado_anidado.planchas_usadas,
             aprovechamiento_pct=resultado.reporte_aprovechamiento.porcentaje_aprovechamiento,
@@ -730,4 +776,4 @@ def comparar_formatos_de_grupo(
     try:
         return _correr_comparacion(preparada)
     except ValueError as error:
-        raise _error_de_comparacion(error) from error
+        raise para_el_usuario(error, preparada.nombres) from error

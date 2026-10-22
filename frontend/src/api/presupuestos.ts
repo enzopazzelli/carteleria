@@ -156,7 +156,7 @@ export function aplicarOverride(lineaId: number, valorOverride: string | null, o
 
 export function actualizarMargenEIva(
   presupuestoId: number,
-  datos: { margen_pct?: string; iva_pct?: string }
+  datos: { margen_pct?: string | null; iva_pct?: string | null }
 ): Promise<Presupuesto> {
   return apiPatch<Presupuesto>(`/presupuestos/${presupuestoId}`, datos);
 }

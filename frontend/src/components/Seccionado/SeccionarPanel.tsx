@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import type React from "react";
-import { ApiError } from "../../api/client";
 import type { Formato } from "../../api/catalogo";
 import { proponerSeccionado, type GrillaSeccionado, type Pieza, type PropuestaSeccionado } from "../../api/piezasYgrupos";
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import { useAplicarSeccionado } from "../../hooks/usePiezas";
-import Banner from "../Banner";
 import { desplazamientoEnGrilla, grillaGuardada, leerAngulo, lineasDeGrilla } from "./geometria";
 import { crearTurnos } from "./turnos";
+import Mensaje from "../Mensaje/Mensaje";
+import { falla, type QueMostrar } from "../Mensaje/contenido";
 
 const LADO_DIBUJO_PX = 560;
 const COLORES_TRAMOS = ["#2b6cb0", "#2f855a"];
@@ -32,7 +32,7 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
   // Buscar la mejor grilla prueba cientos; evaluar una ya elegida es un
   // solo corte. Solo la búsqueda tarda como para avisarlo.
   const [buscando, setBuscando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<QueMostrar | null>(null);
   const [inicioArrastre, setInicioArrastre] = useState<{ x: number; y: number } | null>(null);
   // La búsqueda puede tardar un minuto. Si mientras tanto se cambia de
   // chapa o se pide otra grilla, la respuesta que llega tarde no se usa:
@@ -77,7 +77,7 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
       setAngulo(String(Math.round(nueva.angulo_grados * 10) / 10));
     } catch (e) {
       if (!turnos.vigente(turno)) return;
-      setError(e instanceof ApiError ? e.message : "No se pudo calcular el seccionado.");
+      setError(falla(e, "No se pudo calcular el seccionado."));
     } finally {
       if (turnos.vigente(turno)) {
         setCalculando(false);
@@ -135,7 +135,7 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
       });
       onCerrar();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "No se pudo aplicar el seccionado.");
+      setError(falla(e, "No se pudo aplicar el seccionado."));
     }
   }
 
@@ -204,7 +204,7 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
 
       {error && (
         <div className="mb-2">
-          <Banner variante="error">{error}</Banner>
+          <Mensaje variante="error" que={error} trabajoId={pieza.trabajo_id} />
         </div>
       )}
 

@@ -32,7 +32,7 @@ router = APIRouter(tags=["seccionado"])
 def _pieza_o_404(sesion: Session, pieza_id: int) -> Pieza:
     pieza = sesion.get(Pieza, pieza_id)
     if pieza is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe la pieza {pieza_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa pieza ya no existe: volvé a cargar la pestaña.")
     return pieza
 
 
@@ -60,7 +60,7 @@ def _chapa_y_parametros(sesion: Session, pieza: Pieza, formato_id: int) -> tuple
     de ese grupo si los tiene, y si no los del material de la chapa."""
     formato = sesion.get(Formato, formato_id)
     if formato is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el formato {formato_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa chapa ya no existe: volvé a cargar la página.")
     try:
         params = _parametros_de_corte(pieza.grupo, formato.material)
     except ValueError as error:

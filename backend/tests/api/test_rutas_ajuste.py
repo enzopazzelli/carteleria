@@ -138,7 +138,13 @@ def test_mover_una_pieza_encima_de_otra_es_invalido_pero_se_aplica_igual(cliente
     assert respuesta.status_code == 200
     cuerpo = respuesta.json()
     assert cuerpo["valida"] is False
-    assert "superpone" in cuerpo["motivo"]
+    piezas = {p["id"]: p["id_origen"] for p in cliente.get(f"/trabajos/{_trabajo['id']}/piezas").json()}
+    motivo = cuerpo["motivo"]
+    assert motivo["mensaje"] == (
+        f"«{piezas[a['pieza_id']]}» se pisa con «{piezas[b['pieza_id']]}» (o queda más cerca que la separación y el kerf)."
+    )
+    assert motivo["piezas"] == [a["pieza_id"], b["pieza_id"]]
+    assert motivo["chapas"] == [{"ejecucion_id": ejecucion_id, "plancha": a["plancha_indice"]}]
     # se aplicó de todas formas:
     assert cuerpo["centro_x_mm"] == b["centro_x_mm"]
 
@@ -150,7 +156,7 @@ def test_mover_una_pieza_al_margen_es_invalido(cliente, tmp_path):
     respuesta = cliente.patch(f"/colocaciones/{objetivo['id']}", json={"centro_x_mm": "1", "centro_y_mm": "1"})
 
     assert respuesta.json()["valida"] is False
-    assert "margen" in respuesta.json()["motivo"]
+    assert "margen" in respuesta.json()["motivo"]["mensaje"]
 
 
 def test_rotar_pieza_con_veta_a_angulo_libre_es_invalido(cliente, tmp_path):
@@ -160,7 +166,7 @@ def test_rotar_pieza_con_veta_a_angulo_libre_es_invalido(cliente, tmp_path):
     respuesta = cliente.patch(f"/colocaciones/{objetivo['id']}", json={"angulo_grados": "45"})
 
     assert respuesta.json()["valida"] is False
-    assert "veta" in respuesta.json()["motivo"]
+    assert "veta" in respuesta.json()["motivo"]["mensaje"]
 
 
 def test_ajustar_solo_lo_que_se_manda_conserva_el_resto(cliente, tmp_path):

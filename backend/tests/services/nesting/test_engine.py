@@ -17,7 +17,7 @@ from itertools import combinations
 
 import pytest
 
-from app.services.nesting.engine import MotorNestingRectangular
+from app.services.nesting.engine import MotorNestingRectangular, PiezasSinUbicar
 from app.services.nesting.models import ParametrosCorte, Pieza, Plancha, RotacionPermitida
 
 PLANCHA_1000X1000 = Plancha(ancho_mm=Decimal("1000"), alto_mm=Decimal("1000"))
@@ -109,7 +109,7 @@ def test_sin_tope_arbitrario_y_advierte_por_par_05():
 
     assert resultado.planchas_usadas == 5
     assert len(resultado.posiciones) == 5  # ninguna pieza se descarta por el tope
-    assert any("PAR-05" in advertencia for advertencia in resultado.advertencias)
+    assert any("más que el tope" in advertencia for advertencia in resultado.advertencias)
 
 
 def test_no_advierte_por_debajo_del_tope():
@@ -250,3 +250,22 @@ def test_kerf_margen_y_separacion_se_aplican_de_forma_independiente():
     assert posicion.y_mm == margen + kerf / 2
     assert posicion.ancho_colocado_mm == pieza.ancho_mm
     assert posicion.alto_colocado_mm == pieza.alto_mm
+
+
+def test_las_piezas_que_el_motor_rectangular_no_ubica_tienen_nombre():
+    motor = MotorNestingRectangular(
+        Plancha(Decimal(100), Decimal(100)),
+        ParametrosCorte(Decimal(0), Decimal(0), Decimal(0), RotacionPermitida.LIBRE_0_90),
+    )
+
+    with pytest.raises(PiezasSinUbicar) as error:
+        motor._validar_todas_colocadas([], [Pieza("7", Decimal(10), Decimal(10))])
+
+    assert error.value.ids == ["7"]
+
+
+def test_las_piezas_sin_ubicar_se_nombran_por_pieza_y_no_por_copia():
+    error = PiezasSinUbicar(["7#1", "7#0", "12#0"])
+
+    assert error.ids == ["12", "7"]
+    assert "7#1" in str(error)

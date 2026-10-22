@@ -95,7 +95,12 @@ _ERRORES_DE_CONVERSION = (DXFError, ValueError, TypeError, ArithmeticError, Inde
 
 
 class ArchivoDXFInvalido(Exception):
-    """El archivo no es un DXF válido, o `ezdxf` no puede leerlo."""
+    """El archivo no es un DXF válido, o `ezdxf` no puede leerlo. El texto
+    es para el usuario; la causa técnica, si hay, va en `detalle` (A9)."""
+
+    def __init__(self, mensaje: str, detalle: str | None = None) -> None:
+        super().__init__(mensaje)
+        self.detalle = detalle
 
 
 @dataclass
@@ -578,7 +583,10 @@ def parsear_dxf(
     try:
         documento = ezdxf.readfile(str(ruta))
     except (DXFError, OSError) as error:
-        raise ArchivoDXFInvalido(f"No se pudo leer '{ruta}' como DXF: {error}") from error
+        raise ArchivoDXFInvalido(
+            "No se pudo leer el archivo como DXF: exportalo de nuevo desde Corel (Archivo → Exportar → DXF) y volvé a subirlo.",
+            detalle=f"No se pudo leer '{ruta}' como DXF: {error}",
+        ) from error
 
     # `PAR-07` está en mm; `flattening` la quiere en unidades del dibujo.
     distancia_aplanado = float(_TOLERANCIA_APLANADO_MM / escala_a_mm)
@@ -671,15 +679,15 @@ def _advertencias(
     advertencias = []
     if no_cerrados:
         advertencias.append(
-            f"{no_cerrados} contorno(s) no se pudieron cerrar dentro de "
-            f"PAR-06 ({_TOLERANCIA_CIERRE_MM} mm) y se excluyeron."
+            f"{no_cerrados} contorno(s) quedan abiertos más de {_TOLERANCIA_CIERRE_MM} mm "
+            "y no se cargaron: cerralos en el dibujo."
         )
     reparados = [c for c in que_se_cruzan if c.reparado]
     excluidos = [c for c in que_se_cruzan if not c.reparado]
     if reparados:
         advertencias.append(
-            f"Se repararon {len(reparados)} contorno(s) que se cruzaban a sí mismos, corrigiendo "
-            f"a lo sumo PAR-49 ({_AREA_MAXIMA_REPARABLE_MM2} mm²) de área cada uno: {_lugares(reparados)}."
+            f"Se arreglaron {len(reparados)} contorno(s) que se cruzaban a sí mismos (cada arreglo cambia "
+            f"a lo sumo {_AREA_MAXIMA_REPARABLE_MM2} mm²): {_lugares(reparados)}."
         )
     if excluidos:
         advertencias.append(
@@ -688,11 +696,11 @@ def _advertencias(
         )
     if ilegibles:
         advertencias.append(
-            f"{sum(ilegibles.values())} entidad(es) no se pudieron leer y se excluyeron ({_detalle(ilegibles)})."
+            f"{sum(ilegibles.values())} elemento(s) del dibujo no se pudieron leer y no se cargaron ({_detalle(ilegibles)})."
         )
     if ignoradas:
         mensaje = (
-            f"Se ignoraron {sum(ignoradas.values())} entidad(es) que no son contornos "
+            f"Se dejaron afuera {sum(ignoradas.values())} elemento(s) del dibujo que no son contornos "
             f"cortables ({_detalle(ignoradas)})."
         )
         if ignoradas.keys() & {"TEXT", "MTEXT"}:

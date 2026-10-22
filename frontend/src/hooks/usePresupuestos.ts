@@ -102,7 +102,7 @@ export function useAplicarOverride(presupuestoId: number) {
 export function useActualizarMargenEIva(presupuestoId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (datos: { margen_pct?: string; iva_pct?: string }) => actualizarMargenEIva(presupuestoId, datos),
+    mutationFn: (datos: { margen_pct?: string | null; iva_pct?: string | null }) => actualizarMargenEIva(presupuestoId, datos),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["desglose", presupuestoId] }),
   });
 }

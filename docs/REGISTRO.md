@@ -119,6 +119,8 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-20** | Canales de notificación al aprobador | mail | — | Por usuario | `usuarios` | `CART-403` | 🔴 a confirmar (`P-15`) |
 | **PAR-21** | Agrupación de notificaciones | individual | — | Por usuario | `usuarios` | `CART-403` | 🔴 a confirmar (`P-15`) |
 | **PAR-22** | Frecuencia del proceso de vencimientos | diaria, 06:00 | — | Sistema | Config | `CART-401` | 🟡 provisorio |
+| **PAR-54** | Tamaño de cada archivo del registro del servidor, antes de empezar uno nuevo | 1 | MB | Sistema | Config | `plan/A9-mensajes-entendibles/diseno.md` | 🟡 provisorio — propuesto el 2026-10-15. El registro guarda las fallas con su traza, en la carpeta de datos |
+| **PAR-55** | Cuántos archivos viejos del registro del servidor se guardan | 5 | archivos | Sistema | Config | `plan/A9-mensajes-entendibles/diseno.md` | 🟡 provisorio — propuesto el 2026-10-15. Con `PAR-54`, el registro ocupa a lo sumo unos pocos MB |
 
 ### 2.4 Parámetros del dashboard
 

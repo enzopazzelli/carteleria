@@ -62,6 +62,7 @@ def test_se_superpone_directamente_con_otra_pieza():
     )
     assert not resultado.valida
     assert "p2" in resultado.motivo
+    assert resultado.choca_con == "p2"
 
 
 def test_respeta_el_buffer_minimo_de_kerf_y_separacion():

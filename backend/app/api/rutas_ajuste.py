@@ -21,7 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato
-from ..modelos.trabajo import Colocacion, EstadoEjecucion
+from ..modelos.trabajo import Colocacion, EstadoEjecucion, Pieza
 from ..services.nesting.exportacion_dxf import exportar_plancha_a_dxf, nombre_de_archivo
 from ..services.nesting.models import ParametrosCorte, Plancha, PosicionPieza, ResultadoAnidado, RotacionPermitida
 from ..services.nesting.validacion_manual import (
@@ -32,6 +32,7 @@ from ..services.nesting.validacion_manual import (
 )
 from ..services.nesting.visualizacion import render_svg_plancha
 from .dependencias import obtener_sesion
+from .esquemas_mensajes import AvisoLeer
 from .esquemas_nesting import ColocacionActualizar, ColocacionAjusteLeer
 from .rutas_nesting import _ejecucion_o_404, geometria_desde_pieza
 
@@ -56,7 +57,7 @@ def _parametros_desde_snapshot(snapshot: dict | None) -> ParametrosCorte:
     if snapshot is None:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "La ejecución no tiene un snapshot de parámetros de corte guardado.",
+            "Este anidado no guardó con qué parámetros de corte se hizo: volvé a anidar.",
         )
     return ParametrosCorte(
         kerf_mm=Decimal(snapshot["kerf_mm"]),
@@ -95,16 +96,35 @@ def _validar_lista_y_plancha(ejecucion, plancha_indice: int) -> None:
     if ejecucion.estado != EstadoEjecucion.LISTA.value:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"La ejecución está en estado «{ejecucion.estado}», todavía no hay resultado para exportar.",
+            "Este anidado todavía no terminó: no hay nada para exportar.",
         )
     total = ejecucion.planchas_usadas or 0
     if not (0 <= plancha_indice < total):
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND, f"La ejecución tiene {total} plancha(s); no existe la #{plancha_indice}."
+            status.HTTP_404_NOT_FOUND, f"Este anidado tiene {total} chapa(s): no hay una chapa {plancha_indice + 1}."
         )
 
 
 # --- Mover / rotar ---------------------------------------------------------
+
+
+def _motivo_para_el_usuario(sesion: Session, resultado, colocacion: Colocacion) -> AvisoLeer | None:
+    """El motivo de un ajuste que no vale, con las piezas y la chapa (A9)."""
+    if resultado.valida:
+        return None
+    chapas = [{"ejecucion_id": colocacion.ejecucion_id, "plancha": colocacion.plancha_indice}]
+    if resultado.choca_con is None:
+        return AvisoLeer(mensaje=resultado.motivo, piezas=[colocacion.pieza_id], chapas=chapas)
+    otra_id = int(resultado.choca_con.split("#")[0])
+    otra = sesion.get(Pieza, otra_id)
+    return AvisoLeer(
+        mensaje=(
+            f"«{colocacion.pieza.id_origen}» se pisa con «{otra.id_origen if otra else 'otra pieza'}» "
+            "(o queda más cerca que la separación y el kerf)."
+        ),
+        piezas=[colocacion.pieza_id, otra_id],
+        chapas=chapas,
+    )
 
 
 @router.patch("/colocaciones/{colocacion_id}", response_model=ColocacionAjusteLeer)
@@ -113,12 +133,12 @@ def ajustar_colocacion(
 ) -> ColocacionAjusteLeer:
     colocacion = sesion.get(Colocacion, colocacion_id)
     if colocacion is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe la colocación {colocacion_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa pieza ya no está en el anidado: volvé a cargar la pestaña.")
     ejecucion = colocacion.ejecucion
     if ejecucion.estado != EstadoEjecucion.LISTA.value:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"La ejecución está en estado «{ejecucion.estado}»; solo se puede ajustar una colocación «lista».",
+            "Solo se pueden mover piezas de un anidado terminado.",
         )
 
     propuesta = PosicionManual(
@@ -158,7 +178,7 @@ def ajustar_colocacion(
         angulo_grados=colocacion.angulo_grados,
         movida_a_mano=colocacion.movida_a_mano,
         valida=resultado_validacion.valida,
-        motivo=resultado_validacion.motivo,
+        motivo=_motivo_para_el_usuario(sesion, resultado_validacion, colocacion),
     )
 
 

@@ -10,6 +10,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ..modelos.catalogo import Moneda
+from .etiquetas import ETIQUETAS_DE_CAMPOS
 
 # --- Topes -----------------------------------------------------------------
 # Lo que se rechaza al entrar por absurdo, no por una regla de negocio: un
@@ -79,7 +80,7 @@ class PresupuestoActualizar(BaseModel):
         # este chequeo el `null` llegaba a la base y volvía como error 500.
         for campo in ("cliente_id", "validez_dias", "moneda"):
             if campo in self.model_fields_set and getattr(self, campo) is None:
-                raise ValueError(f"{campo} no puede quedar vacío.")
+                raise ValueError(f"«{ETIQUETAS_DE_CAMPOS.get(campo, campo)}» no puede quedar vacío.")
         return self
 
 
@@ -137,7 +138,7 @@ class LineaCostoOverride(BaseModel):
     @model_validator(mode="after")
     def _override_por_es_obligatorio_si_hay_override(self) -> LineaCostoOverride:
         if self.valor_override is not None and not self.override_por:
-            raise ValueError("override_por es obligatorio para aplicar un override — hay que saber quién lo hizo.")
+            raise ValueError("Falta quién cargó el valor a mano.")
         return self
 
 

@@ -172,7 +172,7 @@ def test_un_formato_sin_precio_no_calcula_costo_cero(sesion):
     assert linea.area_total_m2 is not None, "el área se calcula igual, con o sin precio"
     assert linea.costo_estimado is None
     assert linea.precio_unitario is None
-    assert any("no tiene precio de referencia" in a for a in linea.advertencias)
+    assert any("no tiene precio cargado" in a for a in linea.advertencias)
 
 
 def test_una_unidad_de_venta_distinta_de_m2_no_se_multiplica_a_ciegas(sesion):
@@ -224,7 +224,7 @@ def test_sin_ejecucion_definitiva_usa_la_mas_reciente_lista_y_avisa(sesion):
 
     linea = resumen.lineas[0]
     assert linea.planchas_usadas == 4, "tiene que usar la más reciente, no la primera"
-    assert any("ninguna ejecución está marcada como definitiva" in a for a in linea.advertencias)
+    assert any("ningún anidado está elegido para cotizar" in a for a in linea.advertencias)
 
 
 def test_piezas_sin_asignar_se_reportan_en_advertencias_generales(sesion):

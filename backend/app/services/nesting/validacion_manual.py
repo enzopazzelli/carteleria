@@ -94,6 +94,9 @@ class PosicionManual:
 class ResultadoValidacion:
     valida: bool
     motivo: str | None = None
+    #: El `pieza_id` («id#instancia») de la pieza con la que choca, si el
+    #: motivo es ese (A9: la ruta la nombra como en el dibujo).
+    choca_con: str | None = None
 
 
 def _poligono_centrado(geometria: GeometriaPieza) -> Polygon:
@@ -223,11 +226,11 @@ def validar_posicion_manual(
     `PAR-03` para toda la tanda. Es un PISO para ese par puntual —
     `max` contra la separación global, nunca la reemplaza hacia abajo."""
     if params.rotaciones_permitidas is RotacionPermitida.SOLO_0_180 and propuesta.angulo_grados % Decimal(180) != 0:
-        return ResultadoValidacion(False, "Este material tiene veta (PAR-04): solo admite 0°/180°, no ángulo libre.")
+        return ResultadoValidacion(False, "Este material tiene veta: la pieza solo se puede girar media vuelta (0° o 180°).")
 
     poligono_propuesto = poligono_colocado(propuesta, geometria_propuesta)
     if _invade_margen(poligono_propuesto, plancha, params.margen_borde_mm):
-        return ResultadoValidacion(False, "La pieza invade el margen de borde de la plancha.")
+        return ResultadoValidacion(False, "La pieza pisa el margen de borde de la chapa.")
 
     for otra_posicion, otra_geometria in otras:
         if otra_posicion.pieza_id == propuesta.pieza_id or otra_posicion.plancha_indice != propuesta.plancha_indice:
@@ -263,7 +266,9 @@ def validar_posicion_manual(
             invalida = poligono_propuesto.intersection(otro_poligono).area > _EPSILON_AREA_MM2
         if invalida:
             return ResultadoValidacion(
-                False, f"Se superpone con '{otra_posicion.pieza_id}' (o invade su separación/kerf mínimos)."
+                False,
+                f"Se superpone con '{otra_posicion.pieza_id}' (o invade su separación/kerf mínimos).",
+                choca_con=otra_posicion.pieza_id,
             )
 
     return ResultadoValidacion(True)

@@ -19,6 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import config
+from ..mensajes import ErrorParaElUsuario
 from ..modelos.trabajo import GrupoDeCorte, Pieza, Trabajo
 from ..services.ingesta.analisis import (
     AREA_MINIMA_GEMELA_MM2,
@@ -67,14 +68,14 @@ router = APIRouter(tags=["trabajos"])
 def _trabajo_o_404(sesion: Session, trabajo_id: int) -> Trabajo:
     trabajo = sesion.get(Trabajo, trabajo_id)
     if trabajo is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el trabajo {trabajo_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese trabajo ya no existe: volvé a la lista de trabajos.")
     return trabajo
 
 
 def _grupo_o_404(sesion: Session, grupo_id: int) -> GrupoDeCorte:
     grupo = sesion.get(GrupoDeCorte, grupo_id)
     if grupo is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el grupo de corte {grupo_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese grupo ya no existe: volvé a cargar la pestaña.")
     return grupo
 
 
@@ -190,20 +191,21 @@ def _correcciones(texto: str | None) -> dict[str, Rol]:
     try:
         datos = json.loads(texto)
     except json.JSONDecodeError as error:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST, f"Las correcciones no son un JSON válido ({error.msg})."
+        raise ErrorParaElUsuario(
+            "No se pudieron leer las correcciones del dibujo: volvé a marcarlas.",
+            detalle=f"Las correcciones no son un JSON válido ({error.msg}).",
         ) from error
     if not isinstance(datos, dict):
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "Las correcciones tienen que ser un objeto: de nombre de forma a «cortar» o «no_va».",
+        raise ErrorParaElUsuario(
+            "No se pudieron leer las correcciones del dibujo: volvé a marcarlas.",
+            detalle="Las correcciones tienen que ser un objeto: de nombre de forma a «cortar» o «no_va».",
         )
     correcciones = {}
     for forma, valor in datos.items():
         if not isinstance(valor, str) or valor not in _ROL_DE_UNA_CORRECCION:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                f"«{valor}» no es una corrección: para «{forma}» tiene que ser «cortar» o «no_va».",
+                f"No se entendió la corrección de «{forma}»: volvé a marcarla.",
             )
         correcciones[forma] = _ROL_DE_UNA_CORRECCION[valor]
     return correcciones
@@ -306,7 +308,7 @@ def _leer(
         # va también: se quedaron sin la pieza de la que eran el hueco.
         resultado = parsear_dxf(ruta, escala_a_mm, tamano, marcadas=set(correcciones), no_van=no_van)
     except ArchivoDXFInvalido as error:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
+        raise ErrorParaElUsuario(str(error), detalle=error.detalle) from error
 
     # Lo que no va no es parte del diseño: no es el hueco de nadie ni se
     # une con nada. Pasa a la lectura unida como está, para verlo ahí y
@@ -342,7 +344,7 @@ def _leer(
     if ajenas:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            f"Las correcciones nombran formas que no están en este archivo: {', '.join(ajenas)}.",
+            f"Algunas formas marcadas no están en este archivo: {', '.join(ajenas)}. Volvé a marcarlas.",
         )
     avisos = list(resultado.advertencias)
     if not uniones:
@@ -542,7 +544,7 @@ def actualizar_pieza(
 ) -> Pieza:
     pieza = sesion.get(Pieza, pieza_id)
     if pieza is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe la pieza {pieza_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa pieza ya no existe: volvé a cargar la pestaña.")
     valores = datos.model_dump(exclude_unset=True)
     if valores.get("descartada") is False and pieza.seccionado is not None:
         raise HTTPException(

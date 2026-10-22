@@ -44,6 +44,19 @@ def _a_mm(valor_micrones: int) -> Decimal:
     return Decimal(valor_micrones) / _MICRONES_POR_MM
 
 
+class PiezasSinUbicar(ValueError):
+    """El motor rectangular no ubicó todas las piezas (A9). Fallar acá, en
+    vez de descartarlas en silencio, es la corrección de
+    `DECISIONES-Y-BLOQUEANTES.md §1.2`."""
+
+    def __init__(self, ids):
+        copias = sorted(str(i) for i in ids)
+        # Cada copia de una pieza viaja como «<id de pieza>#<copia>»: el
+        # mensaje nombra la pieza, el detalle conserva las copias.
+        self.ids = sorted({c.split("#")[0] for c in copias})
+        super().__init__(f"El motor no pudo ubicar todas las piezas (no colocadas: {copias}).")
+
+
 class MotorNestingRectangular:
     """Empaqueta piezas rectangulares sobre planchas de un único formato.
 
@@ -140,12 +153,7 @@ class MotorNestingRectangular:
         colocadas = {rect.rid for bin_ in packer for rect in bin_}
         faltantes = {pieza.id for pieza in piezas_expandidas} - colocadas
         if faltantes:
-            raise ValueError(
-                "El motor no pudo ubicar todas las piezas sobre el formato "
-                f"elegido (no colocadas: {sorted(faltantes)}). Fallar acá, "
-                "en vez de descartarlas en silencio, es la corrección de "
-                "DECISIONES-Y-BLOQUEANTES.md §1.2 sobre el bug original."
-            )
+            raise PiezasSinUbicar(faltantes)
 
     def _extraer_posiciones(self, packer, piezas_expandidas: list[Pieza]) -> list[PosicionPieza]:
         por_id = {pieza.id: pieza for pieza in piezas_expandidas}
@@ -179,7 +187,6 @@ class MotorNestingRectangular:
         if planchas_usadas <= tope:
             return []
         return [
-            f"El trabajo usa {planchas_usadas} planchas, por encima del tope "
-            f"de negocio configurado (PAR-05 = {tope}). No se truncó el "
-            "resultado — revisar antes de confirmar el pedido."
+            f"El trabajo usa {planchas_usadas} chapas, más que el tope de {tope} "
+            "que se fijó para revisar. Se calculó entero: revisalo antes de confirmar el pedido."
         ]

@@ -140,3 +140,18 @@ export function cambiosDeLinea(
   }
   return cambios;
 }
+
+/** Un porcentaje como se escribe acá («10,5», «10.5», «21 %») → el número
+ * que espera la API, o `null` si no lo es. Vacío también es `null`. Con
+ * `conSigno` acepta un menos adelante (un margen puede ser negativo). */
+export function leerPorcentaje(texto: string, { conSigno = false }: { conSigno?: boolean } = {}): string | null {
+  const limpio = texto.trim().replace(/\s*%$/, "").replace(",", ".");
+  return (conSigno ? /^-?\d+(\.\d+)?$/ : /^\d+(\.\d+)?$/).test(limpio) ? limpio : null;
+}
+
+/** Lo que se manda al guardar un porcentaje: el número; `null` si el campo
+ * quedó vacío (la API lo limpia); `undefined` si no es un porcentaje. */
+export function porcentajeParaGuardar(texto: string, opciones: { conSigno?: boolean } = {}): string | null | undefined {
+  if (texto.trim() === "") return null;
+  return leerPorcentaje(texto, opciones) ?? undefined;
+}

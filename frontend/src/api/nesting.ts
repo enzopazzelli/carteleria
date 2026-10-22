@@ -1,4 +1,5 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "./client";
+import type { Aviso, ErrorDelServidor } from "./mensajes";
 
 /** Cómo va un anidado o una comparación en curso (A7). Lo que el motor
  * todavía no informó viene en `null`. */
@@ -24,8 +25,8 @@ export interface Ejecucion {
   planchas_usadas: number | null;
   aprovechamiento_pct: string | null;
   milisegundos: number | null;
-  mensajes: string[] | null;
-  error: string | null;
+  mensajes: Aviso[] | null;
+  error: ErrorDelServidor | null;
   es_definitiva: boolean;
   creado_en: string;
   /** Solo mientras corre (A7). */
@@ -79,7 +80,7 @@ export interface Colocacion {
 
 export interface ColocacionAjustada extends Colocacion {
   valida: boolean;
-  motivo: string | null;
+  motivo: Aviso | null;
 }
 
 export function listarColocaciones(ejecucionId: number): Promise<Colocacion[]> {
@@ -95,6 +96,11 @@ export function ajustarColocacion(
 
 export function urlPlano(ejecucionId: number, plancha: number): string {
   return `http://localhost:8000/ejecuciones/${ejecucionId}/plano?plancha=${plancha}`;
+}
+
+/** El plano de una chapa sin nombres de piezas, para su miniatura (A9). */
+export function urlPlanoMiniatura(ejecucionId: number, plancha: number): string {
+  return `${urlPlano(ejecucionId, plancha)}&etiquetas=false`;
 }
 
 export function urlDxf(ejecucionId: number, plancha: number): string {

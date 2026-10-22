@@ -89,9 +89,6 @@ def por_chapa(placed):
     for q in placed:chapas.setdefault(q['sheet'],[]).append({k:v for k,v in q.items() if k!='sheet'})
     return [chapas[s] for s in sorted(chapas)]
 
-def _motivo(error):
-    return (str(error) or type(error).__name__)[:200]
-
 def resolver(data, salida=None):
     from .sparrow import convertir_y_validar, ruta_de_avisos, ruta_de_progreso
     from .sparrow_reparto import vaciar_chapas
@@ -154,7 +151,8 @@ def resolver(data, salida=None):
             # lo que ya se encontró. Si falla la primera, no hay nada que
             # conservar.
             if best is None: raise
-            avisar(f'La pasada {intento+1} de Sparrow falló ({_motivo(error)}): queda el mejor anidado de las anteriores.')
+            print(f'pasada {intento+1}:',repr(error),file=sys.stderr)
+            avisar('Una de las vueltas de búsqueda falló: quedó el mejor resultado de las anteriores.')
             break
         if score[0]==minimo: break
         if opts.get('vaciar_chapas',True):
@@ -177,7 +175,7 @@ def resolver(data, salida=None):
                 # `BaseException` porque spyrrow avisa sus fallas internas
                 # con `PanicException`, que no desciende de `Exception`.
                 print('vaciar_chapas:',error,file=sys.stderr)
-                avisar(f'No se pudo terminar de vaciar chapas ({_motivo(error)}): el resultado es el mejor anidado completo que se encontró.')
+                avisar('No se pudo terminar de vaciar chapas: este es el mejor resultado completo que encontró.')
             if score[0]==minimo: break
     return best
 

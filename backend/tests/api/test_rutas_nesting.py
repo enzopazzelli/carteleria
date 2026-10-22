@@ -13,6 +13,8 @@ from decimal import Decimal
 
 import ezdxf
 import pytest
+
+from .ayudas import mensaje_de
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -123,7 +125,7 @@ def test_anidar_grupo_sin_formato_da_400(cliente):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
 
     assert respuesta.status_code == 400
-    assert "formato" in respuesta.json()["detail"]
+    assert "todavía no tiene chapa" in mensaje_de(respuesta)
 
 
 def test_anidar_grupo_sin_parametros_de_corte_da_400(cliente):
@@ -139,7 +141,7 @@ def test_anidar_grupo_sin_parametros_de_corte_da_400(cliente):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
 
     assert respuesta.status_code == 400
-    assert "parámetros de corte" in respuesta.json()["detail"]
+    assert "el kerf, el margen y la separación" in mensaje_de(respuesta)
 
 
 def test_anidar_grupo_sin_piezas_da_400(cliente):
@@ -152,7 +154,7 @@ def test_anidar_grupo_sin_piezas_da_400(cliente):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
 
     assert respuesta.status_code == 400
-    assert "piezas" in respuesta.json()["detail"]
+    assert "piezas" in mensaje_de(respuesta)
 
 
 def test_anidar_grupo_inexistente_da_404(cliente):
@@ -322,7 +324,7 @@ def test_borrar_un_anidado_inexistente_da_404(cliente):
 
     # El mensaje, y no solo el 404: una ruta que no existe también da 404.
     assert respuesta.status_code == 404
-    assert "No existe la ejecución 999" in respuesta.json()["detail"]
+    assert "Ese anidado ya no existe" in mensaje_de(respuesta)
 
 
 @pytest.mark.parametrize("estado", [EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value])
@@ -339,7 +341,7 @@ def test_un_anidado_en_curso_no_se_borra(cliente, tmp_path, estado):
     respuesta = cliente.delete(f"/ejecuciones/{ejecucion_id}")
 
     assert respuesta.status_code == 409
-    assert "cancel" in respuesta.json()["detail"].lower()
+    assert "cancel" in mensaje_de(respuesta).lower()
     assert cliente.get(f"/ejecuciones/{ejecucion_id}").status_code == 200
 
 
@@ -431,7 +433,7 @@ def test_anidar_sin_el_flag_no_usa_huecos_y_guarda_la_opcion_en_falso(cliente, t
 
     assert final["estado"] == "lista"
     assert final["opciones"] == {"usar_anidado_en_huecos": False}
-    assert not any("reubicada" in mensaje for mensaje in (final["mensajes"] or []))
+    assert not any("reubicada" in aviso["mensaje"] for aviso in (final["mensajes"] or []))
 
 
 def test_anidar_con_el_flag_reubica_la_pieza_chica_dentro_del_agujero(cliente, tmp_path):
@@ -442,7 +444,7 @@ def test_anidar_con_el_flag_reubica_la_pieza_chica_dentro_del_agujero(cliente, t
 
     assert final["estado"] == "lista"
     assert final["opciones"] == {"usar_anidado_en_huecos": True}
-    assert any("reubicada" in mensaje for mensaje in (final["mensajes"] or []))
+    assert any("reubicada" in aviso["mensaje"] for aviso in (final["mensajes"] or []))
 
     piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
     chica = next(p for p in piezas if Decimal(p["ancho_mm"]) == Decimal("30"))
@@ -671,7 +673,7 @@ def test_comparar_formatos_grupo_sin_piezas_da_400(cliente):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": [formato["id"]]})
 
     assert respuesta.status_code == 400
-    assert "piezas" in respuesta.json()["detail"]
+    assert "piezas" in mensaje_de(respuesta)
 
 
 def test_comparar_formatos_con_formato_inexistente_da_404(cliente, tmp_path):
@@ -692,7 +694,7 @@ def test_comparar_formatos_lista_vacia_da_400(cliente, tmp_path):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": []})
 
     assert respuesta.status_code == 400
-    assert "formato" in respuesta.json()["detail"]
+    assert "formato" in mensaje_de(respuesta)
 
 
 def test_comparar_formatos_sin_precio_no_confunde_la_unidad_de_venta(cliente, tmp_path):
@@ -719,7 +721,7 @@ def test_comparar_formatos_sin_precio_no_confunde_la_unidad_de_venta(cliente, tm
     )
 
     assert respuesta.status_code == 400
-    detalle = respuesta.json()["detail"]
+    detalle = mensaje_de(respuesta)
     assert "precio" in detalle
     assert "se vende por" not in detalle
 
@@ -741,7 +743,7 @@ def test_sparrow_preflight_no_encola_piezas_que_no_entran(cliente,tmp_path):
     _,grupo=_trabajo_con_grupo_listo(cliente,tmp_path,ancho=1000,alto=1000)
     r=cliente.post(f"/grupos/{grupo['id']}/anidar",json={"motor":"sparrow"})
     assert r.status_code==400
-    assert 'no entran' in r.json()['detail']
+    assert 'no entran' in mensaje_de(r)
     assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json()==[]
 
 
@@ -881,3 +883,99 @@ def test_una_corrida_terminada_no_trae_progreso_aunque_la_memoria_no_lo_haya_olv
     assert final["estado"] == "lista", final.get("error")
     assert en_memoria is not None, "la prueba necesita que la memoria todavía lo tenga"
     assert final["progreso"] is None
+
+
+def test_un_anidado_que_falla_sin_que_nadie_lo_prevea_guarda_el_mensaje_general_y_la_traza(
+    cliente, tmp_path, monkeypatch, caplog
+):
+    from app.api import rutas_nesting
+    from app.mensajes import MENSAJE_INESPERADO
+
+    def bum(self, piezas, tope_planchas_advertencia):
+        raise RuntimeError("bum")
+
+    monkeypatch.setattr(rutas_nesting.MotorNestingRectangular, "anidar", bum)
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    with caplog.at_level("WARNING", logger="carteleria"):
+        ejecucion_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+        final = _esperar_estado(cliente, ejecucion_id)
+
+    assert final["estado"] == "error"
+    assert final["error"]["mensaje"] == MENSAJE_INESPERADO
+    assert "RuntimeError: bum" in final["error"]["detalle"]
+    assert "RuntimeError: bum" in caplog.text
+
+
+def test_una_corrida_de_antes_de_a9_se_lee_igual(cliente, tmp_path):
+    from sqlalchemy.orm import Session
+
+    from app.modelos.trabajo import EjecucionNesting
+
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    with Session(cliente.motor) as sesion:
+        vieja = EjecucionNesting(grupo_id=grupo["id"], motor="rectpack", estado="error", error="texto viejo", mensajes=["aviso viejo"])
+        sesion.add(vieja)
+        sesion.commit()
+        vieja_id = vieja.id
+
+    leida = cliente.get(f"/ejecuciones/{vieja_id}").json()
+
+    assert leida["error"] == {"mensaje": "texto viejo", "detalle": None, "piezas": [], "chapas": [], "piezas_invalidas": []}
+    assert leida["mensajes"] == [{"mensaje": "aviso viejo", "piezas": [], "chapas": []}]
+
+
+def test_anidar_una_pieza_mas_grande_que_la_chapa_la_nombra(cliente, tmp_path):
+    trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path, ancho=2000, alto=100)
+    pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={"motor": "sparrow"})
+
+    detalle = respuesta.json()["detail"]
+    assert respuesta.status_code == 400
+    assert detalle["mensaje"].startswith("Estas piezas no entran en la chapa de 1000 × 1000")
+    assert f"«{pieza['id_origen']}»" in detalle["mensaje"]
+    assert detalle["piezas"] == [pieza["id"]]
+
+
+def test_si_falla_la_traduccion_del_error_la_corrida_igual_termina_en_error(cliente, tmp_path, monkeypatch):
+    """Revisión de A9: si el manejo del error revienta, la corrida no puede
+    quedar «corriendo» para siempre."""
+    from app.api import rutas_nesting
+    from app.mensajes import MENSAJE_INESPERADO
+
+    def bum(self, piezas, tope_planchas_advertencia):
+        raise RuntimeError("bum")
+
+    def traduccion_rota(*args, **kwargs):
+        raise RuntimeError("la traducción también falla")
+
+    monkeypatch.setattr(rutas_nesting.MotorNestingRectangular, "anidar", bum)
+    monkeypatch.setattr(rutas_nesting, "para_el_usuario", traduccion_rota)
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    ejecucion_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+    final = _esperar_estado(cliente, ejecucion_id)
+
+    assert final["estado"] == "error"
+    assert final["error"]["mensaje"] == MENSAJE_INESPERADO
+
+
+def test_si_falla_algo_despues_del_calculo_la_corrida_igual_termina_en_error(cliente, tmp_path, monkeypatch, caplog):
+    from app.api import rutas_nesting
+    from app.mensajes import MENSAJE_INESPERADO
+
+    def aprovechamiento_roto(*args, **kwargs):
+        raise RuntimeError("falla al medir")
+
+    monkeypatch.setattr(rutas_nesting, "calcular_aprovechamiento", aprovechamiento_roto)
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    with caplog.at_level("ERROR", logger="carteleria"):
+        ejecucion_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+        final = _esperar_estado(cliente, ejecucion_id)
+
+    assert final["estado"] == "error"
+    assert final["error"]["mensaje"] == MENSAJE_INESPERADO
+    assert "falla al medir" in final["error"]["detalle"]
+    assert "falla al medir" in caplog.text

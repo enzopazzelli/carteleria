@@ -5,6 +5,8 @@ from decimal import Decimal
 
 import ezdxf
 import pytest
+
+from .ayudas import mensaje_de
 from sqlalchemy.orm import Session
 
 from app.modelos.trabajo import Colocacion, EjecucionNesting, Pieza
@@ -75,7 +77,7 @@ def test_una_pieza_que_entra_entera_no_se_secciona(cliente, tmp_path):
     respuesta = _proponer(cliente, pieza["id"], formato_id=formato["id"])
 
     assert respuesta.status_code == 400
-    assert "entra entera" in respuesta.json()["detail"]
+    assert "entra entera" in mensaje_de(respuesta)
 
 
 def test_un_formato_sin_parametros_de_corte_da_400(cliente, tmp_path):
@@ -88,7 +90,7 @@ def test_un_formato_sin_parametros_de_corte_da_400(cliente, tmp_path):
     respuesta = _proponer(cliente, pieza["id"], formato_id=formato["id"])
 
     assert respuesta.status_code == 400
-    assert "parámetros de corte" in respuesta.json()["detail"]
+    assert "el kerf, el margen y la separación" in mensaje_de(respuesta)
 
 
 @pytest.mark.parametrize("ancho_de_la_chapa", ["27", "20"])
@@ -108,7 +110,7 @@ def test_una_chapa_que_no_deja_superficie_util_da_400(cliente, tmp_path, ancho_d
     })
 
     assert propuesta.status_code == 400, propuesta.text
-    assert "superficie útil" in propuesta.json()["detail"]
+    assert "superficie útil" in mensaje_de(propuesta)
     assert aplicado.status_code == 400, aplicado.text
 
 
@@ -153,7 +155,7 @@ def test_una_pieza_inexistente_da_404(cliente):
 
     # El mensaje, y no solo el 404: una ruta que no existe también da 404.
     assert respuesta.status_code == 404
-    assert "No existe la pieza 999" in respuesta.json()["detail"]
+    assert "Esa pieza ya no existe" in mensaje_de(respuesta)
 
 
 def _aplicar(cliente, pieza_id, formato_id, angulo=0, dx=0, dy=0):
@@ -273,7 +275,7 @@ def test_un_tramo_no_se_secciona(cliente, tmp_path):
     respuesta = cliente.post(f"/piezas/{tramo['id']}/seccionado/propuesta", json={"formato_id": formato["id"]})
 
     assert respuesta.status_code == 400
-    assert "es un tramo" in respuesta.json()["detail"]
+    assert "es un tramo" in mensaje_de(respuesta)
 
 
 def _guardar_anidado_con(cliente, trabajo_id: int, pieza_id: int) -> int:
@@ -299,11 +301,11 @@ def test_con_un_tramo_en_un_anidado_guardado_no_se_deshace_ni_se_vuelve_a_seccio
     deshacer = cliente.delete(f"/piezas/{pieza['id']}/seccionado")
     rehacer = _aplicar(cliente, pieza["id"], formato["id"], dx=200)
 
-    assert deshacer.status_code == 409 and "Con anidado" in deshacer.json()["detail"]
+    assert deshacer.status_code == 409 and "Con anidado" in mensaje_de(deshacer)
     assert rehacer.status_code == 409
     # Dice cuál hay que borrar y dónde, no «borrá el grupo».
-    assert f"#{anidado_id}" in rehacer.json()["detail"]
-    assert "pestaña Anidado" in rehacer.json()["detail"]
+    assert f"#{anidado_id}" in mensaje_de(rehacer)
+    assert "pestaña Anidado" in mensaje_de(rehacer)
 
 
 def test_borrado_el_anidado_se_puede_volver_a_seccionar_y_deshacer(cliente, tmp_path):
@@ -361,7 +363,7 @@ def test_una_pieza_descartada_a_mano_no_se_secciona(cliente, tmp_path, ruta):
     })
 
     assert respuesta.status_code == 409
-    assert "descartada" in respuesta.json()["detail"]
+    assert "descartada" in mensaje_de(respuesta)
     assert not [p for p in _piezas(cliente, trabajo["id"]) if p["seccionada_de_id"] == pieza["id"]]
 
 
@@ -402,8 +404,8 @@ def test_mientras_corre_un_anidado_del_grupo_no_se_secciona_ni_se_deshace(client
         respuesta = _aplicar(cliente, pieza["id"], formato["id"], dx=200)
 
     assert respuesta.status_code == 409
-    assert f"#{anidado_id}" in respuesta.json()["detail"]
-    assert "cancel" in respuesta.json()["detail"]
+    assert f"#{anidado_id}" in mensaje_de(respuesta)
+    assert "cancel" in mensaje_de(respuesta)
     assert _piezas(cliente, trabajo["id"]) == antes
 
 
@@ -418,7 +420,7 @@ def test_un_anidado_en_curso_en_el_grupo_de_un_tramo_movido_tampoco_deja_deshace
     respuesta = cliente.delete(f"/piezas/{pieza['id']}/seccionado")
 
     assert respuesta.status_code == 409
-    assert f"#{anidado_id}" in respuesta.json()["detail"]
+    assert f"#{anidado_id}" in mensaje_de(respuesta)
 
 
 @pytest.mark.parametrize("estado", ["lista", "error", "cancelada"])
@@ -440,7 +442,7 @@ def test_restaurar_una_pieza_seccionada_se_rechaza(cliente, tmp_path):
     respuesta = cliente.patch(f"/piezas/{pieza['id']}", json={"descartada": False})
 
     assert respuesta.status_code == 409
-    assert "deshacé el seccionado" in respuesta.json()["detail"]
+    assert "deshacé el seccionado" in mensaje_de(respuesta)
 
 
 # Con `ON DELETE CASCADE` la base borraría los tramos antes que el ORM, que

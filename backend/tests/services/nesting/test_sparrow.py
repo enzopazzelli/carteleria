@@ -171,9 +171,10 @@ def test_un_reparto_que_falla_queda_en_los_avisos(monkeypatch,tmp_path,consulta)
     assert 'vaciar chapas' in aviso
 
 
-def test_una_pasada_que_falla_despues_de_la_primera_no_pierde_lo_encontrado(monkeypatch,tmp_path):
+def test_una_pasada_que_falla_despues_de_la_primera_no_pierde_lo_encontrado(monkeypatch,tmp_path,capsys):
     """De 60 entra uno por chapa, y por área podrían ser dos: el worker
-    prueba una segunda pasada. Si esa falla, vale la primera."""
+    prueba una segunda pasada. Si esa falla, vale la primera. El aviso no
+    trae la causa: va al registro del worker (A9)."""
     entrada=entrada_de_cuadrados(4,lado=60,intentos=2,tiempo_maximo_s=60,vaciar_chapas=False)
     llamadas=[]
     def pasada(data):
@@ -187,11 +188,11 @@ def test_una_pasada_que_falla_despues_de_la_primera_no_pierde_lo_encontrado(monk
 
     assert len(llamadas)==2
     assert chapas_usadas(colocadas)==4
-    [aviso]=avisos_escritos(salida)
-    assert 'pánico de prueba' in aviso
+    assert avisos_escritos(salida)==['Una de las vueltas de búsqueda falló: quedó el mejor resultado de las anteriores.']
+    assert 'pánico de prueba' in capsys.readouterr().err
 
 
-def test_una_pasada_posterior_que_no_valida_no_pierde_lo_encontrado(monkeypatch,tmp_path):
+def test_una_pasada_posterior_que_no_valida_no_pierde_lo_encontrado(monkeypatch,tmp_path,capsys):
     entrada=entrada_de_cuadrados(4,lado=60,intentos=2,tiempo_maximo_s=60,vaciar_chapas=False)
     llamadas=[]
     def pasada(data):
@@ -205,8 +206,8 @@ def test_una_pasada_posterior_que_no_valida_no_pierde_lo_encontrado(monkeypatch,
     colocadas=sparrow_worker.resolver(entrada,salida)
 
     assert chapas_usadas(colocadas)==4
-    [aviso]=avisos_escritos(salida)
-    assert 'pasada 2' in aviso
+    assert avisos_escritos(salida)==['Una de las vueltas de búsqueda falló: quedó el mejor resultado de las anteriores.']
+    assert 'pasada 2' in capsys.readouterr().err
 
 
 def test_un_mismo_aviso_no_se_repite(monkeypatch,tmp_path):
@@ -313,16 +314,17 @@ def test_avisar_no_deja_el_archivo_de_avisos_a_medias(monkeypatch,tmp_path):
     assert len(json.loads(ruta_de_avisos(salida).read_bytes()))==1
 
 
-def test_si_el_worker_termina_con_error_vale_lo_que_dejo_escrito(monkeypatch,tmp_path):
-    """Antes se descartaba el anidado de la primera pasada. El aviso dice
-    la causa: el registro del worker se borra con su carpeta."""
-    con_worker(monkeypatch,worker_falso(tmp_path,1,registro='Traceback...\nValueError: causa de prueba'))
+def test_si_el_worker_termina_con_error_vale_lo_que_dejo_escrito(monkeypatch, tmp_path, caplog):
+    """Antes se descartaba el anidado de la primera pasada. El aviso no
+    trae lo técnico: la causa queda en el registro del servidor."""
+    con_worker(monkeypatch, worker_falso(tmp_path, 1, registro='Traceback...\nValueError: causa de prueba'))
 
-    resultado=anidar_sparrow(*datos(3),OpcionesSparrow(tiempo_maximo_s=20))
+    with caplog.at_level("WARNING", logger="carteleria"):
+        resultado = anidar_sparrow(*datos(3), OpcionesSparrow(tiempo_maximo_s=20))
 
-    assert resultado.planchas_usadas==2
-    [aviso]=[a for a in resultado.advertencias if 'terminó con un error' in a]
-    assert 'ValueError: causa de prueba' in aviso
+    assert resultado.planchas_usadas == 2
+    assert "El cálculo se cortó antes de terminar: este es el mejor resultado completo que había encontrado." in resultado.advertencias
+    assert "ValueError: causa de prueba" in caplog.text
 
 
 def worker_que_falla(tmp_path,escribir_error):
@@ -456,3 +458,88 @@ def test_un_progreso_a_medias_no_frena_el_anidado_ni_la_barra(monkeypatch,tmp_pa
 
     assert resultado.planchas_usadas==2
     assert avances and all(set(a)=={'segundos','maximo'} for a in avances)
+
+
+from app.services.nesting.sparrow import (
+    CalculoInterrumpido,
+    PiezaSinContorno,
+    PiezasQueNoEntran,
+    ResultadoQueNoPasaElControl,
+    SinLugarUtil,
+    TiempoAgotado,
+)
+
+
+def test_una_pieza_que_no_entra_dice_cual_es():
+    piezas, geometrias, _, params = datos()
+
+    with pytest.raises(PiezasQueNoEntran) as error:
+        preparar_entrada(piezas, geometrias, Plancha(D(15), D(15)), params, OpcionesSparrow())
+
+    assert error.value.ids == ["1"]
+
+
+def test_una_pieza_sin_contorno_dice_cual_es():
+    piezas, _, plancha, params = datos()
+
+    with pytest.raises(PiezaSinContorno) as error:
+        preparar_entrada(piezas, {}, plancha, params, OpcionesSparrow())
+
+    assert error.value.pieza_id == "1"
+
+
+def test_una_chapa_sin_lugar_util_tiene_nombre():
+    piezas, geometrias, _, _ = datos()
+    params = ParametrosCorte(D(0), D(10), D(0), RotacionPermitida.LIBRE_0_90)
+
+    with pytest.raises(SinLugarUtil):
+        preparar_entrada(piezas, geometrias, Plancha(D(20), D(20)), params, OpcionesSparrow())
+
+
+def test_sin_tiempo_dice_cuantos_segundos_tenia():
+    with pytest.raises(TiempoAgotado) as error:
+        anidar_sparrow(*datos(), OpcionesSparrow(segundos_por_busqueda=10, tiempo_maximo_s=0.01))
+
+    assert error.value.segundos == 0.01
+
+
+def test_un_resultado_que_no_pasa_el_control_lleva_el_motivo():
+    entrada = preparar_entrada(*datos(), OpcionesSparrow())
+    q = {'id': '1#0', 'sheet': 0, 'rotation': 0, 'tx': 0, 'ty': 0}
+
+    with pytest.raises(ResultadoQueNoPasaElControl) as error:
+        convertir_y_validar(entrada, [q, q])
+
+    assert "duplicadas" in error.value.motivo
+
+
+def test_un_worker_que_se_corta_lleva_su_registro(monkeypatch, tmp_path):
+    con_worker(monkeypatch, worker_que_falla(tmp_path, "print('ValueError: causa de prueba', file=sys.stderr)"))
+
+    with pytest.raises(CalculoInterrumpido) as error:
+        anidar_sparrow(*datos(3), OpcionesSparrow(tiempo_maximo_s=20))
+
+    assert "causa de prueba" in error.value.registro
+
+
+from app.mensajes import Aviso
+
+
+def test_el_aviso_de_huecos_unidos_nombra_las_piezas_y_ya_no_hay_aviso_fijo():
+    p, g, plancha, params = datos()
+    g['1'].agujeros_local_mm.extend([[(2, 2), (6, 2), (6, 6), (2, 6)], [(4, 4), (8, 4), (8, 8), (4, 8)]])
+    entrada = preparar_entrada(p, g, plancha, params, OpcionesSparrow())
+    colocadas = [{'id': '1#0', 'sheet': 0, 'rotation': 0, 'tx': 0, 'ty': 0}, {'id': '1#1', 'sheet': 0, 'rotation': 0, 'tx': 40, 'ty': 0}]
+
+    resultado = convertir_y_validar(entrada, colocadas)
+
+    assert resultado.advertencias == [Aviso(
+        "Estas piezas tenían huecos que se pisaban y se calcularon con los huecos unidos (el dibujo guardado no cambia):",
+        (1,),
+    )]
+
+
+def test_sin_avisos_si_no_hubo_nada_que_avisar():
+    resultado = anidar_sparrow(*datos(3), OpcionesSparrow(segundos_por_busqueda=1, tiempo_maximo_s=20, simplificacion_mm=0))
+
+    assert not any("Sparrow" in str(a) for a in resultado.advertencias)
