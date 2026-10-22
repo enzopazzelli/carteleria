@@ -299,7 +299,7 @@ def recalcular_materiales(
         if existente.valor_override is not None and existente.valor_calculado != linea.costo_estimado:
             aviso = (
                 f"El valor calculado cambió de {existente.valor_calculado} a {linea.costo_estimado}; "
-                f"el override manual ({existente.valor_override}) puede estar desactualizado."
+                f"el valor a mano ({existente.valor_override}) puede haber quedado viejo."
             )
             advertencia = f"{advertencia}; {aviso}" if advertencia else aviso
 

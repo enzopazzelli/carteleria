@@ -109,7 +109,7 @@ def test_sin_tope_arbitrario_y_advierte_por_par_05():
 
     assert resultado.planchas_usadas == 5
     assert len(resultado.posiciones) == 5  # ninguna pieza se descarta por el tope
-    assert any("PAR-05" in advertencia for advertencia in resultado.advertencias)
+    assert any("más que el tope" in advertencia for advertencia in resultado.advertencias)
 
 
 def test_no_advierte_por_debajo_del_tope():

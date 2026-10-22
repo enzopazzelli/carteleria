@@ -90,3 +90,51 @@ def test_ningun_texto_para_el_usuario_rompe_la_regla():
     rotos = [f"{lugar}: {texto}" for lugar, texto in textos_para_el_usuario() if PROHIBIDO.search(texto)]
 
     assert rotos == []
+
+
+#: Frases técnicas que nunca llegan al mensaje: son el `str()` de un error con
+#: nombre propio, que la ruta pone en `detalle`, o una línea del registro.
+TECNICOS_PERMITIDOS = (
+    "Sparrow no puede comparar: ",  # ErrorGeometriaSparrow → detalle
+    "Sparrow excedió el tiempo máximo (",  # TiempoAgotado → detalle
+    "Sparrow no pudo calcular: ",  # CalculoInterrumpido → detalle
+    "Sparrow devolvió piezas faltantes o duplicadas.",  # ResultadoQueNoPasaElControl → detalle
+    "Colocación inválida devuelta por Sparrow.",  # ídem
+    "Rotación no permitida devuelta por Sparrow.",  # ídem
+    "Lo que escribió el cálculo de Sparrow:",  # registro del servidor
+    "Las correcciones no son un JSON válido (",  # detalle de la lectura del dibujo
+)
+
+
+def _docstrings(arbol) -> set[int]:
+    nodos = (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+    return {
+        id(n.body[0].value)
+        for n in ast.walk(arbol)
+        if isinstance(n, nodos) and n.body and isinstance(n.body[0], ast.Expr)
+        and isinstance(n.body[0].value, ast.Constant) and isinstance(n.body[0].value.value, str)
+    }
+
+
+def frases_del_servidor():
+    """Toda cadena con espacios que no es un docstring: la búsqueda de arriba
+    no ve un texto guardado en una variable o devuelto en una lista."""
+    for archivo in sorted(APP.rglob("*.py")):
+        if archivo.name in FUERA_DEL_PRODUCTO:
+            continue
+        arbol = ast.parse(archivo.read_text(encoding="utf-8"))
+        docstrings = _docstrings(arbol)
+        for nodo in ast.walk(arbol):
+            if isinstance(nodo, ast.Constant) and isinstance(nodo.value, str) and id(nodo) not in docstrings:
+                if " " in nodo.value and not nodo.value.startswith("/"):
+                    yield f"{archivo.relative_to(APP.parent)}:{nodo.lineno}", nodo.value
+
+
+def test_ninguna_frase_del_servidor_rompe_la_regla():
+    rotos = [
+        f"{lugar}: {texto}"
+        for lugar, texto in frases_del_servidor()
+        if PROHIBIDO.search(texto) and not texto.startswith(TECNICOS_PERMITIDOS)
+    ]
+
+    assert rotos == []

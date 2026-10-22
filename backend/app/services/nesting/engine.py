@@ -187,7 +187,6 @@ class MotorNestingRectangular:
         if planchas_usadas <= tope:
             return []
         return [
-            f"El trabajo usa {planchas_usadas} planchas, por encima del tope "
-            f"de negocio configurado (PAR-05 = {tope}). No se truncó el "
-            "resultado — revisar antes de confirmar el pedido."
+            f"El trabajo usa {planchas_usadas} chapas, más que el tope de {tope} "
+            "que se fijó para revisar. Se calculó entero: revisalo antes de confirmar el pedido."
         ]
