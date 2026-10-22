@@ -125,7 +125,7 @@ def test_anidar_grupo_sin_formato_da_400(cliente):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
 
     assert respuesta.status_code == 400
-    assert "formato" in mensaje_de(respuesta)
+    assert "todavía no tiene chapa" in mensaje_de(respuesta)
 
 
 def test_anidar_grupo_sin_parametros_de_corte_da_400(cliente):
@@ -141,7 +141,7 @@ def test_anidar_grupo_sin_parametros_de_corte_da_400(cliente):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
 
     assert respuesta.status_code == 400
-    assert "parámetros de corte" in mensaje_de(respuesta)
+    assert "el kerf, el margen y la separación" in mensaje_de(respuesta)
 
 
 def test_anidar_grupo_sin_piezas_da_400(cliente):
@@ -324,7 +324,7 @@ def test_borrar_un_anidado_inexistente_da_404(cliente):
 
     # El mensaje, y no solo el 404: una ruta que no existe también da 404.
     assert respuesta.status_code == 404
-    assert "No existe la ejecución 999" in mensaje_de(respuesta)
+    assert "Ese anidado ya no existe" in mensaje_de(respuesta)
 
 
 @pytest.mark.parametrize("estado", [EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value])

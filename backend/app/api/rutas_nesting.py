@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session
 from .. import progreso
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
-from ..mensajes import aviso_desde
+from ..mensajes import ErrorParaElUsuario, aviso_desde
 from ..modelos.base import Sesion
 from ..modelos.catalogo import Formato, Material
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
@@ -59,7 +59,7 @@ from .esquemas_nesting import (
     ResumenMaterialesLeer,
 )
 from .rutas_trabajos import _grupo_o_404, _trabajo_o_404
-from .traducir_errores import con_nombres, nombres_de_piezas, para_el_usuario
+from .traducir_errores import con_nombres, medida, nombres_de_piezas, para_el_usuario
 
 router = APIRouter(tags=["nesting"])
 
@@ -99,7 +99,7 @@ def geometria_desde_pieza(pieza: Pieza) -> GeometriaPieza:
 def _ejecucion_o_404(sesion: Session, ejecucion_id: int) -> EjecucionNesting:
     ejecucion = sesion.get(EjecucionNesting, ejecucion_id)
     if ejecucion is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe la ejecución {ejecucion_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese anidado ya no existe: volvé a cargar la pestaña.")
     return ejecucion
 
 
@@ -126,7 +126,7 @@ def _parametros_de_corte(grupo: GrupoDeCorte | None, material: Material) -> Para
             rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
         )
     raise ValueError(
-        f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105)."
+        f"«{material.nombre}» todavía no tiene cargados el kerf, el margen y la separación: cargalos antes de anidar."
     )
 
 
@@ -137,7 +137,7 @@ def _datos_para_anidar(
     `ValueError` con un mensaje presentable si el grupo no está listo
     todavía — nunca inventa un formato o un parámetro que falte."""
     if grupo.formato_id is None:
-        raise ValueError(f"El grupo «{grupo.nombre}» no tiene un formato asignado.")
+        raise ValueError(f"El grupo «{grupo.nombre}» todavía no tiene chapa: elegila en la pestaña Grupos.")
     formato = sesion.get(Formato, grupo.formato_id)
 
     plancha = Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm)
@@ -303,10 +303,10 @@ def _correr_anidado(ejecucion_id: int) -> None:
                         borde = float(params.margen_borde_mm + params.kerf_mm / 2)
                         util = box(borde, borde, float(plancha.ancho_mm)-borde, float(plancha.alto_mm)-borde)
                         if poligono_colocado(posicion, geometria).difference(util).area > 0.01:
-                            raise ValueError("El ajuste en huecos invade la reserva de borde/kerf.")
+                            raise ErrorParaElUsuario("Al meter piezas en los huecos, una quedó pisando el margen de la chapa: probá sin esa opción.")
                         validacion = validar_posicion_manual(posicion, geometria, posiciones, plancha, params)
                         if not validacion.valida:
-                            raise ValueError(validacion.motivo)
+                            raise ErrorParaElUsuario("Al meter piezas en los huecos, una quedó pisando otra: probá sin esa opción.", detalle=validacion.motivo)
         except Exception as error:  # noqa: BLE001 - cualquier falla del motor se reporta, no se pierde
             sesion.refresh(ejecucion)
             if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
@@ -455,7 +455,7 @@ def cancelar_ejecucion(
     if ejecucion.estado not in (EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"La ejecución ya está en estado «{ejecucion.estado}», no se puede cancelar.",
+            "Ese anidado ya terminó: no hay nada que cancelar.",
         )
     ejecucion.estado = EstadoEjecucion.CANCELADA.value
     sesion.commit()
@@ -472,7 +472,7 @@ def marcar_definitiva(
     ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
     if ejecucion.estado != EstadoEjecucion.LISTA.value:
         raise HTTPException(
-            status.HTTP_409_CONFLICT, "Solo una ejecución en estado «lista» puede marcarse definitiva."
+            status.HTTP_409_CONFLICT, "Solo un anidado terminado puede quedar como el que se usa para cotizar."
         )
     for otra in ejecucion.grupo.ejecuciones:
         if otra.id != ejecucion.id:
@@ -501,7 +501,7 @@ def borrar_ejecucion(ejecucion_id: int, sesion: Session = Depends(obtener_sesion
     if ejecucion.estado in (EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"La ejecución {ejecucion_id} todavía se está calculando: cancelala antes de borrarla.",
+            f"El anidado #{ejecucion_id} todavía se está calculando: cancelalo antes de borrarlo.",
         )
     sesion.delete(ejecucion)
     sesion.commit()
@@ -545,7 +545,7 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
     if not datos.formato_ids:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Hace falta indicar al menos un formato para comparar.")
     if datos.usar_anidado_en_huecos:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "La comparación todavía no admite la pasada en huecos.")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "La comparación todavía no puede meter piezas adentro de los huecos: destildá esa opción.")
     piezas_dominio = [
         PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad) for p in piezas
     ]
@@ -555,12 +555,12 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
     for formato_id in datos.formato_ids:
         formato = sesion.get(Formato, formato_id)
         if formato is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el formato {formato_id}.")
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa chapa ya no existe: volvé a cargar la página.")
         material = formato.material
         if material.parametros is None:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                f"El material «{material.nombre}» no tiene parámetros de corte configurados (CART-105).",
+                f"«{material.nombre}» todavía no tiene cargados el kerf, el margen y la separación: cargalos antes de anidar.",
             )
         # Dos causas distintas de "no se puede calcular un precio por
         # plancha" (ver costeo.py::_linea_de_grupo, misma distinción):
@@ -571,13 +571,13 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
         if formato.costo_unidad_venta is None:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                f"El formato «{formato.ancho_mm}×{formato.alto_mm}» no tiene precio de referencia cargado.",
+                f"La chapa de {medida(formato)} no tiene precio cargado: no se puede calcular su costo.",
             )
         if formato.unidad_venta != "M2":
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                f"El formato «{formato.ancho_mm}×{formato.alto_mm}» se vende por «{formato.unidad_venta}», "
-                "no por m² — el costo no se calcula solo, hay que cargarlo a mano.",
+                f"La chapa de {medida(formato)} se vende por «{formato.unidad_venta}» y no por m²: "
+                "su costo no se calcula solo, cargalo a mano en Costeo.",
             )
         precio_por_plancha = (formato.ancho_mm / Decimal(1000)) * (formato.alto_mm / Decimal(1000)) * formato.costo_unidad_venta
         params = ParametrosCorte(

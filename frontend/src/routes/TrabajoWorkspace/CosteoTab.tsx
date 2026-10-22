@@ -299,7 +299,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
         overridePor: "Enzo",
       });
     } catch (e) {
-      setError(falla(e, "No se pudo aplicar el override."));
+      setError(falla(e, "No se pudo guardar el valor a mano."));
     }
   }
 

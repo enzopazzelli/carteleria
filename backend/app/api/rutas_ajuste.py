@@ -57,7 +57,7 @@ def _parametros_desde_snapshot(snapshot: dict | None) -> ParametrosCorte:
     if snapshot is None:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "La ejecución no tiene un snapshot de parámetros de corte guardado.",
+            "Este anidado no guardó con qué parámetros de corte se hizo: volvé a anidar.",
         )
     return ParametrosCorte(
         kerf_mm=Decimal(snapshot["kerf_mm"]),
@@ -96,12 +96,12 @@ def _validar_lista_y_plancha(ejecucion, plancha_indice: int) -> None:
     if ejecucion.estado != EstadoEjecucion.LISTA.value:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"La ejecución está en estado «{ejecucion.estado}», todavía no hay resultado para exportar.",
+            "Este anidado todavía no terminó: no hay nada para exportar.",
         )
     total = ejecucion.planchas_usadas or 0
     if not (0 <= plancha_indice < total):
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND, f"La ejecución tiene {total} plancha(s); no existe la #{plancha_indice}."
+            status.HTTP_404_NOT_FOUND, f"Este anidado tiene {total} chapa(s): no hay una chapa {plancha_indice + 1}."
         )
 
 
@@ -133,12 +133,12 @@ def ajustar_colocacion(
 ) -> ColocacionAjusteLeer:
     colocacion = sesion.get(Colocacion, colocacion_id)
     if colocacion is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe la colocación {colocacion_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa pieza ya no está en el anidado: volvé a cargar la pestaña.")
     ejecucion = colocacion.ejecucion
     if ejecucion.estado != EstadoEjecucion.LISTA.value:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"La ejecución está en estado «{ejecucion.estado}»; solo se puede ajustar una colocación «lista».",
+            "Solo se pueden mover piezas de un anidado terminado.",
         )
 
     propuesta = PosicionManual(

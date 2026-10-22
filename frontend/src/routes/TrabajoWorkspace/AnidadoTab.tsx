@@ -208,7 +208,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   async function alCambiarParametros(parametros: ParametrosCorteOverride | null) {
     if (hayAjustesManuales) {
       const confirma = window.confirm(
-        "La ejecución definitiva tiene piezas movidas a mano. Recalcular genera una ejecución nueva sin esos ajustes (la anterior queda en el historial). ¿Recalcular igual?"
+        "El anidado que se usa para cotizar tiene piezas movidas a mano. Recalcular arma un anidado nuevo sin esos ajustes (el anterior queda en la lista). ¿Recalcular igual?"
       );
       if (!confirma) return;
     }
@@ -313,7 +313,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
       {error && <Mensaje variante="error" que={error} trabajoId={trabajoId} />}
       {enCurso && (
         <p className="text-sm mb-2">
-          Ejecución #{enCurso.id}: <EstadoBadge estado={enCurso.estado} />
+          Anidado #{enCurso.id}: <EstadoBadge estado={enCurso.estado} />
           {!ESTADOS_TERMINALES.has(enCurso.estado) && <button className="underline ml-3" onClick={async () => {
             try { await cancelarEjecucion(enCurso.id); await queryClient.invalidateQueries({ queryKey: ["ejecucion", enCurso.id] }); }
             catch (e) { setError(falla(e, "No se pudo cancelar.")); }
@@ -328,7 +328,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
       <table className="w-full text-sm mt-2">
         <thead>
           <tr className="text-left border-b border-line">
-            <th>Ejecución</th>
+            <th>Anidado</th>
             <th>Motor</th><th>Tiempo</th><th>Estado</th>
             <th>Planchas</th>
             <th>Aprov.</th>

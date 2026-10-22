@@ -126,7 +126,7 @@ def calcular(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> Cuenta:
         costo = _costo_efectivo(linea)
         if costo is None:
             advertencias.append(
-                f"«{linea.descripcion}» no tiene costo calculado ni override; no se sumó al total."
+                f"«{linea.descripcion}» no tiene costo calculado ni un valor a mano: no se sumó al total."
             )
             faltantes.append(f"«{linea.descripcion}» no tiene costo.")
             continue
@@ -155,7 +155,7 @@ def calcular(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> Cuenta:
     monto_margen = margen_resultante = precio_venta = monto_iva = total = None
     if not hay_precios:
         advertencias.append(
-            "El presupuesto no tiene margen configurado (PAR-12); no se calculó el precio de venta."
+            "Falta el margen: sin él no se calcula el precio de venta."
         )
         faltantes.append("Falta cargar el margen, o un precio a mano en cada ítem.")
     else:
@@ -167,7 +167,7 @@ def calcular(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> Cuenta:
 
         # 3. Subtotal, IVA y total, y el precio final de cada ítem.
         if iva is None:
-            advertencias.append("El presupuesto no tiene IVA configurado; no se calculó el total.")
+            advertencias.append("Falta el IVA: sin él no se calcula el total.")
             faltantes.append("Falta cargar el IVA.")
             precio_venta = redondear(suma_base)
             finales = _sin_total_fijado(bases, a_mano, precio_venta)

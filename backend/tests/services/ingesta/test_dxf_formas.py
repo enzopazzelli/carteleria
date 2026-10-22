@@ -101,7 +101,7 @@ def test_spline_abierta_se_reporta_como_contorno_no_cerrado(tmp_path):
 
     assert resultado.piezas == []
     assert len(resultado.contornos_no_cerrados) == 1
-    assert "no se pudieron cerrar" in _texto_de_advertencias(resultado)
+    assert "quedan abiertos" in _texto_de_advertencias(resultado)
 
 
 # --- Splines que `ezdxf` no convierte exactas ----------------------------

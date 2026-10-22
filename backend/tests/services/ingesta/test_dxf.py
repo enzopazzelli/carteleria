@@ -106,7 +106,7 @@ def test_un_contorno_con_una_pua_dibujada_se_repara_y_se_avisa(tmp_path):
     assert not resultado.contornos_no_cerrados
     [cruce] = resultado.contornos_que_se_cruzan
     assert cruce.reparado
-    assert any("repar" in a for a in resultado.advertencias)
+    assert any("arreglaron" in a for a in resultado.advertencias)
 
 
 def test_un_rulito_que_encierra_un_agujero_despreciable_se_rellena(tmp_path):
@@ -482,6 +482,19 @@ def test_archivo_invalido_levanta_excepcion_especifica(tmp_path):
 
     with pytest.raises(ArchivoDXFInvalido):
         parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+
+def test_un_archivo_que_no_es_dxf_lo_dice_sin_la_ruta_del_servidor(tmp_path):
+    """A9: la ruta y el error de la biblioteca van al detalle, no al mensaje."""
+    ruta = tmp_path / "no_es_un_dxf.dxf"
+    ruta.write_text("esto no es un archivo DXF")
+
+    with pytest.raises(ArchivoDXFInvalido) as error:
+        parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert str(tmp_path) not in str(error.value)
+    assert "exportalo de nuevo" in str(error.value)
+    assert str(ruta) in error.value.detalle
 
 
 def test_archivo_inexistente_levanta_excepcion_especifica(tmp_path):

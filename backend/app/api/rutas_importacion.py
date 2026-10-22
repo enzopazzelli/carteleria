@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from sqlalchemy.orm import Session
 
 from .. import config
+from ..mensajes import ErrorParaElUsuario
 from ..modelos.trabajo import Trabajo
 from ..services.ingesta.analisis import (
     DISTANCIA_MAXIMA_ENTRE_PIEZAS_DE_UN_DISENIO_MM,
@@ -121,7 +122,7 @@ async def analizar_dxf(
         resultado = parsear_dxf(ruta, escala_a_mm)
     except ArchivoDXFInvalido as error:
         shutil.rmtree(directorio, ignore_errors=True)
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
+        raise ErrorParaElUsuario(str(error), detalle=error.detalle) from error
 
     (directorio / _METADATOS).write_text(
         json.dumps({"archivo_origen": nombre, "escala_a_mm": str(escala_a_mm)}), encoding="utf-8"
@@ -166,7 +167,7 @@ def confirmar_importacion(
     directorio = _directorio_importaciones() / token
     metadatos = directorio / _METADATOS
     if not token.isalnum() or not metadatos.exists():
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el análisis {token}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese análisis del dibujo ya no está: volvé a subir el archivo.")
     guardado = json.loads(metadatos.read_text(encoding="utf-8"))
     ruta = directorio / guardado["archivo_origen"]
     escala_a_mm = Decimal(guardado["escala_a_mm"])
@@ -188,9 +189,9 @@ def confirmar_importacion(
         disenio = disenios[pedido.indice]
         ajenas = set(pedido.roles) - {p.id for p in disenio.piezas}
         if ajenas:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                f"Las piezas {sorted(ajenas)} no son del diseño {pedido.indice}.",
+            raise ErrorParaElUsuario(
+                "Algunas piezas pedidas no son de ese diseño.",
+                detalle=f"Las piezas {sorted(ajenas)} no son del diseño {pedido.indice}.",
             )
         _, sugeridos = _hojas_y_roles(disenio, formatos)
         roles = {r.pieza_id: r.rol for r in sugeridos} | pedido.roles

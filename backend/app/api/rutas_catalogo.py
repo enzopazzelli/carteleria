@@ -16,6 +16,7 @@ from ..modelos.catalogo import Formato, Material, ParametrosCorteMaterial
 from ..modelos.trabajo import GrupoDeCorte
 from ..services.nesting.models import Plancha
 from .dependencias import obtener_sesion
+from .traducir_errores import medida
 from .esquemas_catalogo import (
     FormatoActualizar,
     FormatoCrear,
@@ -34,14 +35,14 @@ router = APIRouter(tags=["catalogo"])
 def _material_o_404(sesion: Session, material_id: int) -> Material:
     material = sesion.get(Material, material_id)
     if material is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el material {material_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese material ya no existe: volvé a cargar la página.")
     return material
 
 
 def _formato_o_404(sesion: Session, formato_id: int) -> Formato:
     formato = sesion.get(Formato, formato_id)
     if formato is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el formato {formato_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa chapa ya no existe: volvé a cargar la página.")
     return formato
 
 
@@ -229,8 +230,8 @@ def crear_retazo(formato_id: int, datos: RetazoCrear, sesion: Session = Depends(
     if origen.unidad_venta != "M2" or origen.costo_unidad_venta is None:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            f"El formato «{origen.ancho_mm}×{origen.alto_mm}» no tiene precio por m²: "
-            "un retazo se cobra por m² y no habría cómo.",
+            f"La chapa de {medida(origen)} no tiene precio por m²: un retazo se cobra por m², "
+            "así que sin ese precio no se puede crear.",
         )
     retazo = Formato(
         material_id=origen.material_id,
@@ -281,13 +282,13 @@ def leer_parametros_corte(
     responsabilidad de quien ENCOLA un anidado (paso 4 del plan), no de
     esta lectura: acá se lee lo que hay, nada más.
     """
-    _material_o_404(sesion, material_id)
+    material = _material_o_404(sesion, material_id)
     parametros = sesion.execute(
         select(ParametrosCorteMaterial).where(ParametrosCorteMaterial.material_id == material_id)
     ).scalar_one_or_none()
     if parametros is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            f"El material {material_id} todavía no tiene parámetros de corte configurados.",
+            f"«{material.nombre}» todavía no tiene cargados el kerf, el margen y la separación.",
         )
     return parametros

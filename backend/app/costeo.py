@@ -87,8 +87,8 @@ def _ejecucion_para_costear(grupo: GrupoDeCorte) -> tuple[EjecucionNesting | Non
 
     elegida = max(listas, key=lambda e: e.id)
     return elegida, [
-        f"Grupo «{grupo.nombre}»: ninguna ejecución está marcada como definitiva; "
-        "se usó la más reciente. Confirmá cuál vale antes de cotizar en serio."
+        f"Grupo «{grupo.nombre}»: ningún anidado está elegido para cotizar; "
+        "se usó el más reciente. Confirmá cuál vale antes de cotizar en serio."
     ]
 
 
@@ -139,12 +139,12 @@ def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:
         )
         if formato.costo_unidad_venta is None:
             advertencias.append(
-                f"Grupo «{grupo.nombre}»: el formato no tiene precio de referencia cargado."
+                f"Grupo «{grupo.nombre}»: la chapa no tiene precio cargado."
             )
         elif formato.unidad_venta != _UNIDAD_VENTA_CALCULABLE:
             advertencias.append(
-                f"Grupo «{grupo.nombre}»: se vende por «{formato.unidad_venta}», "
-                "no por m² — el costo no se calcula solo, hay que cargarlo a mano."
+                f"Grupo «{grupo.nombre}»: la chapa se vende por «{formato.unidad_venta}» y no por m², "
+                "así que su costo no se calcula solo: cargalo a mano."
             )
         else:
             costo_estimado = area_total_m2 * formato.costo_unidad_venta
@@ -176,7 +176,7 @@ def resumen_materiales(sesion: Session, trabajo_id: int) -> ResumenMateriales:
     y una advertencia — nunca con un cero que se confunda con "gratis"."""
     trabajo = sesion.get(Trabajo, trabajo_id)
     if trabajo is None:
-        raise ValueError(f"No existe el trabajo {trabajo_id}.")
+        raise ValueError("Ese trabajo ya no existe: volvé a la lista de trabajos.")
 
     lineas = [_linea_de_grupo(grupo) for grupo in trabajo.grupos]
 

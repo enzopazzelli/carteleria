@@ -43,14 +43,14 @@ router = APIRouter(tags=["cotizador"])
 def _cliente_o_404(sesion: Session, cliente_id: int) -> Cliente:
     cliente = sesion.get(Cliente, cliente_id)
     if cliente is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el cliente {cliente_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese cliente ya no existe: volvé a cargar la página.")
     return cliente
 
 
 def _presupuesto_o_404(sesion: Session, presupuesto_id: int) -> Presupuesto:
     presupuesto = sesion.get(Presupuesto, presupuesto_id)
     if presupuesto is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe el presupuesto {presupuesto_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese presupuesto ya no existe: volvé a cargar la página.")
     return presupuesto
 
 
@@ -249,7 +249,7 @@ def recalcular_materiales(
     if presupuesto.trabajo_id is None:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            "El presupuesto no tiene un trabajo asociado; no hay nada que costear.",
+            "Este presupuesto no está atado a un trabajo: no hay materiales que calcular.",
         )
     resumen = resumen_materiales(sesion, presupuesto.trabajo_id)
 
@@ -334,7 +334,7 @@ def listar_lineas_costo(
 def _linea_costo_o_404(sesion: Session, linea_id: int) -> LineaCosto:
     linea = sesion.get(LineaCosto, linea_id)
     if linea is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe la línea de costo {linea_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa línea ya no existe: volvé a cargar la página.")
     return linea
 
 
@@ -342,8 +342,8 @@ def _rechazar_si_es_material(linea: LineaCosto, accion: str) -> None:
     if linea.rubro == RubroLineaCosto.MATERIAL.value:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"Una línea de rubro MATERIAL no se {accion} a mano — se regenera con "
-            "recalcular-materiales, o se corrige con un override.",
+            f"Una línea de material no se {accion} a mano: se vuelve a calcular con «Recalcular materiales», "
+            "o se corrige con un valor a mano.",
         )
 
 

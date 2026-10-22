@@ -61,7 +61,7 @@ def _comparacion_o_404(comparacion_id: int) -> _Comparacion:
     with _candado:
         comparacion = _por_id.get(comparacion_id)
     if comparacion is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No existe la comparación {comparacion_id}.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa comparación ya no está (el servidor se reinició): volvé a comparar.")
     return comparacion
 
 
@@ -127,7 +127,7 @@ def cancelar_comparacion(comparacion_id: int) -> ComparacionLeer:
     if comparacion.estado != "corriendo":
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"La comparación ya está en estado «{comparacion.estado}», no se puede cancelar.",
+            "La comparación ya terminó: no hay nada que cancelar.",
         )
     comparacion.cancelar.set()
     comparacion.estado = "cancelada"

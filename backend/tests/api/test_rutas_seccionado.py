@@ -90,7 +90,7 @@ def test_un_formato_sin_parametros_de_corte_da_400(cliente, tmp_path):
     respuesta = _proponer(cliente, pieza["id"], formato_id=formato["id"])
 
     assert respuesta.status_code == 400
-    assert "parámetros de corte" in mensaje_de(respuesta)
+    assert "el kerf, el margen y la separación" in mensaje_de(respuesta)
 
 
 @pytest.mark.parametrize("ancho_de_la_chapa", ["27", "20"])
@@ -155,7 +155,7 @@ def test_una_pieza_inexistente_da_404(cliente):
 
     # El mensaje, y no solo el 404: una ruta que no existe también da 404.
     assert respuesta.status_code == 404
-    assert "No existe la pieza 999" in mensaje_de(respuesta)
+    assert "Esa pieza ya no existe" in mensaje_de(respuesta)
 
 
 def _aplicar(cliente, pieza_id, formato_id, angulo=0, dx=0, dy=0):

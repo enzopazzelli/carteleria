@@ -220,7 +220,7 @@ def test_subir_dxf_con_contorno_abierto_no_carga_y_dice_por_que(cliente, tmp_pat
 
     assert respuesta.status_code == 400
     assert "ninguna forma para cortar" in mensaje_de(respuesta)
-    assert "no se pudieron cerrar" in mensaje_de(respuesta)
+    assert "quedan abiertos" in mensaje_de(respuesta)
 
 
 def test_cargar_sin_nada_para_cortar_no_toca_las_piezas_del_trabajo(cliente, tmp_path):
@@ -1136,7 +1136,7 @@ def test_un_punto_marcado_sigue_a_la_vista_aunque_vuelva_su_contorno(cliente, tm
     [
         ("esto no es json", "correcciones"),
         ('["una-forma"]', "correcciones"),
-        ('{"una-forma": "hueco"}', "hueco"),
+        ('{"una-forma": "hueco"}', "una-forma"),
         ('{"forma-que-no-existe": "no_va"}', "forma-que-no-existe"),
     ],
 )
