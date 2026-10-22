@@ -7,6 +7,7 @@ from app.mensajes import (
     Aviso,
     ChapaNombrada,
     ErrorParaElUsuario,
+    ErrorPrevisto,
     aviso_desde,
     error_para_guardar,
     lista_de_nombres,
@@ -50,11 +51,24 @@ def test_la_lista_de_nombres_sigue_el_orden_y_no_repite():
     assert lista_de_nombres([9], nombres) == "«sin nombre»"
 
 
-def test_un_value_error_es_un_error_previsto_con_su_texto():
-    falla = error_para_guardar(ValueError("El grupo no tiene piezas."))
+def test_un_error_previsto_lleva_su_texto_sin_traza():
+    falla = error_para_guardar(ErrorPrevisto("El grupo no tiene piezas."))
 
     assert falla.mensaje == "El grupo no tiene piezas."
-    assert "ValueError" in falla.detalle
+    assert falla.detalle is None
+    assert isinstance(ErrorPrevisto("m"), ValueError), "lo que hoy ataja un ValueError lo sigue atajando"
+
+
+def test_el_error_de_una_biblioteca_no_se_muestra_como_mensaje():
+    """Revisión de A9: un `UnicodeDecodeError` es un `ValueError`, y su texto
+    en inglés llegaba a la pantalla (el error del 14/10)."""
+    try:
+        b"\xed".decode("utf-8")
+    except UnicodeDecodeError as error:
+        falla = error_para_guardar(error)
+
+    assert falla.mensaje == MENSAJE_INESPERADO
+    assert "UnicodeDecodeError" in falla.detalle
 
 
 def test_cualquier_otra_excepcion_es_inesperada_con_la_traza_en_el_detalle():

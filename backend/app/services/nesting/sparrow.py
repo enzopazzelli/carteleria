@@ -6,7 +6,7 @@ from decimal import Decimal
 from dataclasses import dataclass
 from shapely.geometry import Polygon, box
 from shapely import affinity
-from ...mensajes import Aviso
+from ...mensajes import Aviso, ErrorPrevisto
 from ...registro import registro
 from .models import ResultadoAnidado, PosicionPieza, RotacionPermitida
 from .geometria_material import poligono_material
@@ -139,7 +139,7 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
         raise ErrorGeometriaSparrow(invalidas)
     if blocked:
         raise PiezasQueNoEntran(blocked)
-    if not items: raise ValueError('No hay piezas para anidar.')
+    if not items: raise ErrorPrevisto('No hay piezas para anidar.')
     # «¿Entra en la chapa?» se decide con cuartos de vuelta aunque gire
     # libre: una pieza que solo entra en diagonal se sigue mandando a seccionar.
     return {'items':items,'width':width,'height':height,'borde':borde,'gap':gap,'rotations':_rotaciones_para_buscar(params,opciones),'options':vars(opciones),'normalizadas':normalizadas}
@@ -248,7 +248,7 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
             leido={};ultima_lectura=None
             try:
                 while proc.poll() is None:
-                    if cancelada():raise ValueError('Anidado cancelado.')
+                    if cancelada():raise ErrorPrevisto('Anidado cancelado.')
                     ahora=time.monotonic()
                     if ahora-start>opciones.tiempo_maximo_s:
                         if out.exists():

@@ -936,3 +936,46 @@ def test_anidar_una_pieza_mas_grande_que_la_chapa_la_nombra(cliente, tmp_path):
     assert detalle["mensaje"].startswith("Estas piezas no entran en la chapa de 1000 × 1000")
     assert f"«{pieza['id_origen']}»" in detalle["mensaje"]
     assert detalle["piezas"] == [pieza["id"]]
+
+
+def test_si_falla_la_traduccion_del_error_la_corrida_igual_termina_en_error(cliente, tmp_path, monkeypatch):
+    """Revisión de A9: si el manejo del error revienta, la corrida no puede
+    quedar «corriendo» para siempre."""
+    from app.api import rutas_nesting
+    from app.mensajes import MENSAJE_INESPERADO
+
+    def bum(self, piezas, tope_planchas_advertencia):
+        raise RuntimeError("bum")
+
+    def traduccion_rota(*args, **kwargs):
+        raise RuntimeError("la traducción también falla")
+
+    monkeypatch.setattr(rutas_nesting.MotorNestingRectangular, "anidar", bum)
+    monkeypatch.setattr(rutas_nesting, "para_el_usuario", traduccion_rota)
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    ejecucion_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+    final = _esperar_estado(cliente, ejecucion_id)
+
+    assert final["estado"] == "error"
+    assert final["error"]["mensaje"] == MENSAJE_INESPERADO
+
+
+def test_si_falla_algo_despues_del_calculo_la_corrida_igual_termina_en_error(cliente, tmp_path, monkeypatch, caplog):
+    from app.api import rutas_nesting
+    from app.mensajes import MENSAJE_INESPERADO
+
+    def aprovechamiento_roto(*args, **kwargs):
+        raise RuntimeError("falla al medir")
+
+    monkeypatch.setattr(rutas_nesting, "calcular_aprovechamiento", aprovechamiento_roto)
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    with caplog.at_level("ERROR", logger="carteleria"):
+        ejecucion_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+        final = _esperar_estado(cliente, ejecucion_id)
+
+    assert final["estado"] == "error"
+    assert final["error"]["mensaje"] == MENSAJE_INESPERADO
+    assert "falla al medir" in final["error"]["detalle"]
+    assert "falla al medir" in caplog.text

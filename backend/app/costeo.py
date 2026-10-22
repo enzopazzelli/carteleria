@@ -19,6 +19,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .mensajes import ErrorPrevisto
 from .modelos import EjecucionNesting, Formato, GrupoDeCorte, Material, Pieza, Trabajo
 
 _MM_POR_M = Decimal(1000)
@@ -176,7 +177,7 @@ def resumen_materiales(sesion: Session, trabajo_id: int) -> ResumenMateriales:
     y una advertencia — nunca con un cero que se confunda con "gratis"."""
     trabajo = sesion.get(Trabajo, trabajo_id)
     if trabajo is None:
-        raise ValueError("Ese trabajo ya no existe: volvé a la lista de trabajos.")
+        raise ErrorPrevisto("Ese trabajo ya no existe: volvé a la lista de trabajos.")
 
     lineas = [_linea_de_grupo(grupo) for grupo in trabajo.grupos]
 

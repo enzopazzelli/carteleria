@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session
 from .. import progreso
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
-from ..mensajes import ErrorParaElUsuario, aviso_desde
+from ..mensajes import ErrorParaElUsuario, ErrorPrevisto, aviso_desde, error_para_guardar
 from ..modelos.base import Sesion
 from ..modelos.catalogo import Formato, Material
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
@@ -125,7 +125,7 @@ def _parametros_de_corte(grupo: GrupoDeCorte | None, material: Material) -> Para
             separacion_piezas_mm=material.parametros.separacion_piezas_mm,
             rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
         )
-    raise ValueError(
+    raise ErrorPrevisto(
         f"«{material.nombre}» todavía no tiene cargados el kerf, el margen y la separación: cargalos antes de anidar."
     )
 
@@ -134,17 +134,17 @@ def _datos_para_anidar(
     sesion: Session, grupo: GrupoDeCorte
 ) -> tuple[Plancha, ParametrosCorte, list[PiezaDominio]]:
     """Junta lo que `MotorNestingRectangular` necesita, o levanta
-    `ValueError` con un mensaje presentable si el grupo no está listo
+    `ErrorPrevisto` (un `ValueError`) con un mensaje presentable si el grupo no está listo
     todavía — nunca inventa un formato o un parámetro que falte."""
     if grupo.formato_id is None:
-        raise ValueError(f"El grupo «{grupo.nombre}» todavía no tiene chapa: elegila en la pestaña Grupos.")
+        raise ErrorPrevisto(f"El grupo «{grupo.nombre}» todavía no tiene chapa: elegila en la pestaña Grupos.")
     formato = sesion.get(Formato, grupo.formato_id)
 
     plancha = Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm)
     params = _parametros_de_corte(grupo, formato.material)
     piezas = [p for p in grupo.piezas if not p.descartada]
     if not piezas:
-        raise ValueError(f"El grupo «{grupo.nombre}» no tiene piezas para anidar.")
+        raise ErrorPrevisto(f"El grupo «{grupo.nombre}» no tiene piezas para anidar.")
     piezas_dominio = [
         PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad)
         for p in piezas
@@ -250,11 +250,28 @@ def _esta_cancelada(ejecucion_id: int) -> bool:
 
 def _ejecutar_anidado(ejecucion_id: int) -> None:
     """La tarea que corre en la cola. El progreso (A7) se olvida al
-    terminar, salga como salga."""
+    terminar, salga como salga. Si algo revienta fuera de lo que
+    `_correr_anidado` ataja, la corrida no queda «corriendo» para siempre:
+    pasa a error y queda en el registro (revisión de A9)."""
     try:
         _correr_anidado(ejecucion_id)
+    except Exception as error:  # noqa: BLE001 - la red: ninguna corrida queda colgada
+        _marcar_error_inesperado(ejecucion_id, error)
     finally:
         progreso.olvidar(("ejecucion", ejecucion_id))
+
+
+def _marcar_error_inesperado(ejecucion_id: int, error: Exception) -> None:
+    falla = error_para_guardar(error)
+    registro().error("El anidado #%s se cortó sin terminar: %s\n%s", ejecucion_id, falla.mensaje, falla.detalle or "")
+    with Sesion() as sesion:
+        ejecucion = sesion.get(EjecucionNesting, ejecucion_id)
+        if ejecucion is None or ejecucion.estado != EstadoEjecucion.CORRIENDO.value:
+            return
+        ejecucion.estado = EstadoEjecucion.ERROR.value
+        ejecucion.error = falla.mensaje
+        ejecucion.error_datos = {k: v for k, v in falla.como_dict().items() if k != "mensaje"}
+        sesion.commit()
 
 
 def _correr_anidado(ejecucion_id: int) -> None:
@@ -311,7 +328,11 @@ def _correr_anidado(ejecucion_id: int) -> None:
             sesion.refresh(ejecucion)
             if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
                 return  # se canceló mientras corría: no pisar esa decisión con un error
-            falla = para_el_usuario(error, nombres, plancha=plancha, material=material)
+            try:
+                falla = para_el_usuario(error, nombres, plancha=plancha, material=material)
+            except Exception:  # noqa: BLE001 - traducir no puede dejar la corrida colgada
+                registro().exception("No se pudo traducir el error del anidado #%s", ejecucion_id)
+                falla = error_para_guardar(error)
             registro().warning("El anidado #%s terminó en error: %s\n%s", ejecucion_id, falla.mensaje, falla.detalle or "")
             ejecucion.estado = EstadoEjecucion.ERROR.value
             ejecucion.error = falla.mensaje
@@ -675,7 +696,7 @@ def _correr_comparacion(
         maximo = len(a_anidar) * preparada.opciones_sparrow.tiempo_maximo_s
         for numero, (indice, opcion, comunes) in enumerate(a_anidar, start=1):
             if cancelada():
-                raise ValueError("Comparación cancelada.")
+                raise ErrorPrevisto("Comparación cancelada.")
 
             def avanzar(avance: dict, numero: int = numero, descripcion: str = comunes["formato_descripcion"]) -> None:
                 if al_avanzar is not None:
@@ -692,7 +713,7 @@ def _correr_comparacion(
                 )
             except Exception as error:  # noqa: BLE001 - la falla de un formato queda en su fila
                 if cancelada():
-                    raise ValueError("Comparación cancelada.") from error
+                    raise ErrorPrevisto("Comparación cancelada.") from error
                 falla = para_el_usuario(error, preparada.nombres, plancha=opcion.plancha, material=comunes["material_nombre"])
                 registro().warning(
                     "La comparación no pudo anidar %s: %s\n%s", comunes["formato_descripcion"], falla.mensaje, falla.detalle or ""

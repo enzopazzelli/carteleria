@@ -4,7 +4,7 @@ from __future__ import annotations
 from decimal import Decimal as D
 
 from app.api.traducir_errores import medida, para_el_usuario
-from app.mensajes import MENSAJE_INESPERADO, ErrorParaElUsuario
+from app.mensajes import MENSAJE_INESPERADO, ErrorParaElUsuario, ErrorPrevisto
 from app.services.nesting.engine import PiezasSinUbicar
 from app.services.nesting.models import Plancha
 from app.services.nesting.sparrow import (
@@ -88,8 +88,9 @@ def test_lo_que_ya_es_para_el_usuario_queda_y_lo_demas_va_como_siempre():
     propio = ErrorParaElUsuario("m")
 
     assert para_el_usuario(propio, NOMBRES) is propio
-    assert para_el_usuario(ValueError("El grupo no tiene piezas."), NOMBRES).mensaje == "El grupo no tiene piezas."
+    assert para_el_usuario(ErrorPrevisto("El grupo no tiene piezas."), NOMBRES).mensaje == "El grupo no tiene piezas."
     assert para_el_usuario(RuntimeError("bum"), NOMBRES).mensaje == MENSAJE_INESPERADO
+    assert para_el_usuario(ValueError("invalid literal for int()"), NOMBRES).mensaje == MENSAJE_INESPERADO
 
 
 from app.api.traducir_errores import con_nombres

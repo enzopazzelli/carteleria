@@ -69,6 +69,12 @@ class ErrorParaElUsuario(Exception):
         return datos
 
 
+class ErrorPrevisto(ErrorParaElUsuario, ValueError):
+    """Un error que una ruta o un cálculo prevé, con su texto para el
+    usuario y sin traza. Es también un `ValueError`, así lo que hoy ataja
+    un `ValueError` lo sigue atajando (revisión de A9)."""
+
+
 def aviso_desde(valor: str | dict | Aviso) -> Aviso:
     """Un aviso como venga: texto suelto (los guardados antes de A9), el
     dict guardado o el aviso mismo."""
@@ -92,13 +98,12 @@ def lista_de_nombres(ids, nombres: dict[str, str]) -> str:
 def error_para_guardar(error: BaseException) -> ErrorParaElUsuario:
     """Lo que se muestra de una falla que no pasó por una traducción.
 
-    Un `ErrorParaElUsuario` queda como está. Un `ValueError` es un error
-    previsto que ya trae su texto (los de las rutas, y los de los cálculos
-    hasta que tengan nombre propio). Cualquier otra cosa no la previó
-    nadie: el mensaje es `MENSAJE_INESPERADO` y la traza va al detalle."""
+    Un `ErrorParaElUsuario` (también un `ErrorPrevisto`) queda como está.
+    Cualquier otra cosa no la previó nadie, aunque sea un `ValueError`: los
+    de las bibliotecas (`UnicodeDecodeError`, `int()`, shapely) traen texto
+    técnico en inglés. El mensaje es `MENSAJE_INESPERADO` y la traza va al
+    detalle."""
     if isinstance(error, ErrorParaElUsuario):
         return error
     traza = "".join(traceback.format_exception(error))
-    if isinstance(error, ValueError):
-        return ErrorParaElUsuario(str(error), detalle=traza)
     return ErrorParaElUsuario(MENSAJE_INESPERADO, detalle=traza, estado=500)
