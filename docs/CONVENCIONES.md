@@ -291,6 +291,18 @@ Un SVG en px interpretado como mm produce un presupuesto catastróficamente equi
 
 Sin `Ñ` ni acentos en identificadores de base de datos ni en nombres de archivo — la especificación original tenía `'DISENADOR_DUEÑO'`, que da problemas de encoding según el driver.
 
+### Mensajes para quien usa el sistema
+
+Vale para todo error y aviso que lee una persona (A9, [`historico/A9-mensajes-entendibles/diseno.md`](historico/A9-mensajes-entendibles/diseno.md)):
+
+1. **Primero qué pasó, después qué hacer.** Una o dos oraciones, con voseo («elegí», «probá»).
+2. **Se nombra lo que el usuario ve:** la pieza por su nombre del dibujo, el grupo por su nombre, la chapa del catálogo por material y medida, la chapa de un resultado por su número, y el campo con la etiqueta de la pantalla donde se corrige.
+3. **Nunca:** `id` de base, códigos del proyecto (`CART-`, `PAR-`, `D-`…), nombres de programas (Sparrow, rectpack, Deepnest), inglés, palabras de programación (ejecución, snapshot, override, JSON) ni referencias a documentos.
+4. **Lo técnico va en `detalle`**, nunca en el mensaje: la pantalla lo muestra en «Ver detalle técnico» y queda en el registro del servidor.
+5. **Un aviso que sale siempre no es un aviso:** se saca, o pasa a un texto fijo de ayuda.
+
+Un error se tira con `ErrorParaElUsuario` (`backend/app/mensajes.py`), con las piezas y chapas que nombra; un cálculo que solo conoce `id` tira un error con nombre propio y la ruta lo traduce (`backend/app/api/traducir_errores.py`). La prueba `backend/tests/test_mensajes_claros.py` revisa los textos.
+
 ### Tests obligatorios
 
 No todo necesita test, pero **estas tres cosas sí**, sin excepción:
