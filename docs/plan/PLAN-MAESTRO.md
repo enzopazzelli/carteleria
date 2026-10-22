@@ -280,6 +280,17 @@ Se detallan cuando les toque, cada una con su diseño.
 
 **Resueltos el 2026-10-14** (rama `fix/depuracion`): si falla la etapa de vaciar chapas, el motivo llega a los avisos del resultado; si falla una pasada posterior o el worker termina con error, vale el último anidado que dejó escrito; el worker da por mejor un resultado recién cuando quedó escrito; y el filtro por área ya no saltea, por redondeo, piezas que llenan la chapa justa. **Y en la rama `feat/giro-libre`:** Sparrow gira las piezas a cualquier ángulo, con la casilla «Girar a cualquier ángulo» en Anidado y en la comparación de chapas, marcada por defecto (Enzo) y sin efecto con veta. **Y la barra de progreso (A7), en `main` desde el 2026-10-14 ([`historico/A7-progreso-del-anidado/`](../historico/A7-progreso-del-anidado/diseno.md)):** barra de progreso al anidar y al comparar chapas, y la comparación en segundo plano, con cancelar y retomar; con eso deja de ser un solo pedido largo que el navegador podía cortar.
 
+**Lo que sigue, desde la reunión del 2026-10-22.** En la reunión se vieron dos fallas del anidado y salieron pedidos nuevos. Enzo eligió **primero el motor de anidado y después lo demás**, y **por ahora no trabajar los colores ni el `.cdr`**. El motor principal es Sparrow.
+
+| Orden | Qué | Estado |
+|---|---|---|
+| 1 | **Aprovechar huecos primero (A10):** meter las piezas chicas en los huecos de las grandes antes de acomodar; con la barra, cancelar y el tiempo máximo; en Ajuste lo de adentro se mueve con su pieza; los anidados que quedaron colgados al cerrar el servidor pasan a error | Diseño aprobado y plan escrito: [`A10-huecos-primero/`](A10-huecos-primero/diseno.md) |
+| 2 | **Complejo con giro libre:** Sparrow inclina los tramos del aro (1193 × 2361) y ya no entran en la chapa; por eso la comparación terminaba enseguida y el anidado fallaba. Las piezas que no entran a cualquier ángulo giran solo de a cuartos de vuelta | Causa comprobada; falta diseño corto |
+| 3 | **Varios anidados a la vez:** confirmar con una prueba de tres en simultáneo | Después de 1 |
+| 4 | **El material usado en Ancho × Alto,** y hacia qué lado de la chapa se apilan las piezas | Falta decidir qué se muestra |
+| 5 | **El diseño anidado también en PDF,** además del DXF para la máquina | Falta diseño |
+| — | Colores de referencia por pieza; entrada `.cdr` (hay un estudio previo que funcionó: [`historico/SPIKE-CDR.md`](../historico/SPIKE-CDR.md)) | En espera (Enzo, 2026-10-22) |
+
 **Pendientes de los mensajes entendibles (A9).** Construido el 2026-10-22, en `main` desde ese día ([PR #26](https://github.com/enzopazzelli/carteleria/pull/26)) y cerrado: [`historico/A9-mensajes-entendibles/`](../historico/A9-mensajes-entendibles/diseno.md). Resolvió dos pendientes de otras tablas: una chapa de la comparación que no llega a tiempo **falla sola en su fila** y las demás se muestran (antes la comparación entera terminaba en error), y **«Margen %» e «IVA %» aceptan coma** («10,5»). Lo que quedó vivo:
 
 | Pendiente | De dónde sale | Depende de |
