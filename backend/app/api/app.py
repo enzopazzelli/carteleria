@@ -17,7 +17,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .. import config
 from ..modelos.base import inicializar
+from ..registro import configurar_registro
 from .rutas_ajuste import router as router_ajuste
 from .rutas_catalogo import router as router_catalogo
 from .rutas_comparaciones import router as router_comparaciones
@@ -33,6 +35,7 @@ async def _ciclo_de_vida(app: FastAPI) -> AsyncIterator[None]:
     # Bindea `Sesion` al motor real. Las tablas las crea Alembic
     # (`alembic upgrade head`) — esta app nunca llama `create_all`.
     inicializar()
+    configurar_registro(config.DIRECTORIO_REGISTRO, config.TAMANO_REGISTRO_BYTES, config.ARCHIVOS_DE_REGISTRO)
     yield
 
 

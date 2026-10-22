@@ -39,3 +39,12 @@ DIRECTORIO_ARCHIVOS = DIRECTORIO_DATOS / "archivos"
 
 #: Ruta al motor de nesting irregular (`nesting-engine/`).
 RUTA_MOTOR_DEEPNEST = Path(os.getenv("CARTELERIA_MOTOR", RAIZ.parent / "nesting-engine"))
+
+#: El registro del servidor (A9): las fallas con su traza, para quien
+#: mantiene el sistema. Al lado de los datos, fuera de git.
+DIRECTORIO_REGISTRO = DIRECTORIO_DATOS / "registro"
+
+#: `PAR-54` y `PAR-55` (`docs/REGISTRO.md`): tamaño de cada archivo del
+#: registro y cuántos viejos se guardan.
+TAMANO_REGISTRO_BYTES = int(os.getenv("CARTELERIA_REGISTRO_BYTES", "1000000"))
+ARCHIVOS_DE_REGISTRO = int(os.getenv("CARTELERIA_REGISTRO_ARCHIVOS", "5"))
