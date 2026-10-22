@@ -16,6 +16,7 @@ import { cancelarComparacion } from "../../api/piezasYgrupos";
 import Banner from "../../components/Banner";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { debeRetomar, delGrupo, seEsfumo } from "./comparacionEnCurso";
+import { ordenarFilas } from "./filasComparacion";
 import type { OpcionFormato } from "../../api/piezasYgrupos";
 import { ApiError } from "../../api/client";
 import ListaDeFormatos from "../../components/ListaDeFormatos/ListaDeFormatos";
@@ -401,10 +402,15 @@ export default function GruposTab() {
                     </tr>
                   </thead>
                   <tbody>
-                    {/* Las que hay que seccionar, al final: no tienen números para comparar. */}
-                    {[...resultado]
-                      .sort((a, b) => Number(a.piezas_a_seccionar.length > 0) - Number(b.piezas_a_seccionar.length > 0))
-                      .map((opcion) => opcion.piezas_a_seccionar.length > 0 ? (
+                    {/* Las que no se anidaron o hay que seccionar, al final: no tienen números para comparar. */}
+                    {ordenarFilas(resultado).map((opcion) => opcion.error ? (
+                      <tr key={opcion.formato_id} className="border-b border-line text-ink/70">
+                        <td>{opcion.material_nombre}</td>
+                        <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
+                        <td>{opcion.formato_descripcion}</td>
+                        <td colSpan={5} className="text-conflict">{opcion.error.mensaje}</td>
+                      </tr>
+                    ) : opcion.piezas_a_seccionar.length > 0 ? (
                       <tr key={opcion.formato_id} className="border-b border-line text-ink/70">
                         <td>{opcion.material_nombre}</td>
                         <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>

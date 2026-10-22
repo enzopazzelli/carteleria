@@ -46,7 +46,7 @@ from ..services.nesting.models import (
 from ..services.nesting.models import Pieza as PiezaDominio
 from ..services.nesting.validacion_manual import GeometriaPieza
 from .dependencias import obtener_sesion
-from .esquemas_mensajes import avisos_leer
+from .esquemas_mensajes import ErrorLeer, avisos_leer
 from .esquemas_nesting import (
     AnidarCrear,
     ColocacionLeer,
@@ -657,18 +657,22 @@ def _correr_comparacion(
     cancelada: Callable[[], bool] = lambda: False,
 ) -> list[OpcionFormatoLeer]:
     """Anida cada formato y arma la tabla. No usa la base: corre igual en
-    el pedido y en la cola (A7)."""
+    el pedido y en la cola (A7). Un formato que falla queda en su fila con
+    el motivo, y los demás se muestran (A9)."""
     a_anidar = [
-        (opcion, comunes)
-        for opcion, comunes, a_seccionar in zip(preparada.opciones, preparada.comunes, preparada.a_seccionar)
+        (indice, opcion, comunes)
+        for indice, (opcion, comunes, a_seccionar) in enumerate(
+            zip(preparada.opciones, preparada.comunes, preparada.a_seccionar)
+        )
         if not a_seccionar
     ]
+    resultados: dict[int, object] = {}
+    fallas: dict[int, ErrorLeer] = {}
     if preparada.motor == "sparrow":
         from ..services.nesting.comparador import ResultadoComparacionFormato
         inicio = time.monotonic()
         maximo = len(a_anidar) * preparada.opciones_sparrow.tiempo_maximo_s
-        resultados = []
-        for numero, (opcion, comunes) in enumerate(a_anidar, start=1):
+        for numero, (indice, opcion, comunes) in enumerate(a_anidar, start=1):
             if cancelada():
                 raise ValueError("Comparación cancelada.")
 
@@ -680,24 +684,34 @@ def _correr_comparacion(
                         "formato": numero, "formatos": len(a_anidar), "descripcion": descripcion,
                     })
 
-            resultado = anidar_sparrow(
-                preparada.piezas, preparada.geometrias, opcion.plancha, opcion.params, preparada.opciones_sparrow,
-                cancelada=cancelada, al_avanzar=avanzar,
-            )
-            resultados.append(ResultadoComparacionFormato(
+            try:
+                resultado = anidar_sparrow(
+                    preparada.piezas, preparada.geometrias, opcion.plancha, opcion.params, preparada.opciones_sparrow,
+                    cancelada=cancelada, al_avanzar=avanzar,
+                )
+            except Exception as error:  # noqa: BLE001 - la falla de un formato queda en su fila
+                if cancelada():
+                    raise ValueError("Comparación cancelada.") from error
+                falla = para_el_usuario(error, preparada.nombres, plancha=opcion.plancha, material=comunes["material_nombre"])
+                registro().warning(
+                    "La comparación no pudo anidar %s: %s\n%s", comunes["formato_descripcion"], falla.mensaje, falla.detalle or ""
+                )
+                fallas[indice] = ErrorLeer(**falla.como_dict())
+                continue
+            resultados[indice] = ResultadoComparacionFormato(
                 opcion, resultado, calcular_aprovechamiento(resultado, opcion.plancha, preparada.geometrias),
                 resultado.planchas_usadas * opcion.precio_por_plancha,
-            ))
+            )
     else:
-        resultados = comparar_formatos(
-            preparada.piezas, [opcion for opcion, _ in a_anidar], tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
+        en_orden = comparar_formatos(
+            preparada.piezas, [opcion for _, opcion, _ in a_anidar], tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
         )
-    recomendado = formato_recomendado(resultados, preparada.criterio) if resultados else None
+        resultados = {indice: resultado for (indice, _, _), resultado in zip(a_anidar, en_orden)}
+    recomendado = formato_recomendado(list(resultados.values()), preparada.criterio) if resultados else None
 
-    resultados_en_orden = iter(resultados)
     filas = []
-    for comunes, a_seccionar in zip(preparada.comunes, preparada.a_seccionar):
-        if a_seccionar:
+    for indice, (comunes, a_seccionar) in enumerate(zip(preparada.comunes, preparada.a_seccionar)):
+        if a_seccionar or indice in fallas:
             filas.append(OpcionFormatoLeer(
                 **comunes,
                 area_total_m2=None,
@@ -706,9 +720,10 @@ def _correr_comparacion(
                 costo_total=None,
                 recomendado=False,
                 piezas_a_seccionar=a_seccionar,
+                error=fallas.get(indice),
             ))
             continue
-        resultado = next(resultados_en_orden)
+        resultado = resultados[indice]
         filas.append(OpcionFormatoLeer(
             **comunes,
             advertencias=resultado.resultado_anidado.advertencias,

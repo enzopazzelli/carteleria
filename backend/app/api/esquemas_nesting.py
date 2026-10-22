@@ -193,6 +193,9 @@ class OpcionFormatoLeer(BaseModel):
     #: se secciona en tramos que se sueldan después (A5, desde la pestaña
     #: Piezas). Hasta que se seccionen, el formato queda sin anidar.
     piezas_a_seccionar: list[PiezaASeccionarLeer] = Field(default_factory=list)
+    #: El formato no se pudo anidar (A9): no llegó a tiempo o falló el
+    #: cálculo. Como con `piezas_a_seccionar`, sin planchas ni costo.
+    error: ErrorLeer | None = None
 
     @field_validator("advertencias", mode="before")
     @classmethod

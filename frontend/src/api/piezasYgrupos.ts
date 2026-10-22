@@ -145,6 +145,8 @@ export interface OpcionFormato {
   recomendado: boolean;
   precio_simulado: boolean;
   piezas_a_seccionar: PiezaASeccionar[];
+  /** El formato no se pudo anidar (A9): no llegó a tiempo o falló el cálculo. Sin planchas ni costo. */
+  error?: ErrorDelServidor | null;
 }
 
 export function crearGrupo(trabajoId: number, nombre: string): Promise<GrupoDeCorte> {
