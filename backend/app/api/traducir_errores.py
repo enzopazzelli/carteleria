@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from ..mensajes import ErrorParaElUsuario, error_para_guardar, lista_de_nombres
+from ..mensajes import Aviso, ErrorParaElUsuario, error_para_guardar, lista_de_nombres
 from ..services.nesting.engine import PiezasSinUbicar
 from ..services.nesting.sparrow import (
     CalculoInterrumpido,
@@ -32,6 +32,14 @@ def _mm(valor) -> str:
 
 def medida(plancha) -> str:
     return f"{_mm(plancha.ancho_mm)} × {_mm(plancha.alto_mm)}"
+
+
+def con_nombres(aviso: Aviso, nombres: dict[str, str]) -> Aviso:
+    """Un aviso de un cálculo que nombra piezas termina en «:»; acá se le
+    agregan los nombres del dibujo."""
+    if not aviso.piezas or not aviso.mensaje.endswith(":"):
+        return aviso
+    return Aviso(f"{aviso.mensaje} {lista_de_nombres(aviso.piezas, nombres)}.", aviso.piezas, aviso.chapas)
 
 
 def para_el_usuario(error: BaseException, nombres: dict[str, str], *, plancha=None, material: str | None = None) -> ErrorParaElUsuario:

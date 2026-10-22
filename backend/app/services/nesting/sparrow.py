@@ -6,6 +6,8 @@ from decimal import Decimal
 from dataclasses import dataclass
 from shapely.geometry import Polygon, box
 from shapely import affinity
+from ...mensajes import Aviso
+from ...registro import registro
 from .models import ResultadoAnidado, PosicionPieza, RotacionPermitida
 from .geometria_material import poligono_material
 
@@ -192,10 +194,13 @@ def convertir_y_validar(entrada, placed):
         positions.append(PosicionPieza(q['id'],q['sheet'],Decimal(str(x0)),Decimal(str(y0)),Decimal(str(x1-x0)),Decimal(str(y1-y0)),False,Decimal(str(q['rotation'])),Decimal(str(centerx)),Decimal(str(centery))))
     sheets={p.plancha_indice for p in positions}
     if sheets!=set(range(len(sheets))):raise ResultadoQueNoPasaElControl('Índices de chapa inconsistentes.')
-    avisos=['Sparrow experimental: no anida dentro de agujeros; resultado validado con geometría original.']
+    avisos = []
     if entrada.get('normalizadas'):
-        avisos.append(f"Se unificaron huecos superpuestos o tangentes para calcular {len(entrada['normalizadas'])} pieza(s) (IDs: {', '.join(entrada['normalizadas'])}). Se conservaron todas las piezas y los contornos guardados del DXF.")
-    return ResultadoAnidado(positions,len(sheets),avisos)
+        avisos.append(Aviso(
+            "Estas piezas tenían huecos que se pisaban y se calcularon con los huecos unidos (el dibujo guardado no cambia):",
+            tuple(int(i) for i in entrada['normalizadas']),
+        ))
+    return ResultadoAnidado(positions, len(sheets), avisos)
 
 def _lo_que_dejo_el_worker(entrada,out,*avisos):
     """El mejor anidado que dejó escrito el worker, validado, con los avisos
@@ -248,7 +253,7 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
                     if ahora-start>opciones.tiempo_maximo_s:
                         if out.exists():
                             proc.kill(); proc.wait()
-                            return _lo_que_dejo_el_worker(entrada,out,'Se alcanzó el límite de búsqueda: se conserva el mejor anidado completo y validado, sin omitir piezas.')
+                            return _lo_que_dejo_el_worker(entrada,out,'Se usó todo el tiempo de búsqueda: este es el mejor resultado que encontró. Con más tiempo puede salir mejor.')
                         raise TiempoAgotado(opciones.tiempo_maximo_s)
                     if al_avanzar is not None and (ultima_lectura is None or ahora-ultima_lectura>=_LEER_PROGRESO_CADA_S):
                         ultima_lectura=ahora
@@ -258,13 +263,16 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
                 if proc.returncode!=0:
                     # Si ya había escrito un anidado, una falla posterior
                     # no lo tira: el worker escribe solo resultados validados.
-                    log.seek(0);registro=log.read()
+                    log.seek(0);escrito=log.read()
                     if out.exists():
-                        # El registro se borra con la carpeta: la causa va en el aviso.
-                        causa=next((l.strip() for l in reversed(registro.splitlines()) if l.strip()),'sin detalle')[:200]
-                        return _lo_que_dejo_el_worker(entrada,out,f'El cálculo terminó con un error ({causa}): se conserva el mejor anidado completo y validado que había encontrado.')
-                    raise CalculoInterrumpido(registro[-2000:])
+                        # La causa no va en el aviso: queda en el registro del servidor (abajo).
+                        return _lo_que_dejo_el_worker(entrada,out,'El cálculo se cortó antes de terminar: este es el mejor resultado completo que había encontrado.')
+                    raise CalculoInterrumpido(escrito[-2000:])
                 return _lo_que_dejo_el_worker(entrada,out)
             finally:
                 if proc.poll() is None:proc.kill()
                 proc.wait()
+                # Lo técnico de los avisos (y de cualquier falla) no va a la
+                # pantalla: queda acá, en el registro del servidor (A9).
+                log.seek(0);escrito=log.read().strip()
+                if escrito:registro().warning('Lo que escribió el cálculo de Sparrow:\n%s',escrito[-4000:])

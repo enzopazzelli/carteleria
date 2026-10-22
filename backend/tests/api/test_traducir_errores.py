@@ -90,3 +90,17 @@ def test_lo_que_ya_es_para_el_usuario_queda_y_lo_demas_va_como_siempre():
     assert para_el_usuario(propio, NOMBRES) is propio
     assert para_el_usuario(ValueError("El grupo no tiene piezas."), NOMBRES).mensaje == "El grupo no tiene piezas."
     assert para_el_usuario(RuntimeError("bum"), NOMBRES).mensaje == MENSAJE_INESPERADO
+
+
+from app.api.traducir_errores import con_nombres
+from app.mensajes import Aviso
+
+
+def test_un_aviso_que_nombra_piezas_suma_los_nombres():
+    aviso = Aviso("Estas piezas tenían huecos que se pisaban y se calcularon con los huecos unidos (el dibujo guardado no cambia):", (3, 4))
+
+    assert con_nombres(aviso, NOMBRES).mensaje.endswith("no cambia): «aro», «B-3».")
+
+
+def test_un_aviso_sin_piezas_queda_igual():
+    assert con_nombres(Aviso("Se usó todo el tiempo de búsqueda."), NOMBRES) == Aviso("Se usó todo el tiempo de búsqueda.")

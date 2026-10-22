@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from .. import progreso
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
+from ..mensajes import aviso_desde
 from ..modelos.base import Sesion
 from ..modelos.catalogo import Formato, Material
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
@@ -58,7 +59,7 @@ from .esquemas_nesting import (
     ResumenMaterialesLeer,
 )
 from .rutas_trabajos import _grupo_o_404, _trabajo_o_404
-from .traducir_errores import nombres_de_piezas, para_el_usuario
+from .traducir_errores import con_nombres, nombres_de_piezas, para_el_usuario
 
 router = APIRouter(tags=["nesting"])
 
@@ -346,7 +347,7 @@ def _correr_anidado(ejecucion_id: int) -> None:
         ejecucion.planchas_usadas = resultado.planchas_usadas
         ejecucion.aprovechamiento_pct = aprovechamiento.porcentaje_aprovechamiento
         ejecucion.milisegundos = milisegundos
-        ejecucion.mensajes = avisos_leer(resultado.advertencias)
+        ejecucion.mensajes = avisos_leer(con_nombres(aviso_desde(a), nombres) for a in resultado.advertencias)
         if not (ejecucion.parametros or {}).get("formato"):
             ejecucion.parametros = _parametros_snapshot(params)
         ejecucion.estado = EstadoEjecucion.LISTA.value
@@ -726,7 +727,7 @@ def _correr_comparacion(
         resultado = resultados[indice]
         filas.append(OpcionFormatoLeer(
             **comunes,
-            advertencias=resultado.resultado_anidado.advertencias,
+            advertencias=[con_nombres(aviso_desde(a), preparada.nombres) for a in resultado.resultado_anidado.advertencias],
             area_total_m2=resultado.reporte_aprovechamiento.area_total_planchas_mm2 / Decimal(1000000),
             planchas_usadas=resultado.resultado_anidado.planchas_usadas,
             aprovechamiento_pct=resultado.reporte_aprovechamiento.porcentaje_aprovechamiento,

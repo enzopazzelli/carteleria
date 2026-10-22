@@ -305,6 +305,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
             Girar a cualquier ángulo
           </label>
           <p>Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que quedaron a medio llenar. Conserva el anidado validado con menos planchas. Más búsqueda por chapa no da menos planchas. No se garantiza el óptimo global.</p>
+          <p className="text-xs text-ink/70">El cálculo no pone piezas adentro de los huecos de otras.</p>
         </>}
       </div>
       <ParametrosCorteForm grupo={grupo} onCambio={alCambiarParametros} />
