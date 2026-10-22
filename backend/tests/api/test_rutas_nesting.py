@@ -923,3 +923,16 @@ def test_una_corrida_de_antes_de_a9_se_lee_igual(cliente, tmp_path):
 
     assert leida["error"] == {"mensaje": "texto viejo", "detalle": None, "piezas": [], "chapas": [], "piezas_invalidas": []}
     assert leida["mensajes"] == [{"mensaje": "aviso viejo", "piezas": [], "chapas": []}]
+
+
+def test_anidar_una_pieza_mas_grande_que_la_chapa_la_nombra(cliente, tmp_path):
+    trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path, ancho=2000, alto=100)
+    pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={"motor": "sparrow"})
+
+    detalle = respuesta.json()["detail"]
+    assert respuesta.status_code == 400
+    assert detalle["mensaje"].startswith("Estas piezas no entran en la chapa de 1000 × 1000")
+    assert f"«{pieza['id_origen']}»" in detalle["mensaje"]
+    assert detalle["piezas"] == [pieza["id"]]

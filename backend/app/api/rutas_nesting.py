@@ -27,7 +27,6 @@ from sqlalchemy.orm import Session
 from .. import progreso
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
-from ..mensajes import error_para_guardar
 from ..modelos.base import Sesion
 from ..modelos.catalogo import Formato, Material
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
@@ -36,7 +35,7 @@ from ..services.nesting.anidado_huecos import anidar_en_huecos
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.comparador import OpcionFormato, comparar_formatos, formato_recomendado
 from ..services.nesting.engine import MotorNestingRectangular
-from ..services.nesting.sparrow import anidar_sparrow, piezas_que_no_entran, preparar_entrada, OpcionesSparrow, ErrorGeometriaSparrow
+from ..services.nesting.sparrow import anidar_sparrow, piezas_que_no_entran, preparar_entrada, OpcionesSparrow
 from ..services.nesting.models import (
     ParametrosCorte,
     Plancha,
@@ -59,6 +58,7 @@ from .esquemas_nesting import (
     ResumenMaterialesLeer,
 )
 from .rutas_trabajos import _grupo_o_404, _trabajo_o_404
+from .traducir_errores import nombres_de_piezas, para_el_usuario
 
 router = APIRouter(tags=["nesting"])
 
@@ -270,6 +270,9 @@ def _correr_anidado(ejecucion_id: int) -> None:
 
         inicio = time.monotonic()
         geometrias: dict[str, GeometriaPieza] = {}
+        nombres = nombres_de_piezas(ejecucion.grupo.piezas)
+        plancha = None
+        material = ((ejecucion.parametros or {}).get("formato") or {}).get("material_nombre")
         try:
             plancha, params, piezas = _datos_para_anidar(sesion, ejecucion.grupo)
             if (ejecucion.parametros or {}).get("formato"):
@@ -307,7 +310,7 @@ def _correr_anidado(ejecucion_id: int) -> None:
             sesion.refresh(ejecucion)
             if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
                 return  # se canceló mientras corría: no pisar esa decisión con un error
-            falla = error_para_guardar(error)
+            falla = para_el_usuario(error, nombres, plancha=plancha, material=material)
             registro().warning("El anidado #%s terminó en error: %s\n%s", ejecucion_id, falla.mensaje, falla.detalle or "")
             ejecucion.estado = EstadoEjecucion.ERROR.value
             ejecucion.error = falla.mensaje
@@ -363,12 +366,17 @@ def anidar(
     parámetros, piezas) antes de encolar: un 400 acá es mejor que una
     ejecución que nace condenada a terminar en `error`."""
     grupo = _grupo_o_404(sesion, grupo_id)
+    plancha = None
     try:
         plancha, params, piezas = _datos_para_anidar(sesion, grupo)
         if datos.motor == "sparrow":
             preparar_entrada(piezas, _geometrias_del_grupo(grupo), plancha, params, OpcionesSparrow())
     except ValueError as error:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
+        formato = sesion.get(Formato, grupo.formato_id) if grupo.formato_id else None
+        raise para_el_usuario(
+            error, nombres_de_piezas(grupo.piezas), plancha=plancha,
+            material=formato.material.nombre if formato else None,
+        ) from error
 
     formato = sesion.get(Formato, grupo.formato_id)
     snapshot = {**_parametros_snapshot(params), "formato": {
@@ -522,16 +530,8 @@ class _ComparacionPreparada:
     comunes: list[dict]
     opciones: list[OpcionFormato]
     a_seccionar: list[list[PiezaASeccionarLeer]]
-
-
-def _error_de_comparacion(error: ValueError) -> HTTPException:
-    """El 400 de siempre: con las piezas que Sparrow no puede leer, si es eso."""
-    if isinstance(error, ErrorGeometriaSparrow):
-        return HTTPException(status.HTTP_400_BAD_REQUEST, {
-            "mensaje": str(error),
-            "piezas_invalidas": [int(i) for i in error.piezas_invalidas],
-        })
-    return HTTPException(status.HTTP_400_BAD_REQUEST, str(error))
+    #: De `str(Pieza.id)` al nombre del dibujo, para decir los errores (A9).
+    nombres: dict[str, str]
 
 
 def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionFormatosCrear) -> _ComparacionPreparada:
@@ -606,15 +606,17 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
         no_entran = [MotorNestingRectangular(o.plancha, o.params).piezas_que_no_entran(piezas_dominio) for o in opciones]
 
     opciones_sparrow = None
+    nombres = nombres_de_piezas(piezas)
     if datos.motor == "sparrow":
         opciones_sparrow = OpcionesSparrow(**datos.model_dump(exclude={"motor", "formato_ids", "usar_anidado_en_huecos", "criterio"}))
         # Validar todos antes de iniciar búsquedas costosas.
-        try:
-            for opcion, ids in zip(opciones, no_entran):
-                if not ids:
-                    preparar_entrada(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
-        except ValueError as error:
-            raise _error_de_comparacion(error) from error
+        for opcion, formato, ids in zip(opciones, formatos, no_entran):
+            if ids:
+                continue
+            try:
+                preparar_entrada(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
+            except ValueError as error:
+                raise para_el_usuario(error, nombres, plancha=opcion.plancha, material=formato.material.nombre) from error
 
     por_id = {str(p.id): p for p in piezas}
     return _ComparacionPreparada(
@@ -645,6 +647,7 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
             ]
             for ids in no_entran
         ],
+        nombres=nombres,
     )
 
 
@@ -736,4 +739,4 @@ def comparar_formatos_de_grupo(
     try:
         return _correr_comparacion(preparada)
     except ValueError as error:
-        raise _error_de_comparacion(error) from error
+        raise para_el_usuario(error, preparada.nombres) from error
