@@ -80,7 +80,7 @@ export interface Colocacion {
 
 export interface ColocacionAjustada extends Colocacion {
   valida: boolean;
-  motivo: string | null;
+  motivo: Aviso | null;
 }
 
 export function listarColocaciones(ejecucionId: number): Promise<Colocacion[]> {

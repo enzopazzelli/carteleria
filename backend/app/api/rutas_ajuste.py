@@ -21,7 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato
-from ..modelos.trabajo import Colocacion, EstadoEjecucion
+from ..modelos.trabajo import Colocacion, EstadoEjecucion, Pieza
 from ..services.nesting.exportacion_dxf import exportar_plancha_a_dxf, nombre_de_archivo
 from ..services.nesting.models import ParametrosCorte, Plancha, PosicionPieza, ResultadoAnidado, RotacionPermitida
 from ..services.nesting.validacion_manual import (
@@ -32,6 +32,7 @@ from ..services.nesting.validacion_manual import (
 )
 from ..services.nesting.visualizacion import render_svg_plancha
 from .dependencias import obtener_sesion
+from .esquemas_mensajes import AvisoLeer
 from .esquemas_nesting import ColocacionActualizar, ColocacionAjusteLeer
 from .rutas_nesting import _ejecucion_o_404, geometria_desde_pieza
 
@@ -107,6 +108,25 @@ def _validar_lista_y_plancha(ejecucion, plancha_indice: int) -> None:
 # --- Mover / rotar ---------------------------------------------------------
 
 
+def _motivo_para_el_usuario(sesion: Session, resultado, colocacion: Colocacion) -> AvisoLeer | None:
+    """El motivo de un ajuste que no vale, con las piezas y la chapa (A9)."""
+    if resultado.valida:
+        return None
+    chapas = [{"ejecucion_id": colocacion.ejecucion_id, "plancha": colocacion.plancha_indice}]
+    if resultado.choca_con is None:
+        return AvisoLeer(mensaje=resultado.motivo, piezas=[colocacion.pieza_id], chapas=chapas)
+    otra_id = int(resultado.choca_con.split("#")[0])
+    otra = sesion.get(Pieza, otra_id)
+    return AvisoLeer(
+        mensaje=(
+            f"«{colocacion.pieza.id_origen}» se pisa con «{otra.id_origen if otra else 'otra pieza'}» "
+            "(o queda más cerca que la separación y el kerf)."
+        ),
+        piezas=[colocacion.pieza_id, otra_id],
+        chapas=chapas,
+    )
+
+
 @router.patch("/colocaciones/{colocacion_id}", response_model=ColocacionAjusteLeer)
 def ajustar_colocacion(
     colocacion_id: int, datos: ColocacionActualizar, sesion: Session = Depends(obtener_sesion)
@@ -158,7 +178,7 @@ def ajustar_colocacion(
         angulo_grados=colocacion.angulo_grados,
         movida_a_mano=colocacion.movida_a_mano,
         valida=resultado_validacion.valida,
-        motivo=resultado_validacion.motivo,
+        motivo=_motivo_para_el_usuario(sesion, resultado_validacion, colocacion),
     )
 
 

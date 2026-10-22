@@ -4,6 +4,7 @@ import { useGrupos } from "../../hooks/useGrupos";
 import { usePiezas } from "../../hooks/usePiezas";
 import { useEjecucionesDeGrupo, useColocaciones, useAjustarColocacion } from "../../hooks/useNesting";
 import { urlPlano, urlDxf } from "../../api/nesting";
+import type { Aviso } from "../../api/mensajes";
 import { useFormato } from "../../hooks/useCatalogo";
 import PlanoEditor from "../../components/PlanoEditor/PlanoEditor";
 import Banner from "../../components/Banner";
@@ -23,7 +24,7 @@ export default function AjusteTab() {
   // Guarda el resultado completo de cada ajuste (no solo el motivo) para
   // poder decidir "es inválida" por el booleano `valida` que ya manda el
   // backend con ese propósito, no por si el string de motivo vino vacío.
-  const [resultadosAjuste, setResultadosAjuste] = useState<Map<number, { valida: boolean; motivo: string | null }>>(
+  const [resultadosAjuste, setResultadosAjuste] = useState<Map<number, { valida: boolean; motivo: Aviso | null }>>(
     new Map()
   );
 

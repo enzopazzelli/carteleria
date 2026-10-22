@@ -123,7 +123,7 @@ class ColocacionAjusteLeer(ColocacionLeer):
     cómo mostrar el conflicto (ej. resaltarlo), no esta API."""
 
     valida: bool
-    motivo: str | None
+    motivo: AvisoLeer | None
 
 
 # --- Costeo (envuelve `app/costeo.py`, no lo reemplaza) -------------------
