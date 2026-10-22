@@ -27,7 +27,7 @@ import {
   importeParaEditar,
   leerCantidad,
   leerImporte,
-  leerPorcentaje,
+  porcentajeParaGuardar,
   type TextosDeLinea,
 } from "./importes";
 import Mensaje from "../../components/Mensaje/Mensaje";
@@ -303,7 +303,7 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
     }
   }
 
-  async function alCambiarMargenOIva(datos: { margen_pct?: string; iva_pct?: string }) {
+  async function alCambiarMargenOIva(datos: { margen_pct?: string | null; iva_pct?: string | null }) {
     setError(null);
     try {
       await margenEIva.mutateAsync(datos);
@@ -313,9 +313,9 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
   }
 
   async function alCambiarPorcentaje(campo: "margen_pct" | "iva_pct", etiqueta: string, texto: string) {
-    if (texto.trim() === "") return;
-    const valor = leerPorcentaje(texto);
-    if (valor === null) {
+    // El margen puede ser negativo (vender por debajo del costo); el IVA no.
+    const valor = porcentajeParaGuardar(texto, { conSigno: campo === "margen_pct" });
+    if (valor === undefined) {
       setError(`«${etiqueta}»: escribí un número, como 10,5.`);
       return;
     }

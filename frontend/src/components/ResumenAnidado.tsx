@@ -37,7 +37,7 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
           ["Área de piezas", `${(area * aprovechamiento / 100).toFixed(3)} m²`], ["Aprovechamiento", `${aprovechamiento.toFixed(1)} %`] ].map(([label,value]) =>
           <div key={label} className="bg-paper rounded-lg p-3"><p className="text-xs text-ink/60">{label}</p><p className="text-xl font-semibold font-mono">{value}</p></div>)}
       </div>
-      <p className="text-sm mb-3">{ejecucion.motor === "sparrow" ? "Sparrow irregular" : "Rectangular"} · anidado #{ejecucion.id} ·{ejecucion.es_definitiva ? "Elegida para el presupuesto" : "Vista previa; aún no elegida para el presupuesto"}</p>
+      <p className="text-sm mb-3">{ejecucion.motor === "sparrow" ? "Sparrow irregular" : "Rectangular"} · anidado #{ejecucion.id} · {ejecucion.es_definitiva ? "Elegida para el presupuesto" : "Vista previa; aún no elegida para el presupuesto"}</p>
       <div className="flex flex-wrap items-center gap-3 mb-3 text-sm">
         <label>Plancha <select className="border rounded p-1" value={hoja} onChange={(e) => setPlancha(Number(e.target.value))}>
           {Array.from({length:n},(_,i) => <option key={i} value={i}>{i+1} de {n}</option>)}

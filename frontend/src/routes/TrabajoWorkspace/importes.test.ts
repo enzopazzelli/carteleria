@@ -7,6 +7,7 @@ import {
   leerDias,
   leerImporte,
   leerPorcentaje,
+  porcentajeParaGuardar,
   mismoImporte,
   mostrarImporte,
   mostrarPorcentaje,
@@ -225,5 +226,22 @@ describe("leerPorcentaje", () => {
     expect(leerPorcentaje("")).toBeNull();
     expect(leerPorcentaje("-5")).toBeNull();
     expect(leerPorcentaje("1.000,5")).toBeNull();
+  });
+});
+
+describe("porcentajeParaGuardar", () => {
+  it("el margen acepta un valor negativo; el IVA no", () => {
+    expect(porcentajeParaGuardar("-5", { conSigno: true })).toBe("-5");
+    expect(porcentajeParaGuardar("-10,5", { conSigno: true })).toBe("-10.5");
+    expect(porcentajeParaGuardar("-5")).toBeUndefined();
+  });
+
+  it("un campo vacío limpia el valor guardado", () => {
+    expect(porcentajeParaGuardar("  ")).toBeNull();
+  });
+
+  it("lo que no es un porcentaje no se manda", () => {
+    expect(porcentajeParaGuardar("abc", { conSigno: true })).toBeUndefined();
+    expect(porcentajeParaGuardar("21 %")).toBe("21");
   });
 });
