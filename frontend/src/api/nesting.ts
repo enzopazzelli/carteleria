@@ -6,10 +6,13 @@ import type { Aviso, ErrorDelServidor } from "./mensajes";
 export interface Progreso {
   segundos: number;
   maximo: number;
-  fase: "pasada" | "vaciar" | null;
+  fase: "huecos" | "pasada" | "vaciar" | null;
   pasada: number | null;
   pasadas: number | null;
   mejor_chapas: number | null;
+  /** En la fase de huecos (A10): cuántos huecos lleva y cuántos hay. */
+  huecos: number | null;
+  huecos_total: number | null;
   /** Solo en una comparación. */
   formato: number | null;
   formatos: number | null;
@@ -81,6 +84,8 @@ export interface Colocacion {
 export interface ColocacionAjustada extends Colocacion {
   valida: boolean;
   motivo: Aviso | null;
+  /** Las que se movieron con esta porque estaban adentro de sus huecos (A10). */
+  tambien_movidas: ColocacionAjustada[];
 }
 
 export function listarColocaciones(ejecucionId: number): Promise<Colocacion[]> {

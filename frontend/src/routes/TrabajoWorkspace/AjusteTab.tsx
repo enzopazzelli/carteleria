@@ -4,6 +4,7 @@ import { useGrupos } from "../../hooks/useGrupos";
 import { usePiezas } from "../../hooks/usePiezas";
 import { useEjecucionesDeGrupo, useColocaciones, useAjustarColocacion } from "../../hooks/useNesting";
 import { urlPlano, urlDxf } from "../../api/nesting";
+import type { ColocacionAjustada } from "../../api/nesting";
 import type { Aviso } from "../../api/mensajes";
 import { useFormato } from "../../hooks/useCatalogo";
 import PlanoEditor from "../../components/PlanoEditor/PlanoEditor";
@@ -40,16 +41,23 @@ export default function AjusteTab() {
       colocacionId,
       datos: { centro_x_mm: centroXMm, centro_y_mm: centroYMm },
     });
-    setResultadosAjuste((prev) =>
-      new Map(prev).set(colocacionId, { valida: resultado.valida, motivo: resultado.motivo })
-    );
+    anotarResultados(resultado);
+  }
+
+  /** La que se movió y las que viajaron con ella por estar en sus huecos (A10). */
+  function anotarResultados(resultado: ColocacionAjustada) {
+    setResultadosAjuste((prev) => {
+      const nuevos = new Map(prev);
+      for (const movida of [resultado, ...resultado.tambien_movidas]) {
+        nuevos.set(movida.id, { valida: movida.valida, motivo: movida.motivo });
+      }
+      return nuevos;
+    });
   }
 
   async function alRotar(colocacionId: number, anguloGrados: number) {
     const resultado = await ajustar.mutateAsync({ colocacionId, datos: { angulo_grados: anguloGrados } });
-    setResultadosAjuste((prev) =>
-      new Map(prev).set(colocacionId, { valida: resultado.valida, motivo: resultado.motivo })
-    );
+    anotarResultados(resultado);
   }
 
   const invalidas = new Set(

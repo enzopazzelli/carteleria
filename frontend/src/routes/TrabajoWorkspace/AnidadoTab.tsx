@@ -157,7 +157,8 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const activa = historial?.find((e) => !ESTADOS_TERMINALES.has(e.estado));
   const { data: enCurso } = useEjecucion(ejecucionEnCurso ?? activa?.id ?? null);
   const [error, setError] = useState<QueMostrar | null>(null);
-  const [usarHuecos, setUsarHuecos] = useState(false);
+  // Marcada por defecto (Enzo, 2026-10-22, A10). Solo con Sparrow.
+  const [usarHuecos, setUsarHuecos] = useState(true);
   const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
   const [verEjecucion, setVerEjecucion] = useState<number | undefined>();
   const [semilla, setSemilla] = useState(42);
@@ -172,7 +173,8 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const giroLibreAplica = giroLibreSeAplica(
     (grupo.parametros_usados ?? parametrosMaterial)?.rotaciones_permitidas,
   );
-  const opciones = { motor, usar_anidado_en_huecos: usarHuecos, semilla,
+  const huecosAplica = motor === "sparrow";
+  const opciones = { motor, usar_anidado_en_huecos: usarHuecos && huecosAplica, semilla,
     segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion,
     vaciar_chapas: vaciarChapas, giro_libre: giroLibre && giroLibreAplica };
 
@@ -256,12 +258,13 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
         <h3 className="font-medium">{grupo.nombre}</h3>
         <div className="flex items-center gap-3">
           <label
-            className="text-xs flex items-center gap-1 cursor-pointer"
-            title="Segunda pasada: mete piezas chicas adentro de los agujeros de otras piezas, así no ocupan plancha propia."
+            className={`text-xs flex items-center gap-1 ${huecosAplica ? "cursor-pointer" : "opacity-60"}`}
+            title={huecosAplica ? "Mete las piezas chicas en los huecos de las grandes antes de acomodar" : "Solo con Sparrow"}
           >
             <input
               type="checkbox"
-              checked={usarHuecos}
+              checked={usarHuecos && huecosAplica}
+              disabled={!huecosAplica}
               onChange={(e) => setUsarHuecos(e.target.checked)}
             />
             Aprovechar huecos
@@ -305,7 +308,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
             Girar a cualquier ángulo
           </label>
           <p>Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que quedaron a medio llenar. Conserva el anidado validado con menos planchas. Más búsqueda por chapa no da menos planchas. No se garantiza el óptimo global.</p>
-          <p className="text-xs text-ink/70">Sin «Aprovechar huecos», el cálculo no pone piezas adentro de los huecos de otras.</p>
+          <p className="text-xs text-ink/70">Con «Aprovechar huecos», primero mete las piezas chicas en los huecos de las grandes, y después acomoda el resto.</p>
         </>}
       </div>
       <ParametrosCorteForm grupo={grupo} onCambio={alCambiarParametros} />
