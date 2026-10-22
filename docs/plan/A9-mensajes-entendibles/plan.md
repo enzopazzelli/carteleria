@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Estado:** escrito y aprobado por Enzo el 2026-10-15, con ejecución nativa y una pausa por tramo. **La implementación quedó para más adelante, a pedido de Enzo:** ninguna tarea empezada. No se ensayó sobre una copia: los bloques salen de leer el código de `feat/mensajes-entendibles` en `0457cac` (que incluye el arreglo del «utf-8», `aef764f`, [PR #25](https://github.com/enzopazzelli/carteleria/pull/25)). Lo que se aparte va al final, en «Desvíos».
+> **Estado:** escrito y aprobado por Enzo el 2026-10-15. **Construido el 2026-10-22**, las 15 tareas, en la rama `feat/mensajes-entendibles`: tramo 1 con pausa; 2 y 3 de corrido, y 4 y 5 sin pausa, a pedido de Enzo. Backend 763 pruebas, frontend 189. Recorrido en Chrome sobre una copia de la base, con ocho casos. Lo que se apartó del plan está al final, en «Desvíos».
 
 **Goal:** Que todo error y aviso que ve una persona diga qué pasó y qué hacer, en palabras del taller, con la miniatura de las piezas y chapas que nombra y el detalle técnico aparte, en un desplegable y en un registro del servidor.
 
@@ -2986,4 +2986,22 @@ La carpeta `docs/plan/A9-mensajes-entendibles/` pasa a `docs/historico/`, con el
 
 ## Desvíos
 
-(Se completa durante la ejecución.)
+Decisiones tomadas al ejecutar; ninguna cambia una decisión de Enzo. El registro completo, tarea por tarea, quedó en `.superpowers/sdd/plan-A9-mensajes-entendibles/progress.md` hasta cerrar.
+
+**Defectos del plan, encontrados al ejecutar:**
+
+- **Tarea 6.** El motor rectangular nombra cada copia de una pieza «id#copia», y `ErrorParaElUsuario` convierte las piezas a número: la traducción reventaba dentro del `except` de la corrida y el anidado quedaba «corriendo» para siempre. `PiezasSinUbicar.ids` pasa a ser las piezas sin repetir (el texto técnico conserva las copias), con su prueba.
+- **Tarea 8.** En `anidar_sparrow` una variable local `registro` tapaba a la función `registro()` que el plan importaba: pasa a llamarse `escrito`.
+- **Tarea 12.** `components/Mensaje/mensaje.ts` y `Mensaje.tsx` en la misma carpeta chocan en Windows, que no distingue mayúsculas (`import Mensaje from ".../Mensaje"` resolvía al `.ts`). Las cuentas pasan a `contenido.ts`.
+- **Tarea 15, en el recorrido.** El 500 de un error inesperado salía sin el encabezado de CORS: el manejador de `Exception` de Starlette corre afuera de todo middleware. En el navegador se veía «No se pudo conectar con el servidor» en vez del mensaje general. Se ataja adentro de CORS (`_AtajarLoInesperado`, en `manejadores.py`), con una prueba sobre la app real.
+
+**Lo que el plan no nombraba y se sumó:**
+
+- **Tarea 4 y 8.** Pruebas viejas que leían los avisos como texto (una pasaba de casualidad, buscando en las claves) o la causa adentro del aviso: pasan a la forma nueva.
+- **Tarea 13.** Textos con palabras de la lista prohibida que la tabla no traía: «ninguna ejecución está marcada como definitiva» (costeo), «entidad(es)» (lectura del DXF), la confirmación de Recalcular, «ejecución #» de `ResumenAnidado` y «No se pudo aplicar el override.». Y `ArchivoDXFInvalido` mostraba la ruta del servidor y el error de la biblioteca: ahora lleva `detalle`, con su prueba.
+- **Tarea 14.** La prueba guardiana encontró cuatro textos en `deepnest_cliente.py`, que ninguna ruta usa (`AnidarCrear.motor` solo admite rectpack y sparrow): queda fuera de la revisión, con el motivo escrito en la prueba.
+- **Tarea 15.** El recorrido usó 5 s por chapa en vez de 30 (con «Complejo» ninguna llega igual y es más rápido); el cálculo que se corta y el error inesperado se provocaron con una copia del código con dos fallas puestas a propósito, sobre una copia de la base.
+
+**Chicos:** los imports que quedaron sin uso se sacaron; el guion que pasó las pruebas a `mensaje_de` conserva los finales de línea; `SeccionDesglose` (Costeo) muestra sus errores sin miniaturas, porque solo conoce el presupuesto.
+
+**Quedó vivo** en la tabla «Pendientes de los mensajes entendibles (A9)» del plan maestro §7.
