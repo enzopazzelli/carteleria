@@ -66,7 +66,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 **El arreglo del «utf-8»** ([PR #25](https://github.com/enzopazzelli/carteleria/pull/25)) quedó en `main`: un error del cálculo de Sparrow ya no queda tapado por «'utf-8' codec can't decode».
 
-**Mensajes entendibles (A9)**, en la rama `feat/mensajes-entendibles`, los cinco tramos del plan ([`plan/A9-mensajes-entendibles/`](plan/A9-mensajes-entendibles/diseno.md)). Backend 763 pruebas (734 al cerrar el primer tramo; 709 antes de A9), frontend 189 (172 antes):
+**Mensajes entendibles (A9)**, en la rama `feat/mensajes-entendibles`, los cinco tramos del plan ([`plan/A9-mensajes-entendibles/`](plan/A9-mensajes-entendibles/diseno.md)). Backend 767 pruebas (709 antes de A9), frontend 192 (172 antes):
 
 - **Una sola forma para errores y avisos** (`app/mensajes.py`): el mensaje para la persona, el detalle técnico aparte, y las piezas y chapas que nombra. Un solo lugar ataja todo error (`app/api/manejadores.py`): un dato mal escrito dice el campo como en pantalla («Margen %: escribí un número.»), y un error que nadie previó da «Algo falló en el servidor…» con la traza en el detalle.
 - **Registro del servidor** en `CARTELERIA_DATOS/registro/servidor.log`, que rota por tamaño (`PAR-54`, `PAR-55`): cada falla de una corrida o una comparación, y lo técnico de los avisos.
@@ -75,6 +75,8 @@ Qué queda abierto y cuál es el próximo paso.
 - **La pantalla:** un componente `Mensaje` con las miniaturas de las piezas y chapas que nombra y «Ver detalle técnico» con Copiar; con el servidor apagado, «No se pudo conectar con el servidor: revisá que esté prendido.» en lugar de «Failed to fetch»; Margen % e IVA % aceptan coma.
 - **El resto de los textos** contra la regla (sin códigos del proyecto, sin nombres de programas, sin «ejecución» ni «override»), la regla escrita en `CONVENCIONES.md §6`, y una prueba guardiana que recorre el código (`tests/test_mensajes_claros.py`).
 - **Recorrido en Chrome sin ventana** sobre una copia de la base, con ocho casos, dos de ellos provocados con una copia del código: servidor apagado, coma en Margen, comparación con poco tiempo, anidado sin tiempo, pieza más grande que la chapa, Ajuste, cálculo que se corta y error inesperado. **Destapó un error:** el 500 de un error inesperado salía sin el encabezado de CORS y la pantalla decía «No se pudo conectar» en lugar del mensaje; arreglado con su prueba.
+
+**Revisión aparte de la rama: «con arreglos», nada crítico.** Cuatro arreglos, cada uno con una prueba que falló primero: solo un error marcado como previsto (`ErrorPrevisto`) muestra su texto, y cualquier otro, aunque sea un `ValueError` de una biblioteca, da el mensaje general (si no, el «utf-8» del 14/10 podía volver a verse); una corrida ya no queda «corriendo» para siempre si falla el propio manejo del error; Margen % acepta negativos y vaciarlo lo limpia; y la prueba guardiana revisa todas las frases del servidor (encontró dos textos más). Lo menor quedó en los pendientes del plan maestro §7.
 
 **Cuentas de GitHub:** la activa de `gh` en Windows pasó a `enzopazzelli` (LIDR-AI4Devs queda para WSL).
 
@@ -88,7 +90,7 @@ Sin cambios (`PAR-54` y `PAR-55` se dieron de alta con el diseño, el 2026-10-15
 
 ### Pendiente
 
-La revisión aparte de la rama y el PR; fusionarlo es de Enzo. Lo que quedó vivo está en la tabla «Pendientes de los mensajes entendibles (A9)» del plan maestro §7.
+Fusionar el PR es de Enzo; al fusionar, la carpeta del plan pasa a `historico/`. Lo que quedó vivo está en la tabla «Pendientes de los mensajes entendibles (A9)» del plan maestro §7.
 
 ---
 
