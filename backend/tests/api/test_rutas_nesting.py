@@ -13,6 +13,8 @@ from decimal import Decimal
 
 import ezdxf
 import pytest
+
+from .ayudas import mensaje_de
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -123,7 +125,7 @@ def test_anidar_grupo_sin_formato_da_400(cliente):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
 
     assert respuesta.status_code == 400
-    assert "formato" in respuesta.json()["detail"]
+    assert "formato" in mensaje_de(respuesta)
 
 
 def test_anidar_grupo_sin_parametros_de_corte_da_400(cliente):
@@ -139,7 +141,7 @@ def test_anidar_grupo_sin_parametros_de_corte_da_400(cliente):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
 
     assert respuesta.status_code == 400
-    assert "parámetros de corte" in respuesta.json()["detail"]
+    assert "parámetros de corte" in mensaje_de(respuesta)
 
 
 def test_anidar_grupo_sin_piezas_da_400(cliente):
@@ -152,7 +154,7 @@ def test_anidar_grupo_sin_piezas_da_400(cliente):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
 
     assert respuesta.status_code == 400
-    assert "piezas" in respuesta.json()["detail"]
+    assert "piezas" in mensaje_de(respuesta)
 
 
 def test_anidar_grupo_inexistente_da_404(cliente):
@@ -322,7 +324,7 @@ def test_borrar_un_anidado_inexistente_da_404(cliente):
 
     # El mensaje, y no solo el 404: una ruta que no existe también da 404.
     assert respuesta.status_code == 404
-    assert "No existe la ejecución 999" in respuesta.json()["detail"]
+    assert "No existe la ejecución 999" in mensaje_de(respuesta)
 
 
 @pytest.mark.parametrize("estado", [EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value])
@@ -339,7 +341,7 @@ def test_un_anidado_en_curso_no_se_borra(cliente, tmp_path, estado):
     respuesta = cliente.delete(f"/ejecuciones/{ejecucion_id}")
 
     assert respuesta.status_code == 409
-    assert "cancel" in respuesta.json()["detail"].lower()
+    assert "cancel" in mensaje_de(respuesta).lower()
     assert cliente.get(f"/ejecuciones/{ejecucion_id}").status_code == 200
 
 
@@ -671,7 +673,7 @@ def test_comparar_formatos_grupo_sin_piezas_da_400(cliente):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": [formato["id"]]})
 
     assert respuesta.status_code == 400
-    assert "piezas" in respuesta.json()["detail"]
+    assert "piezas" in mensaje_de(respuesta)
 
 
 def test_comparar_formatos_con_formato_inexistente_da_404(cliente, tmp_path):
@@ -692,7 +694,7 @@ def test_comparar_formatos_lista_vacia_da_400(cliente, tmp_path):
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos", json={"formato_ids": []})
 
     assert respuesta.status_code == 400
-    assert "formato" in respuesta.json()["detail"]
+    assert "formato" in mensaje_de(respuesta)
 
 
 def test_comparar_formatos_sin_precio_no_confunde_la_unidad_de_venta(cliente, tmp_path):
@@ -719,7 +721,7 @@ def test_comparar_formatos_sin_precio_no_confunde_la_unidad_de_venta(cliente, tm
     )
 
     assert respuesta.status_code == 400
-    detalle = respuesta.json()["detail"]
+    detalle = mensaje_de(respuesta)
     assert "precio" in detalle
     assert "se vende por" not in detalle
 
@@ -741,7 +743,7 @@ def test_sparrow_preflight_no_encola_piezas_que_no_entran(cliente,tmp_path):
     _,grupo=_trabajo_con_grupo_listo(cliente,tmp_path,ancho=1000,alto=1000)
     r=cliente.post(f"/grupos/{grupo['id']}/anidar",json={"motor":"sparrow"})
     assert r.status_code==400
-    assert 'no entran' in r.json()['detail']
+    assert 'no entran' in mensaje_de(r)
     assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json()==[]
 
 

@@ -20,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .. import config
 from ..modelos.base import inicializar
 from ..registro import configurar_registro
+from .manejadores import registrar_manejadores
 from .rutas_ajuste import router as router_ajuste
 from .rutas_catalogo import router as router_catalogo
 from .rutas_comparaciones import router as router_comparaciones
@@ -43,6 +44,7 @@ app = FastAPI(
     title="Cartelería — catálogo y nesting (en construcción)",
     lifespan=_ciclo_de_vida,
 )
+registrar_manejadores(app)
 
 # Único origen permitido: el dev server de Vite del frontend interno
 # (docs/historico/frontend-cotizador/diseno.md). No se

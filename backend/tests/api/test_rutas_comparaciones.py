@@ -6,6 +6,8 @@ import time
 
 import pytest
 
+from .ayudas import mensaje_de
+
 from .test_rutas_nesting import _grupo_con_piezas_sin_formato, _material_con_formato_y_parametros, cliente  # noqa: F401
 
 
@@ -139,7 +141,7 @@ def test_no_se_arranca_una_segunda_comparacion_en_el_mismo_grupo(cliente, tmp_pa
     segunda = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json=pedido)
 
     assert segunda.status_code == 409
-    assert f"#{primera['id']}" in segunda.json()["detail"]
+    assert f"#{primera['id']}" in mensaje_de(segunda)
 
 
 def test_la_ultima_comparacion_del_grupo_se_retoma(cliente, tmp_path):
@@ -163,7 +165,7 @@ def test_una_comparacion_que_no_se_puede_arrancar_da_el_mismo_error_de_siempre(c
     respuesta = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json={"formato_ids": []})
 
     assert respuesta.status_code == 400
-    assert "al menos un formato" in respuesta.json()["detail"]
+    assert "al menos un formato" in mensaje_de(respuesta)
     assert cliente.get(f"/grupos/{grupo['id']}/comparacion").status_code == 404
 
 

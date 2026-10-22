@@ -8,6 +8,8 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pytest
+
+from .ayudas import mensaje_de
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -363,7 +365,7 @@ def test_un_retazo_de_una_fila_sin_precio_por_m2_da_400(cliente, extra):
     respuesta = _retazo(cliente, origen["id"])
 
     assert respuesta.status_code == 400
-    assert "por m²" in respuesta.json()["detail"]
+    assert "por m²" in mensaje_de(respuesta)
 
 
 def _grupo_con(cliente, formato_id) -> tuple[dict, dict]:
@@ -380,7 +382,7 @@ def test_un_formato_que_usa_un_grupo_no_se_quita(cliente):
     respuesta = cliente.delete(f"/formatos/{origen['id']}")
 
     assert respuesta.status_code == 409
-    assert "«Chapa chica»" in respuesta.json()["detail"]
+    assert "«Chapa chica»" in mensaje_de(respuesta)
     [mismo] = cliente.get(f"/trabajos/{trabajo['id']}/grupos").json()
     assert mismo["id"] == grupo["id"] and mismo["formato_id"] == origen["id"]
 

@@ -8,6 +8,8 @@ from decimal import Decimal
 
 import ezdxf
 import pytest
+
+from .ayudas import mensaje_de
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -128,7 +130,7 @@ def test_subir_dxf_con_escala_no_positiva_da_400(cliente, tmp_path, escala):
     respuesta = _subir(cliente, trabajo["id"], contenido, escala_a_mm=escala)
 
     assert respuesta.status_code == 400
-    assert "escala" in respuesta.json()["detail"]
+    assert "escala" in mensaje_de(respuesta)
 
 
 def test_subir_dxf_a_trabajo_inexistente_da_404(cliente, tmp_path):
@@ -217,8 +219,8 @@ def test_subir_dxf_con_contorno_abierto_no_carga_y_dice_por_que(cliente, tmp_pat
     respuesta = _subir(cliente, trabajo["id"], _contorno_abierto(tmp_path))
 
     assert respuesta.status_code == 400
-    assert "ninguna forma para cortar" in respuesta.json()["detail"]
-    assert "no se pudieron cerrar" in respuesta.json()["detail"]
+    assert "ninguna forma para cortar" in mensaje_de(respuesta)
+    assert "no se pudieron cerrar" in mensaje_de(respuesta)
 
 
 def test_cargar_sin_nada_para_cortar_no_toca_las_piezas_del_trabajo(cliente, tmp_path):
@@ -265,7 +267,7 @@ def test_mientras_corre_un_anidado_del_trabajo_no_se_vuelve_a_cargar(cliente, tm
     respuesta = _subir(cliente, trabajo["id"], contenido)
 
     assert respuesta.status_code == 409
-    assert f"#{ejecucion_id}" in respuesta.json()["detail"]
+    assert f"#{ejecucion_id}" in mensaje_de(respuesta)
     assert cliente.get(f"/trabajos/{trabajo['id']}/piezas").json() == [pieza]
 
 
@@ -773,7 +775,7 @@ def test_ver_la_lectura_con_una_escala_que_no_es_positiva_da_400(cliente, tmp_pa
     respuesta = _ver_lectura(cliente, _crear_trabajo(cliente)["id"], contenido, escala_a_mm="0")
 
     assert respuesta.status_code == 400
-    assert "escala" in respuesta.json()["detail"]
+    assert "escala" in mensaje_de(respuesta)
 
 
 # --- Corregir la lectura a mano (2.1b) -----------------------------------
@@ -1144,7 +1146,7 @@ def test_unas_correcciones_que_no_sirven_dan_400_y_dicen_por_que(cliente, tmp_pa
     respuesta = _ver_lectura(cliente, trabajo["id"], contenido, correcciones=correcciones)
 
     assert respuesta.status_code == 400
-    assert dice in respuesta.json()["detail"]
+    assert dice in mensaje_de(respuesta)
 
 
 def test_cargar_con_unas_correcciones_que_no_sirven_no_toca_las_piezas_del_trabajo(cliente, tmp_path):
