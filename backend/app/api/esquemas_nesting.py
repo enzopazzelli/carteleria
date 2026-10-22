@@ -29,12 +29,10 @@ class AnidarCrear(BaseModel):
     #: Sparrow gira las piezas a cualquier ángulo, no solo de a cuartos de
     #: vuelta. Marcada por defecto (Enzo, 2026-10-14); con veta no se aplica.
     giro_libre: bool = True
-    #: Segunda pasada opcional (`anidado_huecos.py`, Capa 2 de
-    #: `docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`): reubica piezas ya
-    #: anidadas adentro de agujeros reales de otras piezas. Apagada por
-    #: default a propósito — cambia el layout respecto de lo que
-    #: devuelve `rectpack` solo, y quien anida tiene que poder pedir el
-    #: resultado "crudo" del motor para compararlos.
+    #: Meter las piezas chicas en los huecos de las grandes antes de
+    #: acomodar (A10, `huecos_primero.py`). Solo con Sparrow: con el motor
+    #: rectangular se rechaza. Apagada si no se manda: quien llama dice lo
+    #: que quiere; la pantalla la manda marcada.
     usar_anidado_en_huecos: bool = False
 
 
@@ -44,10 +42,13 @@ class ProgresoLeer(BaseModel):
 
     segundos: float
     maximo: int
-    fase: Literal["pasada", "vaciar"] | None = None
+    fase: Literal["huecos", "pasada", "vaciar"] | None = None
     pasada: int | None = None
     pasadas: int | None = None
     mejor_chapas: int | None = None
+    #: En la fase de huecos (A10): cuántos huecos lleva y cuántos hay.
+    huecos: int | None = None
+    huecos_total: int | None = None
     #: Solo en una comparación: qué formato corre, cuántos hay y cuál es.
     formato: int | None = None
     formatos: int | None = None

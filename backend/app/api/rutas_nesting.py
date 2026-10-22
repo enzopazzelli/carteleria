@@ -27,12 +27,11 @@ from sqlalchemy.orm import Session
 from .. import progreso
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
-from ..mensajes import ErrorParaElUsuario, ErrorPrevisto, aviso_desde, error_para_guardar
+from ..mensajes import ErrorPrevisto, aviso_desde, error_para_guardar
 from ..modelos.base import Sesion
 from ..modelos.catalogo import Formato, Material
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
 from ..registro import registro
-from ..services.nesting.anidado_huecos import anidar_en_huecos
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.comparador import OpcionFormato, comparar_formatos, formato_recomendado
 from ..services.nesting.engine import MotorNestingRectangular
@@ -40,8 +39,6 @@ from ..services.nesting.sparrow import anidar_sparrow, piezas_que_no_entran, pre
 from ..services.nesting.models import (
     ParametrosCorte,
     Plancha,
-    PosicionPieza,
-    ResultadoAnidado,
     RotacionPermitida,
 )
 from ..services.nesting.models import Pieza as PiezaDominio
@@ -69,22 +66,17 @@ router = APIRouter(tags=["nesting"])
 # comentario, no un valor repetido a ciegas).
 _TOPE_PLANCHAS_ADVERTENCIA = 500
 
-# PAR-39, provisorio — ver docs/REGISTRO.md. Un agujero más chico que
-# esto no vale la pena intentar llenarlo: ninguna pieza real entra.
-_AREA_MINIMA_HUECO_MM2 = Decimal("100")
-
-
 def _puntos_decimal(puntos: list) -> list[tuple[Decimal, Decimal]]:
     return [(Decimal(x), Decimal(y)) for x, y in puntos]
 
 
 def geometria_desde_pieza(pieza: Pieza) -> GeometriaPieza:
     """La geometría real de una `Pieza` persistida, como la esperan
-    `anidado_huecos.py` y `validacion_manual.py`.
+    Sparrow y `validacion_manual.py`.
 
-    Vive acá y no en `rutas_ajuste.py` (donde nació) porque ahora la
-    necesitan los dos: el ajuste manual para validar una posición, y el
-    anidado para la segunda pasada en huecos. Es la misma conversión —
+    Vive acá y no en `rutas_ajuste.py` (donde nació) porque la necesitan
+    los dos: el ajuste manual para validar una posición, y el anidado para
+    Sparrow y el aprovechamiento. Es la misma conversión —
     tenerla dos veces es cómo las dos capas terminan discrepando sobre
     qué forma tiene una pieza.
     """
@@ -164,27 +156,6 @@ def _parametros_snapshot(params: ParametrosCorte) -> dict:
     }
 
 
-def _misma_ubicacion(a: PosicionPieza, b: PosicionPieza) -> bool:
-    """Si una pieza quedó exactamente donde estaba — deliberadamente SIN
-    mirar `plancha_indice`.
-
-    `anidar_en_huecos` reindexa las planchas cuando alguna queda vacía
-    (todas sus piezas terminaron adentro de huecos de otra), así que una
-    pieza que no se movió ni un milímetro puede igualmente cambiar de
-    índice de plancha. Comparar el objeto entero haría pasar por
-    "reubicada" a media plancha intacta, y su área quedaría fuera del
-    aprovechamiento.
-    """
-    return (
-        a.x_mm == b.x_mm
-        and a.y_mm == b.y_mm
-        and a.ancho_colocado_mm == b.ancho_colocado_mm
-        and a.alto_colocado_mm == b.alto_colocado_mm
-        and a.rotada_90 == b.rotada_90
-        and a.angulo_libre_grados == b.angulo_libre_grados
-    )
-
-
 def _geometrias_del_grupo(grupo: GrupoDeCorte) -> dict[str, GeometriaPieza]:
     """Las formas reales de las piezas del grupo, por id base.
 
@@ -200,46 +171,14 @@ def _geometrias_del_grupo(grupo: GrupoDeCorte) -> dict[str, GeometriaPieza]:
     }
 
 
-def _con_anidado_en_huecos(
-    geometrias: dict[str, GeometriaPieza],
-    resultado: ResultadoAnidado,
-    plancha: Plancha,
-    params: ParametrosCorte,
-) -> ResultadoAnidado:
-    """Segunda pasada opcional (Capa 2, `anidado_huecos.py`): reubica
-    piezas ya anidadas adentro de agujeros reales de otras piezas.
-
-    No hace falta avisarle nada a `calcular_aprovechamiento` sobre qué
-    piezas se reubicaron: midiendo área real de polígono, la contenedora
-    no reclama su propio agujero como material, así que la pieza de
-    adentro suma lo suyo sin contarse dos veces.
-    """
-    if not geometrias:
-        return resultado
-
-    antes = {p.pieza_id: p for p in resultado.posiciones}
-    nuevo = anidar_en_huecos(resultado, geometrias, plancha, params, _AREA_MINIMA_HUECO_MM2)
-    reubicadas = {
-        p.pieza_id
-        for p in nuevo.posiciones
-        if p.pieza_id in antes and not _misma_ubicacion(p, antes[p.pieza_id])
-    }
-    if not reubicadas:
-        return resultado
-
-    # Lista nueva, no `insert` sobre la que viene: `anidar_en_huecos`
-    # reusa por referencia la lista de advertencias del resultado de
-    # entrada, así que mutarla escribiría también sobre el resultado
-    # original del motor.
-    aviso = (
-        f"{len(reubicadas)} pieza(s) reubicada(s) dentro de agujeros de otras piezas "
-        "— no consumen plancha adicional."
-    )
-    return ResultadoAnidado(
-        posiciones=nuevo.posiciones,
-        planchas_usadas=nuevo.planchas_usadas,
-        advertencias=[aviso, *nuevo.advertencias],
-    )
+def _rechazar_huecos_sin_sparrow(datos: AnidarCrear) -> None:
+    """Aprovechar huecos es solo con Sparrow, el motor principal (A10): el
+    rectangular no lo tiene."""
+    if datos.usar_anidado_en_huecos and datos.motor != "sparrow":
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            '"Aprovechar huecos" no funciona con el motor rectangular: destildá esa opción o elegí el otro motor.',
+        )
 
 
 def _esta_cancelada(ejecucion_id: int) -> bool:
@@ -297,11 +236,13 @@ def _correr_anidado(ejecucion_id: int) -> None:
                 snapshot = ejecucion.parametros
                 plancha = Plancha(Decimal(snapshot["formato"]["ancho_mm"]), Decimal(snapshot["formato"]["alto_mm"]))
                 params = ParametrosCorte(Decimal(snapshot["kerf_mm"]), Decimal(snapshot["margen_borde_mm"]), Decimal(snapshot["separacion_piezas_mm"]), RotacionPermitida(snapshot["rotaciones_permitidas"]))
-            # Se arman una sola vez: las usan tanto la segunda pasada en
-            # huecos como la medición de aprovechamiento por área real.
+            # Se arman una sola vez: las usan Sparrow y la medición de
+            # aprovechamiento por área real.
             geometrias = _geometrias_del_grupo(ejecucion.grupo)
             if ejecucion.motor == "sparrow":
-                opciones = OpcionesSparrow(**{k: v for k, v in (ejecucion.opciones or {}).items() if k != "usar_anidado_en_huecos"})
+                # Con la casilla, Sparrow mete primero las piezas en los
+                # huecos (A10, `huecos_primero.py`).
+                opciones = OpcionesSparrow(**(ejecucion.opciones or {}))
                 resultado = anidar_sparrow(piezas, geometrias, plancha, params, opciones,
                     cancelada=lambda: _esta_cancelada(ejecucion_id),
                     al_avanzar=lambda avance: progreso.anotar(("ejecucion", ejecucion_id), avance))
@@ -309,21 +250,6 @@ def _correr_anidado(ejecucion_id: int) -> None:
                 resultado = MotorNestingRectangular(plancha, params).anidar(
                     piezas, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
                 )
-            if (ejecucion.opciones or {}).get("usar_anidado_en_huecos"):
-                resultado = _con_anidado_en_huecos(geometrias, resultado, plancha, params)
-                if ejecucion.motor == "sparrow":
-                    from ..services.nesting.validacion_manual import validar_posicion_manual, posicion_manual_desde_pieza
-                    posiciones = [(posicion_manual_desde_pieza(p), geometrias[p.pieza_id.split("#")[0]]) for p in resultado.posiciones]
-                    for posicion, geometria in posiciones:
-                        from shapely.geometry import box
-                        from ..services.nesting.validacion_manual import poligono_colocado
-                        borde = float(params.margen_borde_mm + params.kerf_mm / 2)
-                        util = box(borde, borde, float(plancha.ancho_mm)-borde, float(plancha.alto_mm)-borde)
-                        if poligono_colocado(posicion, geometria).difference(util).area > 0.01:
-                            raise ErrorParaElUsuario("Al meter piezas en los huecos, una quedó pisando el margen de la chapa: probá sin esa opción.")
-                        validacion = validar_posicion_manual(posicion, geometria, posiciones, plancha, params)
-                        if not validacion.valida:
-                            raise ErrorParaElUsuario("Al meter piezas en los huecos, una quedó pisando otra: probá sin esa opción.", detalle=validacion.motivo)
         except Exception as error:  # noqa: BLE001 - cualquier falla del motor se reporta, no se pierde
             sesion.refresh(ejecucion)
             if ejecucion.estado == EstadoEjecucion.CANCELADA.value:
@@ -388,6 +314,7 @@ def anidar(
     parámetros, piezas) antes de encolar: un 400 acá es mejor que una
     ejecución que nace condenada a terminar en `error`."""
     grupo = _grupo_o_404(sesion, grupo_id)
+    _rechazar_huecos_sin_sparrow(datos)
     plancha = None
     try:
         plancha, params, piezas = _datos_para_anidar(sesion, grupo)
@@ -565,8 +492,7 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"El grupo «{grupo.nombre}» no tiene piezas para comparar.")
     if not datos.formato_ids:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Hace falta indicar al menos un formato para comparar.")
-    if datos.usar_anidado_en_huecos:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "La comparación todavía no puede meter piezas adentro de los huecos: destildá esa opción.")
+    _rechazar_huecos_sin_sparrow(datos)
     piezas_dominio = [
         PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad) for p in piezas
     ]
@@ -630,7 +556,7 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
     opciones_sparrow = None
     nombres = nombres_de_piezas(piezas)
     if datos.motor == "sparrow":
-        opciones_sparrow = OpcionesSparrow(**datos.model_dump(exclude={"motor", "formato_ids", "usar_anidado_en_huecos", "criterio"}))
+        opciones_sparrow = OpcionesSparrow(**datos.model_dump(exclude={"motor", "formato_ids", "criterio"}))
         # Validar todos antes de iniciar búsquedas costosas.
         for opcion, formato, ids in zip(opciones, formatos, no_entran):
             if ids:
