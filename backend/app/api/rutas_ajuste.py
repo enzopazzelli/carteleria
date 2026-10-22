@@ -15,9 +15,11 @@ colocación de una pieza que el diseñador ya sacó del trabajo.
 """
 from __future__ import annotations
 
+import math
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from shapely.geometry import Polygon
 from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato
@@ -28,6 +30,7 @@ from ..services.nesting.validacion_manual import (
     GeometriaPieza,
     PosicionManual,
     pieza_desde_posicion_manual,
+    poligono_colocado,
     validar_posicion_manual,
 )
 from ..services.nesting.visualizacion import render_svg_plancha
@@ -141,45 +144,94 @@ def ajustar_colocacion(
             "Solo se pueden mover piezas de un anidado terminado.",
         )
 
-    propuesta = PosicionManual(
-        pieza_id=f"{colocacion.pieza_id}#{colocacion.instancia}",
-        plancha_indice=colocacion.plancha_indice,
-        centro_x_mm=datos.centro_x_mm if datos.centro_x_mm is not None else colocacion.centro_x_mm,
-        centro_y_mm=datos.centro_y_mm if datos.centro_y_mm is not None else colocacion.centro_y_mm,
-        angulo_grados=datos.angulo_grados if datos.angulo_grados is not None else colocacion.angulo_grados,
-    )
-    geometria_propuesta = geometria_desde_pieza(colocacion.pieza)
-
-    otras = [
-        (_posicion_manual_de(otra), geometria_desde_pieza(otra.pieza))
-        for otra in ejecucion.colocaciones
-        if otra.id != colocacion.id
-        and otra.plancha_indice == colocacion.plancha_indice
-        and not otra.pieza.descartada
+    en_la_chapa = [
+        otra for otra in ejecucion.colocaciones
+        if otra.plancha_indice == colocacion.plancha_indice and not otra.pieza.descartada
     ]
+    geometrias = {c.id: geometria_desde_pieza(c.pieza) for c in en_la_chapa}
+    geometrias.setdefault(colocacion.id, geometria_desde_pieza(colocacion.pieza))
+    de_adentro = _las_de_adentro(colocacion, en_la_chapa, geometrias)
 
+    centro_x = datos.centro_x_mm if datos.centro_x_mm is not None else colocacion.centro_x_mm
+    centro_y = datos.centro_y_mm if datos.centro_y_mm is not None else colocacion.centro_y_mm
+    angulo = datos.angulo_grados if datos.angulo_grados is not None else colocacion.angulo_grados
+    nuevas = {colocacion.id: (centro_x, centro_y, angulo)}
+    for adentro in de_adentro:
+        nuevas[adentro.id] = _llevada_con(adentro, colocacion, centro_x, centro_y, angulo)
+
+    # Cada una se controla contra el resto de la chapa, ya con las
+    # posiciones nuevas de las que se movieron.
     plancha = _plancha_de(sesion, ejecucion)
     params = _parametros_desde_snapshot(ejecucion.parametros)
-    resultado_validacion = validar_posicion_manual(propuesta, geometria_propuesta, otras, plancha, params)
-
-    colocacion.centro_x_mm = propuesta.centro_x_mm
-    colocacion.centro_y_mm = propuesta.centro_y_mm
-    colocacion.angulo_grados = propuesta.angulo_grados
-    colocacion.movida_a_mano = True
+    posiciones = {
+        c.id: (
+            PosicionManual(f"{c.pieza_id}#{c.instancia}", c.plancha_indice, *nuevas[c.id])
+            if c.id in nuevas else _posicion_manual_de(c)
+        )
+        for c in [*en_la_chapa, *([] if colocacion in en_la_chapa else [colocacion])]
+    }
+    leidas = []
+    for movida in [colocacion, *de_adentro]:
+        otras = [(posiciones[c_id], geometrias[c_id]) for c_id in posiciones if c_id != movida.id]
+        resultado_validacion = validar_posicion_manual(posiciones[movida.id], geometrias[movida.id], otras, plancha, params)
+        movida.centro_x_mm, movida.centro_y_mm, movida.angulo_grados = nuevas[movida.id]
+        movida.movida_a_mano = True
+        leidas.append((movida, resultado_validacion))
     sesion.commit()
 
-    return ColocacionAjusteLeer(
-        id=colocacion.id,
-        pieza_id=colocacion.pieza_id,
-        instancia=colocacion.instancia,
-        plancha_indice=colocacion.plancha_indice,
-        centro_x_mm=colocacion.centro_x_mm,
-        centro_y_mm=colocacion.centro_y_mm,
-        angulo_grados=colocacion.angulo_grados,
-        movida_a_mano=colocacion.movida_a_mano,
-        valida=resultado_validacion.valida,
-        motivo=_motivo_para_el_usuario(sesion, resultado_validacion, colocacion),
-    )
+    principal, *tambien = [
+        ColocacionAjusteLeer(
+            id=movida.id,
+            pieza_id=movida.pieza_id,
+            instancia=movida.instancia,
+            plancha_indice=movida.plancha_indice,
+            centro_x_mm=movida.centro_x_mm,
+            centro_y_mm=movida.centro_y_mm,
+            angulo_grados=movida.angulo_grados,
+            movida_a_mano=movida.movida_a_mano,
+            valida=resultado_validacion.valida,
+            motivo=_motivo_para_el_usuario(sesion, resultado_validacion, movida),
+        )
+        for movida, resultado_validacion in leidas
+    ]
+    return principal.model_copy(update={"tambien_movidas": tambien})
+
+
+def _las_de_adentro(
+    colocacion: Colocacion, en_la_chapa: list[Colocacion], geometrias: dict[int, GeometriaPieza]
+) -> list[Colocacion]:
+    """Las de la misma chapa que están enteras adentro de alguno de los
+    huecos de `colocacion` en este momento (A10). Se decide por posición, no
+    por lo que hizo el anidado: una metida a mano en un hueco también viaja.
+    Lo que está adentro de una de adentro está también adentro del hueco, así
+    que sale a cualquier profundidad."""
+    poligono = poligono_colocado(_posicion_manual_de(colocacion), geometrias[colocacion.id])
+    huecos = [Polygon(anillo) for anillo in poligono.interiors]
+    if not huecos:
+        return []
+    return [
+        otra for otra in en_la_chapa
+        if otra.id != colocacion.id
+        and any(h.contains(poligono_colocado(_posicion_manual_de(otra), geometrias[otra.id])) for h in huecos)
+    ]
+
+
+def _llevada_con(
+    adentro: Colocacion, contenedora: Colocacion, centro_x: Decimal, centro_y: Decimal, angulo: Decimal
+) -> tuple[Decimal, Decimal, Decimal]:
+    """Dónde queda `adentro` si su contenedora pasa a `(centro_x, centro_y,
+    angulo)`: gira lo mismo alrededor del centro de ella y se traslada igual."""
+    giro = angulo - contenedora.angulo_grados
+    dx = adentro.centro_x_mm - contenedora.centro_x_mm
+    dy = adentro.centro_y_mm - contenedora.centro_y_mm
+    if giro % 360 == 0:
+        # Sin giro, todo en `Decimal`: mover no tiene que correr nada ni un poco.
+        return centro_x + dx, centro_y + dy, adentro.angulo_grados
+    rad = math.radians(float(giro))
+    x = float(dx) * math.cos(rad) - float(dy) * math.sin(rad)
+    y = float(dx) * math.sin(rad) + float(dy) * math.cos(rad)
+    # `Decimal` deja el signo del dividendo en `%`: se suma 360 para quedar entre 0 y 360.
+    return centro_x + Decimal(str(x)), centro_y + Decimal(str(y)), ((adentro.angulo_grados + giro) % 360 + 360) % 360
 
 
 # --- Exportación: plano (SVG) y DXF de corte ------------------------------

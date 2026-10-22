@@ -277,3 +277,122 @@ def test_pieza_descartada_despues_de_anidar_no_sale_en_el_plano_ni_el_dxf(client
     # de la entidad TEXT — la pieza descartada no debería dejar rastro.
     assert f"{descartada['id']}#0" not in dxf.text
     assert f"{sobreviviente['id']}#0" in dxf.text
+
+
+# --- Lo de adentro se mueve con su pieza (A10) --------------------------------
+
+
+def _anidado_con_una_adentro(cliente, tmp_path, *, huecos=True, tercera=False) -> tuple[int, dict]:
+    """Una pieza de 200 × 200 con un hueco de 60 × 60 en el medio y una de
+    30 × 30 que entra en él, anidadas con Sparrow. Con `tercera`, otra de
+    100 × 100 suelta. Devuelve el anidado y sus colocaciones por medida
+    (`200`, `30`, `100`)."""
+    material = cliente.post("/materiales", json={"nombre": "Chapa"}).json()
+    formato = cliente.post(
+        f"/materiales/{material['id']}/formatos", json={"ancho_mm": "1000", "alto_mm": "1000"}
+    ).json()
+    cliente.put(f"/materiales/{material['id']}/parametros-corte", json={
+        "kerf_mm": "1", "margen_borde_mm": "5", "separacion_piezas_mm": "5", "rotaciones_permitidas": "LIBRE_0_90",
+    })
+    trabajo = cliente.post("/trabajos", json={"nombre": "Con hueco"}).json()
+    documento = ezdxf.new()
+    msp = documento.modelspace()
+    msp.add_lwpolyline([(0, 0), (200, 0), (200, 200), (0, 200)], close=True)
+    msp.add_lwpolyline([(70, 70), (130, 70), (130, 130), (70, 130)], close=True)
+    msp.add_lwpolyline([(400, 0), (430, 0), (430, 30), (400, 30)], close=True)
+    if tercera:
+        msp.add_lwpolyline([(600, 0), (700, 0), (700, 100), (600, 100)], close=True)
+    ruta = tmp_path / "hueca.dxf"
+    documento.saveas(ruta)
+    cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("hueca.dxf", ruta.read_bytes(), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+    piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    grupo = cliente.post(
+        f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "G1", "formato_id": formato["id"]}
+    ).json()
+    for pieza in piezas:
+        cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    ejecucion_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={
+        "motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20, "simplificacion_mm": 0,
+        "usar_anidado_en_huecos": huecos,
+    }).json()["id"]
+    assert _esperar_estado(cliente, ejecucion_id, timeout=30)["estado"] == "lista"
+    medida = {p["id"]: str(int(Decimal(p["ancho_mm"]))) for p in piezas}
+    colocaciones = cliente.get(f"/ejecuciones/{ejecucion_id}/colocaciones").json()
+    return ejecucion_id, {medida[c["pieza_id"]]: c for c in colocaciones}
+
+
+def _centro(colocacion) -> tuple[float, float]:
+    return float(colocacion["centro_x_mm"]), float(colocacion["centro_y_mm"])
+
+
+def test_mover_la_grande_mueve_la_de_adentro(cliente, tmp_path):
+    _ejecucion, por_medida = _anidado_con_una_adentro(cliente, tmp_path)
+    grande, chica = por_medida["200"], por_medida["30"]
+    (gx, gy), (cx, cy) = _centro(grande), _centro(chica)
+
+    cuerpo = cliente.patch(f"/colocaciones/{grande['id']}", json={"centro_x_mm": "500", "centro_y_mm": "500"}).json()
+
+    [movida] = cuerpo["tambien_movidas"]
+    assert movida["id"] == chica["id"]
+    assert _centro(movida) == pytest.approx((cx + 500 - gx, cy + 500 - gy), abs=1e-6)
+    assert cuerpo["valida"] is True and movida["valida"] is True
+    assert movida["movida_a_mano"] is True
+
+
+def test_girar_la_grande_gira_la_de_adentro_alrededor_de_ella(cliente, tmp_path):
+    _ejecucion, por_medida = _anidado_con_una_adentro(cliente, tmp_path)
+    grande, chica = por_medida["200"], por_medida["30"]
+    (gx, gy), (cx, cy) = _centro(grande), _centro(chica)
+    angulo = float(grande["angulo_grados"]) + 90
+
+    cuerpo = cliente.patch(f"/colocaciones/{grande['id']}", json={"angulo_grados": str(angulo)}).json()
+
+    [movida] = cuerpo["tambien_movidas"]
+    esperado = (gx - (cy - gy), gy + (cx - gx))  # girar 90° alrededor del centro de la grande
+    assert _centro(movida) == pytest.approx(esperado, abs=1e-3)
+    assert float(movida["angulo_grados"]) % 360 == pytest.approx((float(chica["angulo_grados"]) + 90) % 360, abs=1e-6)
+    assert movida["valida"] is True
+
+
+def test_mover_la_de_adentro_no_mueve_la_grande(cliente, tmp_path):
+    _ejecucion, por_medida = _anidado_con_una_adentro(cliente, tmp_path)
+    grande, chica = por_medida["200"], por_medida["30"]
+    cx, cy = _centro(chica)
+
+    cuerpo = cliente.patch(f"/colocaciones/{chica['id']}", json={"centro_x_mm": str(cx + 3)}).json()
+
+    assert cuerpo["tambien_movidas"] == []
+    [grande_despues] = [c for c in cliente.get(f"/ejecuciones/{_ejecucion}/colocaciones").json() if c["id"] == grande["id"]]
+    assert _centro(grande_despues) == _centro(grande)
+
+
+def test_si_el_bloque_pisa_algo_se_mueve_igual_y_avisa(cliente, tmp_path):
+    _ejecucion, por_medida = _anidado_con_una_adentro(cliente, tmp_path, tercera=True)
+    grande, chica, suelta = por_medida["200"], por_medida["30"], por_medida["100"]
+    sx, sy = _centro(suelta)
+
+    cuerpo = cliente.patch(f"/colocaciones/{grande['id']}", json={"centro_x_mm": str(sx), "centro_y_mm": str(sy)}).json()
+
+    assert cuerpo["valida"] is False
+    [movida] = cuerpo["tambien_movidas"]
+    assert movida["id"] == chica["id"]
+    (gx, gy), (cx, cy) = _centro(grande), _centro(chica)
+    assert _centro(movida) == pytest.approx((cx + sx - gx, cy + sy - gy), abs=1e-6)
+
+
+def test_una_metida_a_mano_tambien_viaja(cliente, tmp_path):
+    _ejecucion, por_medida = _anidado_con_una_adentro(cliente, tmp_path, huecos=False)
+    grande, chica = por_medida["200"], por_medida["30"]
+    gx, gy = _centro(grande)
+    # El hueco está en el medio de la grande: la chica, a mano, a su centro.
+    adentro = cliente.patch(f"/colocaciones/{chica['id']}", json={"centro_x_mm": str(gx), "centro_y_mm": str(gy)}).json()
+    assert adentro["valida"] is True
+
+    cuerpo = cliente.patch(f"/colocaciones/{grande['id']}", json={"centro_x_mm": "500", "centro_y_mm": "500"}).json()
+
+    [movida] = cuerpo["tambien_movidas"]
+    assert _centro(movida) == pytest.approx((500, 500), abs=1e-6)

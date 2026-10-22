@@ -125,6 +125,9 @@ class ColocacionAjusteLeer(ColocacionLeer):
 
     valida: bool
     motivo: AvisoLeer | None
+    #: Las que se movieron con esta porque estaban enteras adentro de alguno
+    #: de sus huecos (A10), cada una con su control.
+    tambien_movidas: list[ColocacionAjusteLeer] = Field(default_factory=list)
 
 
 # --- Costeo (envuelve `app/costeo.py`, no lo reemplaza) -------------------
