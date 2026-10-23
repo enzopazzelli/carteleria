@@ -286,7 +286,7 @@ Se detallan cuando les toque, cada una con su diseño.
 |---|---|---|
 | 1 | **Aprovechar huecos primero (A10):** meter las piezas chicas en los huecos de las grandes antes de acomodar; con la barra, cancelar y el tiempo máximo; en Ajuste lo de adentro se mueve con su pieza; los anidados que quedaron colgados al cerrar el servidor pasan a error | **En `main` desde el 2026-10-22 y cerrado:** [`historico/A10-huecos-primero/`](../historico/A10-huecos-primero/diseno.md). Mediciones en los «Desvíos» de su [`plan.md`](../historico/A10-huecos-primero/plan.md); lo que quedó vivo, en la tabla de abajo |
 | 2 | **Complejo con giro libre:** Sparrow inclina los tramos del aro (1193 × 2361) y ya no entran en la chapa; por eso la comparación terminaba enseguida y el anidado fallaba. Las piezas que no entran a cualquier ángulo giran solo de a cuartos de vuelta | Diseño escrito (A11), sin ejecutar: [`A11-giro-de-las-piezas-grandes/`](A11-giro-de-las-piezas-grandes/diseno.md). Elige una lista de ángulos por pieza grande, de a 1° |
-| 3 | **Varios anidados a la vez:** confirmar con una prueba de tres en simultáneo | Después de 1 |
+| 3 | **Varios anidados a la vez:** confirmar con una prueba de tres en simultáneo | Por hacer (el 1 ya está: los huecos ya no compiten adentro del servidor) |
 | 4 | **El material usado en Ancho × Alto,** y hacia qué lado de la chapa se apilan las piezas | Falta decidir qué se muestra |
 | 5 | **El diseño anidado también en PDF,** además del DXF para la máquina | Falta diseño |
 | 6 | **Ver las chapas resultantes y mover piezas entre ellas** (detalle abajo) | Planeado el 2026-10-15; falta diseño |
