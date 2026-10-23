@@ -22,9 +22,11 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from shapely.geometry import Polygon
 from sqlalchemy.orm import Session
 
+from .. import config
 from ..modelos.catalogo import Formato
 from ..modelos.trabajo import Colocacion, EstadoEjecucion, Pieza
 from ..services.nesting.exportacion_dxf import exportar_plancha_a_dxf, nombre_de_archivo
+from ..services.nesting.material_usado import material_usado
 from ..services.nesting.models import ParametrosCorte, Plancha, PosicionPieza, ResultadoAnidado, RotacionPermitida
 from ..services.nesting.validacion_manual import (
     GeometriaPieza,
@@ -36,7 +38,13 @@ from ..services.nesting.validacion_manual import (
 from ..services.nesting.visualizacion import render_svg_plancha
 from .dependencias import obtener_sesion
 from .esquemas_mensajes import AvisoLeer
-from .esquemas_nesting import ColocacionActualizar, ColocacionAjusteLeer
+from .esquemas_nesting import (
+    ColocacionActualizar,
+    ColocacionAjusteLeer,
+    MaterialDeChapaLeer,
+    MaterialUsadoLeer,
+    MedidaLeer,
+)
 from .rutas_nesting import _ejecucion_o_404, geometria_desde_pieza
 
 router = APIRouter(tags=["ajuste"])
@@ -273,4 +281,34 @@ def obtener_dxf(
         content=contenido,
         media_type="application/dxf",
         headers={"Content-Disposition": f'attachment; filename="{nombre}"'},
+    )
+
+
+@router.get("/ejecuciones/{ejecucion_id}/material-usado", response_model=MaterialUsadoLeer)
+def obtener_material_usado(ejecucion_id: int, sesion: Session = Depends(obtener_sesion)) -> MaterialUsadoLeer:
+    """Lo usado y el sobrante de cada chapa, en ancho × alto (A12). Con las
+    piezas como están (también lo movido en Ajuste, sin las descartadas) y
+    con la chapa y el borde con que se anidó, no los del grupo hoy."""
+    ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
+    if ejecucion.estado != EstadoEjecucion.LISTA.value:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Este anidado todavía no terminó: no hay material usado para mostrar.")
+    params = _parametros_desde_snapshot(ejecucion.parametros)
+    plancha = _plancha_de(sesion, ejecucion)
+    # El mismo borde que deja `sparrow._area_util` alrededor de la chapa.
+    borde = float(params.margen_borde_mm + params.kerf_mm / 2)
+    por_chapa: list[list[Polygon]] = [[] for _ in range(ejecucion.planchas_usadas or 0)]
+    for colocacion in ejecucion.colocaciones:
+        if colocacion.pieza.descartada or not 0 <= colocacion.plancha_indice < len(por_chapa):
+            continue
+        por_chapa[colocacion.plancha_indice].append(
+            poligono_colocado(_posicion_manual_de(colocacion), geometria_desde_pieza(colocacion.pieza))
+        )
+    material = material_usado(
+        por_chapa, float(plancha.ancho_mm), float(plancha.alto_mm), borde, config.RETAZO_MINIMO_MM
+    )
+    return MaterialUsadoLeer(
+        chapa=MedidaLeer(ancho_mm=round(plancha.ancho_mm), alto_mm=round(plancha.alto_mm)),
+        chapas=[MaterialDeChapaLeer.model_validate(c) for c in material.chapas],
+        linea=material.linea,
+        retazo_minimo_mm=config.RETAZO_MINIMO_MM,
     )

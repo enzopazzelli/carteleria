@@ -3,13 +3,13 @@ from __future__ import annotations
 import json, math, os, subprocess, sys, tempfile, time
 from pathlib import Path
 from decimal import Decimal
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import numpy as np
 from shapely.geometry import Polygon, box
 from shapely import affinity
 from ...mensajes import Aviso, ErrorPrevisto
 from ...registro import registro
-from .models import ResultadoAnidado, PosicionPieza, RotacionPermitida
+from .models import Plancha, ResultadoAnidado, PosicionPieza, RotacionPermitida
 from .geometria_material import poligono_material
 from .huecos_primero import AREA_MINIMA_HUECO_MM2
 
@@ -76,6 +76,11 @@ class OpcionesSparrow:
     #: acomodar (A10, `huecos_primero.py`). El mismo nombre que en la API y
     #: en las corridas guardadas, para que pasen sin traducir.
     usar_anidado_en_huecos: bool = False
+    #: Hacia qué lado queda el sobrante de cada chapa (A12): `"arriba"`,
+    #: como bloque de todo el ancho, o `"costado"`, como tira de todo el
+    #: alto. Si no se dice, al costado, como antes: la pantalla manda
+    #: arriba, y la comparación de chapas siempre arriba.
+    sobrante: str = "costado"
 
 def ruta_de_avisos(salida):
     """Dónde deja el worker sus avisos, al lado de su resultado. Los escribe
@@ -266,8 +271,39 @@ def _leer_progreso(out):
     if not isinstance(datos,dict): return None
     return {k:datos[k] for k in ('fase','pasada','pasadas','mejor_chapas','huecos','huecos_total') if k in datos}
 
+def _acostar(g):
+    """La pieza girada un cuarto de vuelta, corrida para que quede en
+    positivo: cada punto `(x, y)` pasa a `(alto − y, x)`."""
+    def girar(anillo):
+        return [(float(g.alto_mm)-float(y),float(x)) for x,y in anillo]
+    return replace(g,ancho_mm=g.alto_mm,alto_mm=g.ancho_mm,
+                   contorno_local_mm=girar(g.contorno_local_mm) if g.contorno_local_mm else g.contorno_local_mm,
+                   agujeros_local_mm=[girar(a) for a in g.agujeros_local_mm])
+
+def _enderezar(resultado,alto_mm):
+    """De la chapa acostada a la real: `(x, y)` pasa a `(y, alto − x)`, un
+    cuarto de vuelta para el otro lado. Las piezas quedan del lado de la
+    `y` grande, que el plano dibuja abajo, y el sobrante arriba. El
+    ángulo no cambia: este cuarto de vuelta cancela el de `_acostar`, y
+    por eso la veta se respeta."""
+    alto=Decimal(alto_mm)
+    return replace(resultado,posiciones=[replace(p,
+        x_mm=p.y_mm,y_mm=alto-(p.x_mm+p.ancho_colocado_mm),
+        ancho_colocado_mm=p.alto_colocado_mm,alto_colocado_mm=p.ancho_colocado_mm,
+        centro_libre_x_mm=p.centro_libre_y_mm,centro_libre_y_mm=alto-p.centro_libre_x_mm,
+    ) for p in resultado.posiciones])
+
 def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lambda:False,al_avanzar=None):
     opciones=opciones or OpcionesSparrow()
+    if opciones.sobrante=='arriba':
+        # Sparrow llena una franja del alto de la chapa, contra un borde de
+        # los cortos. Para que las piezas se junten a lo largo del lado
+        # largo y el sobrante quede como bloque de todo el ancho, se anida
+        # con la chapa y las piezas acostadas, y se endereza (A12).
+        acostadas={k:_acostar(g) for k,g in geometrias.items()}
+        resultado=anidar_sparrow(piezas,acostadas,Plancha(plancha.alto_mm,plancha.ancho_mm),params,
+                                 replace(opciones,sobrante='costado'),cancelada,al_avanzar)
+        return _enderezar(resultado,plancha.alto_mm)
     entrada=preparar_entrada(piezas,geometrias,plancha,params,opciones)
     with tempfile.TemporaryDirectory(prefix='carteleria-sparrow-') as d:
         inp,out=Path(d)/'entrada.json',Path(d)/'salida.json'

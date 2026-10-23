@@ -496,6 +496,73 @@ def test_worker_real_con_una_pieza_casi_del_ancho_de_la_chapa():
     assert Aviso(AVISO_GRANDES,(1,)) in resultado.advertencias
 
 
+# El sobrante arriba, como bloque (A12): se anida con la chapa acostada y
+# se endereza el resultado.
+from app.services.nesting.material_usado import material_de_chapa
+from app.services.nesting.validacion_manual import poligono_colocado,posicion_manual_desde_pieza
+
+
+def sobrante_de_la_primera_chapa(resultado,geometrias,borde):
+    poligonos=[poligono_colocado(posicion_manual_desde_pieza(q),geometrias[q.pieza_id.split('#')[0]])
+               for q in resultado.posiciones if q.plancha_indice==0]
+    return material_de_chapa(0,poligonos,100,100,borde,250).sobrante
+
+
+def seis_rectangulos(rotaciones=RotacionPermitida.LIBRE_0_90):
+    """Seis piezas de 20 x 30 en una chapa de 100 x 100 con kerf 3: ocupan
+    un tercio de la chapa."""
+    piezas=[Pieza('1',D(20),D(30),6)]
+    g={'1':GeometriaPieza(D(20),D(30),[(0,0),(20,0),(20,30),(0,30)])}
+    return piezas,g,Plancha(D(100),D(100)),ParametrosCorte(D(3),D(0),D(0),rotaciones)
+
+
+def rapido(**opciones):
+    return OpcionesSparrow(segundos_por_busqueda=1,tiempo_maximo_s=20,simplificacion_mm=0,**opciones)
+
+
+def test_el_sobrante_vale_costado_si_no_se_dice():
+    assert OpcionesSparrow().sobrante=='costado'
+
+
+def test_con_el_sobrante_arriba_las_piezas_quedan_abajo_y_sobra_un_bloque():
+    piezas,g,plancha,params=seis_rectangulos()
+
+    resultado=anidar_sparrow(piezas,g,plancha,params,rapido(sobrante='arriba'))
+
+    sobrante=sobrante_de_la_primera_chapa(resultado,g,1.5)
+    assert sobrante.ancho_mm==100 and sobrante.alto_mm>40
+    # El plano dibuja la `y` hacia abajo: las piezas de `y` grande se ven abajo.
+    assert min(q.y_mm for q in resultado.posiciones)>40
+
+
+def test_con_el_sobrante_al_costado_sobra_una_tira_como_hasta_ahora():
+    piezas,g,plancha,params=seis_rectangulos()
+
+    resultado=anidar_sparrow(piezas,g,plancha,params,rapido(sobrante='costado'))
+
+    sobrante=sobrante_de_la_primera_chapa(resultado,g,1.5)
+    assert sobrante.alto_mm==100 and sobrante.ancho_mm>40
+
+
+def test_con_veta_y_el_sobrante_arriba_ninguna_pieza_queda_a_90():
+    piezas,g,plancha,params=seis_rectangulos(RotacionPermitida.SOLO_0_180)
+
+    resultado=anidar_sparrow(piezas,g,plancha,params,rapido(sobrante='arriba'))
+
+    assert {q.angulo_libre_grados for q in resultado.posiciones}<={D(0),D(180)}
+    assert all(round(q.alto_colocado_mm)==30 for q in resultado.posiciones)
+
+
+def test_con_el_sobrante_arriba_huecos_y_piezas_grandes_termina_bien():
+    resultado=anidar_sparrow(*tramo_y_letra(),OpcionesSparrow(sobrante='arriba',usar_anidado_en_huecos=True,giro_libre=True,
+                                                              segundos_por_busqueda=1,tiempo_maximo_s=30,simplificacion_mm=0))
+
+    tramo=next(q for q in resultado.posiciones if q.pieza_id=='1#0')
+    assert resultado.planchas_usadas==2
+    assert round(tramo.alto_colocado_mm)==2361
+    assert Aviso(AVISO_GRANDES,(1,)) in resultado.advertencias
+
+
 from app.services.nesting.sparrow import ruta_de_progreso
 
 

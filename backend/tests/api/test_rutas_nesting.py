@@ -1049,3 +1049,110 @@ def test_el_arranque_corta_las_colgadas_solo_con_la_base_de_verdad(monkeypatch):
     finally:
         modulo.app.dependency_overrides.pop(obtener_sesion, None)
     assert llamadas == [1]
+
+
+# --- Material usado en ancho × alto (A12) -----------------------------------
+
+
+def test_material_usado_de_un_anidado(cliente, tmp_path):
+    """Con el motor rectangular: la cuenta mira las piezas como están, sin
+    importar con qué motor se anidó."""
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+
+    respuesta = cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado")
+
+    assert respuesta.status_code == 200
+    datos = respuesta.json()
+    assert len(datos["chapas"]) == 1
+    assert datos["chapas"][0]["es_retazo"] is True
+    usado = datos["chapas"][0]["usado"]
+    assert datos["linea"] == f"{usado['ancho_mm']} × {usado['alto_mm']}"
+    assert datos["chapa"] == {"ancho_mm": 1000, "alto_mm": 1000}
+    assert datos["retazo_minimo_mm"] == 250
+
+
+def test_material_usado_sin_la_pieza_descartada(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    colocacion = cliente.get(f"/ejecuciones/{ejecucion_id}/colocaciones").json()[0]
+    cliente.patch(f"/piezas/{colocacion['pieza_id']}", json={"descartada": True})
+
+    datos = cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()
+
+    assert datos["linea"] == ""
+
+
+def test_material_usado_de_un_anidado_que_no_esta_listo_da_409(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    with Session(cliente.motor) as sesion:
+        ejecucion = EjecucionNesting(grupo_id=grupo["id"], motor="rectpack", estado=EstadoEjecucion.ENCOLADA.value)
+        sesion.add(ejecucion)
+        sesion.commit()
+        ejecucion_id = ejecucion.id
+
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").status_code == 409
+
+
+def test_material_usado_de_un_anidado_sin_parametros_guardados_da_409(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    with Session(cliente.motor) as sesion:
+        sesion.get(EjecucionNesting, ejecucion_id).parametros = None
+        sesion.commit()
+
+    respuesta = cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado")
+
+    assert respuesta.status_code == 409
+    assert "volvé a anidar" in mensaje_de(respuesta)
+
+
+def test_material_usado_de_un_anidado_inexistente_da_404(cliente):
+    assert cliente.get("/ejecuciones/999/material-usado").status_code == 404
+
+
+# --- Hacia qué lado queda el sobrante (A12) --------------------------------
+
+
+def _sparrow_rapido(**otras) -> dict:
+    return {"motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20, "simplificacion_mm": 0} | otras
+
+
+def test_anidar_guarda_la_opcion_del_sobrante(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json=_sparrow_rapido(sobrante="arriba"))
+
+    final = _esperar_estado(cliente, encolada.json()["id"], timeout=30)
+    assert final["estado"] == "lista"
+    assert final["opciones"]["sobrante"] == "arriba"
+
+
+def test_anidar_sin_la_opcion_del_sobrante_vale_costado(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json=_sparrow_rapido())
+
+    final = _esperar_estado(cliente, encolada.json()["id"], timeout=30)
+    assert final["opciones"]["sobrante"] == "costado"
+
+
+def test_comparar_usa_siempre_el_sobrante_arriba(cliente, tmp_path, monkeypatch):
+    """Para elegir entre chapas cuentan las chapas y el costo, no hacia
+    dónde queda el sobrante: aunque el pedido diga otra cosa."""
+    from app.api import rutas_nesting
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    _material, formato = _material_con_formato_y_parametros(cliente)
+    anotadas = []
+    original = rutas_nesting.anidar_sparrow
+
+    def anotar(piezas, geometrias, plancha, params, opciones, **kw):
+        anotadas.append(opciones.sobrante)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", anotar)
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos",
+                             json=_sparrow_rapido(formato_ids=[formato["id"]], sobrante="costado"))
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert anotadas == ["arriba"]

@@ -34,6 +34,10 @@ class AnidarCrear(BaseModel):
     #: rectangular se rechaza. Apagada si no se manda: quien llama dice lo
     #: que quiere; la pantalla la manda marcada.
     usar_anidado_en_huecos: bool = False
+    #: Hacia qué lado queda el sobrante de cada chapa (A12). Al costado si
+    #: no se manda, como antes; la pantalla manda arriba. La comparación de
+    #: chapas no la mira: compara siempre con el sobrante arriba.
+    sobrante: Literal["arriba", "costado"] = "costado"
 
 
 class ProgresoLeer(BaseModel):
@@ -158,6 +162,34 @@ class ResumenMaterialesLeer(BaseModel):
     lineas: list[LineaMaterialLeer]
     costo_total_por_moneda: dict[str, Decimal]
     advertencias_generales: list[str]
+
+
+# --- Material usado en ancho × alto (A12) ----------------------------------
+
+
+class MedidaLeer(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    ancho_mm: int
+    alto_mm: int
+
+
+class MaterialDeChapaLeer(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    plancha: int
+    usado: MedidaLeer
+    sobrante: MedidaLeer
+    es_retazo: bool
+
+
+class MaterialUsadoLeer(BaseModel):
+    chapa: MedidaLeer
+    chapas: list[MaterialDeChapaLeer]
+    #: Como lo diría el dueño: «6 chapas enteras + 1220 × 1650 + 1220 × 900».
+    linea: str
+    #: `PAR-56`: con qué medida se decidió qué es retazo.
+    retazo_minimo_mm: int
 
 
 # --- Comparar formatos, sin comprometer el grupo (`CART-205`) -------------
