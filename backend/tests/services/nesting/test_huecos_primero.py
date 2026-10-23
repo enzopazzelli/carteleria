@@ -205,3 +205,13 @@ def test_si_no_puede_entrar_ni_un_circulo_no_arma_cuadriculas(monkeypatch):
     monkeypatch.setattr(huecos_primero, "_mascara", contar, raising=False)
     assert meter_en_huecos([aro(), item("chico#0", cuadrado(57))], 2, CUARTOS, 100) == []
     assert llamadas == []
+
+
+def test_corta_adentro_de_un_hueco_cuando_seguir_dice_que_no():
+    """`seguir` se consulta antes de cada hueco y antes de cada pieza que se
+    intenta poner: un hueco grande no se pasa del tiempo (A13)."""
+    respuestas = iter([True, True])
+    chicos = [item(f"chico#{n}", cuadrado(40)) for n in range(4)]
+    adentro = meter_en_huecos([aro(lado=140, hueco=100), *chicos], 2, CUARTOS, 100,
+                              seguir=lambda: next(respuestas, False))
+    assert len(adentro) == 1
