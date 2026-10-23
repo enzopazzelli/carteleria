@@ -32,6 +32,7 @@ import ezdxf
 from shapely.geometry import Polygon, box
 
 from .models import Plancha, PosicionPieza, ResultadoAnidado
+from .geometria_material import poligono_material
 from .validacion_manual import GeometriaPieza
 from .visualizacion import transformador_de_pieza
 
@@ -86,7 +87,14 @@ def _de_adentro_hacia_afuera(
         else:
             contorno, *agujeros = _anillos_en_plancha(posicion, geometria)
             exteriores.append(Polygon(contorno))
-            huecos.append([Polygon(anillo) for anillo in agujeros])
+            # Del material ya arreglado, como el paso de huecos y Ajuste: dos
+            # huecos que se pisan cuentan como uno, y lo metido en la unión
+            # no está adentro de ninguno de los dos solos.
+            try:
+                anillos = poligono_material(contorno, agujeros).interiors
+            except ValueError:
+                anillos = agujeros
+            huecos.append([Polygon(anillo) for anillo in anillos])
     if not any(huecos):
         return posiciones
     profundidad = [
