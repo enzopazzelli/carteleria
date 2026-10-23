@@ -1,6 +1,6 @@
 # A11 · El giro de las piezas grandes — diseño
 
-> **Estado:** escrito el 2026-10-22, con las dos decisiones de Enzo (§3). Enzo pidió subirlo y **dejar la ejecución para más adelante** («Subí el plan pero no vamos a ejecutar ahora»). Al retomar: que Enzo apruebe este diseño y después las tres tareas de §6, con pausa al final de cada una.
+> **Estado:** escrito el 2026-10-22, con las dos decisiones de Enzo (§3). **Aprobado por Enzo el 2026-10-23** («Dale si»), con un detalle sobre la silueta simplificada que al ejecutarlo resultó innecesario (§5.3). **Construido el 2026-10-23** en la rama `feat/giro-piezas-grandes` (las tres tareas de §6, con pausa al final de cada una), sin fusionar en `main`. Cómo quedó y lo medido, en §8.
 >
 > **De dónde sale.** La reunión del 2026-10-22: con «Complejo», la comparación de chapas terminaba enseguida y el anidado fallaba. Es el paso 2 de «Lo que sigue, desde la reunión» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md), después de aprovechar huecos primero (A10). Es del carril del motor, por eso lleva la letra A.
 >
@@ -52,6 +52,7 @@ Para una pieza grande se prueban los ángulos de 0° a 359°, de a 1°. Quedan l
 
 - `preparar_entrada` calcula los ángulos de cada pieza grande y los guarda en su elemento (`'rotations'`). Lo demás sigue con el giro de siempre (`data['rotations']`).
 - El worker se los pasa a Sparrow pieza por pieza (`spyrrow.Item(..., allowed_orientations)`, en `franja`).
+- **La silueta simplificada** con la que busca Sparrow (`sparrow_worker.formas`) no cambia. Al aprobarlo agregué mirarla con los ángulos de cada pieza grande, para que la simplificación no la dejara más ancha que la chapa; al ejecutarlo se vio que no hace falta: el corte de la franja en chapas mide cada pieza con su contorno real (`resolver_una_pasada`, `entra_en_una_chapa`), y la silueta solo cuenta para el alto de la franja, donde un ángulo que no entra Sparrow no lo usa. *(2026-10-23.)*
 - **El control final no cambia.** La lista es una guía para la búsqueda, no una regla nueva. Que la pieza quede adentro del lugar útil lo controla, como hoy, `convertir_y_validar`. *(Decisión mía: una pieza grande adentro del hueco de otra, A10, puede quedar en un ángulo que no está en su lista, y está bien, porque está adentro de su contenedora.)*
 - La comparación usa el mismo `anidar_sparrow`: hereda todo.
 
@@ -67,5 +68,38 @@ Si «Girar a cualquier ángulo» está marcado y hay piezas grandes, el resultad
 
 ## 7. Riesgos
 
-- **Sparrow con listas largas de ángulos** puede buscar más lento que con giro libre. Se mide con Complejo; la mayoría de las piezas no son grandes y siguen con giro libre.
+- **Sparrow con listas largas de ángulos** puede buscar más lento que con giro libre. Se mide con Complejo; la mayoría de las piezas no son grandes y siguen con giro libre. *(La documentación de spyrrow 0.9.0 dice que la búsqueda «es apenas sensible al largo de la lista».)*
 - **Un tramo casi justo** (5 mm de margen en el ancho) queda con 0° y 180° solamente. Es lo esperado.
+
+## 8. Cómo quedó (2026-10-23)
+
+**El código.** `angulos_que_entran` (`sparrow.py`) decide si una pieza es grande por su largo de punta a punta y, si lo es, prueba los ángulos de a 1°. `preparar_entrada` guarda la lista en el elemento de cada pieza grande (`'rotations'`) y anota las piezas para el aviso solo con giro libre (`'piezas_grandes'`). `sparrow_worker.franja` le pasa a cada `spyrrow.Item` sus ángulos, o el giro de siempre. El aviso sale en `convertir_y_validar`, con el texto de §5.4.
+
+**Desvíos.**
+- La silueta simplificada no se tocó (§5.3).
+- El visor viejo (`scripts/servidor_visor.py`) nombra sus piezas con texto («aro»), y el aviso convertía los nombres a número: una prueba del visor se cayó. `_piezas_del_aviso` deja afuera los nombres que no son números; lo usan este aviso y el de los huecos que se pisaban, que tenía la misma falla escondida.
+
+**Medido** sobre una copia de la base de la reunión (`backend/local/tmp-a11/medicion/`), con el guion `backend/local/herramientas-a11-2026-10-23/medir.py`, fuera de git. Opciones por defecto: 240 s, 2 s por búsqueda, semilla 42. Una corrida de cada una.
+
+| Corrida | Con el código de `main` | Con este cambio |
+|---|---|---|
+| Complejo («Calibre 22», 1220 × 2440), giro libre, sin huecos: el caso de la reunión | **Falla a los 34 s:** «Sparrow no pudo calcular» | **8 chapas,** 239 s, con el aviso |
+| Complejo, giro libre, con huecos (lo que viene marcado) | — | **8 chapas,** 239 s, con el aviso |
+| Complejo, sin giro libre, con huecos | 8 chapas, 219 s (medido el 2026-10-22) | 8 chapas, 239 s, sin aviso |
+| Complejo, giro libre, con huecos, chapa de 1250 × 2500 | — | 7 chapas, 238 s |
+| Parador, giro libre, con huecos | 1 chapa, 5 a 6 s, ocupa 946 y 967 mm de alto | 1 chapa, 5 a 6 s, ocupa de 947 a 983 mm; 19 piezas adentro de huecos |
+
+- **El parador no cambia:** no tiene piezas grandes, y lo que recibe Sparrow es idéntico byte a byte con los dos códigos. La diferencia de alto es la de Sparrow entre una corrida y otra (corre con dos hilos).
+- **Los ocho tramos del aro son piezas grandes.** En la chapa de 1220 × 2440, los cuatro de 1193 de ancho (t3 a t6) quedan con 0° y 180°. Los otros cuatro, más angostos, se pueden girar más, porque por su forma girados no se ensanchan tanto: t2 y t7, de 0° a unos 55° (116 y 110 ángulos); t1 y t8, unos 2° hacia un lado y unos 18° hacia el otro (42 y 36). Con la chapa de 1250 × 2500, los de 1193 ya se pueden inclinar 1°.
+- Ninguna pieza grande quedó en un ángulo que no estuviera en su lista.
+- Backend: 808 pruebas en verde.
+
+**Lo que quedó vivo.**
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| En la comparación de chapas, los avisos de todas las chapas se juntan por texto (`unicosPorMensaje`): si una pieza es grande para una chapa y no para otra, el aviso muestra las piezas de la primera chapa que lo dio | Tarea 2 | Que aparezca un caso: con Complejo las chapas comparables tienen el mismo ancho |
+| Los ángulos se prueban de a 1°: una pieza que solo entra entre dos grados enteros no lo aprovecha | §5.2 | — |
+| Una pieza grande adentro del hueco de otra (A10) puede quedar en un ángulo que no está en su lista. Está bien, porque va adentro de su contenedora; no apareció ningún caso | §5.3 | — |
+| Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 | — |
+

@@ -34,7 +34,10 @@ def franja(ids,originals,shapes,data):
     chapa: `[(colocación de Sparrow, material real ya ubicado)]`."""
     import spyrrow
     opts=data['options'];reserva=data['gap']/2
-    items=[spyrrow.Item(k,list(shapes[k].exterior.coords),1,data['rotations']) for k in ids]
+    # Una pieza grande gira solo en sus ángulos (A11): la franja no limita
+    # el ancho, y Sparrow la inclinaría más ancha que la chapa.
+    giros={p['id']:p.get('rotations',data['rotations']) for p in data['items']}
+    items=[spyrrow.Item(k,list(shapes[k].exterior.coords),1,giros[k]) for k in ids]
     config=spyrrow.StripPackingConfig(total_computation_time=opts['segundos_por_busqueda'],num_workers=opts['workers'],seed=opts['semilla'],early_termination=False,min_items_separation=None)
     sol=spyrrow.StripPackingInstance('Carteleria',data['height']+2*reserva+0.001,items).solve(config)
     return [(pi,affinity.translate(affinity.rotate(originals[pi.id],pi.rotation,origin=(0,0)),pi.translation[0],pi.translation[1]-reserva)) for pi in sol.placed_items]

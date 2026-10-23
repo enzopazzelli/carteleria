@@ -389,6 +389,113 @@ def test_worker_real_con_giro_libre():
     assert result.planchas_usadas==1
 
 
+# Las piezas grandes (A11): las que no entran en la chapa a cualquier ángulo
+# giran solo en los ángulos con los que entran enteras.
+from shapely.geometry import Polygon
+from app.services.nesting.sparrow import angulos_que_entran
+
+#: El lugar útil de la chapa de Complejo («Calibre 22»).
+UTIL=(1198,2418)
+
+
+def rectangulo(ancho,alto):
+    return [(0,0),(ancho,0),(ancho,alto),(0,alto)]
+
+
+def test_una_letra_chica_gira_como_todas():
+    assert angulos_que_entran(Polygon(rectangulo(650,650)),None,*UTIL) is None
+
+
+def test_un_tramo_del_aro_va_derecho_o_dado_vuelta():
+    # Inclinado 1° ya mide 1234 mm de ancho.
+    assert angulos_que_entran(Polygon(rectangulo(1193,2361)),None,*UTIL)==[0,180]
+
+
+def test_una_pieza_algo_mas_chica_que_la_chapa_se_puede_inclinar_un_poco():
+    angulos=angulos_que_entran(Polygon(rectangulo(1150,400)),None,*UTIL)
+    # A 8° mide 1194,5 de ancho; a 19° llega a 1217, el máximo.
+    assert {0,8,90,352}<=set(angulos)
+    assert 9 not in angulos and 19 not in angulos and 161 not in angulos
+
+
+def test_con_veta_una_pieza_grande_solo_da_media_vuelta():
+    assert angulos_que_entran(Polygon(rectangulo(1150,400)),[0,180],*UTIL)==[0,180]
+
+
+def test_sin_giro_libre_un_tramo_del_aro_no_se_pone_de_costado():
+    assert angulos_que_entran(Polygon(rectangulo(1193,2361)),[0,90,180,270],*UTIL)==[0,180]
+
+
+def tramo_y_letra():
+    piezas=[Pieza('1',D(1193),D(2361)),Pieza('2',D(650),D(650),2)]
+    g={'1':GeometriaPieza(D(1193),D(2361),rectangulo(1193,2361)),
+       '2':GeometriaPieza(D(650),D(650),rectangulo(650,650))}
+    return piezas,g,Plancha(D(1198),D(2418)),ParametrosCorte(D(0),D(0),D(0),RotacionPermitida.LIBRE_0_90)
+
+
+def test_preparar_entrada_da_sus_angulos_solo_a_las_piezas_grandes():
+    entry=preparar_entrada(*tramo_y_letra(),OpcionesSparrow(giro_libre=True))
+    por_id={p['id']:p for p in entry['items']}
+    assert por_id['1#0']['rotations']==[0,180]
+    assert 'rotations' not in por_id['2#0'] and 'rotations' not in por_id['2#1']
+    assert entry['rotations'] is None
+    assert entry['piezas_grandes']==['1']
+
+
+def test_sin_giro_libre_las_piezas_grandes_no_se_anotan_para_el_aviso():
+    entry=preparar_entrada(*tramo_y_letra(),OpcionesSparrow(giro_libre=False))
+    assert entry['items'][0]['rotations']==[0,180]
+    assert entry['piezas_grandes']==[]
+
+
+def test_sparrow_recibe_los_angulos_de_cada_pieza_grande(monkeypatch):
+    import spyrrow
+    recibidos={};item=spyrrow.Item
+    def anotar(id,forma,demanda,angulos):
+        recibidos[id]=angulos
+        return item(id,forma,demanda,angulos)
+    monkeypatch.setattr(spyrrow,'Item',anotar)
+    entry=preparar_entrada(*tramo_y_letra(),OpcionesSparrow(giro_libre=True,segundos_por_busqueda=1,simplificacion_mm=0))
+    originales,formas=sparrow_worker.formas(entry)
+
+    sparrow_worker.franja(list(formas),originales,formas,entry)
+
+    assert recibidos=={'1#0':[0,180],'2#0':None,'2#1':None}
+
+
+from app.mensajes import Aviso
+
+AVISO_GRANDES="Estas piezas son casi del tamaño de la chapa: se giran solo en los ángulos con los que entran enteras:"
+
+#: El tramo solo en una chapa y las dos letras en otra.
+TRAMO_Y_LETRAS_UBICADOS=[{'id':'1#0','sheet':0,'rotation':180,'tx':1193,'ty':2361},
+                         {'id':'2#0','sheet':1,'rotation':0,'tx':0,'ty':0},
+                         {'id':'2#1','sheet':1,'rotation':0,'tx':0,'ty':700}]
+
+
+def test_el_aviso_nombra_las_piezas_grandes():
+    entry=preparar_entrada(*tramo_y_letra(),OpcionesSparrow(giro_libre=True))
+
+    resultado=convertir_y_validar(entry,TRAMO_Y_LETRAS_UBICADOS)
+
+    assert resultado.advertencias==[Aviso(AVISO_GRANDES,(1,))]
+
+
+def test_sin_giro_libre_no_se_avisa_de_las_piezas_grandes():
+    entry=preparar_entrada(*tramo_y_letra(),OpcionesSparrow(giro_libre=False))
+
+    assert convertir_y_validar(entry,TRAMO_Y_LETRAS_UBICADOS).advertencias==[]
+
+
+def test_worker_real_con_una_pieza_casi_del_ancho_de_la_chapa():
+    resultado=anidar_sparrow(*tramo_y_letra(),OpcionesSparrow(giro_libre=True,segundos_por_busqueda=1,tiempo_maximo_s=30,simplificacion_mm=0))
+
+    tramo=next(q for q in resultado.posiciones if q.pieza_id=='1#0')
+    assert tramo.angulo_libre_grados in (D(0),D(180))
+    assert resultado.planchas_usadas==2
+    assert Aviso(AVISO_GRANDES,(1,)) in resultado.advertencias
+
+
 from app.services.nesting.sparrow import ruta_de_progreso
 
 
