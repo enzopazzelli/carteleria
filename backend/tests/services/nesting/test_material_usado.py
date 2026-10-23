@@ -29,8 +29,8 @@ def test_una_chapa_llena_es_entera():
 
 
 def test_piezas_abajo_dejan_el_bloque_de_arriba():
-    # El plano dibuja la `y` hacia abajo: las piezas de `y` grande se ven abajo.
-    chapa = de_una(box(11, 1529, 1209, 2429))
+    # La altura crece hacia arriba, como en el DXF: las piezas de `y` chica están abajo.
+    chapa = de_una(box(11, 11, 1209, 911))
 
     assert chapa.sobrante == Medida(1220, 1518)
     assert chapa.usado == Medida(1220, 922)
@@ -45,14 +45,14 @@ def test_piezas_a_la_izquierda_dejan_la_tira_de_la_derecha():
 
 
 def test_lo_usado_se_redondea_al_milimetro_de_arriba():
-    chapa = de_una(box(11, 1529.4, 1209, 2429))
+    chapa = de_una(box(11, 11, 1209, 910.6))
 
     assert chapa.usado == Medida(1220, 922)
     assert chapa.sobrante == Medida(1220, 1518)
 
 
 def test_con_medidas_con_decimales_la_salida_es_entera():
-    chapa = de_una(box(11, 1529.4, 1209, 2429), ancho_mm=float(Decimal("1220.00")), alto_mm=float(Decimal("2440.00")))
+    chapa = de_una(box(11, 11, 1209, 910.6), ancho_mm=float(Decimal("1220.00")), alto_mm=float(Decimal("2440.00")))
 
     assert isinstance(chapa.usado.ancho_mm, int) and isinstance(chapa.sobrante.alto_mm, int)
     assert chapa.usado.alto_mm + chapa.sobrante.alto_mm == 2440
@@ -66,7 +66,7 @@ def test_un_sobrante_chico_no_es_retazo():
 
 
 def test_una_chapa_sin_piezas_no_aparece_en_la_linea():
-    material = material_usado([[box(11, 1529, 1209, 2429)], []], **CHAPA)
+    material = material_usado([[box(11, 11, 1209, 911)], []], **CHAPA)
 
     assert material.linea == "1220 × 922"
     assert material.chapas[1].usado == Medida(0, 0)
