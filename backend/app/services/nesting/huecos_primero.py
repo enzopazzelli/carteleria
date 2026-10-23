@@ -144,6 +144,21 @@ def _mascara(poligono, x0: float, y0: float, nx: int, ny: int, casilla: float) -
     return shapely.contains_xy(poligono, *np.meshgrid(xs, ys))
 
 
+def _tamano_rapido(n: int) -> int:
+    """El tamaño más chico, de al menos `n`, que solo tiene factores 2, 3 y
+    5: con un tamaño primo la FFT tarda varias veces más. Agrandar la
+    cuadrícula con ceros no cambia la cuenta."""
+    m = n
+    while True:
+        resto = m
+        for factor in (2, 3, 5):
+            while resto % factor == 0:
+                resto //= factor
+        if resto == 1:
+            return m
+        m += 1
+
+
 @dataclass(frozen=True)
 class _Hueco:
     dueno: str
@@ -205,7 +220,7 @@ def _llenar_hueco(hueco: _Hueco, candidatas: list[_Pieza], gap: float, seguir: C
                     continue
                 # Cuántas casillas ocupadas pisa la pieza en cada corrimiento;
                 # el tamaño agrandado evita que la cuenta dé la vuelta.
-                forma = (ny + my, nx + mx)
+                forma = (_tamano_rapido(ny + my), _tamano_rapido(nx + mx))
                 if bloqueado is None:
                     bloqueado = (~_mascara(libre, x0, y0, nx, ny, casilla)).astype(np.float64)
                 if forma not in transformadas:
