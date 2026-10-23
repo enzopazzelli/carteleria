@@ -1,6 +1,6 @@
 # A12 · El material usado en ancho × alto, y hacia qué lado queda el sobrante — diseño
 
-> **Estado:** escrito el 2026-10-23 con las decisiones de Enzo (§3). **Aprobado por Enzo ese día** («Si»). El plan está en [`plan.md`](plan.md); las tareas de §6 se hacen con pausa al final de cada una.
+> **Estado:** escrito el 2026-10-23 con las decisiones de Enzo (§3). **Aprobado por Enzo ese día** («Si»). El plan está en [`plan.md`](plan.md). **Construido el 2026-10-23** en la rama `feat/material-usado`, las cuatro tareas con pausa al final de cada una, sin fusionar en `main`. Cómo quedó y lo medido, en §8.
 >
 > **De dónde sale.** La reunión del 2026-10-22: el dueño pidió ver el material usado en ancho × alto en lugar de los m². Es el paso 4 de «Lo que sigue, desde la reunión» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md). Lleva la letra A porque cambia cómo acomoda el motor.
 >
@@ -100,3 +100,42 @@ Un servicio puro en el backend, sin base ni pantalla: recibe las piezas ubicadas
 - **Con el sobrante arriba, un diseño puede dar más chapas que al costado.** La franja pasa a tener el ancho de la chapa (1198 mm útiles en lugar de 2418) y las piezas largas tienen que ir acostadas. Se mide en la tarea 4; si pasa, la opción deja volver al costado en ese trabajo.
 - **El plano y el DXF pueden tener el eje vertical en sentidos distintos.** Si no se mira, el bloque puede quedar arriba en uno y abajo en el otro (§5.2).
 - **`PAR-56` es una estimación.** Si el dueño guarda retazos más chicos o más grandes, cambia qué chapas cuentan como enteras, no el cálculo.
+
+## 8. Cómo quedó (2026-10-23)
+
+**El código.**
+- `material_usado.py` calcula lo usado y el sobrante de cada chapa y arma la línea. La ruta `GET /ejecuciones/{id}/material-usado` (en `rutas_ajuste.py`) lo sirve.
+- `PAR-56` está en `config.py` como `RETAZO_MINIMO_MM`.
+- `OpcionesSparrow.sobrante` y `AnidarCrear.sobrante`: `"costado"` si no se manda.
+- Con `"arriba"`, `anidar_sparrow` anida con la chapa y las piezas acostadas (`_acostar`) y endereza el resultado (`_enderezar`). La comparación de chapas manda siempre `"arriba"`.
+- En la pantalla, la opción va en Anidado y el resumen muestra el recuadro «Material usado», la tabla y los m² al pie.
+
+**Desvíos.**
+- Se miran las cuatro franjas de borde, no dos, y la opción no se ve con el motor rectangular (§5.1 y §5.3, anotados al escribir el plan).
+- En el plano, las piezas van del lado de la `y` grande, porque el plano dibuja la `y` hacia abajo (§5.2).
+
+**Medido** sobre una copia de la base de la reunión (`backend/local/tmp-a12/medicion/`), con `backend/local/herramientas-a12-2026-10-23/medir.py`, fuera de git. Con huecos y giro libre, 240 s, una corrida de cada una:
+
+| Corrida | Sobrante arriba | Sobrante al costado |
+|---|---|---|
+| Parador | 1 chapa en 6 s; usa **1220 × 1913** y sobra un bloque de **1220 × 527**, que es retazo | 1 chapa en 5 s; sobra una tira de menos de 250 mm: «1 chapa entera», sin retazo |
+| Complejo | **7 chapas**; «7 chapas enteras» (lo que sobra en cada una, de 47 a 168 mm, no llega a retazo) | **7 chapas**; «7 chapas enteras» |
+
+- **Con el sobrante arriba no se gastó más chapa** (§7): las dos dan lo mismo. Complejo dio 7 con las dos maneras; el 2026-10-23 a la mañana, de a uno, daba 8, así que es la variación de Sparrow entre corridas.
+- **El recorrido de la pantalla** (`recorrido-a12.mjs`, capturas al lado) salió todo BIEN y sin errores en la consola:
+  - la opción viene en «Arriba, como bloque»;
+  - el parador anidado muestra «1220 × 1971», la tabla con el sobrante de 1220 × 469 y los m² al pie;
+  - en el plano, las piezas quedan abajo y el bloque arriba;
+  - subir en Ajuste la pieza más alta hace crecer lo usado (de 1971 a 2211 de alto) y el resumen lo muestra;
+  - un anidado viejo, del sobrante al costado, también muestra su línea;
+  - con el motor rectangular, la opción no se ve.
+- Backend: 835 pruebas en verde. Frontend: 195, `tsc` limpio.
+
+**Lo que quedó vivo.**
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| Confirmar `PAR-56` (250 × 250 mm) con el dueño | §3 | El dueño (4.5 del plan maestro) |
+| Cobrar por lo usado y llevar la cuenta de los retazos | §1 | Sus propios diseños; cobrar depende de `P-10` |
+| Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 | — |
+

@@ -23,7 +23,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 
 | # | Qué | Cómo está hoy | Qué se busca | Estado |
 |---|---|---|---|---|
-| 1 | **El material usado en Ancho × Alto** | El resumen del anidado dice «Material consumido» en m² | Que la salida diga cuánto de cada chapa se usa y cuánto sobra, en Ancho × Alto. Con eso se decide también hacia qué lado de la chapa se apilan las piezas: hoy, a lo largo del lado corto, y el sobrante queda como una tira angosta | Falta decidir qué se muestra |
+| 1 | **El material usado en Ancho × Alto** | El resumen del anidado dice «Material consumido» en m² | Que la salida diga cuánto de cada chapa se usa y cuánto sobra, en Ancho × Alto. Con eso se decide también hacia qué lado de la chapa se apilan las piezas: hoy, a lo largo del lado corto, y el sobrante queda como una tira angosta | **Construido el 2026-10-23, falta fusionarlo en `main`:** la línea «6 chapas enteras + 1220 × 1650 + 1220 × 900», la tabla por chapa y la opción del sobrante arriba, como bloque. Ver [`docs/plan/A12-material-usado-y-sobrante/`](docs/plan/A12-material-usado-y-sobrante/diseno.md) |
 | 2 | **El diseño anidado en PDF** | Sale el DXF de cada chapa, para la máquina | Además, un PDF con cada chapa a escala, para el taller | Falta diseño |
 | 3 | **Ver las chapas resultantes y mover piezas entre ellas** | Ajuste muestra una chapa por vez. Una pieza se mueve o se gira, con lo que tiene adentro, pero solo dentro de su chapa | Ver todas las chapas del anidado juntas, arrastrar una pieza de una chapa a otra y ver cómo quedan repartidas, con el mismo control de siempre (si pisa algo o se sale, avisa) | Planeado el 2026-10-15; falta diseño |
 | 4 | **Una página de inicio, con materiales y presupuestos** | La pantalla tiene la lista de trabajos y el espacio de cada trabajo. Los materiales se cargan por la API, sin pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro | Planeado el 2026-10-15; falta diseño |
@@ -289,6 +289,7 @@ Lo que vale siempre. Se edita.
 | Documento | Qué contiene |
 |---|---|
 | [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) | **El plan vigente.** Etapas, sub-proyectos en orden, el enchufe del motor y las decisiones abiertas. Cada sub-proyecto suma acá su propia carpeta con `diseno.md` y `plan.md` |
+| [`A12-material-usado-y-sobrante/`](docs/plan/A12-material-usado-y-sobrante/diseno.md) | El material usado en ancho × alto y el sobrante arriba, como bloque: construido, sin fusionar |
 
 ### `docs/motor/` — el motor de anidado
 
