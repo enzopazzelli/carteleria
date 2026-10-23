@@ -1,6 +1,6 @@
 # A11 · El giro de las piezas grandes — diseño
 
-> **Estado:** escrito el 2026-10-22, con las dos decisiones de Enzo (§3). **Aprobado por Enzo el 2026-10-23** («Dale si»), con el detalle de la silueta simplificada (§5.3). Se ejecuta en la rama `feat/giro-piezas-grandes`, las tres tareas de §6 con pausa al final de cada una.
+> **Estado:** escrito el 2026-10-22, con las dos decisiones de Enzo (§3). **Aprobado por Enzo el 2026-10-23** («Dale si»), con un detalle sobre la silueta simplificada que al ejecutarlo resultó innecesario (§5.3). Se ejecuta en la rama `feat/giro-piezas-grandes`, las tres tareas de §6 con pausa al final de cada una.
 >
 > **De dónde sale.** La reunión del 2026-10-22: con «Complejo», la comparación de chapas terminaba enseguida y el anidado fallaba. Es el paso 2 de «Lo que sigue, desde la reunión» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md), después de aprovechar huecos primero (A10). Es del carril del motor, por eso lleva la letra A.
 >
@@ -52,7 +52,7 @@ Para una pieza grande se prueban los ángulos de 0° a 359°, de a 1°. Quedan l
 
 - `preparar_entrada` calcula los ángulos de cada pieza grande y los guarda en su elemento (`'rotations'`). Lo demás sigue con el giro de siempre (`data['rotations']`).
 - El worker se los pasa a Sparrow pieza por pieza (`spyrrow.Item(..., allowed_orientations)`, en `franja`).
-- **La silueta simplificada** con la que busca Sparrow (`sparrow_worker.formas`) se usa solo si entra en la chapa: hoy se mira con los cuartos de vuelta; para una pieza grande, con sus propios ángulos. Si no, la simplificación (unas décimas de milímetro de más) podría dejarla más ancha que la chapa en un ángulo de su lista. *(Agregado al aprobarlo, 2026-10-23.)*
+- **La silueta simplificada** con la que busca Sparrow (`sparrow_worker.formas`) no cambia. Al aprobarlo agregué mirarla con los ángulos de cada pieza grande, para que la simplificación no la dejara más ancha que la chapa; al ejecutarlo se vio que no hace falta: el corte de la franja en chapas mide cada pieza con su contorno real (`resolver_una_pasada`, `entra_en_una_chapa`), y la silueta solo cuenta para el alto de la franja, donde un ángulo que no entra Sparrow no lo usa. *(2026-10-23.)*
 - **El control final no cambia.** La lista es una guía para la búsqueda, no una regla nueva. Que la pieza quede adentro del lugar útil lo controla, como hoy, `convertir_y_validar`. *(Decisión mía: una pieza grande adentro del hueco de otra, A10, puede quedar en un ángulo que no está en su lista, y está bien, porque está adentro de su contenedora.)*
 - La comparación usa el mismo `anidar_sparrow`: hereda todo.
 
@@ -63,7 +63,7 @@ Si «Girar a cualquier ángulo» está marcado y hay piezas grandes, el resultad
 ## 6. Tareas
 
 1. **Los ángulos de cada pieza** (`sparrow.py`): una función que, para un contorno, el lugar útil y el giro de siempre, devuelve `None` (gira como todas) o la lista de ángulos que entran. `preparar_entrada` la usa y anota las piezas grandes para el aviso. Pruebas: una letra chica da `None`; un tramo como los del aro da `[0, 180]`; una pieza de 1150 × 400 en 1198 × 2418 da 0° y algunos grados de cada lado; con veta, solo 0° y 180°.
-2. **El worker y el aviso** (`sparrow_worker.franja` y `formas`, `convertir_y_validar`): Sparrow recibe la lista de cada pieza; la silueta simplificada de una pieza grande se mira con sus ángulos; el aviso sale con las piezas grandes. Pruebas: la lista llega a Sparrow (con un `spyrrow.Item` de prueba que la anota); con tramos casi del ancho de la chapa y giro libre, el anidado termina bien y avisa; sin giro libre, no avisa.
+2. **El worker y el aviso** (`sparrow_worker.franja`, `convertir_y_validar`): Sparrow recibe la lista de cada pieza; el aviso sale con las piezas grandes. Pruebas: la lista llega a Sparrow (con un `spyrrow.Item` de prueba que la anota); con tramos casi del ancho de la chapa y giro libre, el anidado termina bien y avisa; sin giro libre, no avisa.
 3. **Medir y cerrar:** sobre una copia de la base, Complejo («Calibre 22») con giro libre tiene que terminar sin error y con no más chapas que sin giro libre (8). El parador no cambia. Documentos.
 
 ## 7. Riesgos

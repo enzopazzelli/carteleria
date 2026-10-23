@@ -448,6 +448,54 @@ def test_sin_giro_libre_las_piezas_grandes_no_se_anotan_para_el_aviso():
     assert entry['piezas_grandes']==[]
 
 
+def test_sparrow_recibe_los_angulos_de_cada_pieza_grande(monkeypatch):
+    import spyrrow
+    recibidos={};item=spyrrow.Item
+    def anotar(id,forma,demanda,angulos):
+        recibidos[id]=angulos
+        return item(id,forma,demanda,angulos)
+    monkeypatch.setattr(spyrrow,'Item',anotar)
+    entry=preparar_entrada(*tramo_y_letra(),OpcionesSparrow(giro_libre=True,segundos_por_busqueda=1,simplificacion_mm=0))
+    originales,formas=sparrow_worker.formas(entry)
+
+    sparrow_worker.franja(list(formas),originales,formas,entry)
+
+    assert recibidos=={'1#0':[0,180],'2#0':None,'2#1':None}
+
+
+from app.mensajes import Aviso
+
+AVISO_GRANDES="Estas piezas son casi del tamaño de la chapa: se giran solo en los ángulos con los que entran enteras:"
+
+#: El tramo solo en una chapa y las dos letras en otra.
+TRAMO_Y_LETRAS_UBICADOS=[{'id':'1#0','sheet':0,'rotation':180,'tx':1193,'ty':2361},
+                         {'id':'2#0','sheet':1,'rotation':0,'tx':0,'ty':0},
+                         {'id':'2#1','sheet':1,'rotation':0,'tx':0,'ty':700}]
+
+
+def test_el_aviso_nombra_las_piezas_grandes():
+    entry=preparar_entrada(*tramo_y_letra(),OpcionesSparrow(giro_libre=True))
+
+    resultado=convertir_y_validar(entry,TRAMO_Y_LETRAS_UBICADOS)
+
+    assert resultado.advertencias==[Aviso(AVISO_GRANDES,(1,))]
+
+
+def test_sin_giro_libre_no_se_avisa_de_las_piezas_grandes():
+    entry=preparar_entrada(*tramo_y_letra(),OpcionesSparrow(giro_libre=False))
+
+    assert convertir_y_validar(entry,TRAMO_Y_LETRAS_UBICADOS).advertencias==[]
+
+
+def test_worker_real_con_una_pieza_casi_del_ancho_de_la_chapa():
+    resultado=anidar_sparrow(*tramo_y_letra(),OpcionesSparrow(giro_libre=True,segundos_por_busqueda=1,tiempo_maximo_s=30,simplificacion_mm=0))
+
+    tramo=next(q for q in resultado.posiciones if q.pieza_id=='1#0')
+    assert tramo.angulo_libre_grados in (D(0),D(180))
+    assert resultado.planchas_usadas==2
+    assert Aviso(AVISO_GRANDES,(1,)) in resultado.advertencias
+
+
 from app.services.nesting.sparrow import ruta_de_progreso
 
 

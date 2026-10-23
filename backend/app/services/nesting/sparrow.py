@@ -169,6 +169,12 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
     # libre: una pieza que solo entra en diagonal se sigue mandando a seccionar.
     return {'items':items,'width':width,'height':height,'borde':borde,'gap':gap,'rotations':para_buscar,'options':vars(opciones),'normalizadas':normalizadas,'piezas_grandes':grandes,'area_minima_hueco_mm2':AREA_MINIMA_HUECO_MM2}
 
+def _piezas_del_aviso(ids):
+    """Las piezas que la pantalla dibuja al lado de un aviso. El visor de
+    `scripts/` nombra sus piezas con texto («aro»): esas no se dibujan, y
+    el aviso sale igual."""
+    return tuple(int(i) for i in ids if str(i).isdigit())
+
 def convertir_y_validar(entrada, placed):
     expected={p['id'] for p in entrada['items']}
     ids=[p['id'] for p in placed]
@@ -223,7 +229,12 @@ def convertir_y_validar(entrada, placed):
     if entrada.get('normalizadas'):
         avisos.append(Aviso(
             "Estas piezas tenían huecos que se pisaban y se calcularon con los huecos unidos (el dibujo guardado no cambia):",
-            tuple(int(i) for i in entrada['normalizadas']),
+            _piezas_del_aviso(entrada['normalizadas']),
+        ))
+    if entrada.get('piezas_grandes'):
+        avisos.append(Aviso(
+            "Estas piezas son casi del tamaño de la chapa: se giran solo en los ángulos con los que entran enteras:",
+            _piezas_del_aviso(entrada['piezas_grandes']),
         ))
     return ResultadoAnidado(positions, len(sheets), avisos)
 
