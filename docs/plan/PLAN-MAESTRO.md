@@ -291,6 +291,14 @@ Se detallan cuando les toque, cada una con su diseño.
 | 5 | **El diseño anidado también en PDF,** además del DXF para la máquina | Falta diseño |
 | — | Colores de referencia por pieza; entrada `.cdr` (hay un estudio previo que funcionó: [`historico/SPIKE-CDR.md`](../historico/SPIKE-CDR.md)) | En espera (Enzo, 2026-10-22) |
 
+**Lo que ya estaba planeado antes de la reunión** (pedidos de Enzo del 2026-10-15; el 2026-10-22 quedaron para «más adelante»). Falta ubicarlos en el orden de arriba: por ahora va primero lo del motor.
+
+| Qué | Cómo está hoy | Qué se busca |
+|---|---|---|
+| Ver las chapas resultantes y mover piezas entre ellas | Ajuste muestra una chapa por vez; `PATCH /colocaciones/{id}` mueve y gira (con lo de adentro, desde A10) pero no cambia `plancha_indice` | Todas las chapas del anidado juntas, pasar una pieza de una chapa a otra y ver cómo quedan repartidas, con el control de siempre. Usa la miniatura de chapa de A9 (`ChapaMiniatura`) |
+| Página de inicio con materiales y presupuestos | Dos rutas en la pantalla (lista de trabajos y espacio de trabajo); la API de materiales y formatos ya tiene alta, edición y baja | Página de inicio, el alta/edición/baja de materiales en pantalla y la lista de presupuestos generados; ahí entra la pantalla para retocar el presupuesto (§6, pendientes de 1.3) |
+| La aprobación del presupuesto | No existe | 1.4, «Aprobación mínima» (§6) |
+
 **Pendientes de aprovechar huecos primero (A10).** Construido el 2026-10-22, fusionado en `main` ese día y cerrado: [`historico/A10-huecos-primero/`](../historico/A10-huecos-primero/diseno.md). Con el parador, lo ocupado de la chapa bajó de 1103 a 930 mm y el paso de huecos tarda segundos (la pasada vieja, 236 s, y no ganaba nada). **El visor viejo sigue, a pedido de Enzo,** con Sparrow y huecos en su selector de motor (rama `feat/visor-sparrow`); de paso volvió a leer el catálogo que arma hoy el extractor, que no leía desde el 2026-09-22. Lo que quedó vivo:
 
 | Pendiente | De dónde sale | Depende de |

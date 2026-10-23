@@ -27,10 +27,15 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 | 4 | **El diseño anidado en PDF** | Además del DXF para la máquina, un PDF con cada chapa a escala para el taller | Falta diseño |
 | — | **Colores de referencia por pieza** (la «O» de Complejo en rojo, para reconocerla anidada) y **entrada `.cdr`** | Pedidos de la reunión | En espera. Para el `.cdr` ya hay un estudio que funcionó: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) |
 
-**Pedidos anteriores que siguen en pie** (2026-10-15, para después del motor):
-- una página de inicio, con los materiales en pantalla (alta, edición y baja) y los presupuestos generados;
-- ver todas las chapas de un anidado juntas y pasar una pieza de una chapa a otra;
-- la pantalla para retocar el presupuesto: los campos de un lado y el PDF del otro.
+**Lo que ya estaba planeado antes de la reunión** (pedidos de Enzo del 2026-10-15, que el 2026-10-22 quedaron para «más adelante»):
+
+| Qué | Cómo está hoy | Qué se busca |
+|---|---|---|
+| **Ver las chapas resultantes y mover piezas entre ellas** | Al terminar el anidado, la pestaña Ajuste muestra una chapa por vez. Una pieza se mueve o se gira dentro de su chapa (y desde A10 lo que tiene adentro viaja con ella), pero no se puede pasar a otra chapa | Ver todas las chapas del anidado juntas, arrastrar una pieza de una chapa a otra y ver cómo quedan repartidas, con el mismo control de siempre (si pisa algo o se sale, avisa) |
+| **Una página de inicio, con materiales y presupuestos** | La pantalla tiene dos lugares: la lista de trabajos y el espacio de cada trabajo. Los materiales y sus chapas se cargan por la API (alta, edición y baja ya existen ahí), no desde la pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; y ver los presupuestos generados. Ahí entra la pantalla para retocar el presupuesto: los campos de un lado y el PDF del otro, que se vuelve a dibujar con cada cambio |
+| **La aprobación del presupuesto** | No existe todavía | El sub-proyecto 1.4 del plan maestro: estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué |
+
+Falta ubicar estos tres en el orden de arriba: por ahora va primero lo del motor.
 
 **Para confirmar con el taller:** si la máquina corta en el orden del archivo (lo de adentro de un hueco primero) o decide el orden sola.
 
