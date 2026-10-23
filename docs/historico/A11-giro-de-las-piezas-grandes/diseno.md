@@ -1,8 +1,8 @@
 # A11 · El giro de las piezas grandes — diseño
 
-> **Estado:** escrito el 2026-10-22, con las dos decisiones de Enzo (§3). **Aprobado por Enzo el 2026-10-23** («Dale si»), con un detalle sobre la silueta simplificada que al ejecutarlo resultó innecesario (§5.3). **Construido el 2026-10-23** en la rama `feat/giro-piezas-grandes` (las tres tareas de §6, con pausa al final de cada una), sin fusionar en `main`. Cómo quedó y lo medido, en §8.
+> **Estado:** escrito el 2026-10-22, con las dos decisiones de Enzo (§3). **Aprobado por Enzo el 2026-10-23** («Dale si»), con un detalle sobre la silueta simplificada que al ejecutarlo resultó innecesario (§5.3). **Construido el 2026-10-23** en la rama `feat/giro-piezas-grandes` (las tres tareas de §6, con pausa al final de cada una), **fusionado en `main` y cerrado ese día**; la carpeta pasó a `docs/historico/`. Cómo quedó y lo medido, en §8; lo que quedó vivo se sigue en el [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md).
 >
-> **De dónde sale.** La reunión del 2026-10-22: con «Complejo», la comparación de chapas terminaba enseguida y el anidado fallaba. Es el paso 2 de «Lo que sigue, desde la reunión» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md), después de aprovechar huecos primero (A10). Es del carril del motor, por eso lleva la letra A.
+> **De dónde sale.** La reunión del 2026-10-22: con «Complejo», la comparación de chapas terminaba enseguida y el anidado fallaba. Es el paso 2 de «Lo que sigue, desde la reunión» en el [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md), después de aprovechar huecos primero (A10). Es del carril del motor, por eso lleva la letra A.
 >
 > **Sobre los valores.** No agrega parámetros al [`REGISTRO.md`](../../REGISTRO.md): el paso de 1° entre ángulos es un detalle interno, como la grilla de puntos de los huecos.
 
