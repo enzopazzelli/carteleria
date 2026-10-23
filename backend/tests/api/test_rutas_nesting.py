@@ -1049,3 +1049,63 @@ def test_el_arranque_corta_las_colgadas_solo_con_la_base_de_verdad(monkeypatch):
     finally:
         modulo.app.dependency_overrides.pop(obtener_sesion, None)
     assert llamadas == [1]
+
+
+# --- Material usado en ancho × alto (A12) -----------------------------------
+
+
+def test_material_usado_de_un_anidado(cliente, tmp_path):
+    """Con el motor rectangular: la cuenta mira las piezas como están, sin
+    importar con qué motor se anidó."""
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+
+    respuesta = cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado")
+
+    assert respuesta.status_code == 200
+    datos = respuesta.json()
+    assert len(datos["chapas"]) == 1
+    assert datos["chapas"][0]["es_retazo"] is True
+    usado = datos["chapas"][0]["usado"]
+    assert datos["linea"] == f"{usado['ancho_mm']} × {usado['alto_mm']}"
+    assert datos["chapa"] == {"ancho_mm": 1000, "alto_mm": 1000}
+    assert datos["retazo_minimo_mm"] == 250
+
+
+def test_material_usado_sin_la_pieza_descartada(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    colocacion = cliente.get(f"/ejecuciones/{ejecucion_id}/colocaciones").json()[0]
+    cliente.patch(f"/piezas/{colocacion['pieza_id']}", json={"descartada": True})
+
+    datos = cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()
+
+    assert datos["linea"] == ""
+
+
+def test_material_usado_de_un_anidado_que_no_esta_listo_da_409(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    with Session(cliente.motor) as sesion:
+        ejecucion = EjecucionNesting(grupo_id=grupo["id"], motor="rectpack", estado=EstadoEjecucion.ENCOLADA.value)
+        sesion.add(ejecucion)
+        sesion.commit()
+        ejecucion_id = ejecucion.id
+
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").status_code == 409
+
+
+def test_material_usado_de_un_anidado_sin_parametros_guardados_da_409(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    with Session(cliente.motor) as sesion:
+        sesion.get(EjecucionNesting, ejecucion_id).parametros = None
+        sesion.commit()
+
+    respuesta = cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado")
+
+    assert respuesta.status_code == 409
+    assert "volvé a anidar" in mensaje_de(respuesta)
+
+
+def test_material_usado_de_un_anidado_inexistente_da_404(cliente):
+    assert cliente.get("/ejecuciones/999/material-usado").status_code == 404

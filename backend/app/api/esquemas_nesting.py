@@ -160,6 +160,34 @@ class ResumenMaterialesLeer(BaseModel):
     advertencias_generales: list[str]
 
 
+# --- Material usado en ancho × alto (A12) ----------------------------------
+
+
+class MedidaLeer(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    ancho_mm: int
+    alto_mm: int
+
+
+class MaterialDeChapaLeer(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    plancha: int
+    usado: MedidaLeer
+    sobrante: MedidaLeer
+    es_retazo: bool
+
+
+class MaterialUsadoLeer(BaseModel):
+    chapa: MedidaLeer
+    chapas: list[MaterialDeChapaLeer]
+    #: Como lo diría el dueño: «6 chapas enteras + 1220 × 1650 + 1220 × 900».
+    linea: str
+    #: `PAR-56`: con qué medida se decidió qué es retazo.
+    retazo_minimo_mm: int
+
+
 # --- Comparar formatos, sin comprometer el grupo (`CART-205`) -------------
 
 

@@ -48,3 +48,7 @@ DIRECTORIO_REGISTRO = DIRECTORIO_DATOS / "registro"
 #: registro y cuántos viejos se guardan.
 TAMANO_REGISTRO_BYTES = int(os.getenv("CARTELERIA_REGISTRO_BYTES", "1000000"))
 ARCHIVOS_DE_REGISTRO = int(os.getenv("CARTELERIA_REGISTRO_ARCHIVOS", "5"))
+
+#: `PAR-56` (`docs/REGISTRO.md`): el retazo más chico que se guarda, en mm
+#: por lado. Una chapa cuyo sobrante no llega cuenta como entera (A12).
+RETAZO_MINIMO_MM = int(os.getenv("CARTELERIA_RETAZO_MINIMO_MM", "250"))
