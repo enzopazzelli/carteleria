@@ -58,6 +58,66 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-23 — El motor de la reunión, cerrado: piezas grandes, varios a la vez, material en ancho × alto, plano derecho y huecos más llenos
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+Cinco trabajos del motor, cada uno en su rama, fusionado en `main`, subido y con la CI en verde. Backend de 797 a 843 pruebas, frontend de 195 a 198.
+
+- **El giro de las piezas grandes (A11)** ([`historico/A11-giro-de-las-piezas-grandes/`](historico/A11-giro-de-las-piezas-grandes/diseno.md)). Con «Girar a cualquier ángulo», Complejo fallaba («No hay piezas completas que entren en una chapa»): Sparrow inclinaba los tramos del aro y quedaban más anchos que la chapa. Ahora cada pieza que no entra a cualquier ángulo gira solo en los ángulos con los que entra entera, de a 1°, y el resultado la nombra en un aviso. Complejo con giro libre: 8 chapas (antes fallaba a los 34 s).
+- **Varios anidados a la vez, medido.** Tres a la vez, por el mismo camino que la pantalla, terminan bien y dentro de su tiempo máximo, con la barra y el servidor respondiendo. De paso, el worker reintenta un momento cuando Windows no lo deja reemplazar su archivo de avance porque el servidor lo está leyendo. Dos Complejo que corrían a la vez dieron 7 chapas (de a uno, 8): quedó como pendiente.
+- **El material usado en ancho × alto (A12)** ([`historico/A12-material-usado-y-sobrante/`](historico/A12-material-usado-y-sobrante/diseno.md)). El dueño quería la medida y no los m², para cobrar, medir, guardar el sobrante y saber sus retazos. El resumen del anidado dice «6 chapas enteras + 1220 × 1650 + 1220 × 900» y una tabla de lo usado y el sobrante de cada chapa; en Anidado se elige que el sobrante quede arriba, como bloque de todo el ancho (por defecto), o al costado. Con el parador sobra un retazo de 1220 × 527 que al costado se perdía.
+- **El plano y Ajuste derechos.** El DXF guarda la altura hacia arriba y el plano y el editor de Ajuste la dibujaban hacia abajo sin darla vuelta: se veían de cabeza (la «A» como una «∀»), el mismo error que tenían las miniaturas de Piezas. El DXF para la máquina siempre estuvo bien. Ahora el plano y Ajuste se ven como el DXF, y el sobrante arriba queda arriba también en el archivo.
+- **Llenar mejor los huecos (A13)** ([`historico/A13-llenar-mejor-los-huecos/`](historico/A13-llenar-mejor-los-huecos/diseno.md)), pedido de Enzo después de probar. Una prueba descartable primero, y después la búsqueda nueva: cada pieza por casillas, contra la pared, con giros de a 15° y dada vuelta. Con el parador entran 30 piezas en los huecos en lugar de 20 y el sobrante crece de 1220 × 509 a 1220 × 761.
+
+Cada uno con su recorrido en Chrome sin ventana sobre una copia de la base. La app se levantó dos veces contra la base real para que Enzo probara (respaldos en `backend/local/respaldo-2026-10-23-*`); al arrancar, el anidado #5 que había quedado «corriendo» desde la reunión pasó a error, como está previsto desde A10.
+
+### Qué se decidió
+
+- A11: la lista de ángulos de a 1° para las piezas grandes; el aviso, con sus nombres.
+- A12: mostrar la medida y el sobrante; cobrar por lo usado y llevar la cuenta de los retazos quedan para después. El sobrante se elige en cada anidado, con el bloque arriba por defecto. Una chapa es «entera» si lo que sobra no llega al retazo más chico que se guarda.
+- A13: hasta uno o dos minutos más por meter más piezas en los huecos.
+
+### Cambios en el registro
+
+`PAR-56` nuevo: el retazo más chico que se guarda, 250 × 250 mm, estimación de Enzo a confirmar con el dueño (sumado a 4.5 del plan maestro).
+
+### Pendiente
+
+Lo que quedó vivo de cada trabajo está en sus tablas del plan maestro §7. Sigue la lista del README: el PDF del diseño anidado, ver y mover piezas entre chapas, la página de inicio y la aprobación (el orden lo confirma Enzo).
+
+---
+
+## 2026-10-22 (2) — Reunión con el cotizador, y aprovechar huecos primero (A10)
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+**La reunión.** Enzo mostró el cotizador. Aparecieron dos fallas del anidado, con su causa comprobada sobre una copia de la base: con «Girar a cualquier ángulo», Complejo fallaba (se resolvió el 23 con A11), y con «Aprovechar huecos» la barra del parador quedaba trabada porque la pasada de huecos corría después de Sparrow, sin avisar progreso ni respetar el tiempo. Salieron pedidos nuevos: varios anidados a la vez, el material en ancho × alto, el diseño anidado en PDF, colores por pieza y la entrada `.cdr`.
+
+**Aprovechar huecos primero (A10)** ([`historico/A10-huecos-primero/`](historico/A10-huecos-primero/diseno.md)), en `main` y cerrado. Las piezas chicas se meten en los huecos de las grandes *antes* de acomodar, y solo se acomoda lo de afuera: con el parador, lo ocupado bajó de 1103 a 930 mm y el paso tarda segundos (la pasada vieja tardaba 236 s y no ganaba nada). Con eso: la barra dice en qué anda, cancelar y el tiempo máximo valen, en Ajuste una pieza se mueve con lo que tiene adentro, en el DXF lo de adentro va primero, y un anidado que quedó colgado al cerrar el programa pasa a error al arrancar.
+
+**El visor de prueba** suma Sparrow con huecos en su selector, y vuelve a leer el catálogo que arma hoy el extractor.
+
+**Documentos:** el README con «En qué estamos» para Vale, y el plan maestro §7 con todo lo que sigue en una sola lista.
+
+### Qué se decidió
+
+Primero el motor de anidado y después lo demás; los colores y el `.cdr`, en espera. Sparrow es el motor principal; el rectangular no aprovecha huecos.
+
+### Cambios en el registro
+
+Sin cambios.
+
+### Pendiente
+
+El orden de lo que sigue después del motor lo confirma Enzo. Confirmar con el taller si la máquina corta en el orden del archivo.
+
+---
+
 ## 2026-10-22 — Mensajes entendibles (A9): cada error dice qué pasó y qué hacer, con lo técnico aparte
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** —

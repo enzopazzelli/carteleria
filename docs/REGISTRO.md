@@ -371,7 +371,7 @@ Resumen para revisar de un vistazo en cada daily.
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
 | Supuestos (`SUP`) | 17 | 11 | 4 | 2 |
-| Parámetros (`PAR`) | 49 | 12 | 25 | 12 |
+| Parámetros (`PAR`) | 56 | 13 | 31 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 34 | 30 | 4 | 0 |
 | Decisiones (`D`) | 21 | 20 | 0 | 1 |

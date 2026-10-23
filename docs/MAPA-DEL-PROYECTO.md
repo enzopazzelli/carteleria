@@ -4,13 +4,13 @@
 >
 > Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`REGISTRO.md`](REGISTRO.md) · [`BITACORA.md`](BITACORA.md)
 >
-> **Versión:** 3.0 · **Fecha:** 2026-10-05 · Reemplaza la 2.2 (2026-09-14), que quedó atrás del frontend y del análisis de DXF
+> **Versión:** 3.1 · **Fecha:** 2026-10-23 · Reemplaza la 3.0 (2026-10-05), que todavía decía que el motor no estaba construido
 
 ---
 
 ## En una frase
 
-**El cotizador funciona de punta a punta en local, por API y en pantalla, hasta el PDF del presupuesto; faltan el login, la aprobación del dueño y el envío al cliente.** El motor de anidado está medido pero no construido: desde el 2026-10-05 es un carril aparte (Vale) que se enchufa después, y el resto lo construye Enzo en el orden del plan maestro.
+**El cotizador funciona de punta a punta en local, por API y en pantalla, hasta el PDF del presupuesto; faltan el login, la aprobación del dueño y el envío al cliente.** El motor de anidado es **Sparrow**, en el producto desde octubre: contornos reales, giro libre, piezas en los huecos de otras, seccionado de lo que no entra, y el material usado en ancho × alto con el sobrante arriba. El rectangular queda de prueba.
 
 ---
 
@@ -23,14 +23,14 @@ La columna «Sigue en» es el paso del plan maestro que lo completa.
 | **Importación de DXF** | Parser con curvas, trazos y bloques, y agujeros reales (`CART-503`, `CART-505`). Análisis de un DXF con varios diseños, hojas de chapa ya dibujadas, escala sugerida y rol por pieza (`CART-509` a `CART-511`). API en dos pasos: analizar sin guardar y confirmar. En la pestaña Piezas, ver cómo se lee un DXF antes de cargarlo, unir las formas que se pisan y los recortes de huecos también en piezas que no entran en ninguna chapa (2.1a). Corregir la lectura con clics sobre el dibujo, y acercarlo y moverlo (2.1b) | La pantalla de revisión de varios diseños (`CART-506`): ninguna pantalla usa todavía la API en dos pasos. Asignar material a muchas piezas a la vez (`CART-507`) | 2.1 |
 | **Catálogo** | Materiales, formatos con el precio importado de la planilla `COTIZADOR` (moneda, unidad, conversión) y parámetros de corte por material; familia de cada material, y retazos de medida libre que siguen el precio por m² de su formato (A8) | Precios con vigencia, carga masiva, insumos que no son chapa, historial | 2.2 |
 | **Trabajos y grupos** | Trabajos, piezas y grupos de corte, cada grupo con su material (`CART-211`) | — | — |
-| **Anidado** | Corre en segundo plano con estados, guarda colocaciones, ajuste manual con validación, plano SVG, DXF de corte y aprovechamiento con área real (`ADR-08`). Comparar formatos antes de elegir uno (`CART-205`) | El motor real. El único conectado es `rectpack`, que sale del producto (`EPICA.md`, nota de `ADR-01`) | E1, E2 |
+| **Anidado** | Sparrow por defecto, en un proceso aparte, con barra de avance, cancelar y tiempo máximo (A7); varios a la vez. Giro a cualquier ángulo, y las piezas casi del tamaño de la chapa solo en los ángulos con los que entran (A11). Piezas chicas adentro de los huecos de las grandes antes de acomodar (A10), buscadas por casillas contra la pared (A13). Vaciar chapas (A6) y seccionar lo que no entra (A5). El sobrante arriba, como bloque, o al costado (A12). Ajuste con validación, plano y DXF de corte con la misma orientación, comparar chapas en segundo plano, aprovechamiento con área real y el material usado en ancho × alto | El diseño anidado en PDF para el taller; ver todas las chapas y mover piezas entre ellas | Plan maestro §7 |
 | **Cotizador** | Presupuesto con cliente, líneas por rubro, override con trazabilidad, líneas libres, margen, IVA, total, desglose y duplicar como otra opción, texto y precio por ítem para el cliente, total fijado y PDF (`CART-301` a `CART-309`) | Insumos elegidos de un catálogo, mano de obra por etapa, presupuestos fuera de un trabajo en pantalla | 1.2, 2.3 |
-| **Frontend** | Lista de trabajos y un espacio de trabajo con cinco pestañas: Piezas, Grupos, Anidado, Ajuste y Costeo | Login, pantalla de presupuestos, pantalla de importar y revisar | 1.1, 1.2, 2.1 |
+| **Frontend** | Lista de trabajos y un espacio de trabajo con cinco pestañas: Piezas (con la lectura del DXF con imagen y la corrección a mano), Grupos (con la lista de materiales y la comparación de chapas), Anidado, Ajuste y Costeo | Login, página de inicio, pantalla de presupuestos y para retocarlos | 1.1, 1.2, plan maestro §7 |
 | **Fundaciones** | SQLite en local y PostgreSQL por configuración, migraciones de Alembic, tests del backend en CI | Servidor, login, roles, usuarios, clientes con email, auditoría, backups | 1.1, 2.5 |
 | **Aprobación y envío** | Nada: el presupuesto solo conoce el estado borrador | Todo (`CART-401` a `CART-408`) | 1.4, 1.5, 2.4 |
 | **Dashboard** | Prototipo de las 9 vistas con datos de muestra (`prototipo-dashboard/`) | Todo lo real (`CART-801` a `CART-808`) | 3.1 |
 | **Fotomontaje** | Nada | Todo (`CART-601` a `CART-607`) | 3.2 |
-| **Motor** (carril de Vale) | Deepnest corriendo sin interfaz en `nesting-engine/`. El híbrido medido en Belgrano iguala las chapas del diseñador en minutos (A1 y A2 de `motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`) | Pasarlo a código de producto (A3) y conectarlo | Carril del motor, E2 |
+| **Motor** | Sparrow (`spyrrow`) integrado al producto: ver la fila de Anidado. Deepnest sigue sin interfaz en `nesting-engine/`, medido en Belgrano (A1 y A2 de `motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`) | Los pendientes de cada paso del motor (plan maestro §7) | Plan maestro §7 |
 
 ---
 
@@ -40,42 +40,35 @@ La columna «Sigue en» es el paso del plan maestro que lo completa.
 flowchart LR
     subgraph hecho ["CONSTRUIDO"]
         direction TB
-        DXF["Subir DXF"] --> ANA["Análisis: diseños,<br/>hojas y roles"]
-        ANA --> CONF["Confirmar:<br/>un trabajo por diseño"]
-        CONF --> PIEZAS["Piezas"]
+        DXF["Subir DXF"] --> ANA["Lectura con imagen,<br/>corregir a mano"]
+        ANA --> PIEZAS["Piezas"]
         PIEZAS --> GRUPOS["Grupos de corte<br/>con material"]
-        COLOC["Colocaciones"] --> AJUSTE["Ajuste manual"]
+        GRUPOS --> MOTOR["Anidado con Sparrow:<br/>huecos, giro, sobrante"]
+        MOTOR --> COLOC["Colocaciones"]
+        COLOC --> AJUSTE["Ajuste manual"]
         AJUSTE --> PLANO["Plano y DXF de corte"]
-        COLOC --> COSTEO["Costeo de material"]
+        COLOC --> COSTEO["Costeo y material usado"]
         COSTEO --> PRESUP["Presupuesto, líneas,<br/>override, totales"]
-        PRESUP --> DESG["Desglose"]
-    end
-
-    subgraph enchufe ["ENCHUFE — carril del motor"]
-        MOTOR["Motor de anidado<br/>(vacío hasta E2)"]
+        PRESUP --> PDF["PDF del presupuesto"]
     end
 
     subgraph falta ["NO EXISTE"]
         direction TB
-        REV["Pantalla de revisión"]
-        PDF["PDF"]
+        PDFT["PDF del diseño<br/>para el taller"]
         APROB["Aprobación del dueño"]
         ENVIO["Envío al cliente"]
     end
 
-    GRUPOS --> MOTOR --> COLOC
-    ANA -.-> REV
-    DESG -.-> PDF -.-> APROB -.-> ENVIO
+    PLANO -.-> PDFT
+    PDF -.-> APROB -.-> ENVIO
 
     classDef ok fill:#cfe8d5,stroke:#3d7a52,color:#14351f
-    classDef enchufeCls fill:#fdf0c8,stroke:#a8862a,color:#3d3007
     classDef no fill:#eeeeee,stroke:#999,color:#555
-    class DXF,ANA,CONF,PIEZAS,GRUPOS,COLOC,AJUSTE,PLANO,COSTEO,PRESUP,DESG ok
-    class MOTOR enchufeCls
-    class REV,PDF,APROB,ENVIO no
+    class DXF,ANA,PIEZAS,GRUPOS,MOTOR,COLOC,AJUSTE,PLANO,COSTEO,PRESUP,PDF ok
+    class PDFT,APROB,ENVIO no
 ```
 
-**Dos cortes, y cada uno tiene su plan.** El de la derecha (PDF, aprobación y envío) lo cierra la etapa 1 del plan maestro con presupuestos que todavía no llevan chapa. El del medio (el motor) lo cierra E2. Mientras tanto, el costo de material de un trabajo figura como pendiente.
+**Dos cortes, y cada uno tiene su plan.** La aprobación y el envío los cierra la etapa 1 del plan maestro (1.4 y 1.5). El PDF del diseño anidado para el taller es el próximo de la lista del plan maestro §7. El motor ya no es un corte: Sparrow está en el producto.
 
 ---
 

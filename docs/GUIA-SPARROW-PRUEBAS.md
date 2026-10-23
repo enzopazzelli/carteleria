@@ -1,5 +1,22 @@
 # Sparrow integrado: guía de pruebas
 
+## Al día (2026-10-23)
+
+La guía original, del 01/10/2026, sigue abajo. **Donde contradiga esto, vale esto.**
+
+- **Sparrow viene elegido por defecto** en Anidado y en la comparación de chapas. El rectangular queda de prueba.
+- **Valores por defecto:** semilla 42, búsqueda por chapa 2 s, tiempo máximo total 240 s, simplificación 0,3 mm. «Vaciar chapas», «Girar a cualquier ángulo» y «Aprovechar huecos», marcadas.
+- **Aprovechar huecos** ya no es una pasada después de Sparrow: mete las piezas chicas en los huecos de las grandes *antes* de acomodar (A10), buscándolas por casillas, contra la pared y con más giros (A13). Lo de adentro viaja con su pieza en Ajuste y va primero en el DXF.
+- **Girar a cualquier ángulo:** una pieza casi del tamaño de la chapa gira solo en los ángulos con los que entra entera, y el resultado la nombra en un aviso (A11).
+- **El sobrante de cada chapa:** arriba, como bloque de todo el ancho (por defecto), o al costado, como tira (A12). El resumen del anidado dice el material usado en ancho × alto, con una tabla por chapa. La comparación de chapas usa siempre el sobrante arriba.
+- **La barra de avance** dice la fase (huecos, pasada, vaciar), y se puede cancelar en cualquier momento (A7). Se pueden correr varios anidados a la vez.
+- **El plano y Ajuste** se dibujan con la altura hacia arriba, como el DXF.
+- El detalle de cada paso está en `docs/historico/A5-*` a `A13-*`, y lo pendiente en el plan maestro §7.
+
+---
+
+## La guía original (01/10/2026)
+
 Modificación del 01/10/2026 en la copia carteleria-main/carteleria-main.
 
 ## Qué se incorporó
