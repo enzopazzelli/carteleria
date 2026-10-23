@@ -289,9 +289,14 @@ Se detallan cuando les toque, cada una con su diseño.
 | 3 | **Varios anidados a la vez:** confirmar con una prueba de tres en simultáneo | Después de 1 |
 | 4 | **El material usado en Ancho × Alto,** y hacia qué lado de la chapa se apilan las piezas | Falta decidir qué se muestra |
 | 5 | **El diseño anidado también en PDF,** además del DXF para la máquina | Falta diseño |
+| 5 | **Ver las chapas resultantes y mover piezas entre ellas** (detalle abajo) | Planeado el 2026-10-15; falta diseño |
+| 6 | **Una página de inicio, con materiales y presupuestos** (detalle abajo) | Planeado el 2026-10-15; falta diseño |
+| 7 | **La aprobación del presupuesto** (1.4, §6) | Planeado; falta diseño |
 | — | Colores de referencia por pieza; entrada `.cdr` (hay un estudio previo que funcionó: [`historico/SPIKE-CDR.md`](../historico/SPIKE-CDR.md)) | En espera (Enzo, 2026-10-22) |
 
-**Lo que ya estaba planeado antes de la reunión** (pedidos de Enzo del 2026-10-15; el 2026-10-22 quedaron para «más adelante»). Falta ubicarlos en el orden de arriba: por ahora va primero lo del motor.
+Los dos primeros son del motor y van primero (Enzo). El orden del 3 al 7 es una propuesta, para que Enzo lo confirme («era eso más lo de hoy. Incluí todo», 2026-10-22).
+
+**Lo que ya estaba planeado antes de la reunión** (pedidos de Enzo del 2026-10-15; el 2026-10-22 quedaron para «más adelante»). Son el 5, el 6 y el 7 de la tabla de arriba.
 
 | Qué | Cómo está hoy | Qué se busca |
 |---|---|---|
