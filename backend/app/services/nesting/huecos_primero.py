@@ -21,8 +21,10 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass
 
+import numpy as np
+import shapely
 from shapely import affinity
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Polygon
 from shapely.prepared import prep
 
 from .geometria_material import poligono_material
@@ -31,8 +33,25 @@ from .geometria_material import poligono_material
 # esto no vale la pena intentar llenarlo: ninguna pieza real entra.
 AREA_MINIMA_HUECO_MM2 = 100.0
 
-#: 4×4: grueso a propósito, es un greedy, no una búsqueda exhaustiva.
-_PASOS_GRILLA_POR_HUECO = 4
+# La búsqueda adentro de un hueco (A13, `docs/plan/A13-llenar-mejor-los-huecos/diseno.md`):
+# lo libre del hueco y cada pieza girada se pasan a casillas, y una
+# correlación por FFT da de una vez todos los lugares donde la pieza no pisa
+# nada. La cuadrícula propone; la geometría exacta decide. No son parámetros
+# del registro: son detalles de la búsqueda, como la grilla que reemplazan.
+#: Las casillas tienen como mucho 4 mm (más fino no metió más piezas en la
+#: prueba del parador) y se achican en un hueco chico, para que el lado
+#: corto tenga unas 20: una pieza que entra justa no se pierde entre dos.
+_CASILLA_MAX_MM = 4.0
+_CASILLA_MIN_MM = 0.5
+_CASILLAS_EN_EL_LADO_CORTO = 20
+#: Con giro libre, de a 15° (de a 10° no ganó nada), más los del hueco.
+_PASO_GIRO_GRADOS = 15
+#: Cuántos de los lugares que propone la cuadrícula se prueban con la
+#: geometría exacta, por pieza y por giro.
+_LUGARES_A_PROBAR = 20
+#: La tolerancia con que se mide el círculo más grande de una forma: el
+#: descarte la suma, para no descartar nunca una pieza que entra.
+_TOLERANCIA_CIRCULO_MM = 0.5
 
 
 @dataclass(frozen=True)
@@ -55,29 +74,36 @@ class _Pieza:
     exterior: Polygon
     #: Área de material (sin sus huecos): con esta se ordenan las candidatas.
     area: float
-    ancho: float
-    alto: float
-    #: Centro de su rectángulo: es lo que se lleva a cada punto de la grilla.
-    centro: tuple[float, float]
+    #: Radio del círculo más grande que cabe en su contorno exterior: si no
+    #: cabe en lo libre de un hueco, la pieza tampoco.
+    radio: float
+
+
+def _radio_del_circulo_mas_grande(forma) -> float:
+    """El radio del círculo más grande que cabe en `forma`, medido con
+    `_TOLERANCIA_CIRCULO_MM`."""
+    if forma.is_empty:
+        return 0.0
+    try:
+        return float(shapely.maximum_inscribed_circle(forma, _TOLERANCIA_CIRCULO_MM).length)
+    except shapely.errors.GEOSException:
+        return math.inf  # sin medida, no se descarta nada
 
 
 def _pieza(item: dict) -> _Pieza:
     exterior = Polygon(item["shell"])
-    minx, miny, maxx, maxy = exterior.bounds
     return _Pieza(
         id=item["id"],
         exterior=exterior,
         area=poligono_material(item["shell"], item["holes"]).area,
-        ancho=maxx - minx,
-        alto=maxy - miny,
-        centro=((minx + maxx) / 2, (miny + maxy) / 2),
+        radio=_radio_del_circulo_mas_grande(exterior),
     )
 
 
 def _angulo_del_hueco(hueco: Polygon) -> float:
     """El ángulo del lado del rectángulo mínimo rotado que envuelve al
-    hueco: para un hueco inclinado (una rueda decorativa), el único ángulo
-    extra que importa."""
+    hueco: para un hueco inclinado (una rueda decorativa), el giro que lo
+    sigue."""
     coords = list(hueco.minimum_rotated_rectangle.exterior.coords)
     if len(coords) < 2:
         return 0.0
@@ -85,42 +111,37 @@ def _angulo_del_hueco(hueco: Polygon) -> float:
     return math.degrees(math.atan2(y1 - y0, x1 - x0)) % 360
 
 
-def _lados_del_rectangulo_minimo(hueco: Polygon) -> tuple[float, float]:
-    coords = list(hueco.minimum_rotated_rectangle.exterior.coords)
-    if len(coords) < 3:
-        minx, miny, maxx, maxy = hueco.bounds
-        return (maxx - minx, maxy - miny)
-    return (Point(coords[0]).distance(Point(coords[1])), Point(coords[1]).distance(Point(coords[2])))
-
-
 def _angulos(hueco: Polygon, rotaciones: list[float] | None) -> list[float]:
     """Respecto de la contenedora. Con rotaciones fijas (veta, o sin giro
     libre), solo esas: el control final rechaza cualquier otro ángulo, y la
-    contenedora también gira solo esos. Con giro libre, 0° y 90° más el
-    ángulo del hueco y su perpendicular."""
+    contenedora también gira solo esos. Con giro libre, de a 15° y los
+    cuatro del hueco: la pieza también se prueba dada vuelta."""
     if rotaciones is not None:
         return [float(a) for a in rotaciones]
-    angulo = _angulo_del_hueco(hueco)
-    return list(dict.fromkeys([0.0, 90.0, angulo, (angulo + 90) % 360]))
+    propio = _angulo_del_hueco(hueco)
+    return list(dict.fromkeys(
+        [float(a) for a in range(0, 360, _PASO_GIRO_GRADOS)] + [(propio + 90 * k) % 360 for k in range(4)]
+    ))
 
 
-def _puntos_candidatos(hueco: Polygon) -> list[Point]:
-    """El centroide y una grilla gruesa de puntos adentro del hueco, del más
-    cercano al centroide al más lejano: con un solo punto, la segunda pieza
-    de un hueco chocaba siempre con la primera aunque sobrara lugar."""
-    minx, miny, maxx, maxy = hueco.bounds
-    centro = hueco.centroid
-    puntos = [centro] if hueco.contains(centro) else []
-    for i in range(_PASOS_GRILLA_POR_HUECO):
-        for j in range(_PASOS_GRILLA_POR_HUECO):
-            punto = Point(
-                minx + (maxx - minx) * (i + 0.5) / _PASOS_GRILLA_POR_HUECO,
-                miny + (maxy - miny) * (j + 0.5) / _PASOS_GRILLA_POR_HUECO,
-            )
-            if hueco.contains(punto):
-                puntos.append(punto)
-    puntos.sort(key=lambda p: p.distance(centro))
-    return puntos
+def _casilla(libre) -> float:
+    """El lado de las casillas para `libre`: unas 20 en el lado corto de su
+    rectángulo mínimo, entre 0,5 y 4 mm."""
+    coords = list(libre.minimum_rotated_rectangle.exterior.coords)
+    if len(coords) >= 3:
+        corto = min(math.dist(coords[0], coords[1]), math.dist(coords[1], coords[2]))
+    else:
+        minx, miny, maxx, maxy = libre.bounds
+        corto = min(maxx - minx, maxy - miny)
+    return min(_CASILLA_MAX_MM, max(_CASILLA_MIN_MM, corto / _CASILLAS_EN_EL_LADO_CORTO))
+
+
+def _mascara(poligono, x0: float, y0: float, nx: int, ny: int, casilla: float) -> np.ndarray:
+    """`bool[ny, nx]`: si el centro de cada casilla cae adentro de
+    `poligono`. La fila 0 es la de abajo (la `y` chica)."""
+    xs = x0 + (np.arange(nx) + 0.5) * casilla
+    ys = y0 + (np.arange(ny) + 0.5) * casilla
+    return shapely.contains_xy(poligono, *np.meshgrid(xs, ys))
 
 
 @dataclass(frozen=True)
@@ -129,63 +150,85 @@ class _Hueco:
     poligono: Polygon
     #: El hueco achicado en `gap`: lo que tiene que quedar adentro.
     util: Polygon
-    puntos: tuple[Point, ...]
     angulos: tuple[float, ...]
-    lados_minimos: tuple[float, float]
 
 
-def _bbox_no_puede_entrar(pieza: _Pieza, hueco: _Hueco) -> bool:
-    """Filtro barato: si el rectángulo de la pieza no entra ni en el del
-    hueco ni en su rectángulo mínimo rotado, en ninguna de sus dos
-    orientaciones, la pieza tampoco."""
-
-    def _cabe_en(ancho: float, alto: float) -> bool:
-        return (pieza.ancho <= ancho and pieza.alto <= alto) or (pieza.alto <= ancho and pieza.ancho <= alto)
-
-    minx, miny, maxx, maxy = hueco.poligono.bounds
-    return not _cabe_en(maxx - minx, maxy - miny) and not _cabe_en(*hueco.lados_minimos)
+def _libre(hueco: _Hueco, puestas: list[Polygon], gap: float):
+    """Lo que queda del hueco útil sin lo ya puesto, agrandado en `gap`."""
+    if not puestas:
+        return hueco.util
+    ocupado = shapely.union_all([p.buffer(gap) if gap > 0 else p for p in puestas])
+    return hueco.util.difference(ocupado)
 
 
-def _intentar(pieza: _Pieza, hueco: _Hueco, util, puestas: list[Polygon], gap: float) -> tuple[Adentro, Polygon] | None:
-    giradas = {}
-    for punto in hueco.puntos:
-        for angulo in hueco.angulos:
-            if angulo not in giradas:
-                rad = math.radians(angulo)
-                cx, cy = pieza.centro
-                centro_girado = (cx * math.cos(rad) - cy * math.sin(rad), cx * math.sin(rad) + cy * math.cos(rad))
-                giradas[angulo] = (affinity.rotate(pieza.exterior, angulo, origin=(0, 0)), centro_girado)
-            girada, (cx, cy) = giradas[angulo]
-            tx, ty = punto.x - cx, punto.y - cy
-            candidata = affinity.translate(girada, tx, ty)
-            if not util.contains(candidata):
-                continue
-            if any(candidata.distance(otra) < gap - 1e-9 for otra in puestas):
-                continue
-            return Adentro(pieza.id, hueco.dueno, angulo, tx, ty), candidata
-    return None
-
-
-def _llenar(hueco: _Hueco, candidatas: list[_Pieza], gap: float, excluir: frozenset[str] = frozenset()) -> list[tuple[_Pieza, Adentro]]:
-    """Tantas candidatas como entren, de la de más área a la de menos. Sin
-    tocar nada afuera, para poder comparar dos planes del mismo hueco."""
+def _llenar_hueco(hueco: _Hueco, candidatas: list[_Pieza], gap: float, seguir: Callable[[], bool]) -> list[tuple[_Pieza, Adentro]]:
+    """Tantas candidatas como entren, de la de más área a la de menos, cada
+    una en el lugar más abajo y a la izquierda donde entra (contra la pared:
+    así lo libre que sobra queda junto). `seguir` se consulta antes de cada
+    pieza que se intenta poner."""
     util = prep(hueco.util)
     plan: list[tuple[_Pieza, Adentro]] = []
     puestas: list[Polygon] = []
-    usadas = set(excluir)
-    while True:
+    usadas: set[str] = set()
+    giradas: dict[tuple[str, float], Polygon] = {}
+    mascaras: dict[tuple[str, float, float], np.ndarray] = {}
+    while seguir():
+        libre = _libre(hueco, puestas, gap)
+        if libre.is_empty:
+            break
+        radio_libre = _radio_del_circulo_mas_grande(libre)
+        casilla = _casilla(libre)
+        x0, y0, x1, y1 = libre.bounds
+        nx, ny = max(1, math.ceil((x1 - x0) / casilla)), max(1, math.ceil((y1 - y0) / casilla))
+        # La cuadrícula de lo libre se arma recién cuando alguna pieza pasa
+        # los descartes: en un hueco donde no entra nada no se arma ninguna.
+        bloqueado = None
+        transformadas: dict[tuple[int, int], np.ndarray] = {}
+        encontrada = None
         for pieza in candidatas:
-            if pieza.id in usadas or _bbox_no_puede_entrar(pieza, hueco):
+            if pieza.id in usadas or pieza.area > libre.area or pieza.radio > radio_libre + _TOLERANCIA_CIRCULO_MM:
                 continue
-            encontrada = _intentar(pieza, hueco, util, puestas, gap)
-            if encontrada is not None:
-                adentro, poligono = encontrada
-                plan.append((pieza, adentro))
-                puestas.append(poligono)
-                usadas.add(pieza.id)
+            for angulo in hueco.angulos:
+                if (pieza.id, angulo) not in giradas:
+                    giradas[(pieza.id, angulo)] = affinity.rotate(pieza.exterior, angulo, origin=(0, 0))
+                girada = giradas[(pieza.id, angulo)]
+                gx0, gy0, gx1, gy1 = girada.bounds
+                if gx1 - gx0 > x1 - x0 or gy1 - gy0 > y1 - y0:
+                    continue
+                clave = (pieza.id, angulo, casilla)
+                if clave not in mascaras:
+                    mx, my = max(1, math.ceil((gx1 - gx0) / casilla)), max(1, math.ceil((gy1 - gy0) / casilla))
+                    mascaras[clave] = _mascara(girada, gx0, gy0, mx, my, casilla).astype(np.float64)
+                propia = mascaras[clave]
+                my, mx = propia.shape
+                if my > ny or mx > nx:
+                    continue
+                # Cuántas casillas ocupadas pisa la pieza en cada corrimiento;
+                # el tamaño agrandado evita que la cuenta dé la vuelta.
+                forma = (ny + my, nx + mx)
+                if bloqueado is None:
+                    bloqueado = (~_mascara(libre, x0, y0, nx, ny, casilla)).astype(np.float64)
+                if forma not in transformadas:
+                    transformadas[forma] = np.fft.rfft2(bloqueado, forma)
+                pisadas = np.fft.irfft2(transformadas[forma] * np.conj(np.fft.rfft2(propia, forma)), forma)
+                lugares = np.argwhere(pisadas[: ny - my + 1, : nx - mx + 1] < 0.5)  # de abajo hacia arriba
+                for j, i in lugares[:_LUGARES_A_PROBAR]:
+                    tx, ty = x0 + i * casilla - gx0, y0 + j * casilla - gy0
+                    candidata = affinity.translate(girada, tx, ty)
+                    if util.contains(candidata) and all(candidata.distance(p) >= gap - 1e-9 for p in puestas):
+                        encontrada = (pieza, Adentro(pieza.id, hueco.dueno, angulo, float(tx), float(ty)), candidata)
+                        break
+                if encontrada:
+                    break
+            if encontrada:
                 break
-        else:
-            return plan
+        if encontrada is None:
+            break
+        pieza, adentro, poligono = encontrada
+        plan.append((pieza, adentro))
+        puestas.append(poligono)
+        usadas.add(pieza.id)
+    return plan
 
 
 def meter_en_huecos(
@@ -222,18 +265,9 @@ def meter_en_huecos(
             break
         util = poligono.buffer(-gap) if gap > 0 else poligono
         if not util.is_empty:
-            hueco = _Hueco(
-                dueno, poligono, util, tuple(_puntos_candidatos(poligono)), tuple(_angulos(poligono, rotaciones)),
-                _lados_del_rectangulo_minimo(poligono),
-            )
+            hueco = _Hueco(dueno, poligono, util, tuple(_angulos(poligono, rotaciones)))
             candidatas = [p for p in orden if p.id != dueno and p.id not in ubicadas and p.id not in con_algo_adentro]
-            plan = _llenar(hueco, candidatas, gap)
-            if plan:
-                # La primera que entró es la de más área, pero dos o tres más
-                # chicas pueden sumar más: se compara con el plan sin ella.
-                sin_la_primera = _llenar(hueco, candidatas, gap, excluir=frozenset({plan[0][0].id}))
-                if sum(p.area for p, _ in sin_la_primera) > sum(p.area for p, _ in plan):
-                    plan = sin_la_primera
+            plan = _llenar_hueco(hueco, candidatas, gap, seguir)
             for pieza, puesta in plan:
                 adentro.append(puesta)
                 ubicadas.add(pieza.id)

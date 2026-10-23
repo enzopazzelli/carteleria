@@ -158,3 +158,50 @@ def test_expandir_resuelve_varios_niveles():
     por_id = {c["id"]: c for c in expandidas}
     hueco_de_la_mediana = Polygon(material_colocado(mediana, por_id["mediana#0"]).interiors[0])
     assert hueco_de_la_mediana.buffer(-2 + 1e-6).contains(material_colocado(chica, por_id["chica#0"]))
+
+
+# --- La búsqueda por casillas (A13) -----------------------------------------
+
+
+def test_cuatro_cuadrados_entran_uno_por_esquina():
+    """Hoy el primero iba al centro del hueco y ya no entraba ninguno más."""
+    chicos = [item(f"chico#{n}", cuadrado(40)) for n in range(4)]
+    adentro = meter_en_huecos([aro(lado=140, hueco=100), *chicos], 2, CUARTOS, 100)
+    assert sorted(a.id for a in adentro) == sorted(c["id"] for c in chicos)
+    por_id = {c["id"]: c for c in chicos}
+    puestos = [colocado(por_id[a.id], a) for a in adentro]
+    hueco = Polygon(cuadrado(100, 20, 20))
+    for i, uno in enumerate(puestos):
+        assert hueco.buffer(-2 + 1e-6).contains(uno)
+        for otro in puestos[i + 1:]:
+            assert uno.distance(otro) >= 2 - 1e-6
+
+
+def ele_en_un_hueco_en_ele():
+    """Un hueco en «L» con la esquina abajo a la izquierda, y una pieza en «L»
+    más chica con la esquina arriba a la derecha: solo entra dada vuelta."""
+    hueco = Polygon(rectangulo(100, 30)).union(Polygon(rectangulo(30, 100)))
+    contenedora = item("aro#0", cuadrado(140), [list(affinity.translate(hueco, 20, 20).exterior.coords)[:-1]])
+    pieza = Polygon(rectangulo(70, 20, 0, 50)).union(Polygon(rectangulo(20, 70, 50, 0)))
+    return contenedora, item("ele#0", list(pieza.exterior.coords)[:-1])
+
+
+def test_una_ele_que_solo_entra_dada_vuelta():
+    contenedora, ele = ele_en_un_hueco_en_ele()
+    adentro = meter_en_huecos([contenedora, ele], 2, None, 100)
+    assert len(adentro) == 1 and round(adentro[0].rotation) % 360 == 180
+    assert meter_en_huecos([contenedora, ele], 2, [0], 100) == []
+
+
+def test_si_no_puede_entrar_ni_un_circulo_no_arma_cuadriculas(monkeypatch):
+    from app.services.nesting import huecos_primero
+    llamadas = []
+    original = getattr(huecos_primero, "_mascara", None)
+
+    def contar(*args, **kwargs):
+        llamadas.append(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(huecos_primero, "_mascara", contar, raising=False)
+    assert meter_en_huecos([aro(), item("chico#0", cuadrado(57))], 2, CUARTOS, 100) == []
+    assert llamadas == []
