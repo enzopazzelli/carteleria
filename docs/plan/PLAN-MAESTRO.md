@@ -291,11 +291,10 @@ Se detallan cuando les toque, cada una con su diseño.
 | 5 | **El diseño anidado también en PDF,** además del DXF para la máquina | Falta diseño |
 | — | Colores de referencia por pieza; entrada `.cdr` (hay un estudio previo que funcionó: [`historico/SPIKE-CDR.md`](../historico/SPIKE-CDR.md)) | En espera (Enzo, 2026-10-22) |
 
-**Pendientes de aprovechar huecos primero (A10).** Construido el 2026-10-22, fusionado en `main` ese día y cerrado: [`historico/A10-huecos-primero/`](../historico/A10-huecos-primero/diseno.md). Con el parador, lo ocupado de la chapa bajó de 1103 a 930 mm y el paso de huecos tarda segundos (la pasada vieja, 236 s, y no ganaba nada). Lo que quedó vivo:
+**Pendientes de aprovechar huecos primero (A10).** Construido el 2026-10-22, fusionado en `main` ese día y cerrado: [`historico/A10-huecos-primero/`](../historico/A10-huecos-primero/diseno.md). Con el parador, lo ocupado de la chapa bajó de 1103 a 930 mm y el paso de huecos tarda segundos (la pasada vieja, 236 s, y no ganaba nada). **El visor viejo sigue, a pedido de Enzo,** con Sparrow y huecos en su selector de motor (rama `feat/visor-sparrow`); de paso volvió a leer el catálogo que arma hoy el extractor, que no leía desde el 2026-09-22. Lo que quedó vivo:
 
 | Pendiente | De dónde sale | Depende de |
 |---|---|---|
-| El visor viejo (`Visor de anidado.cmd`) sigue: sumarle Sparrow con «Aprovechar huecos», con el mismo cálculo que la app. Hoy anida con el rectangular o con Deepnest, sin huecos | Revisión de A10; decisión de Enzo | — |
 | Entran a lo sumo 17 piezas por hueco (una grilla fija de 4 × 4 más el centro): un marco o una letra grande no se llena entero | Revisión de A10 | — |
 | Con giro libre no se prueba meter una pieza dada vuelta (180°, 270°) en un hueco: una pieza no simétrica, como una «L», puede quedar afuera | Revisión de A10 | — |
 | Confirmar con el taller si la máquina corta en el orden del archivo (lo de adentro primero) o lo decide sola, y si importa que el contorno de una pieza vaya antes que sus propios huecos | §5.5 de su diseño | El taller |

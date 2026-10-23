@@ -109,10 +109,10 @@ def opciones_desde_catalogo(
     mensajes = list(catalogo.get("advertencias", []))
     opciones = []
     for formato in catalogo["formatos"]:
-        if formato["precio_referencia_m2"] is None:
+        if _precio_m2(formato) is None:
             continue
         ancho_mm, alto_mm = Decimal(formato["ancho_mm"]), Decimal(formato["alto_mm"])
-        precio_m2 = Decimal(str(formato["precio_referencia_m2"]))
+        precio_m2 = Decimal(str(_precio_m2(formato)))
         precio_por_plancha = precio_m2 * (ancho_mm * alto_mm) / Decimal(1_000_000)
         opciones.append(
             OpcionFormato(
@@ -122,6 +122,19 @@ def opciones_desde_catalogo(
             )
         )
     return opciones, mensajes
+
+
+def _precio_m2(formato: dict):
+    """El precio por m² de un formato del catálogo, como vino en el JSON, o
+    `None`. Desde el 2026-09-22 `extraer_catalogo_chapa_xlsx.py` lo escribe
+    como `costo_unidad_venta` con su `unidad_venta`; los catálogos de antes,
+    como `precio_referencia_m2`. Uno que no se vende por m² no tiene precio
+    por m²."""
+    if "precio_referencia_m2" in formato:
+        return formato["precio_referencia_m2"]
+    if formato.get("unidad_venta") == "M2":
+        return formato.get("costo_unidad_venta")
+    return None
 
 
 def formatos_del_catalogo(ruta_catalogo: Path) -> list[dict]:
@@ -138,7 +151,7 @@ def formatos_del_catalogo(ruta_catalogo: Path) -> list[dict]:
             "etiqueta": f"{f['codigo']} — {f['material']} cal.{f['calibre']} — {f['ancho_mm']}×{f['alto_mm']} mm",
             "ancho_mm": f["ancho_mm"],
             "alto_mm": f["alto_mm"],
-            "precio_referencia_m2": f["precio_referencia_m2"],
+            "precio_referencia_m2": _precio_m2(f),
         }
         for f in catalogo["formatos"]
     ]

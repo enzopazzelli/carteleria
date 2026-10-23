@@ -72,6 +72,7 @@ from _datos_reales import (  # noqa: E402
     piezas_desde_dxf,
 )
 from app.services.nesting.comparador import OpcionFormato  # noqa: E402
+from app.services.nesting.sparrow import OpcionesSparrow, anidar_sparrow  # noqa: E402
 from app.services.nesting.deepnest_cliente import (  # noqa: E402
     ErrorMotorDeepnest,
     OpcionesMotorDeepnest,
@@ -101,6 +102,11 @@ from app.services.nesting.validacion_manual import (  # noqa: E402
 )
 
 PUERTO_DEFAULT = 8765
+#: Con Sparrow alguien espera frente a la pantalla: un minuto como mucho, en
+#: lugar de los cuatro de la app.
+_TIEMPO_MAXIMO_SPARROW_S = 60
+#: Los motores que sabe usar el visor. Sparrow es el de la app.
+_MOTORES = ("rectpack", "deepnest", "sparrow")
 
 
 #: Materiales planos que NO son chapa, con las medidas que dio el cliente
@@ -195,6 +201,9 @@ class _Tanda:
             if self.motor == "deepnest":
                 self._recalcular_deepnest(registrar_proceso)
                 return
+            if self.motor == "sparrow":
+                self._recalcular_sparrow()
+                return
         finally:
             self.segundos_ultimo_calculo = time.perf_counter() - inicio
         try:
@@ -211,6 +220,21 @@ class _Tanda:
         # con el motor rectangular queda sin aprovechar huecos.
         self.posiciones = [posicion_manual_desde_pieza(p) for p in resultado.posiciones]
         self.advertencias = resultado.advertencias
+
+    def _recalcular_sparrow(self) -> None:
+        """Anida con Sparrow, el motor de la app, metiendo primero las
+        piezas chicas en los huecos de las grandes (A10): el mismo cálculo
+        que la pestaña Anidado con «Aprovechar huecos» marcado, con el
+        control final pieza por pieza."""
+        opciones = OpcionesSparrow(usar_anidado_en_huecos=True, tiempo_maximo_s=_TIEMPO_MAXIMO_SPARROW_S)
+        try:
+            resultado = anidar_sparrow(self.piezas, self.geometrias, self.opcion.plancha, self.opcion.params, opciones)
+        except ValueError as error:
+            self.posiciones = []
+            self.advertencias = [str(error)]
+            return
+        self.posiciones = [posicion_manual_desde_pieza(p) for p in resultado.posiciones]
+        self.advertencias = [a if isinstance(a, str) else a.mensaje for a in resultado.advertencias]
 
     def _recalcular_deepnest(self, registrar_proceso=None) -> None:
         """Anida con el motor irregular (`docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md`).
@@ -495,7 +519,7 @@ class _Estado:
             self.tanda2.separaciones_extra = {}
 
         if cambios.get("motor"):
-            if cambios["motor"] not in ("rectpack", "deepnest"):
+            if cambios["motor"] not in _MOTORES:
                 raise ValueError(f"Motor desconocido: {cambios['motor']!r}")
             self.motor = cambios["motor"]
             self.tanda1.motor = self.tanda2.motor = self.motor
@@ -543,7 +567,7 @@ class _Estado:
         parámetro de corte: se pierden los ajustes manuales de posición.
         Correcto —el layout lo produjo otro algoritmo— pero el visor
         avisa antes, igual que con los parámetros."""
-        if motor not in ("rectpack", "deepnest"):
+        if motor not in _MOTORES:
             raise ValueError(f"Motor desconocido: {motor!r}")
         self.motor = motor
         for tanda in (self.tanda1, self.tanda2):
@@ -1188,6 +1212,7 @@ button:disabled { background: #f7f7f5; color: #999; border-color: #ddd; cursor: 
       <select id="motor">
         <option value="rectpack">rectpack — rectángulos, instantáneo</option>
         <option value="deepnest">deepnest — forma real, lento</option>
+        <option value="sparrow">sparrow — el de la app, con huecos</option>
       </select>
     </div>
     <p class="nota-motor" id="nota-motor"></p>
@@ -1523,6 +1548,8 @@ function actualizarNotaMotor() {
   const ultimo = estado ? ` Último cálculo: ${estado.segundos_calculo} s.` : "";
   document.getElementById("nota-motor").textContent = motor === "deepnest"
     ? "Anida la forma real: aprovecha agujeros y zonas cóncavas, y persigue el corte de líneas compartidas. Tarda de segundos a minutos." + ultimo
+    : motor === "sparrow"
+    ? "El cálculo de la app: mete primero las piezas chicas en los huecos de las grandes y después acomoda la forma real del resto. Hasta un minuto." + ultimo
     : "Anida el bounding box de cada pieza (ADR-01). Determinista e instantáneo." + ultimo;
 }
 
@@ -1822,8 +1849,8 @@ def main() -> None:
     )
     parser.add_argument("--plancha-alto-mm", type=Decimal, default=None)
     parser.add_argument(
-        "--motor", choices=["rectpack", "deepnest"], default="rectpack",
-        help="Motor inicial. Se puede cambiar desde el visor. deepnest tarda de segundos a minutos.",
+        "--motor", choices=list(_MOTORES), default="rectpack",
+        help="Motor inicial. Se puede cambiar desde el visor. deepnest tarda de segundos a minutos; sparrow (el de la app, con huecos), hasta un minuto.",
     )
     parser.add_argument("--generaciones", type=int, default=2, help="Presupuesto de búsqueda de deepnest")
     parser.add_argument("--poblacion", type=int, default=6, help="Presupuesto de búsqueda de deepnest")

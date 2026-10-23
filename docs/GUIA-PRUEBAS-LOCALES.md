@@ -183,6 +183,8 @@ Mismas limitaciones que el punto 3: piezas por bounding box (`ADR-01`) — pero 
 python -X utf8 scripts/servidor_visor.py --dxf "../modelos/repisas.dxf" --escala-a-mm 1 --catalogo local/catalogo_chapa.json
 ```
 
+**Con `--motor sparrow`** (o eligiéndolo en el selector) el visor anida con el mismo cálculo que la app: mete primero las piezas chicas en los huecos de las grandes y después acomoda la forma real del resto, con un tope de un minuto (A10, 2026-10-22). Es el único motor del visor que aprovecha huecos.
+
 Para arrancar directamente con el motor irregular, sin pasar por `rectpack`:
 
 ```powershell
