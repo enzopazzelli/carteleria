@@ -1,15 +1,47 @@
-## Motor irregular de prueba — 01/10/2026
+## 🧭 En qué estamos — 2026-10-22
 
-La pantalla Anidado permite elegir **Sparrow irregular (prueba)**, configurar semilla, tiempo y simplificación, comparar historial y cancelar. Instalar las dependencias actualizadas. Ver [guía de Sparrow](docs/GUIA-SPARROW-PRUEBAS.md). Los parámetros de corte se respetan: piezas que no entran generan un error explícito.
+Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Lo que sigue, desde la reunión del 2026-10-22».
+
+**Lo que se busca.** En la reunión del 2026-10-22 se mostró el cotizador. Gustó poder hacer varios anidados a la vez, aparecieron dos fallas del anidado y salieron pedidos nuevos. El objetivo ahora es doble:
+- que el motor de anidado sea confiable con diseños reales y aproveche mejor la chapa. **Sparrow es el motor principal**; el rectangular queda de prueba;
+- después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
+
+**Ya está en `main`:**
+- **Aprovechar huecos primero (A10).** Las piezas chicas se meten en los huecos de las grandes *antes* de acomodar, y solo se acomoda lo que queda afuera. Con el parador, lo ocupado de la chapa bajó de 1103 a 930 mm, y ese paso tarda segundos: la pasada vieja tardaba 236 s y no ganaba nada.
+- Con eso vinieron:
+  - la barra de avance dice en qué anda, se puede cancelar y todo entra en el tiempo máximo;
+  - en Ajuste, una pieza se mueve con lo que tiene adentro;
+  - en el DXF, lo de adentro va primero;
+  - un anidado que quedó colgado al cerrar el programa pasa a error al arrancar.
+- Ver [`docs/historico/A10-huecos-primero/`](docs/historico/A10-huecos-primero/diseno.md).
+- El visor de prueba (`Visor de anidado.cmd`) suma Sparrow con huecos en su selector de motor.
+- Cómo probar Sparrow (semilla, tiempo, simplificación, cancelar): [`docs/GUIA-SPARROW-PRUEBAS.md`](docs/GUIA-SPARROW-PRUEBAS.md).
+
+**Lo que sigue, en este orden** (Enzo: primero el motor, después lo demás):
+
+| # | Qué | Para qué | Estado |
+|---|---|---|---|
+| 1 | **El giro de las piezas grandes (A11)** | Con «Girar a cualquier ángulo», Complejo fallaba: Sparrow inclinaba los tramos del aro y quedaban más anchos que la chapa. Cada pieza que no entra a cualquier ángulo va a girar solo en los ángulos con los que entra | Diseño escrito, **sin ejecutar**: [`docs/plan/A11-giro-de-las-piezas-grandes/`](docs/plan/A11-giro-de-las-piezas-grandes/diseno.md) |
+| 2 | **Varios anidados a la vez** | Confirmar con una prueba de tres en simultáneo lo que gustó en la reunión | Por hacer |
+| 3 | **El material usado en Ancho × Alto** | Que la salida diga cuánto de cada chapa se usa y cuánto sobra; con eso se decide también hacia qué lado de la chapa se apilan las piezas | Falta decidir qué se muestra |
+| 4 | **El diseño anidado en PDF** | Además del DXF para la máquina, un PDF con cada chapa a escala para el taller | Falta diseño |
+| — | **Colores de referencia por pieza** (la «O» de Complejo en rojo, para reconocerla anidada) y **entrada `.cdr`** | Pedidos de la reunión | En espera. Para el `.cdr` ya hay un estudio que funcionó: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) |
+
+**Pedidos anteriores que siguen en pie** (2026-10-15, para después del motor):
+- una página de inicio, con los materiales en pantalla (alta, edición y baja) y los presupuestos generados;
+- ver todas las chapas de un anidado juntas y pasar una pieza de una chapa a otra;
+- la pantalla para retocar el presupuesto: los campos de un lado y el PDF del otro.
+
+**Para confirmar con el taller:** si la máquina corta en el orden del archivo (lo de adentro de un hueco primero) o decide el orden sola.
 
 # Sistema de Cotización, Nesting y Aprobación para Cartelería
 
 Plataforma a medida para una empresa de cartelería de gran formato en chapa. Automatiza el armado de presupuestos, calcula cómo anidar las piezas sobre la plancha para desperdiciar lo menos posible, gestiona el circuito de autorización del dueño y envía el presupuesto al cliente con el fotomontaje del cartel sobre el frente del local.
 
-**Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**, hasta el desglose · faltan el PDF, el login, la aprobación y el envío, y el motor de anidado se conecta después — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md)
+**Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**: lectura del DXF, anidado con Sparrow, costeo y PDF del presupuesto · faltan el login, la aprobación y el envío — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) y, arriba, «En qué estamos»
 **Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md)
 **Equipo:** Enzo (todo lo que no es el motor) · Vale (motor de anidado)
-**Última actualización:** 2026-10-05 — ver [`docs/BITACORA.md`](docs/BITACORA.md)
+**Última actualización:** 2026-10-22 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 
@@ -248,6 +280,7 @@ Lo que vale siempre. Se edita.
 | Documento | Qué contiene |
 |---|---|
 | [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) | **El plan vigente.** Etapas, sub-proyectos en orden, el enchufe del motor y las decisiones abiertas. Cada sub-proyecto suma acá su propia carpeta con `diseno.md` y `plan.md` |
+| [`A11-giro-de-las-piezas-grandes/`](docs/plan/A11-giro-de-las-piezas-grandes/diseno.md) | El arreglo de Complejo con «Girar a cualquier ángulo»: diseño escrito, sin ejecutar |
 
 ### `docs/motor/` — el motor de anidado
 
