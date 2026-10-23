@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Pieza } from "../../api/piezasYgrupos";
 import type { Colocacion } from "../../api/nesting";
-import { mmAPx, pxAMm, rotarPunto } from "./geometria";
+import { mmAPx, pxAMm, rotarPunto, yDesdePantalla, yEnPantalla } from "./geometria";
 
 const ESCALA_PX_POR_MM = 0.3;
 // Grados por "click" de rueda. Continuo a propósito (no saltos de 15°):
@@ -104,12 +104,13 @@ export default function PlanoEditor({
   // un <path>: "M x,y L x,y ... Z". Mismo criterio que `_anillo_path`
   // del backend (`visualizacion.py`) — un agujero se dibuja con la
   // misma transformación que el contorno, solo que después se combina
-  // con `fill-rule="evenodd"` para que quede hueco de verdad.
+  // con `fill-rule="evenodd"` para que quede hueco de verdad. La altura
+  // se da vuelta al dibujar (`yEnPantalla`), como en el plano.
   function anilloAPath(puntosLocales: string[][], esquinaLocal: { x: number; y: number }, centro: { x: number; y: number }, angulo: number): string {
     const comandos = puntosLocales.map(([lx, ly], indice) => {
       const punto = rotarPunto({ x: esquinaLocal.x + Number(lx), y: esquinaLocal.y + Number(ly) }, centro, angulo);
       const xPx = mmAPx(punto.x, ESCALA_PX_POR_MM);
-      const yPx = mmAPx(punto.y, ESCALA_PX_POR_MM);
+      const yPx = yEnPantalla(punto.y, altoPlanchaMm, ESCALA_PX_POR_MM);
       return `${indice === 0 ? "M" : "L"}${xPx.toFixed(2)},${yPx.toFixed(2)}`;
     });
     return comandos.join(" ") + " Z";
@@ -127,7 +128,7 @@ export default function PlanoEditor({
         const xPx = evento.clientX - rect.left;
         const yPx = evento.clientY - rect.top;
         const centroXMm = pxAMm(xPx, ESCALA_PX_POR_MM);
-        const centroYMm = pxAMm(yPx, ESCALA_PX_POR_MM);
+        const centroYMm = yDesdePantalla(yPx, altoPlanchaMm, ESCALA_PX_POR_MM);
         onMover(arrastrando, centroXMm, centroYMm);
       }
     }
