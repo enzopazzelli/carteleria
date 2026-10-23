@@ -120,20 +120,30 @@ def transformador_de_pieza(posicion: PosicionPieza, geometria: GeometriaPieza):
     return transformar_ortogonal
 
 
-def _anillo_path(puntos_locales: list[tuple[Decimal, Decimal]], transformar, escala: float) -> str:
+def _y_en_pantalla(y_mm, alto_mm, escala: float) -> float:
+    """La altura de la chapa en la pantalla. En el DXF (y en todo lo que
+    se guarda) crece hacia arriba, como en cualquier CAD; en la pantalla,
+    hacia abajo. Sin darla vuelta el plano sale de cabeza: la «A» se ve
+    como una «∀» (2026-10-23, el mismo error que tenían las miniaturas de
+    Piezas). El DXF que se exporta no cambia."""
+    return (float(alto_mm) - float(y_mm)) * escala
+
+
+def _anillo_path(puntos_locales: list[tuple[Decimal, Decimal]], transformar, escala: float, alto_mm: Decimal) -> str:
     """Un anillo (contorno exterior o un agujero) como subtrazado de un
     `<path>`: `M x,y L x,y ... Z`."""
     comandos = []
     for indice, (x_local, y_local) in enumerate(puntos_locales):
         x_abs, y_abs = transformar(x_local, y_local)
-        x_px, y_px = x_abs * Decimal(str(escala)), y_abs * Decimal(str(escala))
+        x_px, y_px = float(x_abs) * escala, _y_en_pantalla(y_abs, alto_mm, escala)
         comandos.append(f"{'M' if indice == 0 else 'L'}{x_px:.2f},{y_px:.2f}")
     return " ".join(comandos) + " Z"
 
 
-def _forma_pieza(posicion: PosicionPieza, geometria: GeometriaPieza | None, escala: float) -> str:
+def _forma_pieza(posicion: PosicionPieza, geometria: GeometriaPieza | None, escala: float, alto_mm: Decimal) -> str:
     if geometria is None or not geometria.contorno_local_mm:
-        x, y = float(posicion.x_mm) * escala, float(posicion.y_mm) * escala
+        # En pantalla, la esquina de arriba del rectángulo es la de la y mayor.
+        x, y = float(posicion.x_mm) * escala, _y_en_pantalla(posicion.y_mm + posicion.alto_colocado_mm, alto_mm, escala)
         ancho, alto = float(posicion.ancho_colocado_mm) * escala, float(posicion.alto_colocado_mm) * escala
         return (
             f'<rect x="{x:.2f}" y="{y:.2f}" width="{ancho:.2f}" height="{alto:.2f}">'
@@ -142,12 +152,12 @@ def _forma_pieza(posicion: PosicionPieza, geometria: GeometriaPieza | None, esca
 
     transformar = transformador_de_pieza(posicion, geometria)
     anillos = [geometria.contorno_local_mm, *geometria.agujeros_local_mm]
-    trazado = " ".join(_anillo_path(anillo, transformar, escala) for anillo in anillos)
+    trazado = " ".join(_anillo_path(anillo, transformar, escala, alto_mm) for anillo in anillos)
     regla_relleno = ' fill-rule="evenodd"' if geometria.agujeros_local_mm else ""
     return f'<path d="{trazado}"{regla_relleno}><title>{_titulo_pieza(posicion)}</title></path>'
 
 
-def _etiqueta_pieza(posicion: PosicionPieza, escala: float) -> str:
+def _etiqueta_pieza(posicion: PosicionPieza, escala: float, alto_mm: Decimal) -> str:
     """Sin esto, con muchas piezas chicas (frecuente en piezas
     importadas de DXF) los textos se superponen entre sí y tapan la
     forma — más ilegible que no tener etiqueta. Si no entra, el nombre
@@ -157,11 +167,13 @@ def _etiqueta_pieza(posicion: PosicionPieza, escala: float) -> str:
     if ancho_px < _UMBRAL_ETIQUETA_PX or alto_px < _UMBRAL_ETIQUETA_PX:
         return ""
     x_centro = float(posicion.x_mm + posicion.ancho_colocado_mm / 2) * escala
-    y_centro = float(posicion.y_mm + posicion.alto_colocado_mm / 2) * escala
+    y_centro = _y_en_pantalla(posicion.y_mm + posicion.alto_colocado_mm / 2, alto_mm, escala)
     return f'<text x="{x_centro:.2f}" y="{y_centro:.2f}">{posicion.pieza_id}</text>'
 
 
-def _grupo_pieza(posicion: PosicionPieza, geometrias: GeometriasPorId | None, escala: float, mostrar_etiquetas: bool = True) -> str:
+def _grupo_pieza(
+    posicion: PosicionPieza, geometrias: GeometriasPorId | None, escala: float, alto_mm: Decimal, mostrar_etiquetas: bool = True
+) -> str:
     # Primero por id de instancia (`panel#2`), después por id base
     # (`panel`). Con `MotorNestingRectangular` todas las instancias de
     # una pieza comparten geometría y alcanza con la base; un motor que
@@ -171,8 +183,8 @@ def _grupo_pieza(posicion: PosicionPieza, geometrias: GeometriasPorId | None, es
     geometria = disponibles.get(posicion.pieza_id) or disponibles.get(posicion.pieza_id.split("#")[0])
     return (
         f'<g class="pieza">'
-        f"{_forma_pieza(posicion, geometria, escala)}"
-        f"{_etiqueta_pieza(posicion, escala) if mostrar_etiquetas else ''}"
+        f"{_forma_pieza(posicion, geometria, escala, alto_mm)}"
+        f"{_etiqueta_pieza(posicion, escala, alto_mm) if mostrar_etiquetas else ''}"
         f"</g>"
     )
 
@@ -193,9 +205,11 @@ def _grilla_referencia(ancho_mm: Decimal, alto_mm: Decimal, escala: float) -> st
         x_mm += paso_mm
     y_mm = 0.0
     while y_mm <= float(alto_mm):
-        y_px = y_mm * escala
+        # La altura se cuenta desde abajo, como en el DXF; el número va
+        # arriba de su línea, salvo la de más arriba, que no tiene lugar.
+        y_px = _y_en_pantalla(y_mm, alto_mm, escala)
         lineas.append(f'<line x1="0" y1="{y_px:.2f}" x2="{ancho_px:.2f}" y2="{y_px:.2f}" class="grilla"/>')
-        lineas.append(f'<text x="2" y="{y_px + 10:.2f}" class="grilla-etiqueta">{y_mm:.0f}</text>')
+        lineas.append(f'<text x="2" y="{y_px - 2 if y_px >= 12 else y_px + 10:.2f}" class="grilla-etiqueta">{y_mm:.0f}</text>')
         y_mm += paso_mm
     return f'<g class="grilla-referencia">{"".join(lineas)}</g>'
 
@@ -231,7 +245,7 @@ def render_svg_plancha(
     escala = float(escala_px_por_mm)
     ancho_px, alto_px = float(plancha.ancho_mm) * escala, float(plancha.alto_mm) * escala
     piezas_svg = "".join(
-        _grupo_pieza(posicion, geometrias, escala, mostrar_etiquetas)
+        _grupo_pieza(posicion, geometrias, escala, plancha.alto_mm, mostrar_etiquetas)
         for posicion in resultado.posiciones
         if posicion.plancha_indice == plancha_indice
     )

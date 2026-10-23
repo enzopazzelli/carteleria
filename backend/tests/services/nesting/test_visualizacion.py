@@ -104,10 +104,11 @@ def test_con_contorno_disponible_dibuja_el_path_no_el_rectangulo():
     assert "<path" in svg
     assert svg.count("<rect") == 1  # solo el fondo de la plancha, la pieza es un path
     assert "fill-rule" not in svg  # sin agujeros, no hace falta evenodd
-    # Trasladado por (x_mm, y_mm) = (100, 200), sin rotar: (0,0)->(100,200), (50,0)->(150,200), (0,50)->(100,250)
-    assert "100.00,200.00" in svg
-    assert "150.00,200.00" in svg
-    assert "100.00,250.00" in svg
+    # Trasladado por (x_mm, y_mm) = (100, 200), sin rotar: (0,0)->(100,200), (50,0)->(150,200), (0,50)->(100,250);
+    # en pantalla la altura se da vuelta (1000 - y).
+    assert "100.00,800.00" in svg
+    assert "150.00,800.00" in svg
+    assert "100.00,750.00" in svg
 
 
 def test_el_contorno_se_rota_igual_que_el_rectangulo_cuando_la_pieza_esta_rotada():
@@ -138,10 +139,11 @@ def test_el_contorno_se_rota_igual_que_el_rectangulo_cuando_la_pieza_esta_rotada
         geometrias={"rotada": geometria},
     )
 
-    # transformar(x,y) = (y, 50 - x): (0,0)->(0,50); (50,0)->(0,0); (50,20)->(20,0)
-    assert "0.00,50.00" in svg
-    assert "0.00,0.00" in svg
-    assert "20.00,0.00" in svg
+    # transformar(x,y) = (y, 50 - x): (0,0)->(0,50); (50,0)->(0,0); (50,20)->(20,0);
+    # en pantalla la altura se da vuelta (1000 - y).
+    assert "0.00,950.00" in svg
+    assert "0.00,1000.00" in svg
+    assert "20.00,1000.00" in svg
 
 
 def test_una_pieza_con_agujero_dibuja_path_con_evenodd_y_el_anillo_del_agujero():
@@ -173,7 +175,7 @@ def test_una_pieza_con_agujero_dibuja_path_con_evenodd_y_el_anillo_del_agujero()
     )
 
     assert 'fill-rule="evenodd"' in svg
-    assert "20.00,20.00" in svg  # una esquina del agujero, trasladada (x_mm=0, y_mm=0: sin cambio)
+    assert "20.00,980.00" in svg  # una esquina del agujero (20, 20): sin trasladar, con la altura dada vuelta
     assert svg.count("<path") == 1  # exterior + agujero van en el mismo <path>, dos subtrazados
 
 
@@ -257,3 +259,56 @@ def test_usa_el_id_base_de_la_pieza_expandida_para_buscar_la_geometria():
     svg = render_svg_plancha(resultado, plancha, plancha_indice=0, geometrias={"carrusel-3": geometria})
 
     assert "<path" in svg
+
+
+# --- La altura hacia arriba, como en el DXF (2026-10-23) --------------------
+# El DXF mide la altura hacia arriba y la pantalla hacia abajo: sin darla
+# vuelta, el plano salía de cabeza (la «A» se veía como una «∀»), el mismo
+# error que tenían las miniaturas de Piezas (`b69466a`).
+
+import re
+
+
+def _puntos(svg: str) -> list[tuple[float, float]]:
+    camino = re.search(r'<path[^>]* d="([^"]+)"', svg).group(1)
+    return [tuple(map(float, xy.split(","))) for xy in re.findall(r"[ML]([\d.]+,[\d.]+)", camino)]
+
+
+def test_el_plano_se_ve_como_el_dxf_con_la_altura_hacia_arriba():
+    # Un triángulo con la base abajo y la punta arriba, en la mitad de una
+    # chapa de 100 x 100: la base a 40 mm del piso y la punta a 60.
+    triangulo = GeometriaPieza(Decimal(10), Decimal(20), [(Decimal(0), Decimal(0)), (Decimal(10), Decimal(0)), (Decimal(0), Decimal(20))])
+    posicion = PosicionPieza("t", 0, Decimal(40), Decimal(40), Decimal(10), Decimal(20), False, Decimal(0), Decimal(45), Decimal(50))
+
+    svg = render_svg_plancha(ResultadoAnidado([posicion], 1), Plancha(Decimal(100), Decimal(100)), 0,
+                             escala_px_por_mm=Decimal(1), geometrias={"t": triangulo})
+
+    base, _, punta = _puntos(svg)
+    assert base == (40.0, 60.0)
+    assert punta == (40.0, 40.0)  # más arriba en pantalla, donde la y es menor
+
+
+def test_sin_contorno_el_rectangulo_tambien_se_da_vuelta():
+    posicion = PosicionPieza("r", 0, Decimal(10), Decimal(0), Decimal(30), Decimal(20), False)
+
+    svg = render_svg_plancha(ResultadoAnidado([posicion], 1), Plancha(Decimal(100), Decimal(100)), 0,
+                             escala_px_por_mm=Decimal(1), geometrias={})
+
+    # Pegado al piso de la chapa: en pantalla, abajo de todo.
+    assert '<rect x="10.00" y="80.00" width="30.00" height="20.00">' in svg
+
+
+def test_la_etiqueta_va_en_el_centro_de_la_pieza_dado_vuelta():
+    posicion = PosicionPieza("r", 0, Decimal(10), Decimal(0), Decimal(30), Decimal(20), False)
+
+    svg = render_svg_plancha(ResultadoAnidado([posicion], 1), Plancha(Decimal(100), Decimal(100)), 0,
+                             escala_px_por_mm=Decimal(1), geometrias={})
+
+    assert '<text x="25.00" y="90.00">r</text>' in svg
+
+
+def test_la_regla_de_la_grilla_cuenta_la_altura_desde_abajo():
+    svg = render_svg_plancha(ResultadoAnidado([], 0), Plancha(Decimal(100), Decimal(300)), 0, escala_px_por_mm=Decimal(1))
+
+    alturas = {int(texto): float(y) for y, texto in re.findall(r'<text x="2" y="([\d.]+)" class="grilla-etiqueta">(\d+)</text>', svg)}
+    assert alturas[0] > alturas[100] > alturas[200]
