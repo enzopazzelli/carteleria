@@ -1109,3 +1109,50 @@ def test_material_usado_de_un_anidado_sin_parametros_guardados_da_409(cliente, t
 
 def test_material_usado_de_un_anidado_inexistente_da_404(cliente):
     assert cliente.get("/ejecuciones/999/material-usado").status_code == 404
+
+
+# --- Hacia qué lado queda el sobrante (A12) --------------------------------
+
+
+def _sparrow_rapido(**otras) -> dict:
+    return {"motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20, "simplificacion_mm": 0} | otras
+
+
+def test_anidar_guarda_la_opcion_del_sobrante(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json=_sparrow_rapido(sobrante="arriba"))
+
+    final = _esperar_estado(cliente, encolada.json()["id"], timeout=30)
+    assert final["estado"] == "lista"
+    assert final["opciones"]["sobrante"] == "arriba"
+
+
+def test_anidar_sin_la_opcion_del_sobrante_vale_costado(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json=_sparrow_rapido())
+
+    final = _esperar_estado(cliente, encolada.json()["id"], timeout=30)
+    assert final["opciones"]["sobrante"] == "costado"
+
+
+def test_comparar_usa_siempre_el_sobrante_arriba(cliente, tmp_path, monkeypatch):
+    """Para elegir entre chapas cuentan las chapas y el costo, no hacia
+    dónde queda el sobrante: aunque el pedido diga otra cosa."""
+    from app.api import rutas_nesting
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    _material, formato = _material_con_formato_y_parametros(cliente)
+    anotadas = []
+    original = rutas_nesting.anidar_sparrow
+
+    def anotar(piezas, geometrias, plancha, params, opciones, **kw):
+        anotadas.append(opciones.sobrante)
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", anotar)
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparar-formatos",
+                             json=_sparrow_rapido(formato_ids=[formato["id"]], sobrante="costado"))
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert anotadas == ["arriba"]

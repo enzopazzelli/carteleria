@@ -34,6 +34,10 @@ class AnidarCrear(BaseModel):
     #: rectangular se rechaza. Apagada si no se manda: quien llama dice lo
     #: que quiere; la pantalla la manda marcada.
     usar_anidado_en_huecos: bool = False
+    #: Hacia qué lado queda el sobrante de cada chapa (A12). Al costado si
+    #: no se manda, como antes; la pantalla manda arriba. La comparación de
+    #: chapas no la mira: compara siempre con el sobrante arriba.
+    sobrante: Literal["arriba", "costado"] = "costado"
 
 
 class ProgresoLeer(BaseModel):

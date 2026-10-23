@@ -583,7 +583,11 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
     opciones_sparrow = None
     nombres = nombres_de_piezas(piezas)
     if datos.motor == "sparrow":
-        opciones_sparrow = OpcionesSparrow(**datos.model_dump(exclude={"motor", "formato_ids", "criterio"}))
+        # Siempre con el sobrante arriba (A12): para elegir entre chapas
+        # cuentan las chapas y el costo, no hacia dónde queda el sobrante.
+        opciones_sparrow = OpcionesSparrow(
+            **datos.model_dump(exclude={"motor", "formato_ids", "criterio", "sobrante"}), sobrante="arriba"
+        )
         # Validar todos antes de iniciar búsquedas costosas.
         for opcion, formato, ids in zip(opciones, formatos, no_entran):
             if ids:
