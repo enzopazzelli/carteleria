@@ -292,7 +292,7 @@ Se detallan cuando les toque, cada una con su diseño.
 | 6 | **Ver las chapas resultantes y mover piezas entre ellas** (detalle abajo) | Planeado el 2026-10-15; falta diseño |
 | 7 | **Una página de inicio, con materiales y presupuestos** (detalle abajo) | Planeado el 2026-10-15; falta diseño |
 | 8 | **La aprobación del presupuesto** (1.4, §6) | Planeado; falta diseño |
-| 9 | **Llenar mejor los huecos:** con «Aprovechar huecos», en el parador entran 20 piezas en 11 figuras del logo, pero los huecos grandes quedan bastante vacíos. Se apoya en dos pendientes de A10: a lo sumo 17 piezas por hueco (una grilla fija de posiciones) y no se prueba dar vuelta una pieza adentro de un hueco | Sumado por Enzo el 2026-10-23; falta diseño. Es del motor |
+| 9 | **Llenar mejor los huecos (A13):** con «Aprovechar huecos», en el parador entraban 20 piezas en 11 figuras del logo y los huecos grandes quedaban bastante vacíos. Ahora cada pieza se busca por casillas, contra la pared, con giros de a 15° y dada vuelta | **Construido el 2026-10-23** en la rama `feat/llenar-huecos`, sin fusionar: con el parador entran 30 piezas en lugar de 20 y el sobrante crece de 1220 × 509 a 1220 × 761, sin gastar más chapa; Complejo igual (7 chapas). [Diseño](A13-llenar-mejor-los-huecos/diseno.md) |
 | — | Colores de referencia por pieza; entrada `.cdr` (hay un estudio previo que funcionó: [`historico/SPIKE-CDR.md`](../historico/SPIKE-CDR.md)) | En espera (Enzo, 2026-10-22) |
 
 Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, para que Enzo lo confirme («era eso más lo de hoy. Incluí todo», 2026-10-22).
@@ -330,12 +330,12 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 
 | Pendiente | De dónde sale | Depende de |
 |---|---|---|
-| Entran a lo sumo 17 piezas por hueco (una grilla fija de 4 × 4 más el centro): un marco o una letra grande no se llena entero | Revisión de A10 | — |
-| Con giro libre no se prueba meter una pieza dada vuelta (180°, 270°) en un hueco: una pieza no simétrica, como una «L», puede quedar afuera | Revisión de A10 | — |
 | Confirmar con el taller si la máquina corta en el orden del archivo (lo de adentro primero) o lo decide sola, y si importa que el contorno de una pieza vaya antes que sus propios huecos | §5.5 de su diseño | El taller |
 | Con una base sin migrar el servidor no arranca: la limpieza de anidados colgados corre sin protección | Revisión de A10 | — |
 | Dos pruebas para completar: que sin huecos el resultado sea el mismo con y sin la casilla, y el control de la pieza de adentro cuando el bloque pisa algo | Revisión de A10 | — |
 | En Ajuste, lo de adentro aparece en su lugar nuevo recién cuando vuelve la respuesta, no mientras se arrastra | Aclaración 4 de su plan | — |
+
+**Resueltos el 2026-10-23** con llenar mejor los huecos (A13): ya no hay un tope de 17 piezas por hueco (se buscan todos los lugares por casillas), y con giro libre las piezas se prueban también dadas vuelta adentro de un hueco.
 
 **Pendientes de los mensajes entendibles (A9).** Construido el 2026-10-22, en `main` desde ese día ([PR #26](https://github.com/enzopazzelli/carteleria/pull/26)) y cerrado: [`historico/A9-mensajes-entendibles/`](../historico/A9-mensajes-entendibles/diseno.md). Resolvió dos pendientes de otras tablas: una chapa de la comparación que no llega a tiempo **falla sola en su fila** y las demás se muestran (antes la comparación entera terminaba en error), y **«Margen %» e «IVA %» aceptan coma** («10,5»). Lo que quedó vivo:
 

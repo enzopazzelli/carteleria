@@ -1,6 +1,6 @@
 # A13 · Llenar mejor los huecos — diseño
 
-> **Estado:** escrito el 2026-10-23, después de una prueba descartable que Enzo pidió (§2). **Aprobado por Enzo ese día** («Si»). El plan está en [`plan.md`](plan.md); las tareas de §6 se hacen con pausa al final de cada una. Al escribir el plan cambió cómo se usa la cuadrícula (§5.1, puntos 2, 3 y 5).
+> **Estado:** escrito el 2026-10-23, después de una prueba descartable que Enzo pidió (§2). **Aprobado por Enzo ese día** («Si»). El plan está en [`plan.md`](plan.md). **Construido el 2026-10-23** en la rama `feat/llenar-huecos`, las tres tareas con pausa al final de cada una, sin fusionar en `main`. Cómo quedó y lo medido, en §8. Al escribir el plan cambió cómo se usa la cuadrícula (§5.1, puntos 2, 3 y 5).
 >
 > **De dónde sale.** Enzo, el 2026-10-23, probando la app: «vi que había huecos que estaban siendo aprovechados pero podían meterse alguna pieza más dentro». Es el paso 9 de «Lo que sigue» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md). Resuelve dos pendientes de aprovechar huecos primero (A10): a lo sumo 17 piezas por hueco, y que con giro libre no se pruebe dar vuelta una pieza adentro de un hueco. Es del motor, por eso lleva la letra A.
 >
@@ -110,3 +110,36 @@ El constructor puede sumar otros descartes; lo que se pide es el tiempo de §6, 
 - **Más piezas adentro no siempre es menos chapa:** si lo que entra son piezas chicas que de todos modos cabían afuera, se gana sobrante pero no chapa. Se mide con el anidado entero.
 - **Tiempo con muchos huecos grandes:** el parador tiene 28 huecos y tardó 39 s. Un trabajo con el doble podría llegar al tope de la mitad del tiempo máximo; ahí la búsqueda corta y sigue con lo que tenga, como hoy.
 - **La cuadrícula** propone lugares cada una casilla: un lugar justo que cae entre dos casillas puede no aparecer. Las casillas más chicas en los huecos chicos y los 20 lugares probados lo achican, y las pruebas de A10 con medidas justas lo cuidan. La medición compara piezas adentro con lo de hoy y con lo nuevo.
+
+## 8. Cómo quedó (2026-10-23)
+
+**El código.** En `huecos_primero.py`, `_llenar_hueco` reemplaza a la grilla de 4 × 4, `_intentar` y `_llenar` (con sus dos planes). Lo arman `_casilla` (el lado de las casillas para lo libre), `_mascara` (las casillas con el centro adentro), `_angulos` (de a 15° más los del hueco, o los fijos) y `_tamano_rapido`. Los descartes antes de armar cuadrículas: el material contra lo libre, el círculo más grande de la pieza contra el de lo libre y el rectángulo de cada giro. `seguir` se consulta antes de cada hueco y antes de cada pieza. La firma de `meter_en_huecos`, `Adentro` y `expandir` no cambiaron.
+
+**Desvíos.**
+- **La cuadrícula propone y no decide** (§5.1), y **las casillas se achican en un hueco chico**. Se cambió al escribir el plan: la de la prueba perdía unos 6 mm por lado y no veía las piezas que entran justas.
+- **Tamaños rápidos para la FFT** (`_tamano_rapido`): la cuadrícula se agranda con ceros hasta un tamaño con factores 2, 3 y 5. Con Complejo, este paso bajó de 8,6 s a 4,5 s, y con el parador de 15 a 5 s, con el mismo resultado.
+- **La cuadrícula de lo libre se arma recién cuando una pieza pasa los descartes:** en un hueco donde no entra nada no se arma ninguna.
+- **Una medición mal hecha, corregida:** el cálculo de Sparrow corre en un proceso aparte que carga el código de la carpeta desde donde se lanza. Las primeras corridas «de `main`» se lanzaron desde la rama y usaron el código nuevo. Se repitieron desde una copia de `main`.
+
+**Medido** sobre una copia de la base de la reunión (`backend/local/tmp-a13/medicion/`), con `backend/local/herramientas-a13-2026-10-23/paso_huecos.py` y `medir.py`, fuera de git.
+
+| | `main` | Con este cambio |
+|---|---|---|
+| Parador, solo este paso | 19 piezas adentro (0,246 m²), 2,4 s | **31 piezas adentro (0,367 m²), 5,2 s** |
+| Complejo, solo este paso (no entra nada) | 0, 0,1 s | 0, **4,7 s** |
+| Parador, el anidado entero (sobrante arriba) | 1 chapa, 20 adentro; usa 1220 × 1931 y sobra **1220 × 509** | 1 chapa, 30 adentro; usa 1220 × 1679 y sobra **1220 × 761**; 10,5 s |
+| Complejo, el anidado entero | 7 chapas, 232 s | 7 chapas, 238 s |
+
+- **Con el parador, el sobrante crece un 50 %** (de 509 a 761 mm de alto) y no se gasta más chapa. Con Complejo no cambia nada: sus huecos son más chicos que cualquier pieza.
+- **Lo que pedía §6:** parador con al menos 30 adentro y este paso en menos de 60 s, sí (31, 5 s); Complejo en menos de 5 s, sí (4,5 a 4,7 s, justo).
+- **El recorrido de la pantalla** (`recorrido-a13.mjs`, capturas al lado) salió todo BIEN y sin errores en la consola: la barra dice «Metiendo piezas en los huecos», el resultado avisa «30 piezas van adentro de huecos de otras», y en Ajuste una figura con 7 piezas adentro se movió junto con ellas.
+- Backend: 843 pruebas en verde.
+
+**Lo que quedó vivo.**
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| Todavía queda libre cerca del 70 % de los huecos del parador. Probar otro orden de piezas (no solo de la más grande a la más chica) o varios órdenes podría meter más | §4 | Medir si vale el tiempo |
+| Con Complejo este paso tarda 4,5 s en descubrir que no entra nada, justo debajo de lo pedido: un trabajo con muchos más huecos chicos podría pasarse | §8 | Que aparezca un caso |
+| Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 | — |
+
