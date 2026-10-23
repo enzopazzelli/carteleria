@@ -528,6 +528,28 @@ def test_el_worker_anota_el_mejor_resultado_y_la_etapa_de_vaciar(monkeypatch,tmp
     assert progreso_escrito(salida)=={'fase':'vaciar','pasada':1,'pasadas':1,'mejor_chapas':1}
 
 
+def test_el_avance_se_anota_aunque_windows_no_deje_reemplazarlo_enseguida(monkeypatch,tmp_path,capsys):
+    """El supervisor lee el progreso mientras el worker lo reemplaza, y
+    Windows no deja reemplazar un archivo abierto («Acceso denegado»).
+    Medido con tres anidados a la vez, el 2026-10-23."""
+    entrada=entrada_de_cuadrados(4,intentos=1,tiempo_maximo_s=60)
+    monkeypatch.setattr(sparrow_worker,'resolver_una_pasada',una_por_chapa)
+    reemplazar=Path.replace;rechazos=[]
+    def replace(self,destino):
+        if Path(destino).name.endswith('.progreso.json') and len(rechazos)<2:
+            rechazos.append(destino)
+            raise PermissionError(13,'Acceso denegado')
+        return reemplazar(self,destino)
+    monkeypatch.setattr(Path,'replace',replace)
+    salida=tmp_path/'salida.json'
+
+    sparrow_worker.resolver(entrada,salida)
+
+    assert len(rechazos)==2
+    assert 'avanzar:' not in capsys.readouterr().err
+    assert progreso_escrito(salida)=={'fase':'vaciar','pasada':1,'pasadas':1,'mejor_chapas':1}
+
+
 def worker_que_avanza(tmp_path,progreso,espera=1.5):
     """Un worker que escribe `progreso` (texto, tal cual) como su archivo de
     progreso, espera y recién después deja cada pieza sola en su chapa."""
