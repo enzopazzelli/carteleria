@@ -13,13 +13,14 @@ from collections.abc import Callable
 
 class ColaDeTrabajosEnProceso:
     """Un hilo por tarea encolada, sin cola de espera ni límite de
-    concurrencia — alcanza para un usuario local corriendo un anidado
-    por vez.
+    concurrencia. Con tres anidados de Sparrow a la vez, en una máquina
+    de 4 núcleos, todos terminan bien y cada uno dentro de su tiempo
+    máximo (medido el 2026-10-23): lo que pierde cada uno es búsqueda.
 
-    Sin persistencia entre reinicios: si el proceso muere a mitad de
-    una corrida, la ejecución queda en `corriendo` para siempre. Es un
-    límite conocido del modo local; lo resuelve pasar a Celery/Redis
-    (`ADR-05`), no esta clase.
+    Sin persistencia entre reinicios: una corrida que el proceso deja a
+    medias no sigue. Al arrancar, el servidor la pasa a error
+    (`cortar_corridas_colgadas`, A10). Que sobreviva a un reinicio lo
+    resuelve pasar a Celery/Redis (`ADR-05`), no esta clase.
     """
 
     def encolar(self, tarea: Callable[[], None]) -> None:

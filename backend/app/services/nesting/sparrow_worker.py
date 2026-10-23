@@ -93,6 +93,18 @@ def por_chapa(placed):
     for q in placed:chapas.setdefault(q['sheet'],[]).append({k:v for k,v in q.items() if k!='sheet'})
     return [chapas[s] for s in sorted(chapas)]
 
+def reemplazar(temporal,ruta,intentos=5,espera=0.05):
+    """`temporal.replace(ruta)`, reintentando un momento si Windows no deja:
+    no se puede reemplazar un archivo que otro proceso tiene abierto, y el
+    supervisor lee el progreso mientras el worker lo escribe. Pasó con tres
+    anidados a la vez (2026-10-23)."""
+    for intento in range(intentos):
+        try:
+            return temporal.replace(ruta)
+        except PermissionError:
+            if intento==intentos-1: raise
+            time.sleep(espera)
+
 def resolver(data, salida=None):
     from .sparrow import convertir_y_validar, ruta_de_avisos, ruta_de_progreso
     from .sparrow_reparto import vaciar_chapas
@@ -109,7 +121,7 @@ def resolver(data, salida=None):
         if not salida: return
         ruta=ruta_de_avisos(salida);temporal=ruta.with_suffix('.tmp')
         try:
-            temporal.write_text(json.dumps(avisos),encoding='utf8');temporal.replace(ruta)
+            temporal.write_text(json.dumps(avisos),encoding='utf8');reemplazar(temporal,ruta)
         except OSError as error:
             print('avisar:',error,file=sys.stderr)  # El aviso es lo de menos: el anidado sigue.
     avance={'fase':None,'pasada':None,'pasadas':opts.get('intentos',3),'mejor_chapas':None}
@@ -120,7 +132,7 @@ def resolver(data, salida=None):
         if not salida: return
         ruta=ruta_de_progreso(salida);temporal=ruta.with_suffix('.tmp')
         try:
-            temporal.write_text(json.dumps(avance),encoding='utf8');temporal.replace(ruta)
+            temporal.write_text(json.dumps(avance),encoding='utf8');reemplazar(temporal,ruta)
         except OSError as error:
             print('avanzar:',error,file=sys.stderr)
     adentro=[]
@@ -162,7 +174,7 @@ def resolver(data, salida=None):
             # tiene que poder escribirse.
             if salida:
                 temporal=salida.with_suffix('.tmp')
-                temporal.write_text(json.dumps(completo),encoding='utf8');temporal.replace(salida)
+                temporal.write_text(json.dumps(completo),encoding='utf8');reemplazar(temporal,salida)
             best=completo;score=rank
             avanzar(mejor_chapas=score[0])
     for intento in range(opts.get('intentos',3)):
