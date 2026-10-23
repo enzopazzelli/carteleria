@@ -53,6 +53,9 @@ export default function GruposTab() {
   // Marcada por defecto (Enzo, 2026-10-14). En los materiales con veta el
   // servidor no la aplica.
   const [giroLibre, setGiroLibre] = useState(true);
+  // Marcada por defecto (Enzo, 2026-10-22, A10): la comparación aprovecha
+  // los huecos igual que el anidado. Solo con Sparrow.
+  const [usarHuecos, setUsarHuecos] = useState(true);
   const [error, setError] = useState<QueMostrar | null>(null);
   const [piezasInvalidas, setPiezasInvalidas] = useState<number[]>([]);
   const [seleccionadas, setSeleccionadas] = useState<Set<number>>(new Set());
@@ -154,7 +157,7 @@ export default function GruposTab() {
     setResultado(null);
     try {
       const arrancada = await iniciarComparacion.mutateAsync({ grupoId, formatoIds: candidatos,
-        opciones: { motor, semilla, segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion, vaciar_chapas: vaciarChapas, giro_libre: giroLibre, criterio: "material" } });
+        opciones: { motor, semilla, segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion, vaciar_chapas: vaciarChapas, giro_libre: giroLibre, usar_anidado_en_huecos: usarHuecos && motor === "sparrow", criterio: "material" } });
       // La recién arrancada es la última del grupo, y ya está corriendo: así
       // «Comparar» no vuelve a habilitarse hasta la primera consulta, y al
       // volver al grupo no se retoma una anterior.
@@ -346,10 +349,17 @@ export default function GruposTab() {
                     <input type="checkbox" checked={giroLibre} onChange={(e) => setGiroLibre(e.target.checked)} />
                     Girar a cualquier ángulo
                   </label>
+                  <label
+                    className="flex items-center gap-1 cursor-pointer"
+                    title="Mete las piezas chicas en los huecos de las grandes antes de acomodar"
+                  >
+                    <input type="checkbox" checked={usarHuecos} onChange={(e) => setUsarHuecos(e.target.checked)} />
+                    Aprovechar huecos
+                  </label>
                 </>}
               </fieldset>
               <p className="text-sm mb-3">Se usan los parámetros de corte de cada material. La comparación no guarda un plano; luego ejecutá el mismo motor en Anidado.</p>
-              {motor === "sparrow" && <p className="text-sm mb-3">Calcula siluetas reales, sin la pasada en huecos. Los formatos se procesan uno por uno{candidatos.length > 0 ? `; puede demorar hasta ${candidatos.length * limite} segundos más la validación de geometría` : ""}.</p>}
+              {motor === "sparrow" && <p className="text-sm mb-3">Calcula siluetas reales. Los formatos se procesan uno por uno{candidatos.length > 0 ? `; puede demorar hasta ${candidatos.length * limite} segundos más la validación de geometría` : ""}.</p>}
               {cargando && <p className="text-sm mb-3">Cargando materiales y formatos…</p>}
               {!cargando && !errorCatalogo && formatos.length === 0 && <p className="text-sm mb-3">No hay formatos en el catálogo.</p>}
               {!cargando && formatos.length > 0 && (

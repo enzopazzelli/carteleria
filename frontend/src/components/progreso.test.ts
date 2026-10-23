@@ -5,7 +5,7 @@ import { minutosYSegundos, porcentajeDeProgreso, textoDeProgreso } from "./progr
 function progreso(extra: Partial<Progreso> = {}): Progreso {
   return {
     segundos: 80, maximo: 240, fase: null, pasada: null, pasadas: null,
-    mejor_chapas: null, formato: null, formatos: null, descripcion: null, ...extra,
+    mejor_chapas: null, huecos: null, huecos_total: null, formato: null, formatos: null, descripcion: null, ...extra,
   };
 }
 
@@ -49,6 +49,24 @@ describe("textoDeProgreso", () => {
   it("dice cuando está vaciando chapas, y una chapa en singular", () => {
     expect(textoDeProgreso(progreso({ pasada: 1, pasadas: 3, fase: "vaciar", mejor_chapas: 1 }))).toBe(
       "Pasada 1 de 3, vaciando chapas · mejor: 1 chapa · 1:20 de 4:00",
+    );
+  });
+
+  it("en la fase de huecos dice cuántos lleva de cuántos", () => {
+    expect(textoDeProgreso(progreso({ fase: "huecos", huecos: 12, huecos_total: 39, pasadas: 3, segundos: 3 }))).toBe(
+      "Metiendo piezas en los huecos: 12 de 39 · 0:03 de 4:00",
+    );
+  });
+
+  it("sin el total todavía, dice solo que está metiendo piezas en los huecos", () => {
+    expect(textoDeProgreso(progreso({ fase: "huecos", huecos: 0, huecos_total: null, segundos: 3 }))).toBe(
+      "Metiendo piezas en los huecos · 0:03 de 4:00",
+    );
+  });
+
+  it("después de los huecos ya no los nombra", () => {
+    expect(textoDeProgreso(progreso({ fase: "pasada", pasada: 1, pasadas: 3, huecos: 39, huecos_total: 39, segundos: 3 }))).toBe(
+      "Pasada 1 de 3 · 0:03 de 4:00",
     );
   });
 

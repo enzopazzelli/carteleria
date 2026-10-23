@@ -20,6 +20,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .. import config
 from ..modelos.base import inicializar
 from ..registro import configurar_registro
+from . import rutas_nesting
+from .dependencias import obtener_sesion
 from .manejadores import registrar_manejadores
 from .rutas_ajuste import router as router_ajuste
 from .rutas_catalogo import router as router_catalogo
@@ -37,6 +39,12 @@ async def _ciclo_de_vida(app: FastAPI) -> AsyncIterator[None]:
     # (`alembic upgrade head`) — esta app nunca llama `create_all`.
     inicializar()
     configurar_registro(config.DIRECTORIO_REGISTRO, config.TAMANO_REGISTRO_BYTES, config.ARCHIVOS_DE_REGISTRO)
+    # Los anidados que corrían cuando se cerró no siguen (A10). Solo con la
+    # base de verdad: una prueba arranca la app con otra
+    # (`dependency_overrides`) y no tiene que tocar la de `Sesion`, que
+    # puede ser la real.
+    if obtener_sesion not in app.dependency_overrides:
+        rutas_nesting.cortar_corridas_colgadas()
     yield
 
 

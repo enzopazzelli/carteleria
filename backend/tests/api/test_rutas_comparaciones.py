@@ -267,3 +267,43 @@ def test_una_comparacion_terminada_no_trae_progreso_aunque_la_memoria_no_lo_haya
     assert final["estado"] == "lista", final["error"]
     assert en_memoria is not None, "la prueba necesita que la memoria todavía lo tenga"
     assert final["progreso"] is None
+
+
+# --- Aprovechar huecos primero (A10) -----------------------------------------
+from .test_rutas_nesting import _trabajo_con_pieza_hueca_y_pieza_chica  # noqa: E402
+
+
+def _chapa_justa(cliente, grupo) -> int:
+    """De 230 x 230: con margen 10 y kerf 2 queda un lugar de 208, donde la
+    pieza de 200 entra pero la de 30 no entra al lado: juntas, solo con la
+    chica adentro del hueco."""
+    material_id = cliente.get(f"/formatos/{grupo['formato_id']}").json()["material_id"]
+    return cliente.post(f"/materiales/{material_id}/formatos", json={
+        "ancho_mm": "230", "alto_mm": "230", "unidad_venta": "M2", "costo_unidad_venta": "10",
+    }).json()["id"]
+
+
+@pytest.mark.parametrize("huecos,chapas", [(False, 2), (True, 1)])
+def test_la_comparacion_con_huecos_mete_la_chica_en_el_hueco(cliente, tmp_path, huecos, chapas):
+    _trabajo, grupo = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+    pedido = {**_SPARROW_RAPIDO, "formato_ids": [_chapa_justa(cliente, grupo)], "usar_anidado_en_huecos": huecos}
+
+    arrancada = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json=pedido)
+    final = _esperar_comparacion(cliente, arrancada.json()["id"])
+
+    assert arrancada.status_code == 202, mensaje_de(arrancada)
+    assert final["estado"] == "lista", final["error"]
+    [fila] = final["opciones"]
+    assert fila["planchas_usadas"] == chapas
+
+
+def test_la_comparacion_rectangular_con_huecos_se_rechaza(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+    pedido = {"motor": "rectpack", "formato_ids": [grupo["formato_id"]], "usar_anidado_en_huecos": True}
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json=pedido)
+
+    assert respuesta.status_code == 400
+    assert mensaje_de(respuesta) == (
+        '"Aprovechar huecos" no funciona con el motor rectangular: destildá esa opción o elegí el otro motor.'
+    )

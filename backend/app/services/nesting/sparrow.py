@@ -10,6 +10,7 @@ from ...mensajes import Aviso, ErrorPrevisto
 from ...registro import registro
 from .models import ResultadoAnidado, PosicionPieza, RotacionPermitida
 from .geometria_material import poligono_material
+from .huecos_primero import AREA_MINIMA_HUECO_MM2
 
 class ErrorGeometriaSparrow(ValueError):
     def __init__(self, ids):
@@ -70,6 +71,10 @@ class OpcionesSparrow:
     #: Marcada por defecto (Enzo, 2026-10-14). Con veta no se aplica: el
     #: material solo gira media vuelta.
     giro_libre: bool = True
+    #: Meter las piezas chicas en los huecos de las grandes antes de
+    #: acomodar (A10, `huecos_primero.py`). El mismo nombre que en la API y
+    #: en las corridas guardadas, para que pasen sin traducir.
+    usar_anidado_en_huecos: bool = False
 
 def ruta_de_avisos(salida):
     """Dónde deja el worker sus avisos, al lado de su resultado. Los escribe
@@ -142,7 +147,7 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
     if not items: raise ErrorPrevisto('No hay piezas para anidar.')
     # «¿Entra en la chapa?» se decide con cuartos de vuelta aunque gire
     # libre: una pieza que solo entra en diagonal se sigue mandando a seccionar.
-    return {'items':items,'width':width,'height':height,'borde':borde,'gap':gap,'rotations':_rotaciones_para_buscar(params,opciones),'options':vars(opciones),'normalizadas':normalizadas}
+    return {'items':items,'width':width,'height':height,'borde':borde,'gap':gap,'rotations':_rotaciones_para_buscar(params,opciones),'options':vars(opciones),'normalizadas':normalizadas,'area_minima_hueco_mm2':AREA_MINIMA_HUECO_MM2}
 
 def convertir_y_validar(entrada, placed):
     expected={p['id'] for p in entrada['items']}
@@ -228,7 +233,7 @@ def _leer_progreso(out):
     except (OSError,ValueError):
         return None
     if not isinstance(datos,dict): return None
-    return {k:datos[k] for k in ('fase','pasada','pasadas','mejor_chapas') if k in datos}
+    return {k:datos[k] for k in ('fase','pasada','pasadas','mejor_chapas','huecos','huecos_total') if k in datos}
 
 def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lambda:False,al_avanzar=None):
     opciones=opciones or OpcionesSparrow()

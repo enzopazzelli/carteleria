@@ -4,6 +4,7 @@ from pathlib import Path
 from shapely.geometry import Polygon
 from shapely import affinity
 from .geometria_material import poligono_material
+from .huecos_primero import AREA_MINIMA_HUECO_MM2, expandir, meter_en_huecos
 
 def formas(data):
     """`(originales, de_busqueda)` por id: el material real de cada pieza,
@@ -95,9 +96,6 @@ def resolver(data, salida=None):
     opts=data['options']
     inicio=time.monotonic(); best=None; score=None; duracion=0
     limite=inicio+opts['tiempo_maximo_s']-1
-    # Cota física por área exterior: Sparrow reserva las siluetas completas.
-    area=sum(Polygon(p['shell']).area for p in data['items'])
-    minimo=max(1,math.ceil(area/(data['width']*data['height'])))
     avisos=[]
     def avisar(texto):
         # Se escriben en el momento: si el supervisor corta por tiempo, ya
@@ -122,23 +120,52 @@ def resolver(data, salida=None):
             temporal.write_text(json.dumps(avance),encoding='utf8');temporal.replace(ruta)
         except OSError as error:
             print('avanzar:',error,file=sys.stderr)
+    adentro=[]
+    if opts.get('usar_anidado_en_huecos'):
+        # Antes de acomodar, las piezas chicas a los huecos de las grandes
+        # (A10): lo que entra no ocupa lugar propio. Hasta la mitad del
+        # tiempo, para que quede tiempo para acomodar.
+        tope=inicio+opts['tiempo_maximo_s']/2
+        avanzar(fase='huecos',huecos=0,huecos_total=None)
+        try:
+            adentro=meter_en_huecos(data['items'],data['gap'],data['rotations'],data.get('area_minima_hueco_mm2',AREA_MINIMA_HUECO_MM2),
+                al_avanzar=lambda hechos,total:avanzar(huecos=hechos,huecos_total=total),
+                seguir=lambda:time.monotonic()<tope)
+        except (KeyboardInterrupt,SystemExit):raise
+        except BaseException as error:
+            # Viene marcado por defecto: una falla de este paso no tira un
+            # anidado que sin huecos sale bien. La causa queda en el
+            # registro del worker; el aviso, para quien anida.
+            print('meter_en_huecos:',repr(error),file=sys.stderr)
+            avisar('No se pudieron meter piezas en los huecos: se acomodó sin aprovecharlos.')
+            adentro=[]
+        if len(adentro)==1:avisar('1 pieza va adentro del hueco de otra: no ocupa lugar propio en la chapa.')
+        elif adentro:avisar(f'{len(adentro)} piezas van adentro de huecos de otras: no ocupan lugar propio en la chapa.')
+    # Sparrow acomoda los bloques: cada pieza que quedó afuera, con lo que
+    # tiene adentro. Lo de adentro vuelve con `expandir` antes de validar.
+    de_adentro={a.id for a in adentro}
+    bloques={**data,'items':[p for p in data['items'] if p['id'] not in de_adentro]}
+    # Cota física por área exterior: Sparrow reserva las siluetas completas.
+    area=sum(Polygon(p['shell']).area for p in bloques['items'])
+    minimo=max(1,math.ceil(area/(data['width']*data['height'])))
     def considerar(candidato):
         nonlocal best,score
-        convertir_y_validar(data,candidato)  # Nunca guardar demanda parcial o colocaciones inválidas.
-        rank=puntaje(candidato,data)
+        completo=expandir(candidato,adentro)
+        convertir_y_validar(data,completo)  # Nunca guardar demanda parcial o colocaciones inválidas.
+        rank=puntaje(completo,data)
         if score is None or rank<score:
             # Primero se escribe y después se lo da por mejor: si escribir
             # falla, uno peor que este pero mejor que el escrito todavía
             # tiene que poder escribirse.
             if salida:
                 temporal=salida.with_suffix('.tmp')
-                temporal.write_text(json.dumps(candidato),encoding='utf8');temporal.replace(salida)
-            best=candidato;score=rank
+                temporal.write_text(json.dumps(completo),encoding='utf8');temporal.replace(salida)
+            best=completo;score=rank
             avanzar(mejor_chapas=score[0])
     for intento in range(opts.get('intentos',3)):
         # No empezar una pasada que no va a terminar antes del límite.
         if intento and time.monotonic()+duracion>=limite: break
-        prueba={**data,'options':{**opts,'semilla':(opts['semilla']+104729*intento)%2147483648}}
+        prueba={**bloques,'options':{**opts,'semilla':(opts['semilla']+104729*intento)%2147483648}}
         avanzar(fase='pasada',pasada=intento+1)
         t0=time.monotonic()
         try:

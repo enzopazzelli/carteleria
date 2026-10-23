@@ -284,7 +284,7 @@ Se detallan cuando les toque, cada una con su diseño.
 
 | Orden | Qué | Estado |
 |---|---|---|
-| 1 | **Aprovechar huecos primero (A10):** meter las piezas chicas en los huecos de las grandes antes de acomodar; con la barra, cancelar y el tiempo máximo; en Ajuste lo de adentro se mueve con su pieza; los anidados que quedaron colgados al cerrar el servidor pasan a error | Diseño aprobado y plan escrito: [`A10-huecos-primero/`](A10-huecos-primero/diseno.md) |
+| 1 | **Aprovechar huecos primero (A10):** meter las piezas chicas en los huecos de las grandes antes de acomodar; con la barra, cancelar y el tiempo máximo; en Ajuste lo de adentro se mueve con su pieza; los anidados que quedaron colgados al cerrar el servidor pasan a error | **Construido el 2026-10-22** en la rama `feat/huecos-primero`, con recorrido y revisión aparte; falta fusionar. Mediciones y pendientes en los «Desvíos» de su [`plan.md`](A10-huecos-primero/plan.md) |
 | 2 | **Complejo con giro libre:** Sparrow inclina los tramos del aro (1193 × 2361) y ya no entran en la chapa; por eso la comparación terminaba enseguida y el anidado fallaba. Las piezas que no entran a cualquier ángulo giran solo de a cuartos de vuelta | Causa comprobada; falta diseño corto |
 | 3 | **Varios anidados a la vez:** confirmar con una prueba de tres en simultáneo | Después de 1 |
 | 4 | **El material usado en Ancho × Alto,** y hacia qué lado de la chapa se apilan las piezas | Falta decidir qué se muestra |

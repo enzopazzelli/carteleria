@@ -543,3 +543,100 @@ def test_sin_avisos_si_no_hubo_nada_que_avisar():
     resultado = anidar_sparrow(*datos(3), OpcionesSparrow(segundos_por_busqueda=1, tiempo_maximo_s=20, simplificacion_mm=0))
 
     assert not any("Sparrow" in str(a) for a in resultado.advertencias)
+
+
+# --- Aprovechar huecos primero (A10) -----------------------------------------
+from app.services.nesting.sparrow import ruta_de_progreso, _leer_progreso
+
+
+def cuadrado_d(lado, desde=0):
+    return [(D(desde), D(desde)), (D(desde + lado), D(desde)), (D(desde + lado), D(desde + lado)), (D(desde), D(desde + lado))]
+
+
+def entrada_aro_y_cuadrado(huecos, **opciones):
+    """Un aro de 90 con un hueco de 60 y un cuadrado de 50, en una chapa de
+    100 x 100 con kerf 2: juntos no entran, salvo con el cuadrado adentro."""
+    piezas = [Pieza('1', D(90), D(90)), Pieza('2', D(50), D(50))]
+    g = {'1': GeometriaPieza(D(90), D(90), cuadrado_d(90), [cuadrado_d(60, 15)]),
+         '2': GeometriaPieza(D(50), D(50), cuadrado_d(50))}
+    params = ParametrosCorte(D(2), D(0), D(0), RotacionPermitida.LIBRE_0_90)
+    return preparar_entrada(piezas, g, Plancha(D(100), D(100)), params, OpcionesSparrow(
+        segundos_por_busqueda=1, simplificacion_mm=0, tiempo_maximo_s=30, usar_anidado_en_huecos=huecos, **opciones))
+
+
+def test_con_huecos_el_cuadrado_va_adentro_y_alcanza_una_chapa():
+    entrada = entrada_aro_y_cuadrado(True)
+    colocadas = sparrow_worker.resolver(entrada)
+    assert chapas_usadas(colocadas) == 1
+    assert convertir_y_validar(entrada, colocadas).planchas_usadas == 1
+
+
+def test_sin_huecos_usa_dos_chapas():
+    assert chapas_usadas(sparrow_worker.resolver(entrada_aro_y_cuadrado(False))) == 2
+
+
+def test_sin_ningun_hueco_no_avisa_nada(tmp_path):
+    entrada = entrada_de_cuadrados(4, usar_anidado_en_huecos=True, tiempo_maximo_s=30)
+    salida = tmp_path / 'salida.json'
+    colocadas = sparrow_worker.resolver(entrada, salida)
+    assert chapas_usadas(colocadas) == 1
+    assert not ruta_de_avisos(salida).exists()
+
+
+def test_el_aviso_dice_cuantas_van_adentro(tmp_path):
+    salida = tmp_path / 'salida.json'
+    sparrow_worker.resolver(entrada_aro_y_cuadrado(True), salida)
+    assert avisos_escritos(salida) == ['1 pieza va adentro del hueco de otra: no ocupa lugar propio en la chapa.']
+
+
+def test_la_barra_pasa_por_la_fase_de_huecos(tmp_path, monkeypatch):
+    salida = tmp_path / 'salida.json'
+    leido = []
+
+    def falso(*args, al_avanzar, seguir, **kwargs):
+        al_avanzar(1, 1)
+        leido.append(json.loads(ruta_de_progreso(salida).read_text(encoding='utf8')))
+        return []
+
+    monkeypatch.setattr(sparrow_worker, 'meter_en_huecos', falso)
+    sparrow_worker.resolver(entrada_aro_y_cuadrado(True), salida)
+    [progreso] = leido
+    assert (progreso['fase'], progreso['huecos'], progreso['huecos_total']) == ('huecos', 1, 1)
+
+
+def test_leer_progreso_deja_pasar_los_huecos(tmp_path):
+    salida = tmp_path / 'salida.json'
+    ruta_de_progreso(salida).write_text(json.dumps({'fase': 'huecos', 'huecos': 3, 'huecos_total': 9}), encoding='utf8')
+    assert _leer_progreso(salida) == {'fase': 'huecos', 'huecos': 3, 'huecos_total': 9}
+
+
+@pytest.mark.parametrize('maximo,sigue', [(240, True), (0, False)])
+def test_el_paso_de_huecos_para_a_la_mitad_del_tiempo(monkeypatch, maximo, sigue):
+    visto = []
+
+    def falso(*args, al_avanzar, seguir, **kwargs):
+        visto.append(seguir())
+        return []
+
+    monkeypatch.setattr(sparrow_worker, 'meter_en_huecos', falso)
+    sparrow_worker.resolver(entrada_de_cuadrados(1, usar_anidado_en_huecos=True, tiempo_maximo_s=maximo))
+    assert visto == [sigue]
+
+
+def test_si_el_paso_de_huecos_falla_se_acomoda_sin_huecos_y_se_avisa(tmp_path, monkeypatch, capsys):
+    """La casilla viene marcada por defecto: una falla del paso nuevo no
+    puede tirar un anidado que sin huecos sale bien (revisión de A10). La
+    causa va al registro del worker, no al aviso."""
+    def falla(*args, **kwargs):
+        raise ValueError('falla de prueba')
+
+    monkeypatch.setattr(sparrow_worker, 'meter_en_huecos', falla)
+    entrada = entrada_aro_y_cuadrado(True)
+    salida = tmp_path / 'salida.json'
+
+    colocadas = sparrow_worker.resolver(entrada, salida)
+
+    assert chapas_usadas(colocadas) == 2
+    assert convertir_y_validar(entrada, colocadas).planchas_usadas == 2
+    assert avisos_escritos(salida) == ['No se pudieron meter piezas en los huecos: se acomodó sin aprovecharlos.']
+    assert 'falla de prueba' in capsys.readouterr().err

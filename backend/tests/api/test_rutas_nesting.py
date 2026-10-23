@@ -395,7 +395,7 @@ def test_cors_permite_origen_del_frontend_local(cliente):
 def _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path) -> tuple[dict, dict]:
     """Un grupo listo para anidar con dos piezas: una grande con un
     agujero real de 60×60 mm, y una chica de 30×30 que entra adentro de
-    ese agujero. Es el caso mínimo que ejercita `anidado_huecos.py`."""
+    ese agujero. Es el caso mínimo de aprovechar huecos (A10)."""
     _material, formato = _material_con_formato_y_parametros(cliente)
     trabajo = cliente.post("/trabajos", json={"nombre": "Con hueco"}).json()
 
@@ -423,28 +423,32 @@ def _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path) -> tuple[dict, dic
     return trabajo, grupo
 
 
+#: Sparrow con una búsqueda corta: aprovechar huecos es solo con Sparrow (A10).
+SPARROW_RAPIDO = {"motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20, "simplificacion_mm": 0}
+
+
 def test_anidar_sin_el_flag_no_usa_huecos_y_guarda_la_opcion_en_falso(cliente, tmp_path):
-    """El default es apagado: el resultado tiene que ser el del motor
-    crudo, sin la advertencia de reubicación de la Capa 2."""
+    """El default de la API es apagado: sin el aviso de las piezas que van
+    adentro de huecos."""
     _trabajo, grupo = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
 
-    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json={})
-    final = _esperar_estado(cliente, encolada.json()["id"])
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json=SPARROW_RAPIDO)
+    final = _esperar_estado(cliente, encolada.json()["id"], timeout=30)
 
-    assert final["estado"] == "lista"
-    assert final["opciones"] == {"usar_anidado_en_huecos": False}
-    assert not any("reubicada" in aviso["mensaje"] for aviso in (final["mensajes"] or []))
+    assert final["estado"] == "lista", final["error"]
+    assert final["opciones"]["usar_anidado_en_huecos"] is False
+    assert not any("adentro del hueco" in aviso["mensaje"] for aviso in (final["mensajes"] or []))
 
 
-def test_anidar_con_el_flag_reubica_la_pieza_chica_dentro_del_agujero(cliente, tmp_path):
+def test_anidar_con_el_flag_mete_la_pieza_chica_dentro_del_agujero(cliente, tmp_path):
     trabajo, grupo = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
 
-    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json={"usar_anidado_en_huecos": True})
-    final = _esperar_estado(cliente, encolada.json()["id"])
+    encolada = cliente.post(f"/grupos/{grupo['id']}/anidar", json={**SPARROW_RAPIDO, "usar_anidado_en_huecos": True})
+    final = _esperar_estado(cliente, encolada.json()["id"], timeout=30)
 
-    assert final["estado"] == "lista"
-    assert final["opciones"] == {"usar_anidado_en_huecos": True}
-    assert any("reubicada" in aviso["mensaje"] for aviso in (final["mensajes"] or []))
+    assert final["estado"] == "lista", final["error"]
+    assert final["opciones"]["usar_anidado_en_huecos"] is True
+    assert any("adentro del hueco" in aviso["mensaje"] for aviso in (final["mensajes"] or []))
 
     piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
     chica = next(p for p in piezas if Decimal(p["ancho_mm"]) == Decimal("30"))
@@ -480,17 +484,28 @@ def test_meter_una_pieza_en_un_hueco_no_cambia_el_aprovechamiento_si_no_ahorra_p
     por rectángulo, la contenedora reclamaba su propio agujero como
     material suyo y el número se movía sin que cambiara nada físico."""
     _trabajo_a, grupo_a = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
-    sin_flag = cliente.post(f"/grupos/{grupo_a['id']}/anidar", json={}).json()["id"]
-    final_sin = _esperar_estado(cliente, sin_flag)
+    sin_flag = cliente.post(f"/grupos/{grupo_a['id']}/anidar", json=SPARROW_RAPIDO).json()["id"]
+    final_sin = _esperar_estado(cliente, sin_flag, timeout=30)
 
     _trabajo_b, grupo_b = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
     con_flag = cliente.post(
-        f"/grupos/{grupo_b['id']}/anidar", json={"usar_anidado_en_huecos": True}
+        f"/grupos/{grupo_b['id']}/anidar", json={**SPARROW_RAPIDO, "usar_anidado_en_huecos": True}
     ).json()["id"]
-    final_con = _esperar_estado(cliente, con_flag)
+    final_con = _esperar_estado(cliente, con_flag, timeout=30)
 
     assert final_con["planchas_usadas"] == final_sin["planchas_usadas"]
     assert Decimal(final_con["aprovechamiento_pct"]) == Decimal(final_sin["aprovechamiento_pct"])
+
+
+def test_rectangular_con_huecos_se_rechaza(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={"usar_anidado_en_huecos": True})
+
+    assert respuesta.status_code == 400
+    assert mensaje_de(respuesta) == (
+        '"Aprovechar huecos" no funciona con el motor rectangular: destildá esa opción o elegí el otro motor.'
+    )
 
 
 # --- Listar historial de ejecuciones ------
@@ -843,7 +858,9 @@ def test_mientras_corre_el_anidado_trae_su_progreso_y_al_terminar_no(cliente, tm
     seguir.set()
     final = _esperar_estado(cliente, ejecucion["id"], timeout=20)
 
-    assert en_curso["progreso"] == {**avance, "formato": None, "formatos": None, "descripcion": None}
+    assert en_curso["progreso"] == {
+        **avance, "huecos": None, "huecos_total": None, "formato": None, "formatos": None, "descripcion": None,
+    }
     assert final["estado"] == "lista", final.get("error")
     assert final["progreso"] is None
 
@@ -979,3 +996,56 @@ def test_si_falla_algo_despues_del_calculo_la_corrida_igual_termina_en_error(cli
     assert final["error"]["mensaje"] == MENSAJE_INESPERADO
     assert "falla al medir" in final["error"]["detalle"]
     assert "falla al medir" in caplog.text
+
+
+# --- Corridas colgadas al arrancar (A10) --------------------------------------
+
+CORTADA_AL_CERRAR = "Se cortó porque el programa se cerró mientras calculaba: volvé a calcularlo."
+
+
+def test_al_arrancar_las_corridas_colgadas_pasan_a_error(cliente, tmp_path):
+    from app.api.rutas_nesting import cortar_corridas_colgadas
+
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    with Sesion() as sesion:
+        corridas = [
+            EjecucionNesting(grupo_id=grupo["id"], motor="sparrow", estado=estado.value)
+            for estado in (EstadoEjecucion.CORRIENDO, EstadoEjecucion.ENCOLADA, EstadoEjecucion.LISTA)
+        ]
+        sesion.add_all(corridas)
+        sesion.commit()
+        ids = [c.id for c in corridas]
+
+    assert cortar_corridas_colgadas() == 2
+
+    for colgada in ids[:2]:
+        cuerpo = cliente.get(f"/ejecuciones/{colgada}").json()
+        assert cuerpo["estado"] == "error"
+        assert cuerpo["error"]["mensaje"] == CORTADA_AL_CERRAR
+    assert cliente.get(f"/ejecuciones/{ids[2]}").json()["estado"] == "lista"
+
+
+def test_el_arranque_corta_las_colgadas_solo_con_la_base_de_verdad(monkeypatch):
+    """Una prueba arranca la app con otra base (`dependency_overrides`):
+    ahí no se toca la base de `Sesion`, que puede ser la real."""
+    import importlib
+
+    from app.api import rutas_nesting
+
+    modulo = importlib.import_module("app.api.app")
+    llamadas = []
+    monkeypatch.setattr(rutas_nesting, "cortar_corridas_colgadas", lambda: llamadas.append(1) or 0)
+    monkeypatch.setattr(modulo, "inicializar", lambda: None)
+    monkeypatch.setattr(modulo, "configurar_registro", lambda *args: None)
+
+    with TestClient(modulo.app):
+        pass
+    assert llamadas == [1]
+
+    modulo.app.dependency_overrides[obtener_sesion] = lambda: None
+    try:
+        with TestClient(modulo.app):
+            pass
+    finally:
+        modulo.app.dependency_overrides.pop(obtener_sesion, None)
+    assert llamadas == [1]

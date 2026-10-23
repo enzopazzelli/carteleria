@@ -65,7 +65,7 @@ Los tres parámetros de corte se aplican por geometría, no como opciones del al
 - **No optimiza el corte compartido.** Un packer tipo guillotina *tiende* a alinear bordes por su propia mecánica, pero no lo busca ni lo mide.
 - **Solo rota 0°/90°.** `ADR-01`.
 
-**Lo que se le agregó encima** (`anidado_huecos.py`, la Capa 2 de [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](../historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md)): una segunda pasada *greedy* que, sobre el resultado ya anidado, intenta meter piezas chicas dentro de los agujeros reales de las ya colocadas. Prueba una grilla de posiciones y varios ángulos, y compara dos planes por hueco. **No es una optimización conjunta** — es un rescate posterior, sobre decisiones que el packer ya tomó mirando solo rectángulos.
+**Lo que se le había agregado encima** (borrado el 2026-10-22 en A10: ahora las piezas se meten en los huecos *antes* de acomodar, y solo con Sparrow, en `huecos_primero.py`; ver [`plan/A10-huecos-primero/diseno.md`](../plan/A10-huecos-primero/diseno.md)) (`anidado_huecos.py`, la Capa 2 de [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](../historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md)): una segunda pasada *greedy* que, sobre el resultado ya anidado, intenta meter piezas chicas dentro de los agujeros reales de las ya colocadas. Prueba una grilla de posiciones y varios ángulos, y compara dos planes por hueco. **No es una optimización conjunta** — es un rescate posterior, sobre decisiones que el packer ya tomó mirando solo rectángulos.
 
 ---
 
@@ -248,7 +248,7 @@ Y hay una tercera forma, que las mediciones hacen visible: **no son excluyentes 
 | | Dónde | Estado |
 |---|---|---|
 | `rectpack` | `backend/app/services/nesting/engine.py` | Producción, con tests |
-| Anidado en huecos (Capa 2) | `backend/app/services/nesting/anidado_huecos.py` | Construido, sin integrar a `aprovechamiento.py` |
+| Anidado en huecos (Capa 2) | `backend/app/services/nesting/anidado_huecos.py` | **Borrado** el 2026-10-22: lo reemplaza `huecos_primero.py` (A10), que llena los huecos antes de acomodar, con Sparrow |
 | Motor Deepnest headless | `nesting-engine/` | **Spike.** Anda, con 5 pruebas de humo verdes |
 | Cliente Python del spike | `backend/app/services/nesting/deepnest_cliente.py` | Spike: habla por `subprocess`, un proceso por corrida |
 | Comparador | `backend/scripts/comparar_motores.py` | Herramienta de decisión, descartable |

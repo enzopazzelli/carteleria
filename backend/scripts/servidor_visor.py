@@ -72,7 +72,6 @@ from _datos_reales import (  # noqa: E402
     piezas_desde_dxf,
 )
 from app.services.nesting.comparador import OpcionFormato  # noqa: E402
-from app.services.nesting.anidado_huecos import anidar_en_huecos  # noqa: E402
 from app.services.nesting.deepnest_cliente import (  # noqa: E402
     ErrorMotorDeepnest,
     OpcionesMotorDeepnest,
@@ -102,7 +101,6 @@ from app.services.nesting.validacion_manual import (  # noqa: E402
 )
 
 PUERTO_DEFAULT = 8765
-_AREA_MINIMA_HUECO_MM2 = Decimal("100")  # PAR-39, provisorio
 
 
 #: Materiales planos que NO son chapa, con las medidas que dio el cliente
@@ -207,29 +205,18 @@ class _Tanda:
             self.posiciones = []
             self.advertencias = [str(error)]
             return
-        # Capa 2 del plan nativo (docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md):
-        # segunda pasada greedy que intenta reubicar piezas ya anidadas
-        # adentro de agujeros reales de otras piezas ya anidadas.
-        antes = {p.pieza_id: p for p in resultado.posiciones}
-        resultado = anidar_en_huecos(
-            resultado, self.geometrias, self.opcion.plancha, self.opcion.params, _AREA_MINIMA_HUECO_MM2
-        )
-        reubicadas = sum(1 for p in resultado.posiciones if p != antes.get(p.pieza_id))
+        # La segunda pasada que metía piezas en los huecos después de
+        # acomodar (`anidado_huecos.py`) se borró en A10: ahora los huecos se
+        # llenan antes, y solo con Sparrow (`huecos_primero.py`). El visor
+        # con el motor rectangular queda sin aprovechar huecos.
         self.posiciones = [posicion_manual_desde_pieza(p) for p in resultado.posiciones]
         self.advertencias = resultado.advertencias
-        if reubicadas:
-            self.advertencias = [
-                f"{reubicadas} pieza(s) reubicada(s) dentro de agujeros de otras piezas (Capa 2).",
-                *self.advertencias,
-            ]
 
     def _recalcular_deepnest(self, registrar_proceso=None) -> None:
         """Anida con el motor irregular (`docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md`).
 
-        No hace falta la Capa 2 (`anidado_huecos`) acá: Deepnest ya
-        considera los agujeros como espacio válido durante la colocación,
-        que es justamente lo que la Capa 2 aproxima a posteriori para
-        `rectpack`.
+        Deepnest ya considera los agujeros como espacio válido durante la
+        colocación.
 
         Es MUCHO más lento que `rectpack` — de segundos a minutos, contra
         milisegundos — así que el tiempo se reporta como advertencia: sin
