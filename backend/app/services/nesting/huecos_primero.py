@@ -1,4 +1,4 @@
-"""Aprovechar huecos primero (A10, `docs/plan/A10-huecos-primero/diseno.md`).
+"""Aprovechar huecos primero (A10, `docs/historico/A10-huecos-primero/diseno.md`).
 
 Antes de acomodar, mete las piezas chicas en los huecos de las grandes, con
 cada pieza en su propio marco y sin chapa todavía. Lo que entra en un hueco

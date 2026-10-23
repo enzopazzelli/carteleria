@@ -339,7 +339,7 @@ La pasada vieja, sola, tardaba 236 s con el parador (518 s en la reunión, con t
 | Entran a lo sumo 17 piezas por hueco (una grilla fija de 4 × 4 más el centro): un marco o una letra grande no se llena entero. Una grilla más densa según el tamaño del hueco | Revisión de la rama |
 | Con giro libre no se prueban 180°, 270° ni el ángulo del hueco más 180°: una pieza no simétrica (una «L») que entraría dada vuelta queda afuera | Revisión de la rama |
 | Confirmar con el taller si la máquina corta en el orden del archivo (lo de adentro primero) o lo decide sola; y si importa que el contorno de una pieza vaya antes que sus propios huecos | §5.5 del diseño |
-| Si se retira el visor viejo (`Visor de anidado.cmd`), que usa el motor rectangular y ahora no aprovecha huecos | Revisión de la rama; decisión de Enzo |
+| El visor viejo (`Visor de anidado.cmd`) sigue: Enzo pidió ponerlo al día sumándole Sparrow con «Aprovechar huecos», con el mismo cálculo que la app | Revisión de la rama; decisión de Enzo (2026-10-22) |
 | Con una base sin migrar, el servidor no arranca: la limpieza de corridas colgadas corre sin protección | Revisión de la rama |
 | Dos pruebas que conviene completar: que sin huecos el resultado sea el mismo con y sin la casilla, y el control de la pieza de adentro cuando el bloque pisa algo | Revisión de la rama |
 | La pantalla de Ajuste mueve lo de adentro recién cuando vuelve la respuesta, no mientras se arrastra | Aclaración 4 |

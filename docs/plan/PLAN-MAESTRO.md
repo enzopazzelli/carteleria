@@ -284,12 +284,24 @@ Se detallan cuando les toque, cada una con su diseño.
 
 | Orden | Qué | Estado |
 |---|---|---|
-| 1 | **Aprovechar huecos primero (A10):** meter las piezas chicas en los huecos de las grandes antes de acomodar; con la barra, cancelar y el tiempo máximo; en Ajuste lo de adentro se mueve con su pieza; los anidados que quedaron colgados al cerrar el servidor pasan a error | **Construido el 2026-10-22** en la rama `feat/huecos-primero`, con recorrido y revisión aparte; falta fusionar. Mediciones y pendientes en los «Desvíos» de su [`plan.md`](A10-huecos-primero/plan.md) |
+| 1 | **Aprovechar huecos primero (A10):** meter las piezas chicas en los huecos de las grandes antes de acomodar; con la barra, cancelar y el tiempo máximo; en Ajuste lo de adentro se mueve con su pieza; los anidados que quedaron colgados al cerrar el servidor pasan a error | **En `main` desde el 2026-10-22 y cerrado:** [`historico/A10-huecos-primero/`](../historico/A10-huecos-primero/diseno.md). Mediciones en los «Desvíos» de su [`plan.md`](../historico/A10-huecos-primero/plan.md); lo que quedó vivo, en la tabla de abajo |
 | 2 | **Complejo con giro libre:** Sparrow inclina los tramos del aro (1193 × 2361) y ya no entran en la chapa; por eso la comparación terminaba enseguida y el anidado fallaba. Las piezas que no entran a cualquier ángulo giran solo de a cuartos de vuelta | Causa comprobada; falta diseño corto |
 | 3 | **Varios anidados a la vez:** confirmar con una prueba de tres en simultáneo | Después de 1 |
 | 4 | **El material usado en Ancho × Alto,** y hacia qué lado de la chapa se apilan las piezas | Falta decidir qué se muestra |
 | 5 | **El diseño anidado también en PDF,** además del DXF para la máquina | Falta diseño |
 | — | Colores de referencia por pieza; entrada `.cdr` (hay un estudio previo que funcionó: [`historico/SPIKE-CDR.md`](../historico/SPIKE-CDR.md)) | En espera (Enzo, 2026-10-22) |
+
+**Pendientes de aprovechar huecos primero (A10).** Construido el 2026-10-22, fusionado en `main` ese día y cerrado: [`historico/A10-huecos-primero/`](../historico/A10-huecos-primero/diseno.md). Con el parador, lo ocupado de la chapa bajó de 1103 a 930 mm y el paso de huecos tarda segundos (la pasada vieja, 236 s, y no ganaba nada). Lo que quedó vivo:
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| El visor viejo (`Visor de anidado.cmd`) sigue: sumarle Sparrow con «Aprovechar huecos», con el mismo cálculo que la app. Hoy anida con el rectangular o con Deepnest, sin huecos | Revisión de A10; decisión de Enzo | — |
+| Entran a lo sumo 17 piezas por hueco (una grilla fija de 4 × 4 más el centro): un marco o una letra grande no se llena entero | Revisión de A10 | — |
+| Con giro libre no se prueba meter una pieza dada vuelta (180°, 270°) en un hueco: una pieza no simétrica, como una «L», puede quedar afuera | Revisión de A10 | — |
+| Confirmar con el taller si la máquina corta en el orden del archivo (lo de adentro primero) o lo decide sola, y si importa que el contorno de una pieza vaya antes que sus propios huecos | §5.5 de su diseño | El taller |
+| Con una base sin migrar el servidor no arranca: la limpieza de anidados colgados corre sin protección | Revisión de A10 | — |
+| Dos pruebas para completar: que sin huecos el resultado sea el mismo con y sin la casilla, y el control de la pieza de adentro cuando el bloque pisa algo | Revisión de A10 | — |
+| En Ajuste, lo de adentro aparece en su lugar nuevo recién cuando vuelve la respuesta, no mientras se arrastra | Aclaración 4 de su plan | — |
 
 **Pendientes de los mensajes entendibles (A9).** Construido el 2026-10-22, en `main` desde ese día ([PR #26](https://github.com/enzopazzelli/carteleria/pull/26)) y cerrado: [`historico/A9-mensajes-entendibles/`](../historico/A9-mensajes-entendibles/diseno.md). Resolvió dos pendientes de otras tablas: una chapa de la comparación que no llega a tiempo **falla sola en su fila** y las demás se muestran (antes la comparación entera terminaba en error), y **«Margen %» e «IVA %» aceptan coma** («10,5»). Lo que quedó vivo:
 
