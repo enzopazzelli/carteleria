@@ -621,3 +621,22 @@ def test_el_paso_de_huecos_para_a_la_mitad_del_tiempo(monkeypatch, maximo, sigue
     monkeypatch.setattr(sparrow_worker, 'meter_en_huecos', falso)
     sparrow_worker.resolver(entrada_de_cuadrados(1, usar_anidado_en_huecos=True, tiempo_maximo_s=maximo))
     assert visto == [sigue]
+
+
+def test_si_el_paso_de_huecos_falla_se_acomoda_sin_huecos_y_se_avisa(tmp_path, monkeypatch, capsys):
+    """La casilla viene marcada por defecto: una falla del paso nuevo no
+    puede tirar un anidado que sin huecos sale bien (revisión de A10). La
+    causa va al registro del worker, no al aviso."""
+    def falla(*args, **kwargs):
+        raise ValueError('falla de prueba')
+
+    monkeypatch.setattr(sparrow_worker, 'meter_en_huecos', falla)
+    entrada = entrada_aro_y_cuadrado(True)
+    salida = tmp_path / 'salida.json'
+
+    colocadas = sparrow_worker.resolver(entrada, salida)
+
+    assert chapas_usadas(colocadas) == 2
+    assert convertir_y_validar(entrada, colocadas).planchas_usadas == 2
+    assert avisos_escritos(salida) == ['No se pudieron meter piezas en los huecos: se acomodó sin aprovecharlos.']
+    assert 'falla de prueba' in capsys.readouterr().err

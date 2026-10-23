@@ -127,9 +127,18 @@ def resolver(data, salida=None):
         # tiempo, para que quede tiempo para acomodar.
         tope=inicio+opts['tiempo_maximo_s']/2
         avanzar(fase='huecos',huecos=0,huecos_total=None)
-        adentro=meter_en_huecos(data['items'],data['gap'],data['rotations'],data.get('area_minima_hueco_mm2',AREA_MINIMA_HUECO_MM2),
-            al_avanzar=lambda hechos,total:avanzar(huecos=hechos,huecos_total=total),
-            seguir=lambda:time.monotonic()<tope)
+        try:
+            adentro=meter_en_huecos(data['items'],data['gap'],data['rotations'],data.get('area_minima_hueco_mm2',AREA_MINIMA_HUECO_MM2),
+                al_avanzar=lambda hechos,total:avanzar(huecos=hechos,huecos_total=total),
+                seguir=lambda:time.monotonic()<tope)
+        except (KeyboardInterrupt,SystemExit):raise
+        except BaseException as error:
+            # Viene marcado por defecto: una falla de este paso no tira un
+            # anidado que sin huecos sale bien. La causa queda en el
+            # registro del worker; el aviso, para quien anida.
+            print('meter_en_huecos:',repr(error),file=sys.stderr)
+            avisar('No se pudieron meter piezas en los huecos: se acomodó sin aprovecharlos.')
+            adentro=[]
         if len(adentro)==1:avisar('1 pieza va adentro del hueco de otra: no ocupa lugar propio en la chapa.')
         elif adentro:avisar(f'{len(adentro)} piezas van adentro de huecos de otras: no ocupan lugar propio en la chapa.')
     # Sparrow acomoda los bloques: cada pieza que quedó afuera, con lo que
