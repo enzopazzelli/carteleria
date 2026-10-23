@@ -1,6 +1,6 @@
 # A10 · Aprovechar huecos primero — diseño
 
-> **Estado:** aprobado por Enzo el 2026-10-22 («Vamos ahora pero sin trabajar sobre el color y los cdr. Primero el motor de anidado, y después lo que sigue»), con un cambio: el motor principal es Sparrow, y el rectangular no aprovecha huecos (§5.2). Sigue el plan.
+> **Estado:** **construido el 2026-10-22** en la rama `feat/huecos-primero`, con recorrido en Chrome y revisión aparte; falta fusionar. Lo que se apartó y lo que quedó pendiente está en los «Desvíos» del [plan](plan.md). Aprobado por Enzo el 2026-10-22 («Vamos ahora pero sin trabajar sobre el color y los cdr. Primero el motor de anidado, y después lo que sigue»), con un cambio: el motor principal es Sparrow, y el rectangular no aprovecha huecos (§5.2). Sigue el plan.
 >
 > **De dónde sale.** La reunión del 2026-10-22. Con «Aprovechar huecos» marcado, el anidado del parador (`Parador corte conjunto.dxf`) dejó la barra quieta en 0:03 y tardó más de 8 minutos. Al buscar la causa apareció algo más importante: aunque termine, hoy aprovechar los huecos no gana nada. Enzo eligió dar vuelta el orden y hacerlo antes que lo demás que pidieron en la reunión (§6). Es del carril del motor, como A5 a A9, y por eso lleva la letra A.
 >

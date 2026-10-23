@@ -298,4 +298,48 @@ Textos exactos:
 
 ## Desvíos
 
-(Se llena al ejecutar.)
+Construido el 2026-10-22, con pausa al final de cada tramo y el ok de Enzo en cada una. Backend 795 en verde, frontend 195, `tsc -b` limpio.
+
+**Decisiones al ejecutar** (el detalle está en el registro de la ejecución):
+
+- **Tarea 3.** La prueba que compara el progreso exacto de un anidado suma `huecos` y `huecos_total`. Salieron de `rutas_nesting.py` tres imports que quedaron sin uso. Las menciones a `anidado_huecos.py` en comentarios de otros archivos quedan como historia.
+- **Tarea 4.** El arranque corta las corridas colgadas **solo si la app usa su base de verdad** (`obtener_sesion` sin reemplazar). Las pruebas arrancan la app con otra base, y en ese momento la de `Sesion` puede ser la real: una prueba corriendo con el servidor de Enzo levantado le habría marcado sus anidados como cortados. Tiene su propia prueba.
+- **Tarea 5.** Lo de adentro sale en una sola pasada por posición: lo que está adentro de una pieza de adentro también está adentro del hueco de la de afuera. Sin giro la cuenta va en `Decimal`; con giro, en `float`, con el ángulo entre 0 y 360.
+- **Tarea 6.** Una pieza cargada a mano cuenta con su rectángulo.
+- **Tarea 7.** En la comparación de Grupos la casilla va con las otras opciones de Sparrow, que con el rectangular se esconden (en Anidado queda gris).
+
+**Mediciones sobre una copia de la base real:**
+
+| Diseño | Sin huecos | Con huecos primero |
+|---|---|---|
+| Parador (52 piezas, 28 con hueco; chapa de 1220 × 2440) | 4,4 s; ocupan 1103 × 2417 mm | 8,3 s (unos 4 s para 28 huecos); 19 piezas adentro; ocupan 930 × 2417 mm |
+| Complejo, «Calibre 22», sin giro libre | 222 s; 8 chapas | 219 s; 8 chapas; ninguna pieza entra en sus 17 huecos |
+| Carrusel (35 piezas, 31 con hueco; escala 10) | 3,1 s; 1 chapa | 4,1 s; 1 chapa; 6 piezas adentro |
+
+La pasada vieja, sola, tardaba 236 s con el parador (518 s en la reunión, con tres a la vez) y no ganaba nada (1137 × 2417 mm).
+
+**Recorrido en Chrome sin ventana** sobre la copia (guion y capturas en `backend/local/herramientas-a10-2026-10-22/`, fuera de git), todo bien y sin errores de consola:
+- el anidado #5, colgado desde la reunión, pasó a error al arrancar, con el texto nuevo;
+- la casilla viene marcada;
+- la barra mostró «Metiendo piezas en los huecos»;
+- el parador terminó en 10,5 s con el aviso de las 19 piezas;
+- cancelar en la fase de huecos dejó «cancelada» a los 225 ms;
+- con el motor rectangular, la casilla queda gris en Anidado («Solo con Sparrow») y desaparece en la comparación;
+- en Ajuste, arrastrar una letra con otra adentro corrió las dos exactamente lo mismo.
+
+**Revisión aparte de la rama:** «con arreglos», nada crítico. Tres arreglos, cada uno con una prueba que falló primero:
+1. El visor (`scripts/servidor_visor.py`, el de `Visor de anidado.cmd`) importaba `anidado_huecos.py` y no abría. Se le sacó la pasada de huecos: con el motor rectangular queda sin aprovechar huecos.
+2. El orden del DXF usaba los huecos crudos. Ahora usa los ya unidos, como el paso de huecos y Ajuste: Corel exporta huecos que se pisan.
+3. Si falla meter piezas en los huecos, el anidado sigue sin ellos y avisa, en lugar de caerse entero: la casilla viene marcada por defecto.
+
+**Lo que quedó pendiente** (pasa al plan maestro):
+
+| Pendiente | De dónde sale |
+|---|---|
+| Entran a lo sumo 17 piezas por hueco (una grilla fija de 4 × 4 más el centro): un marco o una letra grande no se llena entero. Una grilla más densa según el tamaño del hueco | Revisión de la rama |
+| Con giro libre no se prueban 180°, 270° ni el ángulo del hueco más 180°: una pieza no simétrica (una «L») que entraría dada vuelta queda afuera | Revisión de la rama |
+| Confirmar con el taller si la máquina corta en el orden del archivo (lo de adentro primero) o lo decide sola; y si importa que el contorno de una pieza vaya antes que sus propios huecos | §5.5 del diseño |
+| Si se retira el visor viejo (`Visor de anidado.cmd`), que usa el motor rectangular y ahora no aprovecha huecos | Revisión de la rama; decisión de Enzo |
+| Con una base sin migrar, el servidor no arranca: la limpieza de corridas colgadas corre sin protección | Revisión de la rama |
+| Dos pruebas que conviene completar: que sin huecos el resultado sea el mismo con y sin la casilla, y el control de la pieza de adentro cuando el bloque pisa algo | Revisión de la rama |
+| La pantalla de Ajuste mueve lo de adentro recién cuando vuelve la respuesta, no mientras se arrastra | Aclaración 4 |
