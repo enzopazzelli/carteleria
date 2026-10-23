@@ -389,6 +389,65 @@ def test_worker_real_con_giro_libre():
     assert result.planchas_usadas==1
 
 
+# Las piezas grandes (A11): las que no entran en la chapa a cualquier ángulo
+# giran solo en los ángulos con los que entran enteras.
+from shapely.geometry import Polygon
+from app.services.nesting.sparrow import angulos_que_entran
+
+#: El lugar útil de la chapa de Complejo («Calibre 22»).
+UTIL=(1198,2418)
+
+
+def rectangulo(ancho,alto):
+    return [(0,0),(ancho,0),(ancho,alto),(0,alto)]
+
+
+def test_una_letra_chica_gira_como_todas():
+    assert angulos_que_entran(Polygon(rectangulo(650,650)),None,*UTIL) is None
+
+
+def test_un_tramo_del_aro_va_derecho_o_dado_vuelta():
+    # Inclinado 1° ya mide 1234 mm de ancho.
+    assert angulos_que_entran(Polygon(rectangulo(1193,2361)),None,*UTIL)==[0,180]
+
+
+def test_una_pieza_algo_mas_chica_que_la_chapa_se_puede_inclinar_un_poco():
+    angulos=angulos_que_entran(Polygon(rectangulo(1150,400)),None,*UTIL)
+    # A 8° mide 1194,5 de ancho; a 19° llega a 1217, el máximo.
+    assert {0,8,90,352}<=set(angulos)
+    assert 9 not in angulos and 19 not in angulos and 161 not in angulos
+
+
+def test_con_veta_una_pieza_grande_solo_da_media_vuelta():
+    assert angulos_que_entran(Polygon(rectangulo(1150,400)),[0,180],*UTIL)==[0,180]
+
+
+def test_sin_giro_libre_un_tramo_del_aro_no_se_pone_de_costado():
+    assert angulos_que_entran(Polygon(rectangulo(1193,2361)),[0,90,180,270],*UTIL)==[0,180]
+
+
+def tramo_y_letra():
+    piezas=[Pieza('1',D(1193),D(2361)),Pieza('2',D(650),D(650),2)]
+    g={'1':GeometriaPieza(D(1193),D(2361),rectangulo(1193,2361)),
+       '2':GeometriaPieza(D(650),D(650),rectangulo(650,650))}
+    return piezas,g,Plancha(D(1198),D(2418)),ParametrosCorte(D(0),D(0),D(0),RotacionPermitida.LIBRE_0_90)
+
+
+def test_preparar_entrada_da_sus_angulos_solo_a_las_piezas_grandes():
+    entry=preparar_entrada(*tramo_y_letra(),OpcionesSparrow(giro_libre=True))
+    por_id={p['id']:p for p in entry['items']}
+    assert por_id['1#0']['rotations']==[0,180]
+    assert 'rotations' not in por_id['2#0'] and 'rotations' not in por_id['2#1']
+    assert entry['rotations'] is None
+    assert entry['piezas_grandes']==['1']
+
+
+def test_sin_giro_libre_las_piezas_grandes_no_se_anotan_para_el_aviso():
+    entry=preparar_entrada(*tramo_y_letra(),OpcionesSparrow(giro_libre=False))
+    assert entry['items'][0]['rotations']==[0,180]
+    assert entry['piezas_grandes']==[]
+
+
 from app.services.nesting.sparrow import ruta_de_progreso
 
 

@@ -4,6 +4,7 @@ import json, math, os, subprocess, sys, tempfile, time
 from pathlib import Path
 from decimal import Decimal
 from dataclasses import dataclass
+import numpy as np
 from shapely.geometry import Polygon, box
 from shapely import affinity
 from ...mensajes import Aviso, ErrorPrevisto
@@ -106,6 +107,18 @@ def _entra(shell, rotations, width, height):
         if b[2]-b[0]<=width+1e-8 and b[3]-b[1]<=height+1e-8: return True
     return False
 
+def angulos_que_entran(shell, rotations, width, height):
+    """`None` si la pieza entra en el área útil a cualquier ángulo: gira como
+    todas, con `rotations` (`None` es cualquier ángulo). Si no, es una pieza
+    grande (A11): los ángulos de `rotations`, o de 0° a 359° de a 1° si gira
+    libre, con los que entra entera. Sin esa lista, Sparrow la inclina en la
+    franja, que solo limita el alto, y queda más ancha que la chapa."""
+    puntos=np.asarray(shell.convex_hull.exterior.coords)
+    # El largo de punta a punta es el mayor ancho que puede tomar al girar.
+    largo=max(float(np.hypot(*(puntos-p).T).max()) for p in puntos)
+    if largo<=min(width,height)+1e-8: return None
+    return [a for a in (rotations or range(360)) if _entra(shell,[a],width,height)]
+
 def piezas_que_no_entran(piezas, geometrias, plancha, params):
     """Las piezas cuya silueta no entra en el área útil con ninguna rotación
     permitida: el mismo chequeo que `preparar_entrada` hace antes de buscar.
@@ -123,7 +136,8 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
     if width <= 0 or height <= 0 or min(borde, gap) < 0:
         raise SinLugarUtil()
     rotations = _rotaciones(params)
-    items=[]; blocked=[]; invalidas=[]; normalizadas=[]
+    para_buscar = _rotaciones_para_buscar(params, opciones)
+    items=[]; blocked=[]; invalidas=[]; normalizadas=[]; grandes=[]
     for p in piezas:
         g=geometrias.get(p.id)
         if g is None or not g.contorno_local_mm:
@@ -137,9 +151,15 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
         if not original.is_valid:
             normalizadas.append(p.id)
         shell=Polygon(g.contorno_local_mm)
-        if not _entra(shell, rotations, width, height): blocked.append(p.id)
+        if not _entra(shell, rotations, width, height):
+            blocked.append(p.id)
+            continue
+        angulos=angulos_que_entran(shell, para_buscar, width, height)
+        # Se avisa solo con giro libre: sin él, la casilla no prometía inclinarlas.
+        if angulos is not None and para_buscar is None: grandes.append(p.id)
+        propios={} if angulos is None else {'rotations':angulos}
         for n in range(p.cantidad):
-            items.append({'id':f'{p.id}#{n}','shell':list(shell.exterior.coords),'holes':[list(r.coords) for r in original.interiors]})
+            items.append({'id':f'{p.id}#{n}','shell':list(shell.exterior.coords),'holes':[list(r.coords) for r in original.interiors],**propios})
     if invalidas:
         raise ErrorGeometriaSparrow(invalidas)
     if blocked:
@@ -147,7 +167,7 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
     if not items: raise ErrorPrevisto('No hay piezas para anidar.')
     # «¿Entra en la chapa?» se decide con cuartos de vuelta aunque gire
     # libre: una pieza que solo entra en diagonal se sigue mandando a seccionar.
-    return {'items':items,'width':width,'height':height,'borde':borde,'gap':gap,'rotations':_rotaciones_para_buscar(params,opciones),'options':vars(opciones),'normalizadas':normalizadas,'area_minima_hueco_mm2':AREA_MINIMA_HUECO_MM2}
+    return {'items':items,'width':width,'height':height,'borde':borde,'gap':gap,'rotations':para_buscar,'options':vars(opciones),'normalizadas':normalizadas,'piezas_grandes':grandes,'area_minima_hueco_mm2':AREA_MINIMA_HUECO_MM2}
 
 def convertir_y_validar(entrada, placed):
     expected={p['id'] for p in entrada['items']}
