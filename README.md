@@ -7,6 +7,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
 
 **Ya está en `main`:**
+- **El material usado en ancho × alto (A12), desde el 2026-10-23.** El resumen del anidado dice lo usado como lo diría el dueño, «6 chapas enteras + 1220 × 1650 + 1220 × 900», con una tabla de lo usado y el sobrante de cada chapa; una chapa es «entera» si lo que sobra no llega al retazo más chico que se guarda (250 × 250 mm, a confirmar con el dueño). En Anidado se elige si el sobrante queda arriba, como bloque de todo el ancho (por defecto), o al costado. Con el parador sobra arriba un retazo de 1220 × 527. Ver [`docs/historico/A12-material-usado-y-sobrante/`](docs/historico/A12-material-usado-y-sobrante/diseno.md).
 - **Varios anidados a la vez, confirmado el 2026-10-23.** Tres a la vez terminan bien, cada uno dentro de su tiempo máximo, con la barra de avance y el servidor respondiendo. Con la máquina compartida cada uno busca menos, pero en la medición no salió peor: tres Complejo juntos dieron 7, 8 y 7 chapas (uno solo, 8). Detalle en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md).
 - **El giro de las piezas grandes (A11), desde el 2026-10-23.** Con «Girar a cualquier ángulo», Complejo fallaba: Sparrow inclinaba los tramos del aro y quedaban más anchos que la chapa, y la comparación terminaba enseguida con el mismo error. Ahora cada pieza que no entra a cualquier ángulo gira solo en los ángulos con los que entra entera, y el resultado la nombra en un aviso; las demás siguen girando libre. Complejo da 8 chapas, con y sin giro libre. Ver [`docs/historico/A11-giro-de-las-piezas-grandes/`](docs/historico/A11-giro-de-las-piezas-grandes/diseno.md).
 - **Aprovechar huecos primero (A10).** Las piezas chicas se meten en los huecos de las grandes *antes* de acomodar, y solo se acomoda lo que queda afuera. Con el parador, lo ocupado de la chapa bajó de 1103 a 930 mm, y ese paso tarda segundos: la pasada vieja tardaba 236 s y no ganaba nada.
@@ -23,11 +24,10 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 
 | # | Qué | Cómo está hoy | Qué se busca | Estado |
 |---|---|---|---|---|
-| 1 | **El material usado en Ancho × Alto** | El resumen del anidado dice «Material consumido» en m² | Que la salida diga cuánto de cada chapa se usa y cuánto sobra, en Ancho × Alto. Con eso se decide también hacia qué lado de la chapa se apilan las piezas: hoy, a lo largo del lado corto, y el sobrante queda como una tira angosta | **Construido el 2026-10-23, falta fusionarlo en `main`:** la línea «6 chapas enteras + 1220 × 1650 + 1220 × 900», la tabla por chapa y la opción del sobrante arriba, como bloque. Ver [`docs/plan/A12-material-usado-y-sobrante/`](docs/plan/A12-material-usado-y-sobrante/diseno.md) |
-| 2 | **El diseño anidado en PDF** | Sale el DXF de cada chapa, para la máquina | Además, un PDF con cada chapa a escala, para el taller | Falta diseño |
-| 3 | **Ver las chapas resultantes y mover piezas entre ellas** | Ajuste muestra una chapa por vez. Una pieza se mueve o se gira, con lo que tiene adentro, pero solo dentro de su chapa | Ver todas las chapas del anidado juntas, arrastrar una pieza de una chapa a otra y ver cómo quedan repartidas, con el mismo control de siempre (si pisa algo o se sale, avisa) | Planeado el 2026-10-15; falta diseño |
-| 4 | **Una página de inicio, con materiales y presupuestos** | La pantalla tiene la lista de trabajos y el espacio de cada trabajo. Los materiales se cargan por la API, sin pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro | Planeado el 2026-10-15; falta diseño |
-| 5 | **La aprobación del presupuesto** | No existe | Estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué (sub-proyecto 1.4 del plan maestro) | Planeado; falta diseño |
+| 1 | **El diseño anidado en PDF** | Sale el DXF de cada chapa, para la máquina | Además, un PDF con cada chapa a escala, para el taller | Falta diseño |
+| 2 | **Ver las chapas resultantes y mover piezas entre ellas** | Ajuste muestra una chapa por vez. Una pieza se mueve o se gira, con lo que tiene adentro, pero solo dentro de su chapa | Ver todas las chapas del anidado juntas, arrastrar una pieza de una chapa a otra y ver cómo quedan repartidas, con el mismo control de siempre (si pisa algo o se sale, avisa) | Planeado el 2026-10-15; falta diseño |
+| 3 | **Una página de inicio, con materiales y presupuestos** | La pantalla tiene la lista de trabajos y el espacio de cada trabajo. Los materiales se cargan por la API, sin pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro | Planeado el 2026-10-15; falta diseño |
+| 4 | **La aprobación del presupuesto** | No existe | Estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué (sub-proyecto 1.4 del plan maestro) | Planeado; falta diseño |
 | — | **Colores de referencia por pieza** | Los DXF que llegan no traen color | Elegir un color por pieza (la «O» de Complejo en rojo) y que se vea en el plano, en Ajuste y en el PDF, para reconocerla anidada | En espera (Enzo, 2026-10-22) |
 | — | **Entrada `.cdr`** | Solo se lee DXF | Leer el archivo de CorelDRAW directo. Ya hay un estudio que funcionó con LibreOffice, sin CorelDRAW: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | En espera (Enzo, 2026-10-22) |
 
@@ -37,9 +37,10 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - con una base sin actualizar, el servidor no arranca;
 - faltan dos comprobaciones en las pruebas;
 - en la comparación de chapas, el aviso de las piezas grandes muestra las de la primera chapa que lo dio;
-- Complejo entra en 7 chapas (lo encontraron dos anidados que corrían a la vez), pero de a uno siempre da 8: falta que la búsqueda lo encuentre seguido.
+- Complejo entra en 7 chapas (lo encontraron dos anidados que corrían a la vez), pero de a uno siempre da 8: falta que la búsqueda lo encuentre seguido;
+- en pantalla, el plano se ve espejado de arriba abajo respecto del DXF (es de antes): el sobrante que se ve arriba queda abajo en el archivo para la máquina.
 
-El detalle está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Pendientes de aprovechar huecos primero (A10)», «Pendientes del giro de las piezas grandes (A11)» y, lo de las 7 chapas, «Pendientes del reparto por chapa».
+El detalle está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Pendientes de aprovechar huecos primero (A10)», «Pendientes del giro de las piezas grandes (A11)», «Pendientes del material usado en ancho × alto (A12)» y, lo de las 7 chapas, «Pendientes del reparto por chapa».
 
 **Para confirmar con el taller:** si la máquina corta en el orden del archivo (lo de adentro de un hueco primero) o decide el orden sola.
 
@@ -289,7 +290,6 @@ Lo que vale siempre. Se edita.
 | Documento | Qué contiene |
 |---|---|
 | [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) | **El plan vigente.** Etapas, sub-proyectos en orden, el enchufe del motor y las decisiones abiertas. Cada sub-proyecto suma acá su propia carpeta con `diseno.md` y `plan.md` |
-| [`A12-material-usado-y-sobrante/`](docs/plan/A12-material-usado-y-sobrante/diseno.md) | El material usado en ancho × alto y el sobrante arriba, como bloque: construido, sin fusionar |
 
 ### `docs/motor/` — el motor de anidado
 

@@ -1,8 +1,8 @@
 # A12 · El material usado en ancho × alto, y hacia qué lado queda el sobrante — diseño
 
-> **Estado:** escrito el 2026-10-23 con las decisiones de Enzo (§3). **Aprobado por Enzo ese día** («Si»). El plan está en [`plan.md`](plan.md). **Construido el 2026-10-23** en la rama `feat/material-usado`, las cuatro tareas con pausa al final de cada una, sin fusionar en `main`. Cómo quedó y lo medido, en §8.
+> **Estado:** escrito el 2026-10-23 con las decisiones de Enzo (§3). **Aprobado por Enzo ese día** («Si»). El plan está en [`plan.md`](plan.md). **Construido el 2026-10-23** en la rama `feat/material-usado`, las cuatro tareas con pausa al final de cada una, **fusionado en `main` y cerrado ese día**; la carpeta pasó a `docs/historico/`. Cómo quedó y lo medido, en §8; lo que quedó vivo se sigue en el [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md).
 >
-> **De dónde sale.** La reunión del 2026-10-22: el dueño pidió ver el material usado en ancho × alto en lugar de los m². Es el paso 4 de «Lo que sigue, desde la reunión» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md). Lleva la letra A porque cambia cómo acomoda el motor.
+> **De dónde sale.** La reunión del 2026-10-22: el dueño pidió ver el material usado en ancho × alto en lugar de los m². Es el paso 4 de «Lo que sigue, desde la reunión» en el [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). Lleva la letra A porque cambia cómo acomoda el motor.
 >
 > **Sobre los valores.** Agrega un parámetro al [`REGISTRO.md`](../../REGISTRO.md): **`PAR-56`**, el retazo más chico que se guarda. Su valor es una estimación de Enzo y se confirma con el dueño (4.5 del plan maestro).
 
@@ -138,4 +138,5 @@ Un servicio puro en el backend, sin base ni pantalla: recibe las piezas ubicadas
 | Confirmar `PAR-56` (250 × 250 mm) con el dueño | §3 | El dueño (4.5 del plan maestro) |
 | Cobrar por lo usado y llevar la cuenta de los retazos | §1 | Sus propios diseños; cobrar depende de `P-10` |
 | Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 | — |
+| El plano (y Ajuste) dibuja la `y` hacia abajo, y ni la lectura ni la exportación del DXF la dan vuelta: en pantalla la chapa se ve espejada de arriba abajo respecto del DXF. El bloque que se ve arriba en pantalla queda abajo en el archivo para la máquina. Es de antes de A12 | Recorrido de la tarea 4 | Revisarlo con un DXF a la vista |
 

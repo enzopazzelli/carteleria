@@ -121,7 +121,7 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-22** | Frecuencia del proceso de vencimientos | diaria, 06:00 | — | Sistema | Config | `CART-401` | 🟡 provisorio |
 | **PAR-54** | Tamaño de cada archivo del registro del servidor, antes de empezar uno nuevo | 1 | MB | Sistema | Config | `historico/A9-mensajes-entendibles/diseno.md` | 🟡 provisorio — propuesto el 2026-10-15. El registro guarda las fallas con su traza, en la carpeta de datos |
 | **PAR-55** | Cuántos archivos viejos del registro del servidor se guardan | 5 | archivos | Sistema | Config | `historico/A9-mensajes-entendibles/diseno.md` | 🟡 provisorio — propuesto el 2026-10-15. Con `PAR-54`, el registro ocupa a lo sumo unos pocos MB |
-| **PAR-56** | Retazo más chico que se guarda: lado mínimo de un sobrante para contarlo como retazo. Una chapa cuyo sobrante no llega cuenta como entera | 250 | mm | Sistema | Config | `plan/A12-material-usado-y-sobrante/diseno.md` | 🔴 a confirmar con el dueño — estimación de Enzo del 2026-10-23 («25 cm × 25 cm»). En `backend/app/config.py` (`RETAZO_MINIMO_MM`) |
+| **PAR-56** | Retazo más chico que se guarda: lado mínimo de un sobrante para contarlo como retazo. Una chapa cuyo sobrante no llega cuenta como entera | 250 | mm | Sistema | Config | `historico/A12-material-usado-y-sobrante/diseno.md` | 🔴 a confirmar con el dueño — estimación de Enzo del 2026-10-23 («25 cm × 25 cm»). En `backend/app/config.py` (`RETAZO_MINIMO_MM`) |
 
 ### 2.4 Parámetros del dashboard
 

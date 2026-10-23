@@ -1,5 +1,5 @@
 """Lo usado y el sobrante de cada chapa, en ancho × alto (A12,
-`docs/plan/A12-material-usado-y-sobrante/diseno.md`).
+`docs/historico/A12-material-usado-y-sobrante/diseno.md`).
 
 El dueño piensa la chapa en medidas, no en m²: «6 chapas enteras + 1220 ×
 900». El sobrante de una chapa es la franja libre más grande pegada a uno
