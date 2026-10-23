@@ -49,6 +49,9 @@ export interface OpcionesAnidado {
   simplificacion_mm?: number;
   vaciar_chapas?: boolean;
   giro_libre?: boolean;
+  /** Hacia qué lado queda el sobrante de cada chapa (A12). El servidor
+   * usa «costado» si no se manda; la pantalla manda «arriba». */
+  sobrante?: "arriba" | "costado";
 }
 
 export function anidar(grupoId: number, opciones: OpcionesAnidado = {}): Promise<Ejecucion> {
@@ -118,4 +121,31 @@ export function cancelarEjecucion(id: number): Promise<Ejecucion> {
 
 export function borrarEjecucion(id: number): Promise<void> {
   return apiDelete(`/ejecuciones/${id}`);
+}
+
+export interface MedidaLeer {
+  ancho_mm: number;
+  alto_mm: number;
+}
+
+/** Lo usado y el sobrante de una chapa (A12). */
+export interface MaterialDeChapa {
+  plancha: number;
+  usado: MedidaLeer;
+  sobrante: MedidaLeer;
+  /** Si el sobrante llega al retazo más chico que se guarda. Si no, la chapa cuenta como entera. */
+  es_retazo: boolean;
+}
+
+export interface MaterialUsado {
+  chapa: MedidaLeer;
+  chapas: MaterialDeChapa[];
+  /** Como lo diría el dueño: «6 chapas enteras + 1220 × 1650 + 1220 × 900». */
+  linea: string;
+  retazo_minimo_mm: number;
+}
+
+/** Con las piezas como están, también lo movido en Ajuste (A12). */
+export function obtenerMaterialUsado(ejecucionId: number): Promise<MaterialUsado> {
+  return apiGet<MaterialUsado>(`/ejecuciones/${ejecucionId}/material-usado`);
 }

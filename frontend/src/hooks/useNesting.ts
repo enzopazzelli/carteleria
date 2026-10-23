@@ -7,6 +7,7 @@ import {
   listarEjecucionesDeGrupo,
   marcarDefinitiva,
   obtenerEjecucion,
+  obtenerMaterialUsado,
   type Colocacion,
   type Ejecucion,
   type OpcionesAnidado,
@@ -67,6 +68,15 @@ export function useColocaciones(ejecucionId: number | null) {
   });
 }
 
+export function useMaterialUsado(ejecucionId: number | null) {
+  return useQuery({
+    queryKey: ["material-usado", ejecucionId],
+    queryFn: () => obtenerMaterialUsado(ejecucionId as number),
+    enabled: ejecucionId !== null,
+    retry: false,
+  });
+}
+
 export function useAjustarColocacion(ejecucionId: number) {
   const queryClient = useQueryClient();
   const clave = ["colocaciones", ejecucionId];
@@ -105,6 +115,10 @@ export function useAjustarColocacion(ejecucionId: number) {
     onError: (_error, _variables, contexto) => {
       if (contexto?.anteriores) queryClient.setQueryData(clave, contexto.anteriores);
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: clave }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: clave });
+      // Mover una pieza cambia lo usado y el sobrante de su chapa (A12).
+      queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
+    },
   });
 }

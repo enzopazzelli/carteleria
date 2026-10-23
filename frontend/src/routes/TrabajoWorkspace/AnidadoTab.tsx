@@ -146,6 +146,23 @@ function ParametrosCorteForm({
   );
 }
 
+/** Una chapa de dibujito, con las piezas en gris y el sobrante en verde
+ * (A12): arriba, como bloque, o al costado, como tira. */
+function ChapaConSobrante({ arriba }: { arriba: boolean }) {
+  return (
+    <svg width="14" height="26" viewBox="0 0 14 26" aria-hidden="true">
+      <rect x="0.5" y="0.5" width="13" height="25" fill="#fff" stroke="currentColor" />
+      {arriba ? <>
+        <rect x="1" y="11" width="12" height="14.5" fill="#bbb" />
+        <rect x="1" y="1" width="12" height="10" fill="#9fd8a8" />
+      </> : <>
+        <rect x="1" y="1" width="7" height="24.5" fill="#bbb" />
+        <rect x="8" y="1" width="5" height="24.5" fill="#9fd8a8" />
+      </>}
+    </svg>
+  );
+}
+
 function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: number }) {
   const queryClient = useQueryClient();
   const anidar = useAnidar(grupo.id);
@@ -168,6 +185,8 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const [vaciarChapas, setVaciarChapas] = useState(true);
   // Marcada por defecto (Enzo, 2026-10-14). Con veta no se aplica.
   const [giroLibre, setGiroLibre] = useState(true);
+  // El sobrante arriba, como bloque, por defecto (Enzo, 2026-10-23, A12).
+  const [sobrante, setSobrante] = useState<"arriba" | "costado">("arriba");
   const { data: formato } = useFormato(grupo.formato_id);
   const { data: parametrosMaterial } = useParametrosCorteMaterial(formato?.material_id ?? null);
   const giroLibreAplica = giroLibreSeAplica(
@@ -176,7 +195,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const huecosAplica = motor === "sparrow";
   const opciones = { motor, usar_anidado_en_huecos: usarHuecos && huecosAplica, semilla,
     segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion,
-    vaciar_chapas: vaciarChapas, giro_libre: giroLibre && giroLibreAplica };
+    vaciar_chapas: vaciarChapas, giro_libre: giroLibre && giroLibreAplica, sobrante };
 
   const definitiva = historial?.find((e) => e.es_definitiva) ?? null;
   const { data: colocacionesDefinitiva } = useColocaciones(definitiva?.id ?? null);
@@ -307,6 +326,19 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
             />
             Girar a cualquier ángulo
           </label>
+          <fieldset className="flex flex-wrap items-center gap-3">
+            <legend className="float-left mr-1">El sobrante de cada chapa:</legend>
+            <label className="flex items-center gap-1 cursor-pointer" title="Las piezas se juntan abajo, usando todo el ancho, y sobra arriba un pedazo de chapa entero, como una chapa más corta.">
+              <input type="radio" name={`sobrante-${grupo.id}`} checked={sobrante === "arriba"} onChange={() => setSobrante("arriba")} />
+              <ChapaConSobrante arriba />
+              Arriba, como bloque
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer" title="Las piezas se juntan a la izquierda, usando todo el alto, y sobra una tira a la derecha.">
+              <input type="radio" name={`sobrante-${grupo.id}`} checked={sobrante === "costado"} onChange={() => setSobrante("costado")} />
+              <ChapaConSobrante arriba={false} />
+              Al costado, como tira (como hasta ahora)
+            </label>
+          </fieldset>
           <p>Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que quedaron a medio llenar. Conserva el anidado validado con menos planchas. Más búsqueda por chapa no da menos planchas. No se garantiza el óptimo global.</p>
           <p className="text-xs text-ink/70">Con «Aprovechar huecos», primero mete las piezas chicas en los huecos de las grandes, y después acomoda el resto.</p>
         </>}
