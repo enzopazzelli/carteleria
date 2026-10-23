@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mmAPx, pxAMm, rotarPunto } from "./geometria";
+import { mmAPx, pxAMm, rotarPunto, yDesdePantalla, yEnPantalla } from "./geometria";
 
 describe("mmAPx / pxAMm", () => {
   it("convierte mm a píxeles según la escala", () => {
@@ -30,5 +30,23 @@ describe("rotarPunto", () => {
     const resultado = rotarPunto({ x: 10, y: 10 }, { x: 10, y: 0 }, 90);
     expect(resultado.x).toBeCloseTo(0, 6);
     expect(resultado.y).toBeCloseTo(0, 6);
+  });
+});
+
+// La altura de la chapa crece hacia arriba (como en el DXF) y la de la
+// pantalla hacia abajo: sin darla vuelta, Ajuste mostraba la chapa de
+// cabeza (2026-10-23, el mismo error que el plano y las miniaturas).
+describe("yEnPantalla / yDesdePantalla", () => {
+  it("el piso de la chapa queda abajo en la pantalla", () => {
+    expect(yEnPantalla(0, 2440, 0.5)).toBe(1220);
+    expect(yEnPantalla(2440, 2440, 0.5)).toBe(0);
+  });
+
+  it("una pieza más alta en la chapa queda más arriba en la pantalla", () => {
+    expect(yEnPantalla(2000, 2440, 1)).toBeLessThan(yEnPantalla(500, 2440, 1));
+  });
+
+  it("al soltar una pieza, se vuelve de la pantalla a la chapa", () => {
+    expect(yDesdePantalla(yEnPantalla(733, 2440, 0.3), 2440, 0.3)).toBeCloseTo(733);
   });
 });

@@ -272,25 +272,25 @@ def _leer_progreso(out):
     return {k:datos[k] for k in ('fase','pasada','pasadas','mejor_chapas','huecos','huecos_total') if k in datos}
 
 def _acostar(g):
-    """La pieza girada un cuarto de vuelta, corrida para que quede en
-    positivo: cada punto `(x, y)` pasa a `(alto − y, x)`."""
+    """La pieza girada un cuarto de vuelta en sentido horario, corrida
+    para que quede en positivo: cada punto `(x, y)` pasa a `(y, ancho − x)`."""
     def girar(anillo):
-        return [(float(g.alto_mm)-float(y),float(x)) for x,y in anillo]
+        return [(float(y),float(g.ancho_mm)-float(x)) for x,y in anillo]
     return replace(g,ancho_mm=g.alto_mm,alto_mm=g.ancho_mm,
                    contorno_local_mm=girar(g.contorno_local_mm) if g.contorno_local_mm else g.contorno_local_mm,
                    agujeros_local_mm=[girar(a) for a in g.agujeros_local_mm])
 
-def _enderezar(resultado,alto_mm):
-    """De la chapa acostada a la real: `(x, y)` pasa a `(y, alto − x)`, un
-    cuarto de vuelta para el otro lado. Las piezas quedan del lado de la
-    `y` grande, que el plano dibuja abajo, y el sobrante arriba. El
-    ángulo no cambia: este cuarto de vuelta cancela el de `_acostar`, y
-    por eso la veta se respeta."""
-    alto=Decimal(alto_mm)
+def _enderezar(resultado,ancho_mm):
+    """De la chapa acostada a la real: `(x, y)` pasa a `(ancho − y, x)`, un
+    cuarto de vuelta antihorario. Las piezas, que Sparrow juntó contra el
+    borde de la `x` chica, quedan abajo (la `y` chica, como en el DXF) y el
+    sobrante arriba. El ángulo no cambia: este cuarto de vuelta cancela el
+    de `_acostar`, y por eso la veta se respeta."""
+    ancho=Decimal(ancho_mm)
     return replace(resultado,posiciones=[replace(p,
-        x_mm=p.y_mm,y_mm=alto-(p.x_mm+p.ancho_colocado_mm),
+        x_mm=ancho-(p.y_mm+p.alto_colocado_mm),y_mm=p.x_mm,
         ancho_colocado_mm=p.alto_colocado_mm,alto_colocado_mm=p.ancho_colocado_mm,
-        centro_libre_x_mm=p.centro_libre_y_mm,centro_libre_y_mm=alto-p.centro_libre_x_mm,
+        centro_libre_x_mm=ancho-p.centro_libre_y_mm,centro_libre_y_mm=p.centro_libre_x_mm,
     ) for p in resultado.posiciones])
 
 def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lambda:False,al_avanzar=None):
@@ -303,7 +303,7 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
         acostadas={k:_acostar(g) for k,g in geometrias.items()}
         resultado=anidar_sparrow(piezas,acostadas,Plancha(plancha.alto_mm,plancha.ancho_mm),params,
                                  replace(opciones,sobrante='costado'),cancelada,al_avanzar)
-        return _enderezar(resultado,plancha.alto_mm)
+        return _enderezar(resultado,plancha.ancho_mm)
     entrada=preparar_entrada(piezas,geometrias,plancha,params,opciones)
     with tempfile.TemporaryDirectory(prefix='carteleria-sparrow-') as d:
         inp,out=Path(d)/'entrada.json',Path(d)/'salida.json'

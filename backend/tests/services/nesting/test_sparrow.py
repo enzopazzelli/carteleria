@@ -531,8 +531,9 @@ def test_con_el_sobrante_arriba_las_piezas_quedan_abajo_y_sobra_un_bloque():
 
     sobrante=sobrante_de_la_primera_chapa(resultado,g,1.5)
     assert sobrante.ancho_mm==100 and sobrante.alto_mm>40
-    # El plano dibuja la `y` hacia abajo: las piezas de `y` grande se ven abajo.
-    assert min(q.y_mm for q in resultado.posiciones)>40
+    # Abajo de verdad, del lado de la `y` chica, como en el DXF: así el
+    # bloque queda arriba en la chapa, en el archivo y en la pantalla.
+    assert max(q.y_mm+q.alto_colocado_mm for q in resultado.posiciones)<60
 
 
 def test_con_el_sobrante_al_costado_sobra_una_tira_como_hasta_ahora():

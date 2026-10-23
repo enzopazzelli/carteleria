@@ -112,7 +112,7 @@ Un servicio puro en el backend, sin base ni pantalla: recibe las piezas ubicadas
 
 **Desvíos.**
 - Se miran las cuatro franjas de borde, no dos, y la opción no se ve con el motor rectangular (§5.1 y §5.3, anotados al escribir el plan).
-- En el plano, las piezas van del lado de la `y` grande, porque el plano dibuja la `y` hacia abajo (§5.2).
+- En el plano, las piezas van del lado de la `y` grande, porque el plano dibuja la `y` hacia abajo (§5.2). **Corregido el mismo día** (rama `fix/plano-derecho`): el plano y Ajuste dibujaban la chapa de cabeza respecto del DXF. Con la pantalla derecha, las piezas van del lado de la `y` chica, abajo de verdad, y el bloque queda arriba en la pantalla, en el DXF y en la chapa; `material_usado` llama «arriba» a la `y` grande.
 
 **Medido** sobre una copia de la base de la reunión (`backend/local/tmp-a12/medicion/`), con `backend/local/herramientas-a12-2026-10-23/medir.py`, fuera de git. Con huecos y giro libre, 240 s, una corrida de cada una:
 
@@ -138,5 +138,4 @@ Un servicio puro en el backend, sin base ni pantalla: recibe las piezas ubicadas
 | Confirmar `PAR-56` (250 × 250 mm) con el dueño | §3 | El dueño (4.5 del plan maestro) |
 | Cobrar por lo usado y llevar la cuenta de los retazos | §1 | Sus propios diseños; cobrar depende de `P-10` |
 | Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 | — |
-| El plano (y Ajuste) dibuja la `y` hacia abajo, y ni la lectura ni la exportación del DXF la dan vuelta: en pantalla la chapa se ve espejada de arriba abajo respecto del DXF. El bloque que se ve arriba en pantalla queda abajo en el archivo para la máquina. Es de antes de A12 | Recorrido de la tarea 4 | Revisarlo con un DXF a la vista |
 

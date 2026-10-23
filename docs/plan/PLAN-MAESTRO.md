@@ -292,6 +292,7 @@ Se detallan cuando les toque, cada una con su diseño.
 | 6 | **Ver las chapas resultantes y mover piezas entre ellas** (detalle abajo) | Planeado el 2026-10-15; falta diseño |
 | 7 | **Una página de inicio, con materiales y presupuestos** (detalle abajo) | Planeado el 2026-10-15; falta diseño |
 | 8 | **La aprobación del presupuesto** (1.4, §6) | Planeado; falta diseño |
+| 9 | **Llenar mejor los huecos:** con «Aprovechar huecos», en el parador entran 20 piezas en 11 figuras del logo, pero los huecos grandes quedan bastante vacíos. Se apoya en dos pendientes de A10: a lo sumo 17 piezas por hueco (una grilla fija de posiciones) y no se prueba dar vuelta una pieza adentro de un hueco | Sumado por Enzo el 2026-10-23; falta diseño. Es del motor |
 | — | Colores de referencia por pieza; entrada `.cdr` (hay un estudio previo que funcionó: [`historico/SPIKE-CDR.md`](../historico/SPIKE-CDR.md)) | En espera (Enzo, 2026-10-22) |
 
 Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, para que Enzo lo confirme («era eso más lo de hoy. Incluí todo», 2026-10-22).
@@ -310,8 +311,11 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 |---|---|---|
 | Confirmar con el dueño el retazo más chico que se guarda (`PAR-56`, 250 × 250 mm, estimación de Enzo) | §3 de su diseño | El dueño (4.5) |
 | Cobrar por lo usado (cambia el presupuesto) y llevar la cuenta de los retazos (guardar el sobrante como retazo y ver cuáles hay) | §1 de su diseño | Sus propios diseños; cobrar depende de `P-10` |
-| El plano (y Ajuste) dibuja la `y` hacia abajo, y ni la lectura ni la exportación del DXF la dan vuelta: en pantalla la chapa se ve espejada de arriba abajo respecto del DXF. El bloque que se ve arriba en pantalla queda abajo en el archivo para la máquina. Es de antes de A12 | Recorrido de A12 | Revisarlo con un DXF a la vista |
 | Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 de su diseño | — |
+| En Ajuste, al tocar una pieza aparecen arriba del editor los botones para rotarla y el editor salta unos 42 px hacia abajo: incómodo al empezar a arrastrar. Es de antes | Recorrido del arreglo del espejo, 2026-10-23 | — |
+| El editor del visor de prueba (`scripts/servidor_visor.py`) dibuja y arrastra con la altura hacia abajo: se ve de cabeza. Su vista fija, que usa el plano, ya sale derecha | Arreglo del espejo, 2026-10-23 | Que se use el visor |
+
+**Resuelto el 2026-10-23** (rama `fix/plano-derecho`): **el plano y Ajuste se veían de cabeza.** El DXF guarda la altura hacia arriba y la pantalla la cuenta hacia abajo; el plano (Anidado, «Abrir plano», miniaturas de chapa, la vista fija del visor) y el editor de Ajuste no la daban vuelta, y la «A» se veía como una «∀» (el mismo error que tenían las miniaturas de Piezas, `b69466a`). Ahora la dan vuelta al dibujar, y Ajuste también al soltar una pieza arrastrada. El DXF exportado no cambió: la máquina siempre recibió lo correcto. Con eso, el sobrante arriba junta las piezas abajo de verdad y el bloque queda arriba también en el DXF. Recorrido en Chrome todo BIEN; el plano y el DXF exportado se ven iguales.
 
 **Pendientes del giro de las piezas grandes (A11).** Construido el 2026-10-23, fusionado en `main` ese día y cerrado: [`historico/A11-giro-de-las-piezas-grandes/`](../historico/A11-giro-de-las-piezas-grandes/diseno.md). Cada pieza que no entra en la chapa a cualquier ángulo gira solo en los ángulos con los que entra entera, de a 1°, y el resultado la nombra en un aviso. Con «Complejo» y giro libre: 8 chapas, sin y con huecos (antes fallaba); sin giro libre, 8, como antes. Lo que quedó vivo:
 

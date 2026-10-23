@@ -61,11 +61,12 @@ def material_de_chapa(
     y0 = min(p.bounds[1] for p in poligonos)
     x1 = max(p.bounds[2] for p in poligonos)
     y1 = max(p.bounds[3] for p in poligonos)
-    # Lo libre pegado a cada borde. El plano dibuja la `y` hacia abajo: la
-    # franja de `y` chica es la que se ve arriba. En este orden se desempata.
+    # Lo libre pegado a cada borde. La altura crece hacia arriba, como en el
+    # DXF y en el plano: la franja de la `y` grande es la de arriba. En este
+    # orden se desempata.
     franjas = [
-        ("arriba", max(0.0, y0 - borde_mm)),
-        ("abajo", max(0.0, alto_mm - (y1 + borde_mm))),
+        ("arriba", max(0.0, alto_mm - (y1 + borde_mm))),
+        ("abajo", max(0.0, y0 - borde_mm)),
         ("derecha", max(0.0, ancho_mm - (x1 + borde_mm))),
         ("izquierda", max(0.0, x0 - borde_mm)),
     ]
