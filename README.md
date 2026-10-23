@@ -7,6 +7,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
 
 **Ya está en `main`:**
+- **Llenar mejor los huecos (A13), desde el 2026-10-23.** Cada pieza se busca por casillas adentro de los huecos, contra la pared y probando muchos más giros, incluida dada vuelta. Con el parador entran 30 piezas en los huecos en lugar de 20, y el sobrante crece de 1220 × 509 a 1220 × 761 sin gastar más chapa. Ver [`docs/historico/A13-llenar-mejor-los-huecos/`](docs/historico/A13-llenar-mejor-los-huecos/diseno.md).
 - **El plano y Ajuste se ven derechos, desde el 2026-10-23.** Se veían de cabeza respecto del DXF (la «A» como una «∀»); el DXF para la máquina siempre estuvo bien. Con eso, el sobrante arriba queda arriba también en el archivo.
 - **El material usado en ancho × alto (A12), desde el 2026-10-23.** El resumen del anidado dice lo usado como lo diría el dueño, «6 chapas enteras + 1220 × 1650 + 1220 × 900», con una tabla de lo usado y el sobrante de cada chapa; una chapa es «entera» si lo que sobra no llega al retazo más chico que se guarda (250 × 250 mm, a confirmar con el dueño). En Anidado se elige si el sobrante queda arriba, como bloque de todo el ancho (por defecto), o al costado. Con el parador sobra arriba un retazo de 1220 × 527. Ver [`docs/historico/A12-material-usado-y-sobrante/`](docs/historico/A12-material-usado-y-sobrante/diseno.md).
 - **Varios anidados a la vez, confirmado el 2026-10-23.** Tres a la vez terminan bien, cada uno dentro de su tiempo máximo, con la barra de avance y el servidor respondiendo. Con la máquina compartida cada uno busca menos, pero en la medición no salió peor: tres Complejo juntos dieron 7, 8 y 7 chapas (uno solo, 8). Detalle en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md).
@@ -21,7 +22,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - El visor de prueba (`Visor de anidado.cmd`) suma Sparrow con huecos en su selector de motor.
 - Cómo probar Sparrow (semilla, tiempo, simplificación, cancelar): [`docs/GUIA-SPARROW-PRUEBAS.md`](docs/GUIA-SPARROW-PRUEBAS.md).
 
-**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor que salió de la reunión ya está; el 5, llenar mejor los huecos, es del motor y se sumó después. El orden es una propuesta, para que Enzo lo confirme.
+**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, también llenar mejor los huecos, que se sumó después. El orden de lo que queda es una propuesta, para que Enzo lo confirme.
 
 | # | Qué | Cómo está hoy | Qué se busca | Estado |
 |---|---|---|---|---|
@@ -29,7 +30,6 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 | 2 | **Ver las chapas resultantes y mover piezas entre ellas** | Ajuste muestra una chapa por vez. Una pieza se mueve o se gira, con lo que tiene adentro, pero solo dentro de su chapa | Ver todas las chapas del anidado juntas, arrastrar una pieza de una chapa a otra y ver cómo quedan repartidas, con el mismo control de siempre (si pisa algo o se sale, avisa) | Planeado el 2026-10-15; falta diseño |
 | 3 | **Una página de inicio, con materiales y presupuestos** | La pantalla tiene la lista de trabajos y el espacio de cada trabajo. Los materiales se cargan por la API, sin pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro | Planeado el 2026-10-15; falta diseño |
 | 4 | **La aprobación del presupuesto** | No existe | Estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué (sub-proyecto 1.4 del plan maestro) | Planeado; falta diseño |
-| 5 | **Llenar mejor los huecos** | Con «Aprovechar huecos», en el parador entran 20 piezas adentro de las figuras del logo, pero los huecos grandes quedan bastante vacíos | Que entren más piezas en cada hueco: hoy se prueba una grilla fija de posiciones (a lo sumo 17 piezas por hueco) y no se prueba dar vuelta una pieza adentro de un hueco | **Construido el 2026-10-23, falta fusionarlo en `main`:** con el parador entran 30 piezas en los huecos en lugar de 20, y el sobrante crece de 1220 × 509 a 1220 × 761. Ver [`docs/plan/A13-llenar-mejor-los-huecos/`](docs/plan/A13-llenar-mejor-los-huecos/diseno.md) |
 | — | **Colores de referencia por pieza** | Los DXF que llegan no traen color | Elegir un color por pieza (la «O» de Complejo en rojo) y que se vea en el plano, en Ajuste y en el PDF, para reconocerla anidada | En espera (Enzo, 2026-10-22) |
 | — | **Entrada `.cdr`** | Solo se lee DXF | Leer el archivo de CorelDRAW directo. Ya hay un estudio que funcionó con LibreOffice, sin CorelDRAW: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | En espera (Enzo, 2026-10-22) |
 
@@ -291,7 +291,6 @@ Lo que vale siempre. Se edita.
 | Documento | Qué contiene |
 |---|---|
 | [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) | **El plan vigente.** Etapas, sub-proyectos en orden, el enchufe del motor y las decisiones abiertas. Cada sub-proyecto suma acá su propia carpeta con `diseno.md` y `plan.md` |
-| [`A13-llenar-mejor-los-huecos/`](docs/plan/A13-llenar-mejor-los-huecos/diseno.md) | Llenar mejor los huecos: construido, sin fusionar |
 
 ### `docs/motor/` — el motor de anidado
 

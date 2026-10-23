@@ -33,7 +33,7 @@ from .geometria_material import poligono_material
 # esto no vale la pena intentar llenarlo: ninguna pieza real entra.
 AREA_MINIMA_HUECO_MM2 = 100.0
 
-# La búsqueda adentro de un hueco (A13, `docs/plan/A13-llenar-mejor-los-huecos/diseno.md`):
+# La búsqueda adentro de un hueco (A13, `docs/historico/A13-llenar-mejor-los-huecos/diseno.md`):
 # lo libre del hueco y cada pieza girada se pasan a casillas, y una
 # correlación por FFT da de una vez todos los lugares donde la pieza no pisa
 # nada. La cuadrícula propone; la geometría exacta decide. No son parámetros

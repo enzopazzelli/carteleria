@@ -292,7 +292,7 @@ Se detallan cuando les toque, cada una con su diseño.
 | 6 | **Ver las chapas resultantes y mover piezas entre ellas** (detalle abajo) | Planeado el 2026-10-15; falta diseño |
 | 7 | **Una página de inicio, con materiales y presupuestos** (detalle abajo) | Planeado el 2026-10-15; falta diseño |
 | 8 | **La aprobación del presupuesto** (1.4, §6) | Planeado; falta diseño |
-| 9 | **Llenar mejor los huecos (A13):** con «Aprovechar huecos», en el parador entraban 20 piezas en 11 figuras del logo y los huecos grandes quedaban bastante vacíos. Ahora cada pieza se busca por casillas, contra la pared, con giros de a 15° y dada vuelta | **Construido el 2026-10-23** en la rama `feat/llenar-huecos`, sin fusionar: con el parador entran 30 piezas en lugar de 20 y el sobrante crece de 1220 × 509 a 1220 × 761, sin gastar más chapa; Complejo igual (7 chapas). [Diseño](A13-llenar-mejor-los-huecos/diseno.md) |
+| 9 | **Llenar mejor los huecos (A13):** con «Aprovechar huecos», en el parador entraban 20 piezas en 11 figuras del logo y los huecos grandes quedaban bastante vacíos. Ahora cada pieza se busca por casillas, contra la pared, con giros de a 15° y dada vuelta | **En `main` desde el 2026-10-23 y cerrado:** [`historico/A13-llenar-mejor-los-huecos/`](../historico/A13-llenar-mejor-los-huecos/diseno.md). Con el parador entran 30 piezas en lugar de 20 y el sobrante crece de 1220 × 509 a 1220 × 761, sin gastar más chapa; Complejo igual (7 chapas). Lo que quedó vivo, en la tabla de abajo |
 | — | Colores de referencia por pieza; entrada `.cdr` (hay un estudio previo que funcionó: [`historico/SPIKE-CDR.md`](../historico/SPIKE-CDR.md)) | En espera (Enzo, 2026-10-22) |
 
 Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, para que Enzo lo confirme («era eso más lo de hoy. Incluí todo», 2026-10-22).
@@ -304,6 +304,14 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 | Ver las chapas resultantes y mover piezas entre ellas | Ajuste muestra una chapa por vez; `PATCH /colocaciones/{id}` mueve y gira (con lo de adentro, desde A10) pero no cambia `plancha_indice` | Todas las chapas del anidado juntas, pasar una pieza de una chapa a otra y ver cómo quedan repartidas, con el control de siempre. Usa la miniatura de chapa de A9 (`ChapaMiniatura`) |
 | Página de inicio con materiales y presupuestos | Dos rutas en la pantalla (lista de trabajos y espacio de trabajo); la API de materiales y formatos ya tiene alta, edición y baja | Página de inicio, el alta/edición/baja de materiales en pantalla y la lista de presupuestos generados; ahí entra la pantalla para retocar el presupuesto (§6, pendientes de 1.3) |
 | La aprobación del presupuesto | No existe | 1.4, «Aprobación mínima» (§6) |
+
+**Pendientes de llenar mejor los huecos (A13).** Construido el 2026-10-23, fusionado en `main` ese día y cerrado: [`historico/A13-llenar-mejor-los-huecos/`](../historico/A13-llenar-mejor-los-huecos/diseno.md). Con el parador entran 30 piezas en los huecos en lugar de 20, y el sobrante crece un 50 %. Lo que quedó vivo:
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| Todavía queda libre cerca del 70 % de los huecos del parador. Probar otro orden de piezas (no solo de la más grande a la más chica) o varios órdenes podría meter más | §4 de su diseño | Medir si vale el tiempo |
+| Con Complejo, este paso tarda 4,5 s en descubrir que no entra nada, justo debajo de lo pedido: un trabajo con muchos más huecos chicos podría pasarse | §8 de su diseño | Que aparezca un caso |
+| Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 de su diseño | — |
 
 **Pendientes del material usado en ancho × alto (A12).** Construido el 2026-10-23, fusionado en `main` ese día y cerrado: [`historico/A12-material-usado-y-sobrante/`](../historico/A12-material-usado-y-sobrante/diseno.md). Con el parador y el sobrante arriba, sobra un retazo de 1220 × 527 que al costado se perdía; Complejo da 7 chapas de las dos maneras. Lo que quedó vivo:
 
