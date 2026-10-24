@@ -4,6 +4,8 @@ import { usePiezas, useSubirDxf, useLeerDxf, useDescartarPieza, useDeshacerSecci
 import { useGrupos } from "../../hooks/useGrupos";
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import PiezaMiniPreview from "../../components/PiezaMiniPreview";
+import ConDisenioAlCostado from "../../components/Disenio/ConDisenioAlCostado";
+import { useIluminado } from "../../components/Disenio/Iluminado";
 import Banner from "../../components/Banner";
 import SeccionarPanel from "../../components/Seccionado/SeccionarPanel";
 import LecturaPanel from "../../components/LecturaDxf/LecturaPanel";
@@ -15,7 +17,17 @@ import { escalaParaCargar } from "./cargaDxf";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
+/** Con el diseño fijo al costado: pasar el mouse por una fila ilumina la pieza en él (A14). */
 export default function PiezasTab() {
+  const { trabajoId } = useParams();
+  return (
+    <ConDisenioAlCostado trabajoId={Number(trabajoId)}>
+      <PiezasDelTrabajo />
+    </ConDisenioAlCostado>
+  );
+}
+
+function PiezasDelTrabajo() {
   const { trabajoId } = useParams();
   const id = Number(trabajoId);
   const [busqueda] = useSearchParams();
@@ -25,6 +37,7 @@ export default function PiezasTab() {
   const pedidas = new Set((busqueda.get("seccionar") ?? "").split(",").filter(Boolean).map(Number));
   const formatoPedido = Number(busqueda.get("formato")) || null;
   const { data: piezas, isLoading } = usePiezas(id);
+  const iluminado = useIluminado();
   // Si lo que no entra son los tramos de una pieza ya seccionada para
   // otra chapa, la que hay que mostrar es esa pieza: un tramo no tiene
   // botón para seccionar.
@@ -352,7 +365,11 @@ export default function PiezasTab() {
           <tbody>
             {ordenadas.map((pieza) => (
               <Fragment key={pieza.id}>
-                <tr className={`border-b border-line ${pieza.descartada ? "opacity-40" : ""}`}>
+                <tr
+                  className={`border-b border-line ${pieza.descartada ? "opacity-40" : ""} ${iluminado.pieza === pieza.id ? "bg-bronze/20" : ""}`}
+                  onMouseEnter={() => iluminado.setPieza(pieza.id)}
+                  onMouseLeave={() => iluminado.setPieza(null)}
+                >
                   <td className="py-2">
                     <PiezaMiniPreview contornoMm={pieza.contorno_mm} anchoMm={pieza.ancho_mm} altoMm={pieza.alto_mm} />
                   </td>

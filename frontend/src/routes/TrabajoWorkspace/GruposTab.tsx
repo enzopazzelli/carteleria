@@ -21,9 +21,21 @@ import type { OpcionFormato } from "../../api/piezasYgrupos";
 import { ApiError } from "../../api/client";
 import ListaDeFormatos from "../../components/ListaDeFormatos/ListaDeFormatos";
 import Mensaje from "../../components/Mensaje/Mensaje";
+import ConDisenioAlCostado from "../../components/Disenio/ConDisenioAlCostado";
+import PiezaNombrada from "../../components/PiezaNombrada";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
+/** Con el diseño fijo al costado: las piezas nombradas se iluminan en él (A14). */
 export default function GruposTab() {
+  const { trabajoId } = useParams();
+  return (
+    <ConDisenioAlCostado trabajoId={Number(trabajoId)}>
+      <GruposDelTrabajo />
+    </ConDisenioAlCostado>
+  );
+}
+
+function GruposDelTrabajo() {
   const { trabajoId } = useParams();
   const id = Number(trabajoId);
   const { data: piezas } = usePiezas(id);
@@ -278,7 +290,7 @@ export default function GruposTab() {
                       )
                     }
                   />
-                  <span>{pieza.id_origen}</span>
+                  <PiezaNombrada pieza={pieza} trabajoId={id} />
                   <span className="font-mono text-ink/60">
                     {pieza.ancho_mm}×{pieza.alto_mm} mm
                   </span>
@@ -439,6 +451,12 @@ export default function GruposTab() {
                               .join(", ")}
                             {opcion.piezas_a_seccionar.length > 3 && "…"}
                           </Link>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {opcion.piezas_a_seccionar.slice(0, 3).map((aSeccionar) => {
+                              const pieza = piezas?.find((p) => p.id === aSeccionar.id);
+                              return pieza ? <PiezaNombrada key={pieza.id} pieza={pieza} trabajoId={id} /> : null;
+                            })}
+                          </div>
                         </td>
                       </tr>
                     ) : (

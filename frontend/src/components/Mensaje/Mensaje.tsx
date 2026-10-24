@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Banner from "../Banner";
-import PiezaMiniPreview from "../PiezaMiniPreview";
+import PiezaNombrada from "../PiezaNombrada";
 import ChapaMiniatura from "./ChapaMiniatura";
 import { usePiezas } from "../../hooks/usePiezas";
 import { contenidoDe, piezasNombradas, textoParaCopiar, type QueMostrar } from "./contenido";
@@ -41,9 +41,8 @@ function PiezasDelMensaje({ trabajoId, ids }: { trabajoId: number; ids: number[]
   return (
     <ul className="flex flex-wrap gap-3 mt-2 text-ink">
       {nombradas.map((pieza) => (
-        <li key={pieza.id} className="flex items-center gap-1">
-          <PiezaMiniPreview contornoMm={pieza.contorno_mm} anchoMm={pieza.ancho_mm} altoMm={pieza.alto_mm} />
-          <span className="text-xs">{pieza.id_origen}</span>
+        <li key={pieza.id}>
+          <PiezaNombrada pieza={pieza} trabajoId={trabajoId} />
         </li>
       ))}
     </ul>
