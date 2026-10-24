@@ -105,6 +105,7 @@ def eliminar_trabajo(trabajo_id: int, sesion: Session = Depends(obtener_sesion))
     trabajo = _trabajo_o_404(sesion, trabajo_id)
     if trabajo.archivo_guardado:
         Path(trabajo.archivo_guardado).unlink(missing_ok=True)
+        _ruta_del_fondo(trabajo).unlink(missing_ok=True)
     sesion.delete(trabajo)
     sesion.commit()
 
@@ -126,6 +127,13 @@ def _normalizar_a_marco_local(pieza: PiezaImportada) -> tuple[list, list, tuple[
         [[str(x - min_x), str(y - min_y)] for x, y in agujero] for agujero in pieza.agujeros_mm
     ]
     return contorno, agujeros, (Decimal(str(min_x)), Decimal(str(min_y)))
+
+
+def _ruta_del_fondo(trabajo: Trabajo) -> Path:
+    """Donde se guarda el fondo del diseño ya armado (A14, `rutas_disenio.py`),
+    al lado del DXF: leer el archivo entero cada vez puede tardar. Volver a
+    cargar el dibujo lo borra."""
+    return Path(trabajo.archivo_guardado).with_suffix(".fondo.json")
 
 
 def _pieza_orm_desde_importada(trabajo_id: int, pieza: PiezaImportada) -> Pieza:
@@ -506,6 +514,8 @@ async def subir_dxf(
         )
 
     config.DIRECTORIO_ARCHIVOS.mkdir(parents=True, exist_ok=True)
+    if trabajo.archivo_guardado:
+        _ruta_del_fondo(trabajo).unlink(missing_ok=True)  # era del dibujo anterior
     ruta_guardada = config.DIRECTORIO_ARCHIVOS / nombre
     ruta_guardada.write_bytes(contenido)
 

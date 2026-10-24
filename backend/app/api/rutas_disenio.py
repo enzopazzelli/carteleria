@@ -6,20 +6,26 @@ el DXF guardado, una vez, cuando se pide el diseño.
 """
 from __future__ import annotations
 
+import json
 import logging
 from decimal import Decimal
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from shapely.geometry import Polygon
 from sqlalchemy.orm import Session
 
 from ..modelos.trabajo import Pieza, Trabajo
+from ..services.disenio import PosicionEnDisenio, al_disenio
+from ..services.ingesta.dibujo import DETALLE_DEL_DIBUJO, anillo_para_dibujar, tolerancia_del_dibujo
+from ..services.ingesta.dxf import parsear_dxf
 from ..services.ingesta.models import PiezaImportada
 from ..services.seccionado import Grilla, seccionar_con_grilla
+from .dependencias import obtener_sesion
+from .esquemas_disenio import CorteEnDisenio, DisenioLeer, FormaDeFondo, PiezaEnDisenio
 from .rutas_catalogo import _formatos_del_catalogo
 from .rutas_seccionado import _celda, _chapa_y_parametros, _en_orden, _forma, _posicion_del_tramo
-from .rutas_trabajos import _leer
+from .rutas_trabajos import _leer, _ruta_del_fondo, _trabajo_o_404
 
 router = APIRouter(tags=["diseño"])
 _registro = logging.getLogger(__name__)
@@ -122,3 +128,64 @@ def recuperar_posiciones(sesion: Session, trabajo: Trabajo) -> None:
             continue
         for campo, valor in _posicion_del_tramo(original, candidato, grilla).items():
             setattr(tramo, campo, valor)
+
+
+# --- El pedido del diseño ------------------------------------------------------
+
+
+def _fondo(trabajo: Trabajo) -> list[FormaDeFondo]:
+    """Todas las formas del DXF guardado, sin correcciones: así entra
+    también lo que se marcó que no va, para ubicarse."""
+    if not trabajo.archivo_guardado or not trabajo.escala_a_mm:
+        return []
+    guardado = _ruta_del_fondo(trabajo)
+    if guardado.exists():
+        return [FormaDeFondo(**forma) for forma in json.loads(guardado.read_text(encoding="utf-8"))]
+    try:
+        piezas = parsear_dxf(Path(trabajo.archivo_guardado), trabajo.escala_a_mm).piezas
+    except Exception:  # sin archivo o ilegible: el diseño sale sin fondo
+        _registro.warning("No se pudo leer el DXF del trabajo %s para el fondo", trabajo.id, exc_info=True)
+        return []
+    tolerancia = tolerancia_del_dibujo(piezas, DETALLE_DEL_DIBUJO)
+    fondo = [
+        FormaDeFondo(
+            contorno_mm=anillo_para_dibujar(pieza.contorno_mm, tolerancia),
+            agujeros_mm=[anillo_para_dibujar(agujero, tolerancia) for agujero in pieza.agujeros_mm],
+        )
+        for pieza in piezas
+    ]
+    guardado.write_text(json.dumps([forma.model_dump() for forma in fondo]), encoding="utf-8")
+    return fondo
+
+
+def _posicion(pieza: Pieza) -> PosicionEnDisenio | None:
+    if pieza.disenio_x_mm is None or pieza.disenio_y_mm is None or pieza.disenio_angulo_grados is None:
+        return None
+    return PosicionEnDisenio(float(pieza.disenio_x_mm), float(pieza.disenio_y_mm), float(pieza.disenio_angulo_grados))
+
+
+@router.get("/trabajos/{trabajo_id}/disenio", response_model=DisenioLeer)
+def obtener_disenio(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -> DisenioLeer:
+    """El dibujo como se cargó y dónde está cada pieza que se corta
+    (A14). La primera vez completa lo que las piezas viejas no saben."""
+    trabajo = _trabajo_o_404(sesion, trabajo_id)
+    if any(p.disenio_x_mm is None for p in trabajo.piezas):
+        recuperar_posiciones(sesion, trabajo)
+        sesion.commit()
+
+    piezas, sin_lugar, cortes = [], [], []
+    for pieza in trabajo.piezas:
+        posicion = _posicion(pieza)
+        if pieza.seccionado and posicion is not None:
+            cortes += [
+                CorteEnDisenio(pieza_id=pieza.id, puntos=[list(p) for p in al_disenio(corte["puntos"], posicion)])
+                for corte in pieza.seccionado.get("cortes", [])
+            ]
+        if pieza.descartada:
+            continue
+        if posicion is None:
+            sin_lugar.append(pieza.id)
+        else:
+            piezas.append(PiezaEnDisenio(pieza_id=pieza.id, x_mm=posicion.x_mm, y_mm=posicion.y_mm,
+                                         angulo_grados=posicion.angulo_grados))
+    return DisenioLeer(fondo=_fondo(trabajo), piezas=piezas, cortes=cortes, sin_lugar=sin_lugar)
