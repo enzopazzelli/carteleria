@@ -21,6 +21,18 @@ class PosicionEnDisenio:
     angulo_grados: float
 
 
+def posicion_de_tramo(
+    original: PosicionEnDisenio, angulo_grilla: float, esquina: tuple[float, float]
+) -> PosicionEnDisenio:
+    """La posición de un tramo de un seccionado. El tramo se guarda girado
+    `-angulo_grilla` y corrido `-esquina` desde el marco de la original
+    (`seccionado.tramo_orientado`): se deshace eso y se suma la posición de
+    la original."""
+    (ex, ey), = al_disenio([esquina], PosicionEnDisenio(0, 0, angulo_grilla))
+    (x, y), = al_disenio([(ex, ey)], original)
+    return PosicionEnDisenio(x, y, original.angulo_grados + angulo_grilla)
+
+
 def al_disenio(
     puntos: Iterable[Sequence[float | Decimal | str]], posicion: PosicionEnDisenio
 ) -> list[tuple[float, float]]:

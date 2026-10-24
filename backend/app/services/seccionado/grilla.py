@@ -250,5 +250,13 @@ def tramo_orientado(tramo: Polygon, grilla: Grilla) -> Polygon:
     Se gira `-angulo` y no al ángulo que mejor le quede: así respeta la
     veta y entra seguro, porque cabía en la celda tal cual (§5.2)."""
     girado = affinity.rotate(tramo, -grilla.angulo_grados, origin=(0, 0))
-    x0, y0, _, _ = girado.bounds
+    x0, y0 = esquina_girada(tramo, grilla)
     return affinity.translate(girado, -x0, -y0)
+
+
+def esquina_girada(tramo: Polygon, grilla: Grilla) -> tuple[float, float]:
+    """La esquina mínima del tramo ya girado `-angulo`: lo que le resta
+    `tramo_orientado` para llevarlo a su marco local. Con ella se sabe dónde
+    estaba el tramo en la original (A14, `services/disenio.py`)."""
+    x0, y0, _, _ = affinity.rotate(tramo, -grilla.angulo_grados, origin=(0, 0)).bounds
+    return x0, y0
