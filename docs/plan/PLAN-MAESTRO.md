@@ -338,12 +338,13 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 
 | Pendiente | De dónde sale | Depende de |
 |---|---|---|
-| Confirmar con el taller si la máquina corta en el orden del archivo (lo de adentro primero) o lo decide sola, y si importa que el contorno de una pieza vaya antes que sus propios huecos | §5.5 de su diseño | El taller |
 | Con una base sin migrar el servidor no arranca: la limpieza de anidados colgados corre sin protección | Revisión de A10 | — |
 | Dos pruebas para completar: que sin huecos el resultado sea el mismo con y sin la casilla, y el control de la pieza de adentro cuando el bloque pisa algo | Revisión de A10 | — |
 | En Ajuste, lo de adentro aparece en su lugar nuevo recién cuando vuelve la respuesta, no mientras se arrastra | Aclaración 4 de su plan | — |
 
 **Resueltos el 2026-10-23** con llenar mejor los huecos (A13): ya no hay un tope de 17 piezas por hueco (se buscan todos los lugares por casillas), y con giro libre las piezas se prueban también dadas vuelta adentro de un hueco.
+
+**Resuelto el 2026-10-24:** el orden de corte ya no se pregunta al taller. Enzo da por bueno que la máquina corta en el orden del archivo, porque en el taller ya meten piezas adentro de otras en sus propios archivos; si no, el operador elige el orden en la máquina, y eso cubre también el contorno de una pieza contra sus propios huecos. Quedó como supuesto `SUP-18` en el [registro](../REGISTRO.md).
 
 **Pendientes de los mensajes entendibles (A9).** Construido el 2026-10-22, en `main` desde ese día ([PR #26](https://github.com/enzopazzelli/carteleria/pull/26)) y cerrado: [`historico/A9-mensajes-entendibles/`](../historico/A9-mensajes-entendibles/diseno.md). Resolvió dos pendientes de otras tablas: una chapa de la comparación que no llega a tiempo **falla sola en su fila** y las demás se muestran (antes la comparación entera terminaba en error), y **«Margen %» e «IVA %» aceptan coma** («10,5»). Lo que quedó vivo:
 

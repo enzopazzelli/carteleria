@@ -43,7 +43,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 
 El detalle está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Pendientes de aprovechar huecos primero (A10)», «Pendientes del giro de las piezas grandes (A11)», «Pendientes del material usado en ancho × alto (A12)» y, lo de las 7 chapas, «Pendientes del reparto por chapa».
 
-**Para confirmar con el taller:** si la máquina corta en el orden del archivo (lo de adentro de un hueco primero) o decide el orden sola.
+**El orden de corte ya no es pregunta para el taller:** se da por bueno que la máquina corta en el orden del archivo, con lo de adentro de un hueco primero (`SUP-18` en el [registro](docs/REGISTRO.md)).
 
 # Sistema de Cotización, Nesting y Aprobación para Cartelería
 
@@ -52,7 +52,7 @@ Plataforma a medida para una empresa de cartelería de gran formato en chapa. Au
 **Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**: lectura del DXF, anidado con Sparrow, costeo y PDF del presupuesto · faltan el login, la aprobación y el envío — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) y, arriba, «En qué estamos»
 **Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md)
 **Equipo:** Enzo (todo lo que no es el motor) · Vale (motor de anidado)
-**Última actualización:** 2026-10-23 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
+**Última actualización:** 2026-10-24 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 

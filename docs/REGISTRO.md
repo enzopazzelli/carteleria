@@ -56,6 +56,7 @@ Cosas que damos por ciertas sin haberlas confirmado. Un supuesto que se cae pued
 | **SUP-15** | El equipo trabaja part-time, ~15-20 hs/semana cada uno | 🟡 | Enzo y Vale | Todo el cronograma de `EPICA.md §8` se recalcula |
 | **SUP-16** | Una sola empresa, una sola instancia: no hace falta multi-tenancy | 🟢 | Alcance definido en `EPICA.md §6` | El modelo de datos necesitaría `empresa_id` en todas las tablas — caro de agregar después |
 | **SUP-17** | Lo que hay que seccionar el diseñador lo exporta **soldado** desde Corel: una sola forma con sus huecos, no la vista armada en capas encimadas | 🔴 | Diseño: pedirle el aro de `Complejo.dxf` exportado así (`historico/A5-seccionado/diseno.md §2`) | El sistema tendría que reconstruir el metal desde las capas, y puede ser imposible: en `Complejo.dxf` ni la unión ni la regla par-impar lo reconstruyen, y el DXF probablemente no guarda el grosor de los trazos |
+| **SUP-18** | La máquina corta en el orden del archivo: lo de adentro de un hueco antes que la pieza que lo rodea, que es como lo escribe el DXF exportado (`historico/A10-huecos-primero/diseno.md §5.5`). Si no, el operador elige el orden en la máquina | 🟡 | Enzo lo da por bueno el 2026-10-24: en el taller ya meten piezas adentro de otras en sus propios archivos. Se termina de confirmar al cortar el primer anidado con piezas en huecos | Una pieza de adentro podría cortarse después que la que la rodea y moverse al quedar suelta: el operador tendría que reordenar el corte a mano |
 
 > **SUP-04 y SUP-08 son los dos que más pueden doler.** El primero reordena el roadmap; el segundo invalida los cálculos del motor. Los dos se responden en el encuentro 2 del relevamiento ([§6](#6-guion-de-relevamiento)).
 
@@ -370,7 +371,7 @@ Resumen para revisar de un vistazo en cada daily.
 
 | Categoría | Total | 🔴 Abierto | 🟡 Parcial | 🟢 Cerrado |
 |---|---|---|---|---|
-| Supuestos (`SUP`) | 17 | 11 | 4 | 2 |
+| Supuestos (`SUP`) | 18 | 11 | 5 | 2 |
 | Parámetros (`PAR`) | 56 | 13 | 31 | 12 |
 | Insumos (`B` + `T`) | 23 | 18 | 4 | 1 |
 | Preguntas (`P`) | 34 | 30 | 4 | 0 |

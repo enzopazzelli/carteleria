@@ -58,6 +58,29 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-24 — Ramas limpias y el orden de corte
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** —
+
+### Qué se hizo
+
+- **Ramas borradas, en GitHub y en la máquina: queda solo `main`.** Todas estaban ya en `main`, salvo `claude/conventions-module-tests-sb4fkq` (2026-08-31, último commit `18e88c2`), que sumaba a `CONVENCIONES.md` la regla «todo módulo nuevo lleva sus tests en el mismo PR»; se borró con las demás. Las seis `feat/CART-201` a `CART-206` (2026-09-05) git las daba por no fusionadas, pero sus cambios ya estaban en `main` con otro hash (`git cherry` los marcaba con `-`).
+- **Los dos presupuestos que habían quedado sin trabajo en la base local ya no estaban:** se fueron entre el 22 y la mañana del 23 (están en el respaldo del 22, no en el del 23). No hubo nada que borrar.
+
+### Qué se decidió
+
+- **El orden de corte:** Enzo da por bueno que la máquina corta en el orden del archivo, porque en el taller ya meten piezas adentro de otras en sus propios archivos; si no, el operador elige el orden en la máquina. Ya no queda como pregunta para el taller.
+
+### Cambios en el registro
+
+`SUP-18` nuevo, 🟡: la máquina corta en el orden del archivo. Sale de la tabla «Pendientes de aprovechar huecos primero (A10)» del plan maestro §7.
+
+### Pendiente
+
+Sin cambios: sigue la lista del README (el PDF del diseño anidado, ver y mover piezas entre chapas, la página de inicio y la aprobación; el orden lo confirma Enzo).
+
+---
+
 ## 2026-10-23 — El motor de la reunión, cerrado: piezas grandes, varios a la vez, material en ancho × alto, plano derecho y huecos más llenos
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —
