@@ -102,6 +102,20 @@ export function ajustarColocacion(
   return apiPatch<ColocacionAjustada>(`/colocaciones/${colocacionId}`, datos);
 }
 
+/** Cómo quedó el anidado después de pasar una pieza de chapa (A14). */
+export interface MovidaDeChapa {
+  colocaciones: Colocacion[];
+  planchas_usadas: number;
+  aprovechamiento_pct: string | null;
+  /** La chapa que quedó vacía y se quitó: las que seguían bajaron un número. */
+  chapa_quitada: number | null;
+}
+
+/** `planchaDestino` igual a la cantidad de chapas es una chapa nueva, al final. */
+export function moverAOtraChapa(colocacionId: number, planchaDestino: number): Promise<MovidaDeChapa> {
+  return apiPost<MovidaDeChapa>(`/colocaciones/${colocacionId}/a-otra-chapa`, { plancha_destino: planchaDestino });
+}
+
 export function urlPlano(ejecucionId: number, plancha: number): string {
   return `http://localhost:8000/ejecuciones/${ejecucionId}/plano?plancha=${plancha}`;
 }

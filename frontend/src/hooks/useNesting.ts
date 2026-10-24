@@ -6,6 +6,7 @@ import {
   listarColocaciones,
   listarEjecucionesDeGrupo,
   marcarDefinitiva,
+  moverAOtraChapa,
   obtenerEjecucion,
   obtenerMaterialUsado,
   type Colocacion,
@@ -119,6 +120,23 @@ export function useAjustarColocacion(ejecucionId: number) {
       queryClient.invalidateQueries({ queryKey: clave });
       // Mover una pieza cambia lo usado y el sobrante de su chapa (A12).
       queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
+    },
+  });
+}
+
+/** Pasar una pieza a otra chapa (A14): cambian las colocaciones, la
+ * cantidad de chapas del anidado, el material usado y el costo. */
+export function useMoverAOtraChapa(ejecucionId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ colocacionId, planchaDestino }: { colocacionId: number; planchaDestino: number }) =>
+      moverAOtraChapa(colocacionId, planchaDestino),
+    onSuccess: (movida) => {
+      queryClient.setQueryData(["colocaciones", ejecucionId], movida.colocaciones);
+      queryClient.invalidateQueries({ queryKey: ["ejecuciones"] });
+      queryClient.invalidateQueries({ queryKey: ["ejecucion", ejecucionId] });
+      queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
+      queryClient.invalidateQueries({ queryKey: ["costeo"] });
     },
   });
 }
