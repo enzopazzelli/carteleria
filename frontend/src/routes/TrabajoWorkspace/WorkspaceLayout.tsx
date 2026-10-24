@@ -7,7 +7,7 @@ const ETAPAS = [
   { path: "piezas", etiqueta: "Piezas" },
   { path: "grupos", etiqueta: "Grupos" },
   { path: "anidado", etiqueta: "Anidado" },
-  { path: "ajuste", etiqueta: "Ajuste" },
+  { path: "chapas", etiqueta: "Chapas" },
   { path: "costeo", etiqueta: "Costeo" },
 ] as const;
 
@@ -21,11 +21,11 @@ export default function WorkspaceLayout() {
   const tieneDatos: Record<string, boolean> = {
     piezas: (piezas?.length ?? 0) > 0,
     grupos: (grupos?.length ?? 0) > 0,
-    // Anidado, Ajuste y Costeo se afinan en las Tareas 10/12/13 cuando
+    // Anidado, Chapas y Costeo se afinan en las Tareas 10/12/13 cuando
     // exista el hook para consultar ejecuciones/presupuestos — hasta
     // entonces el punto queda vacío (nunca en falso positivo).
     anidado: false,
-    ajuste: false,
+    chapas: false,
     costeo: false,
   };
 
