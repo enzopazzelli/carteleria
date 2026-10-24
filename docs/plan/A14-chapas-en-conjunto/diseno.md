@@ -1,6 +1,6 @@
 # A14 · Las chapas en conjunto y el diseño inicial — diseño
 
-> **Estado:** escrito el 2026-10-24, después de una charla con bocetos (§3). Falta que Enzo lo apruebe; después va el plan, en `plan.md` de esta misma carpeta.
+> **Estado:** escrito el 2026-10-24, después de una charla con bocetos (§3). **Aprobado por Enzo ese día** («Sí, lo apruebo»). El plan está en [`plan.md`](plan.md): 12 tareas en 4 tramos.
 >
 > **De dónde sale.** Enzo, el 2026-10-24: «quiero trabajar con cuestiones visuales del diseño». Junta tres pedidos: ver todas las chapas del anidado y pasar piezas entre ellas (el paso 6 de «Lo que sigue» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md), pedido el 2026-10-15), que toda pieza nombrada venga con algo que diga cuál es, y ver el diseño inicial al final, con la pieza que se toca iluminada en los dos lados. Lleva la letra A porque cambia lo que se hace con el resultado del anidado.
 >
