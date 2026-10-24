@@ -134,6 +134,23 @@ class ColocacionAjusteLeer(ColocacionLeer):
     tambien_movidas: list[ColocacionAjusteLeer] = Field(default_factory=list)
 
 
+class ColocacionAOtraChapa(BaseModel):
+    """Pasar una pieza a otra chapa (A14). `plancha_destino` igual a la
+    cantidad de chapas es una chapa nueva, al final."""
+
+    plancha_destino: int = Field(ge=0)
+
+
+class MovidaDeChapaLeer(BaseModel):
+    """Cómo quedó el anidado después de pasar una pieza de chapa."""
+
+    colocaciones: list[ColocacionLeer]
+    planchas_usadas: int
+    aprovechamiento_pct: Decimal | None
+    #: La chapa que quedó vacía y se quitó (las que seguían bajaron un número).
+    chapa_quitada: int | None = None
+
+
 # --- Costeo (envuelve `app/costeo.py`, no lo reemplaza) -------------------
 
 

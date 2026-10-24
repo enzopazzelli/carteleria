@@ -19,6 +19,10 @@ export interface Pieza {
   /** Seccionado (A5): en un tramo, la pieza de la que salió; en la original, cómo se seccionó. */
   seccionada_de_id: number | null;
   seccionado: SeccionadoGuardado | null;
+  /** Dónde estaba en el dibujo (A14): giro y corrimiento desde su marco local; `null` si no se sabe. */
+  disenio_x_mm: string | null;
+  disenio_y_mm: string | null;
+  disenio_angulo_grados: string | null;
 }
 
 export interface GrupoDeCorte {

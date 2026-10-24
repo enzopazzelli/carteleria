@@ -246,6 +246,23 @@ def _llenar_hueco(hueco: _Hueco, candidatas: list[_Pieza], gap: float, seguir: C
     return plan
 
 
+def lugar_libre(libre, exterior: Polygon, angulos: list[float]) -> tuple[float, float, float] | None:
+    """El lugar más abajo y a la izquierda donde entra `exterior` adentro de
+    `libre`, probando `angulos`: `(angulo, tx, ty)` es girarlo alrededor de
+    (0, 0) y trasladarlo. `None` si no entra. Es la búsqueda de un hueco con
+    lo libre de una chapa en su lugar (A14, pasar una pieza a otra chapa):
+    `libre` ya descuenta el margen y lo ocupado, así que no se le suma gap."""
+    if libre.is_empty:
+        return None
+    hueco = _Hueco(dueno="chapa", poligono=libre, util=libre, angulos=tuple(float(a) for a in angulos))
+    pieza = _Pieza(id="pieza", exterior=exterior, area=exterior.area, radio=_radio_del_circulo_mas_grande(exterior))
+    plan = _llenar_hueco(hueco, [pieza], 0.0, lambda: True)
+    if not plan:
+        return None
+    _, adentro = plan[0]
+    return adentro.rotation, adentro.tx, adentro.ty
+
+
 def meter_en_huecos(
     items: list[dict],
     gap: float,

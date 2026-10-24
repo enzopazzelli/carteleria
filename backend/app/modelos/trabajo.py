@@ -154,6 +154,13 @@ class Pieza(Base):
     #: soldadura). Con esto la pieza queda `descartada` y la reemplazan
     #: sus tramos.
     seccionado: Mapped[dict | None] = mapped_column(JSON, default=None)
+    #: Dónde estaba en el dibujo (A14): un punto `p` del contorno local va
+    #: a `girar(p, disenio_angulo_grados) + (disenio_x_mm, disenio_y_mm)`
+    #: (`services/disenio.py`). `None` = no se sabe (cargada a mano, o de
+    #: antes de A14 y todavía sin recuperar).
+    disenio_x_mm: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    disenio_y_mm: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    disenio_angulo_grados: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
 
     trabajo: Mapped[Trabajo] = relationship(back_populates="piezas")
     grupo: Mapped[GrupoDeCorte | None] = relationship(back_populates="piezas")

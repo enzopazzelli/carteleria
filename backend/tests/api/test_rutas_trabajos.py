@@ -175,6 +175,24 @@ def test_subir_dxf_crea_piezas_en_marco_local(cliente, tmp_path):
     assert max(x for x, _ in esquinas) == Decimal("100.0")
 
 
+def test_cargar_guarda_donde_estaba_cada_pieza(cliente, tmp_path):
+    """A14: el marco local tira la esquina de cada pieza; se guarda aparte,
+    para poder dibujar el diseño como se cargó."""
+    trabajo = _crear_trabajo(cliente)
+
+    def dos_cuadrados(msp):
+        msp.add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], close=True)
+        msp.add_lwpolyline([(500, 0), (600, 0), (600, 100), (500, 100)], close=True)
+
+    _subir(cliente, trabajo["id"], _dxf_bytes(tmp_path, "dos.dxf", dos_cuadrados))
+
+    piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    por_x = sorted(piezas, key=lambda p: Decimal(p["disenio_x_mm"]))
+    assert [Decimal(p["disenio_x_mm"]) for p in por_x] == [Decimal("0"), Decimal("500")]
+    assert all(Decimal(p["disenio_y_mm"]) == 0 for p in piezas)
+    assert all(Decimal(p["disenio_angulo_grados"]) == 0 for p in piezas)
+
+
 def test_subir_dxf_invalido_da_400(cliente):
     respuesta = _subir(cliente, _crear_trabajo(cliente)["id"], b"esto no es un dxf")
 
@@ -635,6 +653,34 @@ def test_cargar_uniendo_guarda_la_pieza_unida_y_sus_huecos_descartados(cliente, 
     assert min(float(x) for x, _ in unida["contorno_mm"]) == pytest.approx(0), "se guarda en su marco local"
     huecos = [p for p in piezas if "/hueco" in p["id_origen"]]
     assert len(huecos) == 2 and all(p["descartada"] for p in huecos)
+
+
+def test_una_pieza_unida_guarda_la_esquina_de_la_union(cliente, tmp_path):
+    """A14: la pieza unida empieza donde empieza la unión, y cada hueco
+    donde empieza su propia forma."""
+    _chapa_en_el_catalogo(cliente)
+    trabajo = _crear_trabajo(cliente)
+
+    def corridas(msp):
+        _franja(msp, 300, 400, 1200)
+        _franja(msp, 1350, 500, 1000)
+
+    contenido = _dxf_bytes(tmp_path, "franjas.dxf", corridas)
+    lectura = _ver_lectura(cliente, trabajo["id"], contenido).json()["unida"]
+    _subir(cliente, trabajo["id"], contenido, unir="true")
+
+    piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    unida = next(p for p in piezas if p["id_origen"].endswith("/unida"))
+    assert (float(unida["disenio_x_mm"]), float(unida["disenio_y_mm"])) == pytest.approx((300, 400))
+    # La lectura dibuja cada forma en su lugar del dibujo: ahí empieza cada pieza.
+    esquina = {
+        forma["id_origen"]: (min(x for x, _ in forma["contorno_mm"]), min(y for _, y in forma["contorno_mm"]))
+        for forma in lectura["formas"]
+    }
+    assert len(piezas) == 3
+    for pieza in piezas:
+        guardada = (float(pieza["disenio_x_mm"]), float(pieza["disenio_y_mm"]))
+        assert guardada == pytest.approx(esquina[pieza["id_origen"]], abs=0.5), pieza["id_origen"]
 
 
 def test_cargar_sin_unir_deja_las_formas_como_vienen_y_avisa(cliente, tmp_path):

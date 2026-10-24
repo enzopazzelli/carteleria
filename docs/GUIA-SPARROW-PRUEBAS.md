@@ -6,11 +6,11 @@ La guía original, del 01/10/2026, sigue abajo. **Donde contradiga esto, vale es
 
 - **Sparrow viene elegido por defecto** en Anidado y en la comparación de chapas. El rectangular queda de prueba.
 - **Valores por defecto:** semilla 42, búsqueda por chapa 2 s, tiempo máximo total 240 s, simplificación 0,3 mm. «Vaciar chapas», «Girar a cualquier ángulo» y «Aprovechar huecos», marcadas.
-- **Aprovechar huecos** ya no es una pasada después de Sparrow: mete las piezas chicas en los huecos de las grandes *antes* de acomodar (A10), buscándolas por casillas, contra la pared y con más giros (A13). Lo de adentro viaja con su pieza en Ajuste y va primero en el DXF.
+- **Aprovechar huecos** ya no es una pasada después de Sparrow: mete las piezas chicas en los huecos de las grandes *antes* de acomodar (A10), buscándolas por casillas, contra la pared y con más giros (A13). Lo de adentro viaja con su pieza en la pestaña Chapas (al retocar y al pasarla de chapa) y va primero en el DXF.
 - **Girar a cualquier ángulo:** una pieza casi del tamaño de la chapa gira solo en los ángulos con los que entra entera, y el resultado la nombra en un aviso (A11).
 - **El sobrante de cada chapa:** arriba, como bloque de todo el ancho (por defecto), o al costado, como tira (A12). El resumen del anidado dice el material usado en ancho × alto, con una tabla por chapa. La comparación de chapas usa siempre el sobrante arriba.
 - **La barra de avance** dice la fase (huecos, pasada, vaciar), y se puede cancelar en cualquier momento (A7). Se pueden correr varios anidados a la vez.
-- **El plano y Ajuste** se dibujan con la altura hacia arriba, como el DXF.
+- **El plano y la pestaña Chapas** se dibujan con la altura hacia arriba, como el DXF.
 - El detalle de cada paso está en `docs/historico/A5-*` a `A13-*`, y lo pendiente en el plan maestro §7.
 
 ---
@@ -35,7 +35,7 @@ Spyrrow no anida dentro de agujeros por sí mismo. La casilla Aprovechar huecos 
 2. Importar un DXF y revisar qué formas son piezas a cortar, cantidades, escala y grupos; el motor no clasifica rótulos o marcos.
 3. En Anidado seleccionar Sparrow irregular (prueba). Inicio sugerido: semilla 42, búsqueda 2 s, máximo total 120 s, simplificación 0,3 mm. Probar después semillas 7 y 123; comparar material y duración. Una semilla con límite temporal y workers no garantiza posiciones idénticas en máquinas diferentes.
 4. Indicar los parámetros de corte reales. El kerf confirmado es 3 mm; margen y separación adicional siguen sin confirmar. No se modificaron los parámetros del catálogo ni se asumió que todos los materiales usan 3 mm.
-5. Anidar, revisar el historial y abrir Ajuste para inspeccionar colocaciones. Comparar con Rectangular antes de marcar definitiva. Cambiar parámetros crea otra corrida; no borra las anteriores.
+5. Anidar, revisar el historial y abrir Chapas para ver todas las chapas juntas e inspeccionar colocaciones (doble clic en una chapa para retocarla). Comparar con Rectangular antes de marcar definitiva. Cambiar parámetros crea otra corrida; no borra las anteriores.
 6. Probar Cancelar y probar un tiempo máximo corto. La cancelación termina el worker en cuanto el supervisor la detecta, normalmente dentro de un ciclo de 0,1 s, más demora del sistema.
 
 ## Belgrano

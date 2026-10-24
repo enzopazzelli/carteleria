@@ -7,9 +7,12 @@ import ezdxf
 import pytest
 
 from .ayudas import mensaje_de
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
 from sqlalchemy.orm import Session
 
 from app.modelos.trabajo import Colocacion, EjecucionNesting, Pieza
+from app.services.disenio import PosicionEnDisenio, al_disenio
 
 from .test_rutas_nesting import _esperar_estado, _material_con_formato_y_parametros, cliente  # noqa: F401
 
@@ -186,6 +189,51 @@ def test_aplicar_crea_los_tramos_y_descarta_la_original(cliente, tmp_path):
     assert original["descartada"]
     assert original["seccionado"]["tramos"] == 2
     assert original["seccionado"]["soldadura_mm"] == pytest.approx(500)
+
+
+def _en_el_disenio(pieza: dict) -> Polygon:
+    posicion = PosicionEnDisenio(
+        float(pieza["disenio_x_mm"]), float(pieza["disenio_y_mm"]), float(pieza["disenio_angulo_grados"])
+    )
+    return Polygon(al_disenio(pieza["contorno_mm"], posicion))
+
+
+def test_los_tramos_puestos_en_el_disenio_cubren_la_original(cliente, tmp_path):
+    """A14: cada tramo sabe dónde estaba. Una «L» lejos del origen, con
+    la grilla girada 30°: puestos en el diseño, los tramos son la «L»."""
+    _material, formato = _material_con_formato_y_parametros(cliente)
+    trabajo = cliente.post("/trabajos", json={"nombre": "Ele"}).json()
+    documento = ezdxf.new()
+    documento.modelspace().add_lwpolyline(
+        [(200, 300), (1700, 300), (1700, 800), (700, 800), (700, 1300), (200, 1300)], close=True
+    )
+    ruta = tmp_path / "ele.dxf"
+    documento.saveas(ruta)
+    cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("ele.dxf", ruta.read_bytes(), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+    original = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+
+    respuesta = _aplicar(cliente, original["id"], formato["id"], angulo=30, dx=40, dy=25)
+
+    assert respuesta.status_code == 201, respuesta.text
+    tramos = [_en_el_disenio(t) for t in respuesta.json()]
+    ele = _en_el_disenio(original)
+    assert len(tramos) > 1
+    assert unary_union(tramos).symmetric_difference(ele).area < 1.0
+    assert all(ele.buffer(0.01).contains(tramo) for tramo in tramos)
+
+
+def test_un_tramo_de_una_original_sin_posicion_queda_sin_posicion(cliente, tmp_path):
+    _material, formato = _material_con_formato_y_parametros(cliente)
+    trabajo = cliente.post("/trabajos", json={"nombre": "A mano"}).json()
+    pieza_id = _insertar_pieza(cliente, trabajo["id"], [(0, 0), (1500, 0), (1500, 500), (0, 500)])
+
+    tramos = _aplicar(cliente, pieza_id, formato["id"]).json()
+
+    assert tramos and all(t["disenio_x_mm"] is None and t["disenio_angulo_grados"] is None for t in tramos)
 
 
 def _grupo_con_margen_propio(cliente, trabajo, formato, pieza) -> dict:

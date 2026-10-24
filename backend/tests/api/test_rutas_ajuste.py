@@ -3,13 +3,17 @@ DXF de corte) — paso 5 de `docs/historico/PLAN-SLICE-VERTICAL.md`.
 """
 from __future__ import annotations
 
+import math
 import time
 from decimal import Decimal
 
 import ezdxf
 import pytest
 from fastapi.testclient import TestClient
+from shapely.geometry import Polygon
 from sqlalchemy.orm import Session
+
+from .ayudas import mensaje_de
 
 from app.api.app import app
 from app.api.dependencias import obtener_sesion
@@ -396,3 +400,165 @@ def test_una_metida_a_mano_tambien_viaja(cliente, tmp_path):
 
     [movida] = cuerpo["tambien_movidas"]
     assert _centro(movida) == pytest.approx((500, 500), abs=1e-6)
+
+
+# --- Pasar una pieza a otra chapa (A14) ----------------------------------
+#
+# `docs/plan/A14-chapas-en-conjunto/diseno.md §5.4`. Chapas chicas para que
+# el anidado deje una pieza por chapa: así se sabe dónde hay lugar.
+
+
+def _anidado(cliente, tmp_path, *, chapa=(150, 150), piezas=((100, 100), (100, 100)), rotaciones="LIBRE_0_90"):
+    """Rectángulos de `piezas` (ancho, alto) anidados con el motor
+    rectangular en una chapa de `chapa`, margen 5, kerf 1 y separación 5.
+    Devuelve el anidado y las piezas cargadas."""
+    material = cliente.post("/materiales", json={"nombre": "Chapa"}).json()
+    formato = cliente.post(
+        f"/materiales/{material['id']}/formatos", json={"ancho_mm": str(chapa[0]), "alto_mm": str(chapa[1])}
+    ).json()
+    cliente.put(f"/materiales/{material['id']}/parametros-corte", json={
+        "kerf_mm": "1", "margen_borde_mm": "5", "separacion_piezas_mm": "5", "rotaciones_permitidas": rotaciones,
+    })
+    trabajo = cliente.post("/trabajos", json={"nombre": "Chapas chicas"}).json()
+    documento = ezdxf.new()
+    for i, (ancho, alto) in enumerate(piezas):
+        x = i * 500
+        documento.modelspace().add_lwpolyline([(x, 0), (x + ancho, 0), (x + ancho, alto), (x, alto)], close=True)
+    ruta = tmp_path / "chicas.dxf"
+    documento.saveas(ruta)
+    cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("chicas.dxf", ruta.read_bytes(), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+    cargadas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+    grupo = cliente.post(
+        f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "G1", "formato_id": formato["id"]}
+    ).json()
+    for pieza in cargadas:
+        cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    ejecucion_id = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+    assert _esperar_estado(cliente, ejecucion_id)["estado"] == "lista"
+    return ejecucion_id, cargadas
+
+
+def _colocaciones(cliente, ejecucion_id) -> list[dict]:
+    return cliente.get(f"/ejecuciones/{ejecucion_id}/colocaciones").json()
+
+
+def _pasar(cliente, colocacion_id, destino):
+    return cliente.post(f"/colocaciones/{colocacion_id}/a-otra-chapa", json={"plancha_destino": destino})
+
+
+def _rectangulo(colocacion, ancho, alto) -> Polygon:
+    """El rectángulo colocado (cuartos de vuelta)."""
+    girada = int(Decimal(colocacion["angulo_grados"])) % 180 == 90
+    a, b = (alto, ancho) if girada else (ancho, alto)
+    x, y = _centro(colocacion)
+    return Polygon([(x - a / 2, y - b / 2), (x + a / 2, y - b / 2), (x + a / 2, y + b / 2), (x - a / 2, y + b / 2)])
+
+
+def test_pasar_a_una_chapa_con_lugar_la_mueve_y_marca_movida(cliente, tmp_path):
+    ejecucion_id, _ = _anidado(cliente, tmp_path, chapa=(300, 150), piezas=((100, 100),) * 3)
+    colocaciones = _colocaciones(cliente, ejecucion_id)
+    por_chapa = {i: [c for c in colocaciones if c["plancha_indice"] == i] for i in (0, 1)}
+    assert (len(por_chapa[0]), len(por_chapa[1])) == (2, 1)
+
+    respuesta = _pasar(cliente, por_chapa[0][0]["id"], 1)
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["planchas_usadas"] == 2 and cuerpo["chapa_quitada"] is None
+    movida = next(c for c in cuerpo["colocaciones"] if c["id"] == por_chapa[0][0]["id"])
+    otra = next(c for c in cuerpo["colocaciones"] if c["id"] == por_chapa[1][0]["id"])
+    assert movida["plancha_indice"] == 1 and movida["movida_a_mano"] is True
+    assert _rectangulo(movida, 100, 100).distance(_rectangulo(otra, 100, 100)) >= 6 - 1e-6
+
+
+def test_sin_lugar_da_409_con_la_pieza_y_no_cambia_nada(cliente, tmp_path):
+    ejecucion_id, _ = _anidado(cliente, tmp_path)
+    antes = _colocaciones(cliente, ejecucion_id)
+    primera = next(c for c in antes if c["plancha_indice"] == 0)
+
+    respuesta = _pasar(cliente, primera["id"], 1)
+
+    assert respuesta.status_code == 409
+    assert "No hay lugar" in mensaje_de(respuesta) and "chapa 2" in mensaje_de(respuesta)
+    assert respuesta.json()["detail"]["piezas"] == [primera["pieza_id"]]
+    assert _colocaciones(cliente, ejecucion_id) == antes
+
+
+def test_a_la_chapa_nueva_y_vaciar_la_de_origen_deja_las_mismas_chapas_renumeradas(cliente, tmp_path):
+    ejecucion_id, _ = _anidado(cliente, tmp_path)
+    antes = {c["plancha_indice"]: c for c in _colocaciones(cliente, ejecucion_id)}
+
+    cuerpo = _pasar(cliente, antes[0]["id"], 2).json()
+
+    assert cuerpo["planchas_usadas"] == 2 and cuerpo["chapa_quitada"] == 0
+    despues = {c["id"]: c["plancha_indice"] for c in cuerpo["colocaciones"]}
+    assert despues == {antes[1]["id"]: 0, antes[0]["id"]: 1}
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}").json()["planchas_usadas"] == 2
+
+
+def test_lo_de_adentro_viaja_a_la_otra_chapa(cliente, tmp_path):
+    ejecucion_id, por_medida = _anidado_con_una_adentro(cliente, tmp_path)
+    grande, chica = por_medida["200"], por_medida["30"]
+    distancia = math.dist(_centro(grande), _centro(chica))
+
+    cuerpo = _pasar(cliente, grande["id"], 1).json()
+
+    despues = {c["id"]: c for c in cuerpo["colocaciones"]}
+    assert cuerpo["planchas_usadas"] == 1 and cuerpo["chapa_quitada"] == 0
+    assert despues[grande["id"]]["plancha_indice"] == despues[chica["id"]]["plancha_indice"] == 0
+    assert despues[chica["id"]]["movida_a_mano"] is True
+    assert math.dist(_centro(despues[grande["id"]]), _centro(despues[chica["id"]])) == pytest.approx(distancia, abs=1e-6)
+
+
+def test_con_veta_la_busqueda_solo_prueba_media_vuelta(cliente, tmp_path):
+    """Una tira de 130 × 60 deja arriba una banda de unos 73 mm de alto: la
+    pieza de 70 × 100 solo entra girada un cuarto de vuelta, que con veta no
+    se puede."""
+    ejecucion_id, cargadas = _anidado(cliente, tmp_path, piezas=((130, 60), (70, 100)), rotaciones="SOLO_0_180")
+    alta = next(p for p in cargadas if Decimal(p["ancho_mm"]) == 70)
+    colocaciones = _colocaciones(cliente, ejecucion_id)
+    suya = next(c for c in colocaciones if c["pieza_id"] == alta["id"])
+    assert len({c["plancha_indice"] for c in colocaciones}) == 2
+
+    respuesta = _pasar(cliente, suya["id"], 1 - suya["plancha_indice"])
+
+    assert respuesta.status_code == 409, respuesta.text
+
+
+def test_una_descartada_no_ocupa_lugar_ni_se_puede_pasar(cliente, tmp_path):
+    ejecucion_id, _ = _anidado(cliente, tmp_path)
+    antes = {c["plancha_indice"]: c for c in _colocaciones(cliente, ejecucion_id)}
+    cliente.patch(f"/piezas/{antes[1]['pieza_id']}", json={"descartada": True})
+
+    assert _pasar(cliente, antes[1]["id"], 0).status_code == 409
+    respuesta = _pasar(cliente, antes[0]["id"], 1)
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["planchas_usadas"] == 1 and cuerpo["chapa_quitada"] == 0
+
+
+def test_destino_inexistente_404_y_la_misma_chapa_400(cliente, tmp_path):
+    ejecucion_id, _ = _anidado(cliente, tmp_path)
+    primera = next(c for c in _colocaciones(cliente, ejecucion_id) if c["plancha_indice"] == 0)
+
+    assert _pasar(cliente, primera["id"], 3).status_code == 404
+    assert _pasar(cliente, primera["id"], 0).status_code == 400
+    assert _pasar(cliente, 999, 1).status_code == 404
+
+
+def test_recalcula_el_aprovechamiento(cliente, tmp_path):
+    ejecucion_id, _ = _anidado(cliente, tmp_path, chapa=(300, 150))
+    antes = cliente.get(f"/ejecuciones/{ejecucion_id}").json()
+    assert antes["planchas_usadas"] == 1
+
+    cuerpo = _pasar(cliente, _colocaciones(cliente, ejecucion_id)[0]["id"], 1).json()
+
+    assert cuerpo["planchas_usadas"] == 2
+    assert Decimal(cuerpo["aprovechamiento_pct"]) == pytest.approx(
+        Decimal(antes["aprovechamiento_pct"]) / 2, abs=Decimal("0.01")
+    )

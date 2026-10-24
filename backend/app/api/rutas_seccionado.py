@@ -19,7 +19,16 @@ from ..services.nesting.engine import MotorNestingRectangular
 from ..services.nesting.geometria_material import poligono_material
 from ..services.nesting.models import ParametrosCorte, Plancha
 from ..services.nesting.models import Pieza as PiezaDominio
-from ..services.seccionado import Grilla, Seccionado, celda_util, mejor_grilla, seccionar_con_grilla, tramo_orientado
+from ..services.disenio import PosicionEnDisenio, posicion_de_tramo
+from ..services.seccionado import (
+    Grilla,
+    Seccionado,
+    celda_util,
+    esquina_girada,
+    mejor_grilla,
+    seccionar_con_grilla,
+    tramo_orientado,
+)
 from .anidado_en_curso import rechazar_si_hay_anidado_en_curso
 from .dependencias import obtener_sesion
 from .esquemas_seccionado import CorteLeer, PropuestaLeer, SeccionadoAplicar, SeccionadoPedido, TramoPropuesto
@@ -212,10 +221,28 @@ def _como_texto(coordenadas) -> list[list[str]]:
     return [[str(round(x, 6)), str(round(y, 6))] for x, y in coordenadas]
 
 
+def _posicion_del_tramo(original: Pieza, tramo: Polygon, grilla: Grilla) -> dict:
+    """Dónde estaba el tramo en el dibujo (A14): la posición de la original
+    más el giro y la esquina que le quita `tramo_orientado`. Sin la de la
+    original, tampoco la del tramo."""
+    if original.disenio_x_mm is None or original.disenio_y_mm is None or original.disenio_angulo_grados is None:
+        return {}
+    de_la_original = PosicionEnDisenio(
+        float(original.disenio_x_mm), float(original.disenio_y_mm), float(original.disenio_angulo_grados)
+    )
+    posicion = posicion_de_tramo(de_la_original, grilla.angulo_grados, esquina_girada(tramo, grilla))
+    return {
+        "disenio_x_mm": Decimal(str(round(posicion.x_mm, 6))),
+        "disenio_y_mm": Decimal(str(round(posicion.y_mm, 6))),
+        "disenio_angulo_grados": Decimal(str(round(posicion.angulo_grados, 6))),
+    }
+
+
 def _tramo_orm(original: Pieza, tramo: Polygon, grilla: Grilla, numero: int) -> Pieza:
     orientado = tramo_orientado(tramo, grilla)
     _, _, ancho, alto = orientado.bounds
     return Pieza(
+        **_posicion_del_tramo(original, tramo, grilla),
         trabajo_id=original.trabajo_id,
         grupo_id=original.grupo_id,
         id_origen=f"{original.id_origen}/t{numero}",

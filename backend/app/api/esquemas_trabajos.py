@@ -50,6 +50,11 @@ class PiezaLeer(BaseModel):
     #: original, cómo se seccionó.
     seccionada_de_id: int | None = None
     seccionado: dict | None = None
+    #: Dónde estaba en el dibujo (A14): giro y corrimiento desde su marco
+    #: local. `None` si no se sabe.
+    disenio_x_mm: Decimal | None = None
+    disenio_y_mm: Decimal | None = None
+    disenio_angulo_grados: Decimal | None = None
 
 
 class PiezaActualizar(BaseModel):

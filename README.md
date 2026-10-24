@@ -26,11 +26,12 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 
 | # | Qué | Cómo está hoy | Qué se busca | Estado |
 |---|---|---|---|---|
-| 1 | **El diseño anidado en PDF** | Sale el DXF de cada chapa, para la máquina | Además, un PDF con cada chapa a escala, para el taller | Falta diseño |
-| 2 | **Ver las chapas resultantes y mover piezas entre ellas** | Ajuste muestra una chapa por vez. Una pieza se mueve o se gira, con lo que tiene adentro, pero solo dentro de su chapa | Ver todas las chapas del anidado juntas, arrastrar una pieza de una chapa a otra y ver cómo quedan repartidas, con el mismo control de siempre (si pisa algo o se sale, avisa) | Planeado el 2026-10-15; falta diseño |
+| 1 | **El diseño anidado en PDF** | Sale el DXF de cada chapa, para la máquina | Además, un PDF con cada chapa a escala, para el taller, con los colores por chapa de A14: para tener registro, para armar el cartel y para el operario de la máquina | Falta diseño; va después de A14 |
+| 2 | **Ver las chapas resultantes y mover piezas entre ellas** | Ajuste muestra una chapa por vez. Una pieza se mueve o se gira, con lo que tiene adentro, pero solo dentro de su chapa | Ver todas las chapas del anidado juntas, arrastrar una pieza de una chapa a otra y ver cómo quedan repartidas, con el mismo control de siempre (si pisa algo o se sale, avisa) | **Construido el 2026-10-24, sin fusionar (A14):** [`docs/plan/A14-chapas-en-conjunto/`](docs/plan/A14-chapas-en-conjunto/diseno.md), en la rama `feat/chapas-en-conjunto`: la pestaña Chapas, con el diseño inicial pintado por chapa, pasar piezas entre chapas y toda pieza nombrada con su forma y su lugar en el diseño |
 | 3 | **Una página de inicio, con materiales y presupuestos** | La pantalla tiene la lista de trabajos y el espacio de cada trabajo. Los materiales se cargan por la API, sin pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro | Planeado el 2026-10-15; falta diseño |
 | 4 | **La aprobación del presupuesto** | No existe | Estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué (sub-proyecto 1.4 del plan maestro) | Planeado; falta diseño |
-| — | **Colores de referencia por pieza** | Los DXF que llegan no traen color | Elegir un color por pieza (la «O» de Complejo en rojo) y que se vea en el plano, en Ajuste y en el PDF, para reconocerla anidada | En espera (Enzo, 2026-10-22) |
+| 5 | **Tarjetas en Trabajos** | La lista de trabajos es una lista simple, un renglón por trabajo | Tarjetas, con información del estado abajo y una miniatura del diseño inicial | Anotado; va después de A14 |
+| — | **Colores de referencia por pieza** | Los DXF que llegan no traen color | Elegir un color por pieza (la «O» de Complejo en rojo) y que se vea en el plano, en Chapas y en el PDF, para reconocerla anidada | En espera (Enzo, 2026-10-22) |
 | — | **Entrada `.cdr`** | Solo se lee DXF | Leer el archivo de CorelDRAW directo. Ya hay un estudio que funcionó con LibreOffice, sin CorelDRAW: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | En espera (Enzo, 2026-10-22) |
 
 **Mejoras chicas del motor que quedaron anotadas:**
@@ -38,7 +39,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - faltan dos comprobaciones en las pruebas;
 - en la comparación de chapas, el aviso de las piezas grandes muestra las de la primera chapa que lo dio;
 - Complejo entra en 7 chapas (lo encontraron dos anidados que corrían a la vez), pero de a uno siempre da 8: falta que la búsqueda lo encuentre seguido;
-- en Ajuste, al tocar una pieza el editor salta un poco hacia abajo (aparecen los botones para rotarla);
+- en la chapa grande (la de Chapas, que antes era Ajuste), al tocar una pieza el editor salta un poco hacia abajo (aparecen los botones para rotarla);
 - el editor del visor de prueba todavía se ve de cabeza.
 
 El detalle está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Pendientes de aprovechar huecos primero (A10)», «Pendientes del giro de las piezas grandes (A11)», «Pendientes del material usado en ancho × alto (A12)» y, lo de las 7 chapas, «Pendientes del reparto por chapa».
@@ -113,13 +114,13 @@ Abrí **exactamente** `http://localhost:5173` (no `127.0.0.1`, no otro puerto): 
 
 | # | Dónde | Qué hacer | Qué tendrías que ver |
 |---|---|---|---|
-| 1 | **Trabajos** (inicio) | Escribí un nombre y apretá "Nuevo trabajo" | Entrás al trabajo; a la izquierda hay cinco etapas: Piezas, Grupos, Anidado, Ajuste, Costeo |
+| 1 | **Trabajos** (inicio) | Escribí un nombre y apretá "Nuevo trabajo" | Entrás al trabajo; a la izquierda hay cinco etapas: Piezas, Grupos, Anidado, Chapas, Costeo |
 | 2 | **Piezas** | Dejá la escala en `1`, elegí el archivo `backend/local/demo.dxf` | **11 piezas** con su dibujo, y un aviso: *"Se ignoraron 1 entidad(es)… (1 TEXT)"*. El aviso es a propósito: el texto del dibujo no se corta |
 | 3 | **Grupos** | "Nuevo grupo" (ej. «Chapa negra») → tildá "Seleccionar todas" → elegí el grupo en "Mover a grupo…" → "Mover" | Las piezas pasan al grupo |
 | 4 | **Grupos** | En el grupo, "Comparar formatos" → tildá 2 o más formatos «DEMO» → "Comparar" → "Usar este" en el que prefieras | Una tabla con planchas, aprovechamiento y costo (marcado "(simulado)"); el grupo queda con su material |
 | 5 | **Anidado** | "Anidar" | La ejecución pasa a **lista**, con planchas y % de aprovechamiento. Probá "Marcar definitiva" |
 | 6 | **Anidado** | Cambiá kerf, margen, separación o rotación y apretá "Aplicar y recalcular"; probá también "Aprovechar huecos" | Se crea una ejecución nueva; la anterior queda en el historial |
-| 7 | **Ajuste** | Elegí el grupo. Arrastrá piezas; girá con la rueda del mouse (o los botones ±15° / ±90°) | Una pieza que se sale o choca se marca en rojo. "Ver plano imprimible" y "Descargar DXF de corte" exportan el resultado |
+| 7 | **Chapas** | Elegí el grupo arriba. Pasá el mouse por una pieza o una chapa; arrastrá una pieza a otra chapa o a «Chapa nueva». Doble clic en una chapa para retocarla: arrastrá piezas y girá con la rueda del mouse (o los botones ±15° / ±90°) | Todas las chapas juntas y el diseño inicial pintado por chapa; lo que está bajo el mouse se ilumina en los dos. Una pieza que se sale o choca se marca en rojo. "Ver plano imprimible" y "Descargar DXF de corte" exportan cada chapa |
 | 8 | **Costeo** | Elegí «+ Cliente nuevo…» → "Crear primera opción de presupuesto" → "Recalcular materiales" → agregá líneas (mano de obra, flete…) | El desglose por rubro, con margen, IVA y total |
 
 ### Qué tener en cuenta (no son errores)
@@ -219,7 +220,7 @@ cartelería/
 │   └── pytest.ini
 │
 ├── frontend/          ← SPA para probar el cotizador (React + Vite + TypeScript + Tailwind)
-│   └── src/routes/TrabajoWorkspace/  Las cinco etapas: Piezas, Grupos, Anidado, Ajuste, Costeo
+│   └── src/routes/TrabajoWorkspace/  Las cinco etapas: Piezas, Grupos, Anidado, Chapas, Costeo
 │
 └── prototipo-dashboard/   ← maqueta HTML del dashboard rápido (F8), sin dependencias
     └── index.html             Abrir directo en el navegador — ver su README
