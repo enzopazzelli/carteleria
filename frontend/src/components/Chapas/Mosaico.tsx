@@ -1,6 +1,7 @@
 import type { Colocacion, Ejecucion } from "../../api/nesting";
 import type { Pieza } from "../../api/piezasYgrupos";
-import { colorDeChapa } from "../Disenio/pintado";
+import { useIluminado } from "../Disenio/Iluminado";
+import { NARANJA_ILUMINADO, colorDeChapa } from "../Disenio/pintado";
 import { anillosColocados, aprovechamientoDeChapa } from "./chapas";
 
 /** Todas las chapas de un anidado, del mismo tamaño y en filas (A14,
@@ -17,6 +18,7 @@ interface MosaicoProps {
 }
 
 export default function Mosaico({ ejecucion, piezas, colocaciones, anchoMm, altoMm, alDobleClic }: MosaicoProps) {
+  const iluminado = useIluminado();
   const porId = new Map(piezas.map((p) => [p.id, p]));
   const indices = Array.from({ length: ejecucion.planchas_usadas ?? 0 }, (_, i) => i);
   const trazo = Math.max(anchoMm, altoMm) / 150;
@@ -37,27 +39,39 @@ export default function Mosaico({ ejecucion, piezas, colocaciones, anchoMm, alto
               className="w-full bg-paper cursor-zoom-in"
               onDoubleClick={() => alDobleClic(indice)}
             >
-              <rect x={0} y={0} width={anchoMm} height={altoMm} fill="none" stroke={color} strokeWidth={trazo * 4} />
+              {/* El fondo de la chapa: bajo el mouse ilumina todas sus piezas en el diseño. */}
+              <rect
+                x={0} y={0} width={anchoMm} height={altoMm} fill="transparent" stroke={color} strokeWidth={trazo * 4}
+                onMouseEnter={() => iluminado.setChapa(indice)}
+                onMouseLeave={() => iluminado.setChapa(null)}
+              />
               {deLaChapa.map((colocacion) => {
                 const pieza = porId.get(colocacion.pieza_id);
                 if (!pieza) return null;
+                const estaIluminada = iluminado.pieza === pieza.id;
                 return (
                   <path
                     key={colocacion.id}
                     data-colocacion={colocacion.id}
                     d={camino(anillosColocados(pieza, colocacion))}
                     fillRule="evenodd"
-                    fill={color}
-                    fillOpacity={0.85}
+                    fill={estaIluminada ? NARANJA_ILUMINADO : color}
+                    fillOpacity={estaIluminada ? 1 : 0.85}
                     stroke="#55606b"
                     strokeWidth={trazo}
+                    onMouseEnter={() => iluminado.setPieza(pieza.id)}
+                    onMouseLeave={() => iluminado.setPieza(null)}
                   >
                     <title>{pieza.id_origen}</title>
                   </path>
                 );
               })}
             </svg>
-            <figcaption className="text-xs mt-1">
+            <figcaption
+              className="text-xs mt-1 cursor-default"
+              onMouseEnter={() => iluminado.setChapa(indice)}
+              onMouseLeave={() => iluminado.setChapa(null)}
+            >
               <span className="font-semibold" style={{ color }}>
                 {indice + 1}
               </span>{" "}

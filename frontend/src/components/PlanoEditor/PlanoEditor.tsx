@@ -27,11 +27,15 @@ interface PlanoEditorProps {
   onMover: (colocacionId: number, centroXMm: number, centroYMm: number) => void;
   onRotar: (colocacionId: number, anguloGrados: number) => void;
   colocacionesInvalidas: Set<number>;
-  // Controlado desde afuera: `AjusteTab` necesita saber qué pieza está
+  // Controlado desde afuera: `ChapaGrande` necesita saber qué pieza está
   // seleccionada para mostrarle sus propios botones de rotar ±15°/±90°
   // al lado del editor, no solo el atajo de doble-click de acá adentro.
   seleccionada: number | null;
   onSeleccionar: (colocacionId: number | null) => void;
+  /** La pieza (`pieza_id`) que está bajo el mouse en otro lado, en naranja (A14). */
+  iluminada?: number | null;
+  /** Avisa qué pieza (`pieza_id`) está bajo el mouse acá, o `null` al salir (A14). */
+  onIluminar?: (piezaId: number | null) => void;
 }
 
 export default function PlanoEditor({
@@ -44,6 +48,8 @@ export default function PlanoEditor({
   colocacionesInvalidas,
   seleccionada,
   onSeleccionar,
+  iluminada = null,
+  onIluminar,
 }: PlanoEditorProps) {
   const [arrastrando, setArrastrando] = useState<number | null>(null);
   // Posición (en coordenadas de pantalla) del pointerdown que armó el
@@ -187,16 +193,19 @@ export default function PlanoEditor({
         const trazado = anillos.map((anillo) => anilloAPath(anillo, esquinaLocal, centro, angulo)).join(" ");
         const invalida = colocacionesInvalidas.has(colocacion.id);
         const estaSeleccionada = seleccionada === colocacion.id;
+        const estaIluminada = iluminada === colocacion.pieza_id;
 
         return (
           <path
             key={colocacion.id}
             d={trazado}
             fillRule="evenodd"
-            fill={invalida ? "#C4432A33" : "#2E807433"}
+            fill={invalida ? "#C4432A33" : estaIluminada ? "#e8833a" : "#2E807433"}
             stroke={invalida ? "#C4432A" : "#2E8074"}
             strokeWidth={estaSeleccionada ? 4 : 2}
             style={{ cursor: "grab" }}
+            onMouseEnter={() => onIluminar?.(colocacion.pieza_id)}
+            onMouseLeave={() => onIluminar?.(null)}
             onPointerDown={(evento) => {
               onSeleccionar(colocacion.id);
               setArrastrando(colocacion.id);
