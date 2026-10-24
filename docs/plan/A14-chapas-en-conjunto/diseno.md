@@ -1,6 +1,6 @@
 # A14 · Las chapas en conjunto y el diseño inicial — diseño
 
-> **Estado:** escrito el 2026-10-24, después de una charla con bocetos (§3). **Aprobado por Enzo ese día** («Sí, lo apruebo»). El plan está en [`plan.md`](plan.md): 12 tareas en 4 tramos.
+> **Estado:** escrito el 2026-10-24, después de una charla con bocetos (§3). **Aprobado por Enzo ese día** («Sí, lo apruebo»). El plan está en [`plan.md`](plan.md): 12 tareas en 4 tramos. **Construido el 2026-10-24** en la rama `feat/chapas-en-conjunto`, con pausa al final de cada tramo; **sin fusionar**. Cómo quedó, lo recorrido y lo que quedó vivo, en §9.
 >
 > **De dónde sale.** Enzo, el 2026-10-24: «quiero trabajar con cuestiones visuales del diseño». Junta tres pedidos: ver todas las chapas del anidado y pasar piezas entre ellas (el paso 6 de «Lo que sigue» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md), pedido el 2026-10-15), que toda pieza nombrada venga con algo que diga cuál es, y ver el diseño inicial al final, con la pieza que se toca iluminada en los dos lados. Lleva la letra A porque cambia lo que se hace con el resultado del anidado.
 >
@@ -178,3 +178,54 @@ Va primero la base porque todo lo demás necesita saber dónde está cada pieza.
 
 - **El PDF del diseño anidado**, el paso 5 de «Lo que sigue». **Con estos colores por chapa.** Enzo, el 2026-10-24: lo usan **para tener registro, para armar el cartel y para que el operario de la máquina tenga el trabajo a mano**.
 - **Las tarjetas de Trabajos.** La lista de trabajos pasa a tarjetas, con **información del estado abajo** y **una miniatura del diseño inicial** (la de §5.2).
+
+## 9. Cómo quedó
+
+Construido el 2026-10-24, los cuatro tramos de §6 en la rama `feat/chapas-en-conjunto`, con pausa al final de cada uno para que Enzo lo viera. Pruebas del servidor de 843 a 876; de la pantalla, de 198 a 209.
+
+**Lo construido:**
+1. **La base.**
+   - Cada pieza guarda dónde estaba en el dibujo, al cargar y al seccionar: tres campos nuevos en `Pieza` y su migración.
+   - Para los trabajos de antes, el dato se recupera la primera vez que se pide el diseño (`rutas_disenio.recuperar_posiciones`).
+   - `GET /trabajos/{id}/disenio` devuelve el fondo, las piezas y los cortes. El fondo se guarda al lado del DXF como `trabajo-N.fondo.json`, y se borra al volver a cargar el dibujo o al borrar el trabajo.
+   - En la pantalla, `DisenioInicial`, con tres modos: pintado por chapa, en gris y chiquito.
+2. **Ver.**
+   - La pestaña **Chapas** reemplaza a Ajuste; un enlace viejo a Ajuste lleva ahí.
+   - Una pastilla por grupo, el diseño pintado y el mosaico.
+   - El iluminado de los dos lados: una pieza, o todas las de una chapa.
+   - Doble clic abre la chapa grande (`ChapaGrande`, el editor de Ajuste).
+3. **Mover.**
+   - `POST /colocaciones/{id}/a-otra-chapa`: lo libre de la chapa de destino hace de hueco para la búsqueda de A13 (`huecos_primero.lugar_libre`).
+   - La chapa nueva, la chapa vacía que se quita y el recálculo de la cantidad de chapas y del aprovechamiento.
+   - En la pantalla, el arrastre con eventos de puntero y el aviso de recalcular el presupuesto.
+4. **Las miniaturas.**
+   - `PiezaNombrada` en los mensajes y en la lista de piezas sin asignar y el «Hay que seccionar» de Grupos.
+   - Grupos y Piezas, con el diseño fijo al costado (`ConDisenioAlCostado`).
+   - En Piezas se ilumina la fila entera.
+
+**Lo recorrido:** en Chrome sin ventana, sobre una copia de la base (`backend/local/tmp-a14/copia`, con sus DXF copiados), con el guion y las capturas en `backend/local/herramientas-a14/`, fuera de git. Todo BIEN y sin errores en la página.
+- **El diseño de Complejo:** 31 piezas y 24 cortes, con el aro entero. Tarda 1,5 s la primera vez y 0,06 s después.
+- **Complejo, anidado en la copia:** 7 chapas, 35,8 %.
+- **El parador:** pasó una pieza a una chapa nueva (2 chapas, con el aviso del presupuesto) y volvió a la primera (1 chapa).
+- **En Complejo:** el tramo más grande no entra en otra chapa (aparece el mensaje), y la pieza más chica pasa de chapa sin cambiar la cantidad.
+- **Las miniaturas:**
+  - en Grupos y en Piezas, la pieza se ilumina en el diseño de al lado;
+  - en Anidado, el aviso de las piezas grandes trae los 8 tramos, cada uno con su diseño chiquito.
+
+**Desvíos del plan** (el detalle está en el registro de la ejecución):
+- **Recuperar dónde estaba cada pieza:** se empareja por todo lo que va después del último guion, que incluye «/unida» y «/huecoN», y no solo por el número.
+- **La ruta del fondo** vive en `rutas_trabajos.py`, para no importar en círculo.
+- **Las funciones del mosaico** van en `Chapas/chapas.ts`: en Windows, `mosaico.ts` chocaba con `Mosaico.tsx`.
+- **El editor** también avisa qué pieza está bajo el mouse.
+- **Una chapa que queda vacía** se lleva también el lugar de las piezas descartadas que tenía.
+
+**Lo que quedó vivo:**
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| En Complejo casi nada entra en otra chapa: aunque están usadas al 34-39 %, lo libre está repartido entre los rayos del aro. Ni la letra más chica de la chapa 1 (447 × 626 mm) entra en otra. La búsqueda está bien: en su propia chapa encuentra el lugar donde ya estaba. Se puede probar con más giros, o reacomodar la chapa de destino cuando no entra | Recorrido del tramo 3 | Decisión de Enzo |
+| El diseño chiquito de 44 px marca poco en un diseño grande como Complejo: agrandarlo, o recortarlo alrededor de la pieza | Recorrido del tramo 4 | — |
+| No se vio en pantalla el «Hay que seccionar» de la comparación con sus formas: en la copia ningún grupo lo da (el aro ya está seccionado) | Recorrido del tramo 4 | Que aparezca un caso |
+| No se pudo comprobar que el clic en una pieza del diseño lleve el mosaico hasta su chapa: en la pantalla del recorrido todo entra sin desplazarse | Recorrido del tramo 2 | — |
+| Un trabajo de la importación de varios diseños tendría de fondo el archivo entero, con todos los diseños | Tarea 1 | — |
+| La chapa grande dibuja las piezas en verde, como Ajuste, y no con el color de su chapa | Recorrido del tramo 2 | — |

@@ -58,6 +58,39 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-24 (2) — Las chapas en conjunto y el diseño inicial (A14)
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+Diseño con bocetos, plan y construcción el mismo día, en la rama `feat/chapas-en-conjunto` (sin fusionar), con pausa al final de cada tramo ([`plan/A14-chapas-en-conjunto/`](plan/A14-chapas-en-conjunto/diseno.md), cómo quedó en §9). Pruebas del servidor de 843 a 876, de la pantalla de 198 a 209.
+
+- **Dónde estaba cada pieza en el dibujo:** se guarda al cargar y al seccionar, y se recupera del DXF guardado para los trabajos de antes. Un pedido nuevo devuelve el diseño de un trabajo con el fondo, las piezas y los cortes.
+- **La pestaña Chapas reemplaza a Ajuste:**
+  - todas las chapas del anidado juntas, con el diseño inicial arriba pintado del color de cada chapa;
+  - lo que falta, en rojo;
+  - pasar el mouse por una pieza o una chapa la ilumina en los dos lados;
+  - doble clic abre la chapa grande para retocar.
+- **Pasar piezas entre chapas:** se arrastra a otra chapa o a «Chapa nueva», y el sistema le busca lugar con la búsqueda de A13. Si no entra, queda donde estaba con un mensaje. Una chapa vacía se quita. Si cambió la cantidad y hay presupuesto, avisa que hay que recalcularlo.
+- **Toda pieza nombrada con su forma:** en Grupos y en Piezas, con el diseño fijo al costado; en los demás mensajes, con un diseño chiquito al lado.
+
+Recorrido en Chrome sin ventana sobre una copia de la base, todo BIEN. Complejo, anidado en la copia, dio 7 chapas.
+
+### Qué se decidió
+
+Con bocetos: el mosaico con el diseño arriba; el diseño pintado por chapa; un material por vez; la chapa nueva; el sistema busca lugar y después se retoca a mano; la forma siempre al lado del nombre y el diseño fijo que ilumina. El PDF del diseño anidado queda para después, con estos colores. Las tarjetas de Trabajos, también para después.
+
+### Cambios en el registro
+
+Sin cambios.
+
+### Pendiente
+
+Que Enzo decida si se fusiona en `main`. Lo que quedó vivo está en §9 del diseño. Lo principal: en Complejo casi nada entra en otra chapa, porque lo libre queda repartido entre los rayos del aro.
+
+---
+
 ## 2026-10-24 — Ramas limpias y el orden de corte
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** —
