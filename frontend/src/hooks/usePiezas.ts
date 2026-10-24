@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
   aplicarSeccionado,
   deshacerSeccionado,
@@ -9,6 +9,14 @@ import {
   type Correcciones,
   type PedidoAplicarSeccionado,
 } from "../api/piezasYgrupos";
+
+/** Cargar, descartar y seccionar cambian las piezas y también el diseño (A14). */
+function refrescarPiezasYDisenio(queryClient: QueryClient, trabajoId: number) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
+    queryClient.invalidateQueries({ queryKey: ["disenio", trabajoId] }),
+  ]);
+}
 
 export function usePiezas(trabajoId: number) {
   return useQuery({ queryKey: ["piezas", trabajoId], queryFn: () => listarPiezas(trabajoId) });
@@ -28,7 +36,7 @@ export function useSubirDxf(trabajoId: number) {
       unir: boolean;
       correcciones: Correcciones;
     }) => subirDxf(trabajoId, archivo, escalaAMm, unir, correcciones),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
+    onSuccess: () => refrescarPiezasYDisenio(queryClient, trabajoId),
   });
 }
 
@@ -52,7 +60,7 @@ export function useDescartarPieza(trabajoId: number) {
   return useMutation({
     mutationFn: ({ piezaId, descartada }: { piezaId: number; descartada: boolean }) =>
       descartarPieza(piezaId, descartada),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
+    onSuccess: () => refrescarPiezasYDisenio(queryClient, trabajoId),
   });
 }
 
@@ -61,7 +69,7 @@ export function useAplicarSeccionado(trabajoId: number) {
   return useMutation({
     mutationFn: ({ piezaId, pedido }: { piezaId: number; pedido: PedidoAplicarSeccionado }) =>
       aplicarSeccionado(piezaId, pedido),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
+    onSuccess: () => refrescarPiezasYDisenio(queryClient, trabajoId),
   });
 }
 
@@ -69,6 +77,6 @@ export function useDeshacerSeccionado(trabajoId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (piezaId: number) => deshacerSeccionado(piezaId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
+    onSuccess: () => refrescarPiezasYDisenio(queryClient, trabajoId),
   });
 }
