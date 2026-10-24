@@ -112,23 +112,24 @@ def eliminar_trabajo(trabajo_id: int, sesion: Session = Depends(obtener_sesion))
 # --- Importación de DXF (`CART-503`) --------------------------------------
 
 
-def _normalizar_a_marco_local(pieza: PiezaImportada) -> tuple[list, list]:
+def _normalizar_a_marco_local(pieza: PiezaImportada) -> tuple[list, list, tuple[Decimal, Decimal]]:
     """`PiezaImportada.contorno_mm` viene en las coordenadas absolutas
     del DXF (`app/services/ingesta/dxf.py`); `Pieza.contorno_mm`
     persistido está documentado en el marco local `[0,ancho]×[0,alto]`
     (`app/modelos/trabajo.py`) — se traduce restando la esquina mínima
-    del propio bounding box de la pieza, la misma para sus agujeros."""
+    del propio bounding box de la pieza, la misma para sus agujeros.
+    Devuelve también esa esquina: es dónde estaba la pieza en el dibujo (A14)."""
     min_x = min(x for x, _ in pieza.contorno_mm)
     min_y = min(y for _, y in pieza.contorno_mm)
     contorno = [[str(x - min_x), str(y - min_y)] for x, y in pieza.contorno_mm]
     agujeros = [
         [[str(x - min_x), str(y - min_y)] for x, y in agujero] for agujero in pieza.agujeros_mm
     ]
-    return contorno, agujeros
+    return contorno, agujeros, (Decimal(str(min_x)), Decimal(str(min_y)))
 
 
 def _pieza_orm_desde_importada(trabajo_id: int, pieza: PiezaImportada) -> Pieza:
-    contorno_mm, agujeros_mm = _normalizar_a_marco_local(pieza)
+    contorno_mm, agujeros_mm, (esquina_x, esquina_y) = _normalizar_a_marco_local(pieza)
     return Pieza(
         trabajo_id=trabajo_id,
         id_origen=pieza.id,
@@ -136,6 +137,9 @@ def _pieza_orm_desde_importada(trabajo_id: int, pieza: PiezaImportada) -> Pieza:
         alto_mm=pieza.alto_mm,
         contorno_mm=contorno_mm,
         agujeros_mm=agujeros_mm,
+        disenio_x_mm=esquina_x,
+        disenio_y_mm=esquina_y,
+        disenio_angulo_grados=Decimal("0"),
     )
 
 
