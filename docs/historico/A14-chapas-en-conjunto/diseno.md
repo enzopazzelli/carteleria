@@ -1,8 +1,8 @@
 # A14 · Las chapas en conjunto y el diseño inicial — diseño
 
-> **Estado:** escrito el 2026-10-24, después de una charla con bocetos (§3). **Aprobado por Enzo ese día** («Sí, lo apruebo»). El plan está en [`plan.md`](plan.md): 12 tareas en 4 tramos. **Construido el 2026-10-24** en la rama `feat/chapas-en-conjunto`, con pausa al final de cada tramo; **sin fusionar**. Cómo quedó, lo recorrido y lo que quedó vivo, en §9.
+> **Estado:** escrito el 2026-10-24, después de una charla con bocetos (§3). **Aprobado por Enzo ese día** («Sí, lo apruebo»). El plan está en [`plan.md`](plan.md): 12 tareas en 4 tramos. **Construido el 2026-10-24** en la rama `feat/chapas-en-conjunto`, con pausa al final de cada tramo, **fusionado en `main`, subido y cerrado ese día**; la carpeta pasó a `docs/historico/`. Cómo quedó y lo recorrido, en §9; lo que quedó vivo se sigue en el [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md).
 >
-> **De dónde sale.** Enzo, el 2026-10-24: «quiero trabajar con cuestiones visuales del diseño». Junta tres pedidos: ver todas las chapas del anidado y pasar piezas entre ellas (el paso 6 de «Lo que sigue» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md), pedido el 2026-10-15), que toda pieza nombrada venga con algo que diga cuál es, y ver el diseño inicial al final, con la pieza que se toca iluminada en los dos lados. Lleva la letra A porque cambia lo que se hace con el resultado del anidado.
+> **De dónde sale.** Enzo, el 2026-10-24: «quiero trabajar con cuestiones visuales del diseño». Junta tres pedidos: ver todas las chapas del anidado y pasar piezas entre ellas (el paso 6 de «Lo que sigue» en el [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md), pedido el 2026-10-15), que toda pieza nombrada venga con algo que diga cuál es, y ver el diseño inicial al final, con la pieza que se toca iluminada en los dos lados. Lleva la letra A porque cambia lo que se hace con el resultado del anidado.
 >
 > **Sobre los valores.** No agrega parámetros al [`REGISTRO.md`](../../REGISTRO.md). La paleta de colores de las chapas es un detalle de la pantalla, no un valor del negocio. La búsqueda de lugar al pasar una pieza usa la de A13 con sus mismos topes internos; si al construir hace falta un tope de tiempo, se da de alta ahí antes de usarlo.
 
@@ -219,7 +219,7 @@ Construido el 2026-10-24, los cuatro tramos de §6 en la rama `feat/chapas-en-co
 - **El editor** también avisa qué pieza está bajo el mouse.
 - **Una chapa que queda vacía** se lleva también el lugar de las piezas descartadas que tenía.
 
-**Lo que quedó vivo:**
+**Lo que quedó vivo** (se sigue en el `PLAN-MAESTRO.md §7`, «Pendientes de las chapas en conjunto (A14)»):
 
 | Pendiente | De dónde sale | Depende de |
 |---|---|---|

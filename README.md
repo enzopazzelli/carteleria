@@ -1,4 +1,4 @@
-## 🧭 En qué estamos — 2026-10-23
+## 🧭 En qué estamos — 2026-10-24
 
 Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Lo que sigue, desde la reunión del 2026-10-22».
 
@@ -7,6 +7,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
 
 **Ya está en `main`:**
+- **Las chapas en conjunto y el diseño inicial (A14), desde el 2026-10-24.** La pestaña **Chapas** reemplaza a Ajuste: muestra todas las chapas del anidado juntas, con el diseño inicial arriba pintado del color de cada chapa y lo que falta en rojo; pasar el mouse por una pieza o una chapa la ilumina en los dos lados. Una pieza se arrastra a otra chapa o a una chapa nueva y el sistema le busca lugar; con doble clic una chapa se abre grande para retocarla. En Grupos, en Piezas y en los mensajes, cada pieza nombrada lleva su forma y su lugar en el diseño. Ver [`docs/historico/A14-chapas-en-conjunto/`](docs/historico/A14-chapas-en-conjunto/diseno.md).
 - **Llenar mejor los huecos (A13), desde el 2026-10-23.** Cada pieza se busca por casillas adentro de los huecos, contra la pared y probando muchos más giros, incluida dada vuelta. Con el parador entran 30 piezas en los huecos en lugar de 20, y el sobrante crece de 1220 × 509 a 1220 × 761 sin gastar más chapa. Ver [`docs/historico/A13-llenar-mejor-los-huecos/`](docs/historico/A13-llenar-mejor-los-huecos/diseno.md).
 - **El plano y Ajuste se ven derechos, desde el 2026-10-23.** Se veían de cabeza respecto del DXF (la «A» como una «∀»); el DXF para la máquina siempre estuvo bien. Con eso, el sobrante arriba queda arriba también en el archivo.
 - **El material usado en ancho × alto (A12), desde el 2026-10-23.** El resumen del anidado dice lo usado como lo diría el dueño, «6 chapas enteras + 1220 × 1650 + 1220 × 900», con una tabla de lo usado y el sobrante de cada chapa; una chapa es «entera» si lo que sobra no llega al retazo más chico que se guarda (250 × 250 mm, a confirmar con el dueño). En Anidado se elige si el sobrante queda arriba, como bloque de todo el ancho (por defecto), o al costado. Con el parador sobra arriba un retazo de 1220 × 527. Ver [`docs/historico/A12-material-usado-y-sobrante/`](docs/historico/A12-material-usado-y-sobrante/diseno.md).
@@ -22,15 +23,14 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - El visor de prueba (`Visor de anidado.cmd`) suma Sparrow con huecos en su selector de motor.
 - Cómo probar Sparrow (semilla, tiempo, simplificación, cancelar): [`docs/GUIA-SPARROW-PRUEBAS.md`](docs/GUIA-SPARROW-PRUEBAS.md).
 
-**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, también llenar mejor los huecos, que se sumó después. El orden de lo que queda es una propuesta, para que Enzo lo confirme.
+**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, también llenar mejor los huecos, que se sumó después, y ver y mover las chapas (A14). El orden de lo que queda es una propuesta, para que Enzo lo confirme.
 
 | # | Qué | Cómo está hoy | Qué se busca | Estado |
 |---|---|---|---|---|
-| 1 | **El diseño anidado en PDF** | Sale el DXF de cada chapa, para la máquina | Además, un PDF con cada chapa a escala, para el taller, con los colores por chapa de A14: para tener registro, para armar el cartel y para el operario de la máquina | Falta diseño; va después de A14 |
-| 2 | **Ver las chapas resultantes y mover piezas entre ellas** | Ajuste muestra una chapa por vez. Una pieza se mueve o se gira, con lo que tiene adentro, pero solo dentro de su chapa | Ver todas las chapas del anidado juntas, arrastrar una pieza de una chapa a otra y ver cómo quedan repartidas, con el mismo control de siempre (si pisa algo o se sale, avisa) | **Construido el 2026-10-24, sin fusionar (A14):** [`docs/plan/A14-chapas-en-conjunto/`](docs/plan/A14-chapas-en-conjunto/diseno.md), en la rama `feat/chapas-en-conjunto`: la pestaña Chapas, con el diseño inicial pintado por chapa, pasar piezas entre chapas y toda pieza nombrada con su forma y su lugar en el diseño |
-| 3 | **Una página de inicio, con materiales y presupuestos** | La pantalla tiene la lista de trabajos y el espacio de cada trabajo. Los materiales se cargan por la API, sin pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro | Planeado el 2026-10-15; falta diseño |
-| 4 | **La aprobación del presupuesto** | No existe | Estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué (sub-proyecto 1.4 del plan maestro) | Planeado; falta diseño |
-| 5 | **Tarjetas en Trabajos** | La lista de trabajos es una lista simple, un renglón por trabajo | Tarjetas, con información del estado abajo y una miniatura del diseño inicial | Anotado; va después de A14 |
+| 1 | **El diseño anidado en PDF** | Sale el DXF de cada chapa, para la máquina | Además, un PDF con cada chapa a escala, para el taller, con los colores por chapa de A14: para tener registro, para armar el cartel y para el operario de la máquina | Falta diseño |
+| 2 | **Una página de inicio, con materiales y presupuestos** | La pantalla tiene la lista de trabajos y el espacio de cada trabajo. Los materiales se cargan por la API, sin pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro | Planeado el 2026-10-15; falta diseño |
+| 3 | **La aprobación del presupuesto** | No existe | Estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué (sub-proyecto 1.4 del plan maestro) | Planeado; falta diseño |
+| 4 | **Tarjetas en Trabajos** | La lista de trabajos es una lista simple, un renglón por trabajo | Tarjetas, con información del estado abajo y una miniatura del diseño inicial (la de A14) | Anotado |
 | — | **Colores de referencia por pieza** | Los DXF que llegan no traen color | Elegir un color por pieza (la «O» de Complejo en rojo) y que se vea en el plano, en Chapas y en el PDF, para reconocerla anidada | En espera (Enzo, 2026-10-22) |
 | — | **Entrada `.cdr`** | Solo se lee DXF | Leer el archivo de CorelDRAW directo. Ya hay un estudio que funcionó con LibreOffice, sin CorelDRAW: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | En espera (Enzo, 2026-10-22) |
 
@@ -40,9 +40,10 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - en la comparación de chapas, el aviso de las piezas grandes muestra las de la primera chapa que lo dio;
 - Complejo entra en 7 chapas (lo encontraron dos anidados que corrían a la vez), pero de a uno siempre da 8: falta que la búsqueda lo encuentre seguido;
 - en la chapa grande (la de Chapas, que antes era Ajuste), al tocar una pieza el editor salta un poco hacia abajo (aparecen los botones para rotarla);
-- el editor del visor de prueba todavía se ve de cabeza.
+- el editor del visor de prueba todavía se ve de cabeza;
+- al pasar una pieza a otra chapa en Complejo, casi nada entra: lo libre queda repartido entre los rayos del aro.
 
-El detalle está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Pendientes de aprovechar huecos primero (A10)», «Pendientes del giro de las piezas grandes (A11)», «Pendientes del material usado en ancho × alto (A12)» y, lo de las 7 chapas, «Pendientes del reparto por chapa».
+El detalle está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Pendientes de aprovechar huecos primero (A10)», «Pendientes del giro de las piezas grandes (A11)», «Pendientes del material usado en ancho × alto (A12)», «Pendientes de las chapas en conjunto (A14)» y, lo de las 7 chapas, «Pendientes del reparto por chapa».
 
 **El orden de corte ya no es pregunta para el taller:** se da por bueno que la máquina corta en el orden del archivo, con lo de adentro de un hueco primero (`SUP-18` en el [registro](docs/REGISTRO.md)).
 

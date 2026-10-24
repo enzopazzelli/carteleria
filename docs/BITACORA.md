@@ -64,7 +64,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Qué se hizo
 
-Diseño con bocetos, plan y construcción el mismo día, en la rama `feat/chapas-en-conjunto` (sin fusionar), con pausa al final de cada tramo ([`plan/A14-chapas-en-conjunto/`](plan/A14-chapas-en-conjunto/diseno.md), cómo quedó en §9). Pruebas del servidor de 843 a 876, de la pantalla de 198 a 209.
+Diseño con bocetos, plan y construcción el mismo día, en la rama `feat/chapas-en-conjunto`, con pausa al final de cada tramo; fusionado en `main` y subido ese día ([`historico/A14-chapas-en-conjunto/`](historico/A14-chapas-en-conjunto/diseno.md), cómo quedó en §9). Pruebas del servidor de 843 a 876, de la pantalla de 198 a 209.
 
 - **Dónde estaba cada pieza en el dibujo:** se guarda al cargar y al seccionar, y se recupera del DXF guardado para los trabajos de antes. Un pedido nuevo devuelve el diseño de un trabajo con el fondo, las piezas y los cortes.
 - **La pestaña Chapas reemplaza a Ajuste:**
@@ -87,7 +87,7 @@ Sin cambios.
 
 ### Pendiente
 
-Que Enzo decida si se fusiona en `main`. Lo que quedó vivo está en §9 del diseño. Lo principal: en Complejo casi nada entra en otra chapa, porque lo libre queda repartido entre los rayos del aro.
+Lo que quedó vivo está en el plan maestro §7, «Pendientes de las chapas en conjunto (A14)». Lo principal: en Complejo casi nada entra en otra chapa, porque lo libre queda repartido entre los rayos del aro.
 
 ---
 
