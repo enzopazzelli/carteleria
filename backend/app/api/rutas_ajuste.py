@@ -24,26 +24,34 @@ from sqlalchemy.orm import Session
 
 from .. import config
 from ..modelos.catalogo import Formato
-from ..modelos.trabajo import Colocacion, EstadoEjecucion, Pieza
+from ..modelos.trabajo import Colocacion, EstadoEjecucion, GrupoDeCorte, Pieza
+from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.exportacion_dxf import exportar_plancha_a_dxf, nombre_de_archivo
+from ..services.nesting.huecos_primero import lugar_libre
 from ..services.nesting.material_usado import material_usado
 from ..services.nesting.models import ParametrosCorte, Plancha, PosicionPieza, ResultadoAnidado, RotacionPermitida
+from ..services.nesting.mover_entre_chapas import angulos_permitidos, libre_de_chapa
 from ..services.nesting.validacion_manual import (
     GeometriaPieza,
     PosicionManual,
+    _poligono_centrado,
     pieza_desde_posicion_manual,
     poligono_colocado,
     validar_posicion_manual,
 )
 from ..services.nesting.visualizacion import render_svg_plancha
+from .anidado_en_curso import rechazar_si_hay_anidado_en_curso
 from .dependencias import obtener_sesion
 from .esquemas_mensajes import AvisoLeer
 from .esquemas_nesting import (
     ColocacionActualizar,
     ColocacionAjusteLeer,
+    ColocacionAOtraChapa,
+    ColocacionLeer,
     MaterialDeChapaLeer,
     MaterialUsadoLeer,
     MedidaLeer,
+    MovidaDeChapaLeer,
 )
 from .rutas_nesting import _ejecucion_o_404, geometria_desde_pieza
 
@@ -240,6 +248,89 @@ def _llevada_con(
     y = float(dx) * math.sin(rad) + float(dy) * math.cos(rad)
     # `Decimal` deja el signo del dividendo en `%`: se suma 360 para quedar entre 0 y 360.
     return centro_x + Decimal(str(x)), centro_y + Decimal(str(y)), ((adentro.angulo_grados + giro) % 360 + 360) % 360
+
+
+# --- Pasar a otra chapa (A14) ---------------------------------------------
+
+
+@router.post("/colocaciones/{colocacion_id}/a-otra-chapa", response_model=MovidaDeChapaLeer)
+def pasar_a_otra_chapa(
+    colocacion_id: int, datos: ColocacionAOtraChapa, sesion: Session = Depends(obtener_sesion)
+) -> MovidaDeChapaLeer:
+    """Pasa una pieza, con lo que tiene adentro de sus huecos, a otra chapa
+    del mismo anidado: el lugar más abajo y a la izquierda donde entra, con
+    los giros que permitió el anidado (`docs/plan/A14-chapas-en-conjunto/diseno.md §5.4`).
+    Si no entra, no cambia nada. Una chapa que queda vacía se quita."""
+    colocacion = sesion.get(Colocacion, colocacion_id)
+    if colocacion is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa pieza ya no está en el anidado: volvé a cargar la pestaña.")
+    ejecucion = colocacion.ejecucion
+    if ejecucion.estado != EstadoEjecucion.LISTA.value:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Solo se pueden mover piezas de un anidado terminado.")
+    rechazar_si_hay_anidado_en_curso(sesion, GrupoDeCorte.id == ejecucion.grupo_id, "pasar piezas de una chapa a otra")
+    pieza = colocacion.pieza
+    if pieza.descartada:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, f"«{pieza.id_origen}» está descartada: no se corta, así que no se pasa de chapa."
+        )
+    total = ejecucion.planchas_usadas or 0
+    destino, origen = datos.plancha_destino, colocacion.plancha_indice
+    if destino > total:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, f"Este anidado tiene {total} chapa(s): no hay una chapa {destino + 1}."
+        )
+    if destino == origen:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"«{pieza.id_origen}» ya está en la chapa {destino + 1}.")
+
+    activas = [c for c in ejecucion.colocaciones if not c.pieza.descartada]
+    geometrias = {c.id: geometria_desde_pieza(c.pieza) for c in activas}
+    de_adentro = _las_de_adentro(colocacion, [c for c in activas if c.plancha_indice == origen], geometrias)
+    ocupadas = [poligono_colocado(_posicion_manual_de(c), geometrias[c.id]) for c in activas if c.plancha_indice == destino]
+    plancha = _plancha_de(sesion, ejecucion)
+    params = _parametros_desde_snapshot(ejecucion.parametros)
+    angulos = angulos_permitidos(params.rotaciones_permitidas, bool((ejecucion.opciones or {}).get("giro_libre", False)))
+    exterior = Polygon(_poligono_centrado(geometrias[colocacion.id]).exterior)
+    lugar = lugar_libre(libre_de_chapa(plancha, params, ocupadas), exterior, angulos)
+    if lugar is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            {
+                "mensaje": f"No hay lugar para «{pieza.id_origen}» en la chapa {destino + 1}: probá con otra chapa o con una nueva.",
+                "piezas": [pieza.id],
+                "chapas": [{"ejecucion_id": ejecucion.id, "plancha": destino}] if destino < total else [],
+            },
+        )
+
+    angulo, x, y = (Decimal(str(round(valor, 6))) for valor in lugar)
+    for adentro in de_adentro:  # antes de mover la contenedora: se calcula desde dónde estaba
+        adentro.centro_x_mm, adentro.centro_y_mm, adentro.angulo_grados = _llevada_con(adentro, colocacion, x, y, angulo)
+    colocacion.centro_x_mm, colocacion.centro_y_mm, colocacion.angulo_grados = x, y, angulo
+    for movida in [colocacion, *de_adentro]:
+        movida.plancha_indice = destino
+        movida.movida_a_mano = True
+    if destino == total:
+        ejecucion.planchas_usadas = total + 1
+
+    chapa_quitada = None
+    if not any(c.plancha_indice == origen for c in activas):
+        chapa_quitada = origen
+        for otra in list(ejecucion.colocaciones):
+            if otra.plancha_indice == origen:
+                # Solo quedaban piezas descartadas, que no se cortan: con la chapa se va su lugar.
+                ejecucion.colocaciones.remove(otra)
+            elif otra.plancha_indice > origen:
+                otra.plancha_indice -= 1
+        ejecucion.planchas_usadas -= 1
+
+    resultado, geometrias_por_pieza = _resultado_y_geometrias(ejecucion)
+    ejecucion.aprovechamiento_pct = calcular_aprovechamiento(resultado, plancha, geometrias_por_pieza).porcentaje_aprovechamiento
+    sesion.commit()
+    return MovidaDeChapaLeer(
+        colocaciones=[ColocacionLeer.model_validate(c) for c in sorted(ejecucion.colocaciones, key=lambda c: c.id)],
+        planchas_usadas=ejecucion.planchas_usadas,
+        aprovechamiento_pct=ejecucion.aprovechamiento_pct,
+        chapa_quitada=chapa_quitada,
+    )
 
 
 # --- Exportación: plano (SVG) y DXF de corte ------------------------------
