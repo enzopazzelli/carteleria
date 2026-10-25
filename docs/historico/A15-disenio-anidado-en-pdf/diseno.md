@@ -1,8 +1,8 @@
 # A15 · El diseño anidado en PDF — diseño
 
-> **Estado:** escrito el 2026-10-25, después de una charla con bocetos (§3). **Aprobado por Enzo ese día** («Si»). El plan está en [`plan.md`](plan.md): 4 tareas, con pausa al final de cada una. **Construido el 2026-10-25** en la rama `feat/pdf-disenio-anidado`, sin fusionar todavía. Cómo quedó y lo recorrido, en §10.
+> **Estado:** escrito el 2026-10-25, después de una charla con bocetos (§3). **Aprobado por Enzo ese día** («Si»). El plan está en [`plan.md`](plan.md): 4 tareas, con pausa al final de cada una. **Construido el 2026-10-25** en la rama `feat/pdf-disenio-anidado`, con pausa al final de cada tarea, **fusionado en `main` y cerrado ese día**; la carpeta pasó a `docs/historico/`. Cómo quedó y lo recorrido, en §10; lo que quedó vivo se sigue en el [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md).
 >
-> **De dónde sale.** Es el paso 1 de «En qué estamos» del README y el 5 de «Lo que sigue» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md). Lo pidió el dueño en la reunión del 2026-10-22: el diseño anidado también en PDF, además del DXF para la máquina. Enzo, el 2026-10-24: lo usan **para tener registro, para armar el cartel y para que el operario de la máquina tenga el trabajo a mano**, con los colores por chapa de A14 ([`historico/A14-chapas-en-conjunto/diseno.md §8`](../../historico/A14-chapas-en-conjunto/diseno.md)). Cubre una parte de `CART-207` (plano de anidado para el taller, [`BACKLOG.md`](../../BACKLOG.md)); lo que se aparta de esa historia está en §4. Lleva la letra A porque cambia lo que se hace con el resultado del anidado.
+> **De dónde sale.** Es el paso 1 de «En qué estamos» del README y el 5 de «Lo que sigue» en el [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). Lo pidió el dueño en la reunión del 2026-10-22: el diseño anidado también en PDF, además del DXF para la máquina. Enzo, el 2026-10-24: lo usan **para tener registro, para armar el cartel y para que el operario de la máquina tenga el trabajo a mano**, con los colores por chapa de A14 ([`historico/A14-chapas-en-conjunto/diseno.md §8`](../A14-chapas-en-conjunto/diseno.md)). Cubre una parte de `CART-207` (plano de anidado para el taller, [`BACKLOG.md`](../../BACKLOG.md)); lo que se aparta de esa historia está en §4. Lleva la letra A porque cambia lo que se hace con el resultado del anidado.
 >
 > **Sobre los valores.** No agrega parámetros al [`REGISTRO.md`](../../REGISTRO.md). La escala, la grilla y cuántas chapas van por hoja son decisiones de Enzo sobre cómo se ve la hoja, no valores del negocio, igual que la paleta de A14. La herramienta es la de `D-16` (ReportLab). La exactitud del dibujo sigue a `PAR-29`.
 
@@ -187,7 +187,7 @@ En pasos chicos, con pausa al final de cada uno para que Enzo lo vea:
 
 ## 10. Cómo quedó
 
-Construido el 2026-10-25, las cuatro tareas del plan en la rama `feat/pdf-disenio-anidado`, con pausa al final de cada una para que Enzo la viera. Pruebas del servidor de 876 a 903; de la pantalla, de 209 a 210.
+Construido el 2026-10-25, las cuatro tareas del plan en la rama `feat/pdf-disenio-anidado`, con pausa al final de cada una para que Enzo la viera, y fusionado en `main` ese día. Pruebas del servidor de 876 a 903; de la pantalla, de 209 a 210.
 
 **Lo construido:**
 1. **Repartir las hojas** (`nesting/hojas_pdf.py`): qué va en cada hoja y dónde, en mm de papel, sin ReportLab. La escala, cuántas chapas por hoja y si la hoja del diseño va parada o apaisada.

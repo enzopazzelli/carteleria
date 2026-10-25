@@ -1,4 +1,4 @@
-## 🧭 En qué estamos — 2026-10-24
+## 🧭 En qué estamos — 2026-10-25
 
 Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Lo que sigue, desde la reunión del 2026-10-22».
 
@@ -7,6 +7,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
 
 **Ya está en `main`:**
+- **El diseño anidado en PDF (A15), desde el 2026-10-25.** Un PDF por trabajo, para imprimir en A4 y en color, que se baja desde la pestaña Chapas o desde el resumen del anidado. Por cada material trae una hoja con el diseño entero pintado del color de cada chapa, a todo el ancho, con lo usado y el sobrante de cada chapa abajo; después, las chapas juntas, hasta 4 por hoja, todas a escala 1:20, con una grilla cada 10 cm y el número de cada pieza, para reconocer lo cortado y marcar a mano. Una barra de 50 cm al pie deja comprobar con una regla que la hoja salió en tamaño real. Ver [`docs/historico/A15-disenio-anidado-en-pdf/`](docs/historico/A15-disenio-anidado-en-pdf/diseno.md).
 - **Las chapas en conjunto y el diseño inicial (A14), desde el 2026-10-24.** La pestaña **Chapas** reemplaza a Ajuste: muestra todas las chapas del anidado juntas, con el diseño inicial arriba pintado del color de cada chapa y lo que falta en rojo; pasar el mouse por una pieza o una chapa la ilumina en los dos lados. Una pieza se arrastra a otra chapa o a una chapa nueva y el sistema le busca lugar; con doble clic una chapa se abre grande para retocarla. En Grupos, en Piezas y en los mensajes, cada pieza nombrada lleva su forma y su lugar en el diseño. Ver [`docs/historico/A14-chapas-en-conjunto/`](docs/historico/A14-chapas-en-conjunto/diseno.md).
 - **Llenar mejor los huecos (A13), desde el 2026-10-23.** Cada pieza se busca por casillas adentro de los huecos, contra la pared y probando muchos más giros, incluida dada vuelta. Con el parador entran 30 piezas en los huecos en lugar de 20, y el sobrante crece de 1220 × 509 a 1220 × 761 sin gastar más chapa. Ver [`docs/historico/A13-llenar-mejor-los-huecos/`](docs/historico/A13-llenar-mejor-los-huecos/diseno.md).
 - **El plano y Ajuste se ven derechos, desde el 2026-10-23.** Se veían de cabeza respecto del DXF (la «A» como una «∀»); el DXF para la máquina siempre estuvo bien. Con eso, el sobrante arriba queda arriba también en el archivo.
@@ -23,14 +24,13 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - El visor de prueba (`Visor de anidado.cmd`) suma Sparrow con huecos en su selector de motor.
 - Cómo probar Sparrow (semilla, tiempo, simplificación, cancelar): [`docs/GUIA-SPARROW-PRUEBAS.md`](docs/GUIA-SPARROW-PRUEBAS.md).
 
-**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, también llenar mejor los huecos, que se sumó después, y ver y mover las chapas (A14). El orden de lo que queda es una propuesta, para que Enzo lo confirme.
+**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, también llenar mejor los huecos, que se sumó después, ver y mover las chapas (A14) y el diseño anidado en PDF (A15). El orden de lo que queda es una propuesta, para que Enzo lo confirme.
 
 | # | Qué | Cómo está hoy | Qué se busca | Estado |
 |---|---|---|---|---|
-| 1 | **El diseño anidado en PDF** | Sale el DXF de cada chapa, para la máquina | Además, un PDF por trabajo para el taller, en A4 y en color: el diseño pintado por chapa y las chapas juntas a 1:20 con una grilla y el número de cada pieza. Para tener registro, para armar el cartel y para el operario de la máquina | **Construido el 2026-10-25, sin fusionar** ([`A15`](docs/plan/A15-disenio-anidado-en-pdf/diseno.md)) |
-| 2 | **Una página de inicio, con materiales y presupuestos** | La pantalla tiene la lista de trabajos y el espacio de cada trabajo. Los materiales se cargan por la API, sin pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro | Planeado el 2026-10-15; falta diseño |
-| 3 | **La aprobación del presupuesto** | No existe | Estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué (sub-proyecto 1.4 del plan maestro) | Planeado; falta diseño |
-| 4 | **Tarjetas en Trabajos** | La lista de trabajos es una lista simple, un renglón por trabajo | Tarjetas, con información del estado abajo y una miniatura del diseño inicial (la de A14) | Anotado |
+| 1 | **Una página de inicio, con materiales y presupuestos** | La pantalla tiene la lista de trabajos y el espacio de cada trabajo. Los materiales se cargan por la API, sin pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro | Planeado el 2026-10-15; falta diseño |
+| 2 | **La aprobación del presupuesto** | No existe | Estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué (sub-proyecto 1.4 del plan maestro) | Planeado; falta diseño |
+| 3 | **Tarjetas en Trabajos** | La lista de trabajos es una lista simple, un renglón por trabajo | Tarjetas, con información del estado abajo y una miniatura del diseño inicial (la de A14) | Anotado |
 | — | **Colores de referencia por pieza** | Los DXF que llegan no traen color | Elegir un color por pieza (la «O» de Complejo en rojo) y que se vea en el plano, en Chapas y en el PDF, para reconocerla anidada | En espera (Enzo, 2026-10-22) |
 | — | **Entrada `.cdr`** | Solo se lee DXF | Leer el archivo de CorelDRAW directo. Ya hay un estudio que funcionó con LibreOffice, sin CorelDRAW: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | En espera (Enzo, 2026-10-22) |
 
@@ -121,7 +121,7 @@ Abrí **exactamente** `http://localhost:5173` (no `127.0.0.1`, no otro puerto): 
 | 4 | **Grupos** | En el grupo, "Comparar formatos" → tildá 2 o más formatos «DEMO» → "Comparar" → "Usar este" en el que prefieras | Una tabla con planchas, aprovechamiento y costo (marcado "(simulado)"); el grupo queda con su material |
 | 5 | **Anidado** | "Anidar" | La ejecución pasa a **lista**, con planchas y % de aprovechamiento. Probá "Marcar definitiva" |
 | 6 | **Anidado** | Cambiá kerf, margen, separación o rotación y apretá "Aplicar y recalcular"; probá también "Aprovechar huecos" | Se crea una ejecución nueva; la anterior queda en el historial |
-| 7 | **Chapas** | Elegí el grupo arriba. Pasá el mouse por una pieza o una chapa; arrastrá una pieza a otra chapa o a «Chapa nueva». Doble clic en una chapa para retocarla: arrastrá piezas y girá con la rueda del mouse (o los botones ±15° / ±90°) | Todas las chapas juntas y el diseño inicial pintado por chapa; lo que está bajo el mouse se ilumina en los dos. Una pieza que se sale o choca se marca en rojo. "Ver plano imprimible" y "Descargar DXF de corte" exportan cada chapa |
+| 7 | **Chapas** | Elegí el grupo arriba. Pasá el mouse por una pieza o una chapa; arrastrá una pieza a otra chapa o a «Chapa nueva». Doble clic en una chapa para retocarla: arrastrá piezas y girá con la rueda del mouse (o los botones ±15° / ±90°) | Todas las chapas juntas y el diseño inicial pintado por chapa; lo que está bajo el mouse se ilumina en los dos. Una pieza que se sale o choca se marca en rojo. "Ver plano imprimible" y "Descargar DXF de corte" exportan cada chapa. "Descargar PDF", arriba a la derecha, baja el PDF del trabajo entero para imprimir en A4 |
 | 8 | **Costeo** | Elegí «+ Cliente nuevo…» → "Crear primera opción de presupuesto" → "Recalcular materiales" → agregá líneas (mano de obra, flete…) | El desglose por rubro, con margen, IVA y total |
 
 ### Qué tener en cuenta (no son errores)
