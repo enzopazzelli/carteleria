@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
+import { urlPdfAnidado } from "../../api/nesting";
 import type { GrupoDeCorte } from "../../api/piezasYgrupos";
 import ChapaGrande from "../../components/Chapas/ChapaGrande";
 import Mosaico from "../../components/Chapas/Mosaico";
@@ -32,10 +33,11 @@ export default function ChapasTab() {
     <IluminadoProvider conDisenioFijo>
       <div>
         <h1 className="text-2xl font-semibold mb-4">Chapas</h1>
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           {grupos?.map((grupo) => (
             <PastillaDeGrupo key={grupo.id} grupo={grupo} elegido={grupo.id === grupoId} alElegir={() => setElegido(grupo.id)} />
           ))}
+          {grupoId !== null && <DescargarPdf trabajoId={id} grupoId={grupoId} />}
         </div>
         {grupoId !== null && <ChapasDelGrupo key={grupoId} trabajoId={id} grupoId={grupoId} grupo={grupos?.find((g) => g.id === grupoId)} />}
       </div>
@@ -57,6 +59,18 @@ function PastillaDeGrupo({ grupo, elegido, alElegir }: { grupo: GrupoDeCorte; el
     >
       {texto}
     </button>
+  );
+}
+
+/** El PDF del trabajo entero (A15). Aparece cuando el grupo que se está
+ * viendo tiene un anidado terminado: si lo tiene, el trabajo también. */
+function DescargarPdf({ trabajoId, grupoId }: { trabajoId: number; grupoId: number }) {
+  const { data: historial } = useEjecucionesDeGrupo(grupoId);
+  if (!anidadoParaMostrar(historial)) return null;
+  return (
+    <a className="ml-auto text-sm underline" href={urlPdfAnidado(trabajoId)}>
+      Descargar PDF
+    </a>
   );
 }
 

@@ -129,6 +129,11 @@ export function urlDxf(ejecucionId: number, plancha: number): string {
   return `http://localhost:8000/ejecuciones/${ejecucionId}/dxf?plancha=${plancha}`;
 }
 
+/** El PDF del diseño anidado del trabajo entero, para imprimir en A4 (A15). */
+export function urlPdfAnidado(trabajoId: number): string {
+  return `http://localhost:8000/trabajos/${trabajoId}/pdf-anidado`;
+}
+
 export function cancelarEjecucion(id: number): Promise<Ejecucion> {
   return apiPost<Ejecucion>(`/ejecuciones/${id}/cancelar`);
 }

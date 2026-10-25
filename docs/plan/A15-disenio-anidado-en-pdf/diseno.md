@@ -1,6 +1,6 @@
 # A15 · El diseño anidado en PDF — diseño
 
-> **Estado:** escrito el 2026-10-25, después de una charla con bocetos (§3). **Aprobado por Enzo ese día** («Si»). El plan está en [`plan.md`](plan.md): 4 tareas, con pausa al final de cada una.
+> **Estado:** escrito el 2026-10-25, después de una charla con bocetos (§3). **Aprobado por Enzo ese día** («Si»). El plan está en [`plan.md`](plan.md): 4 tareas, con pausa al final de cada una. **Construido el 2026-10-25** en la rama `feat/pdf-disenio-anidado`, sin fusionar todavía. Cómo quedó y lo recorrido, en §10.
 >
 > **De dónde sale.** Es el paso 1 de «En qué estamos» del README y el 5 de «Lo que sigue» en el [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md). Lo pidió el dueño en la reunión del 2026-10-22: el diseño anidado también en PDF, además del DXF para la máquina. Enzo, el 2026-10-24: lo usan **para tener registro, para armar el cartel y para que el operario de la máquina tenga el trabajo a mano**, con los colores por chapa de A14 ([`historico/A14-chapas-en-conjunto/diseno.md §8`](../../historico/A14-chapas-en-conjunto/diseno.md)). Cubre una parte de `CART-207` (plano de anidado para el taller, [`BACKLOG.md`](../../BACKLOG.md)); lo que se aparta de esa historia está en §4. Lleva la letra A porque cambia lo que se hace con el resultado del anidado.
 >
@@ -184,3 +184,35 @@ En pasos chicos, con pausa al final de cada uno para que Enzo lo vea:
 - La flecha de la veta.
 - Qué anidado es, en la hoja del diseño.
 - Los dos botones.
+
+## 10. Cómo quedó
+
+Construido el 2026-10-25, las cuatro tareas del plan en la rama `feat/pdf-disenio-anidado`, con pausa al final de cada una para que Enzo la viera. Pruebas del servidor de 876 a 903; de la pantalla, de 209 a 210.
+
+**Lo construido:**
+1. **Repartir las hojas** (`nesting/hojas_pdf.py`): qué va en cada hoja y dónde, en mm de papel, sin ReportLab. La escala, cuántas chapas por hoja y si la hoja del diseño va parada o apaisada.
+2. **Dibujarlas** (`nesting/pdf_anidado.py`): ReportLab, en vectores, con las letras del PDF del presupuesto. Una prueba compara la paleta con la de `pintado.ts`.
+3. **El pedido** `GET /trabajos/{id}/pdf-anidado` (`api/rutas_pdf_anidado.py`). Para no hacer cuentas nuevas se sacaron de sus rutas `disenio_del_trabajo` (`rutas_disenio.py`) y `material_usado_de` (`rutas_ajuste.py`).
+4. **Los dos «Descargar PDF»:** en la fila de las pastillas de la pestaña Chapas y al lado de «Descargar DXF» en el resumen del anidado.
+
+**Lo recorrido**, sobre la copia de la base de los bocetos (`backend/local/tmp-a14/pdf`, con Complejo anidado ahí: 7 chapas), con el guion y las capturas en `backend/local/herramientas-a15/`, fuera de git. Todo BIEN y sin errores en la página:
+- **Complejo:** 3 hojas. El diseño va en una hoja parada, y las chapas 1 a 4 y 5 a 7, a 1:20. «Calibre 18», sin anidar, figura al pie. Baja como `Complejo-anidado-2026-10-25.pdf` (235 KB) desde los dos botones.
+- **parador1:** 2 hojas. El diseño va apaisado y las 3 chapas en una hoja.
+- **El primer parador**, sin anidado terminado: no aparece el botón, y el pedido responde con el mensaje.
+- **Las letras no salen espejadas** y los nombres largos («39/unida/t8») se leen bien.
+
+**Desvíos del plan** (el detalle está en el registro de la ejecución):
+- **Una prueba que no estaba en el plan.** Al mirar las hojas, el modo «solo trazo» del borde blanco de los números quedaba prendido en el PDF, y todo el texto que venía después salía engrosado. ReportLab supone que cada texto nuevo arranca en «relleno». Ahora se vuelve a «relleno» dentro del mismo texto, y una prueba lo controla.
+- **La flecha de la veta va a lo largo del lado largo de la chapa** *(decisión mía)*. El sistema no guarda hacia dónde corre la veta; `PAR-04` solo dice si hay.
+- **El botón de la pestaña Chapas** es un componente chico en la fila de las pastillas, que mira el anidado del grupo elegido con la misma consulta que ya usa la pantalla.
+- **El recorrido usó la copia de los bocetos**, que ya tenía a Complejo anidado, en vez de una copia nueva y volver a anidar.
+
+**Lo que quedó vivo** (se sigue en el `PLAN-MAESTRO.md §7`, «Pendientes del diseño anidado en PDF (A15)»):
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| Imprimir una hoja de chapas al 100 % y medir con regla: la barra, 25 mm; una chapa de 1220 × 2440, 61 × 122 mm | §7 | Enzo |
+| Hacia dónde corre la veta en la chapa: la flecha la supone a lo largo del lado largo | Tarea 2 | Taller (`P-04`, `B-04`) |
+| Las chapas van alineadas abajo, sobre la barra de escala. En chapas bajas, como las de parador1, queda blanco arriba: se pueden centrar en el alto | Tarea 2 | Enzo |
+| En una chapa con muchas piezas chicas (la 1 de parador1, 41 piezas) los números quedan apretados: se leen, pero justo | Tarea 2 | — |
+
