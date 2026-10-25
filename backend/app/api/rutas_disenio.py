@@ -168,7 +168,11 @@ def _posicion(pieza: Pieza) -> PosicionEnDisenio | None:
 def obtener_disenio(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -> DisenioLeer:
     """El dibujo como se cargó y dónde está cada pieza que se corta
     (A14). La primera vez completa lo que las piezas viejas no saben."""
-    trabajo = _trabajo_o_404(sesion, trabajo_id)
+    return disenio_del_trabajo(sesion, _trabajo_o_404(sesion, trabajo_id))
+
+
+def disenio_del_trabajo(sesion: Session, trabajo: Trabajo) -> DisenioLeer:
+    """Lo que devuelve `obtener_disenio`, también para el PDF del diseño anidado (A15)."""
     if any(p.disenio_x_mm is None for p in trabajo.piezas):
         recuperar_posiciones(sesion, trabajo)
         sesion.commit()
