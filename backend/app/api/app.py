@@ -27,6 +27,7 @@ from .rutas_ajuste import router as router_ajuste
 from .rutas_catalogo import router as router_catalogo
 from .rutas_comparaciones import router as router_comparaciones
 from .rutas_disenio import router as router_disenio
+from .rutas_pdf_anidado import router as router_pdf_anidado
 from .rutas_importacion import router as router_importacion
 from .rutas_nesting import router as router_nesting
 from .rutas_presupuesto import router as router_presupuesto
@@ -75,3 +76,4 @@ app.include_router(router_ajuste)
 app.include_router(router_presupuesto)
 app.include_router(router_seccionado)
 app.include_router(router_disenio)
+app.include_router(router_pdf_anidado)

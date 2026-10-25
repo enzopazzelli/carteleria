@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useFormato, useMateriales } from "../hooks/useCatalogo";
 import { useEjecucionesDeGrupo, useMaterialUsado } from "../hooks/useNesting";
-import { urlPlano, urlDxf, type MedidaLeer } from "../api/nesting";
+import { urlPlano, urlDxf, urlPdfAnidado, type MedidaLeer } from "../api/nesting";
 import type { GrupoDeCorte } from "../api/piezasYgrupos";
 
 /** «1220 × 900», como lo escribe el servidor en la línea del material usado. */
@@ -71,6 +71,7 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
         </select></label>
         <a className="underline" href={urlPlano(ejecucion.id,hoja)} target="_blank" rel="noreferrer">Abrir plano</a>
         <a className="underline" href={urlDxf(ejecucion.id,hoja)}>Descargar DXF</a>
+        <a className="underline" href={urlPdfAnidado(grupo.trabajo_id)}>Descargar PDF</a>
         <Link className="underline" to={`/trabajos/${grupo.trabajo_id}/ajuste`}>Ajustar piezas</Link>
       </div>
       <div className="overflow-auto border border-line rounded-lg bg-paper" style={{maxHeight:650}}>

@@ -27,7 +27,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 
 | # | Qué | Cómo está hoy | Qué se busca | Estado |
 |---|---|---|---|---|
-| 1 | **El diseño anidado en PDF** | Sale el DXF de cada chapa, para la máquina | Además, un PDF con cada chapa a escala, para el taller, con los colores por chapa de A14: para tener registro, para armar el cartel y para el operario de la máquina | Falta diseño |
+| 1 | **El diseño anidado en PDF** | Sale el DXF de cada chapa, para la máquina | Además, un PDF por trabajo para el taller, en A4 y en color: el diseño pintado por chapa y las chapas juntas a 1:20 con una grilla y el número de cada pieza. Para tener registro, para armar el cartel y para el operario de la máquina | **Construido el 2026-10-25, sin fusionar** ([`A15`](docs/plan/A15-disenio-anidado-en-pdf/diseno.md)) |
 | 2 | **Una página de inicio, con materiales y presupuestos** | La pantalla tiene la lista de trabajos y el espacio de cada trabajo. Los materiales se cargan por la API, sin pantalla | Una página de inicio; el alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro | Planeado el 2026-10-15; falta diseño |
 | 3 | **La aprobación del presupuesto** | No existe | Estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué (sub-proyecto 1.4 del plan maestro) | Planeado; falta diseño |
 | 4 | **Tarjetas en Trabajos** | La lista de trabajos es una lista simple, un renglón por trabajo | Tarjetas, con información del estado abajo y una miniatura del diseño inicial (la de A14) | Anotado |

@@ -28,7 +28,7 @@ from ..modelos.trabajo import Colocacion, EstadoEjecucion, GrupoDeCorte, Pieza
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.exportacion_dxf import exportar_plancha_a_dxf, nombre_de_archivo
 from ..services.nesting.huecos_primero import lugar_libre
-from ..services.nesting.material_usado import material_usado
+from ..services.nesting.material_usado import MaterialUsado, material_usado
 from ..services.nesting.models import ParametrosCorte, Plancha, PosicionPieza, ResultadoAnidado, RotacionPermitida
 from ..services.nesting.mover_entre_chapas import angulos_permitidos, libre_de_chapa
 from ..services.nesting.validacion_manual import (
@@ -383,6 +383,19 @@ def obtener_material_usado(ejecucion_id: int, sesion: Session = Depends(obtener_
     ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
     if ejecucion.estado != EstadoEjecucion.LISTA.value:
         raise HTTPException(status.HTTP_409_CONFLICT, "Este anidado todavía no terminó: no hay material usado para mostrar.")
+    plancha = _plancha_de(sesion, ejecucion)
+    material = material_usado_de(sesion, ejecucion)
+    return MaterialUsadoLeer(
+        chapa=MedidaLeer(ancho_mm=round(plancha.ancho_mm), alto_mm=round(plancha.alto_mm)),
+        chapas=[MaterialDeChapaLeer.model_validate(c) for c in material.chapas],
+        linea=material.linea,
+        retazo_minimo_mm=config.RETAZO_MINIMO_MM,
+    )
+
+
+def material_usado_de(sesion: Session, ejecucion) -> MaterialUsado:
+    """Lo usado y el sobrante de cada chapa de un anidado terminado; también
+    para el PDF del diseño anidado (A15)."""
     params = _parametros_desde_snapshot(ejecucion.parametros)
     plancha = _plancha_de(sesion, ejecucion)
     # El mismo borde que deja `sparrow._area_util` alrededor de la chapa.
@@ -394,12 +407,6 @@ def obtener_material_usado(ejecucion_id: int, sesion: Session = Depends(obtener_
         por_chapa[colocacion.plancha_indice].append(
             poligono_colocado(_posicion_manual_de(colocacion), geometria_desde_pieza(colocacion.pieza))
         )
-    material = material_usado(
+    return material_usado(
         por_chapa, float(plancha.ancho_mm), float(plancha.alto_mm), borde, config.RETAZO_MINIMO_MM
-    )
-    return MaterialUsadoLeer(
-        chapa=MedidaLeer(ancho_mm=round(plancha.ancho_mm), alto_mm=round(plancha.alto_mm)),
-        chapas=[MaterialDeChapaLeer.model_validate(c) for c in material.chapas],
-        linea=material.linea,
-        retazo_minimo_mm=config.RETAZO_MINIMO_MM,
     )
