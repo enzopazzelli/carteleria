@@ -1,9 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { crearTrabajo, listarTrabajos, obtenerTrabajo } from "../api/trabajos";
-
-export function useTrabajos() {
-  return useQuery({ queryKey: ["trabajos"], queryFn: listarTrabajos });
-}
+import { crearTrabajo, obtenerTrabajo } from "../api/trabajos";
 
 export function useTrabajo(trabajoId: number) {
   return useQuery({
@@ -16,6 +12,6 @@ export function useCrearTrabajo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (nombre: string) => crearTrabajo(nombre),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["trabajos"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tarjetas"] }),
   });
 }

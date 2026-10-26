@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
-import type { PresupuestoResumido } from "../../api/inicio";
+import type { PresupuestoResumido, Tarjeta } from "../../api/inicio";
 import {
+  coincideConLaBusqueda,
   cuantos,
   fechaDeTarjeta,
   renglonesDeChapas,
   rutaDelDestino,
   rutaDelPresupuesto,
+  textoDeBorrado,
   textoDelPresupuesto,
 } from "./formato";
 
@@ -68,4 +70,38 @@ it("cuenta en singular y en plural", () => {
   expect(cuantos(1, "retazo", "retazos")).toBe("1 retazo");
   expect(cuantos(29, "medida de chapa", "medidas de chapa")).toBe("29 medidas de chapa");
   expect(cuantos(0, "presupuesto", "presupuestos")).toBe("0 presupuestos");
+});
+
+function tarjeta(nombre: string, presupuesto: PresupuestoResumido | null): Tarjeta {
+  return {
+    id: 4, nombre, tocado_en: "2026-10-24T19:14:00Z", frase: "Falta el presupuesto", destino: "chapas", chapas: [],
+    pasos: { piezas: "hecho", grupos: "hecho", anidado: "hecho", presupuesto: "pendiente" }, presupuesto,
+  };
+}
+
+describe("coincideConLaBusqueda", () => {
+  it("busca sin acentos ni mayúsculas", () => {
+    expect(coincideConLaBusqueda("Cartel Peña", "pena")).toBe(true);
+    expect(coincideConLaBusqueda("Cartel Pena", "peña")).toBe(true);
+    expect(coincideConLaBusqueda("Parador", "PARA")).toBe(true);
+    expect(coincideConLaBusqueda("Complejo", "x")).toBe(false);
+  });
+
+  it("una búsqueda vacía muestra todo", () => {
+    expect(coincideConLaBusqueda("Complejo", "  ")).toBe(true);
+  });
+});
+
+describe("textoDeBorrado", () => {
+  it("nombra el trabajo y lo que se borra", () => {
+    expect(textoDeBorrado(tarjeta("parador", null))).toEqual([
+      "¿Borrar «parador»? Se borran sus piezas, sus grupos, sus anidados y el dibujo guardado. No se puede deshacer.",
+    ]);
+  });
+
+  it("avisa que el presupuesto queda", () => {
+    expect(textoDeBorrado(tarjeta("parador", PRESUPUESTO))[1]).toBe(
+      "Su presupuesto P-2026-0001 no se borra: queda sin trabajo.",
+    );
+  });
 });

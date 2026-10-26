@@ -9,10 +9,6 @@ export interface Trabajo {
   actualizado_en: string;
 }
 
-export function listarTrabajos(): Promise<Trabajo[]> {
-  return apiGet<Trabajo[]>("/trabajos");
-}
-
 export function obtenerTrabajo(trabajoId: number): Promise<Trabajo> {
   return apiGet<Trabajo>(`/trabajos/${trabajoId}`);
 }

@@ -1,7 +1,7 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import ConBarra from "./routes/ConBarra";
 import Inicio from "./routes/Inicio";
-import TrabajosLista from "./routes/TrabajosLista";
+import Trabajos from "./routes/Trabajos";
 import WorkspaceLayout from "./routes/TrabajoWorkspace/WorkspaceLayout";
 import PiezasTab from "./routes/TrabajoWorkspace/PiezasTab";
 import GruposTab from "./routes/TrabajoWorkspace/GruposTab";
@@ -15,8 +15,7 @@ const router = createBrowserRouter([
     element: <ConBarra />,
     children: [
       { path: "/", element: <Inicio /> },
-      // Hasta la tarea 6 de A16, la lista de siempre.
-      { path: "/trabajos", element: <TrabajosLista /> },
+      { path: "/trabajos", element: <Trabajos /> },
       {
         path: "/trabajos/:trabajoId",
         element: <WorkspaceLayout />,

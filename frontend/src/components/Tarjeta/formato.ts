@@ -1,4 +1,4 @@
-import type { Destino, PresupuestoResumido } from "../../api/inicio";
+import type { Destino, PresupuestoResumido, Tarjeta } from "../../api/inicio";
 import { mostrarImporte } from "../../routes/TrabajoWorkspace/importes";
 
 // Lo que dice una tarjeta de trabajo (A16, `docs/plan/A16-pagina-de-inicio/diseno.md §5.3`).
@@ -51,4 +51,24 @@ export function rutaDelDestino(trabajoId: number, destino: Destino): string {
 /** Abre ese mismo presupuesto en el Costeo, no el primero del trabajo. */
 export function rutaDelPresupuesto(presupuesto: PresupuestoResumido): string | null {
   return presupuesto.trabajo_id === null ? null : `/trabajos/${presupuesto.trabajo_id}/costeo?presupuesto=${presupuesto.id}`;
+}
+
+function sinAcentos(texto: string): string {
+  return texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
+/** Por nombre, sin distinguir mayúsculas ni acentos: «pena» encuentra «Peña». */
+export function coincideConLaBusqueda(nombre: string, busqueda: string): boolean {
+  return sinAcentos(nombre).includes(sinAcentos(busqueda.trim()));
+}
+
+/** Los renglones de la confirmación antes de borrar un trabajo. */
+export function textoDeBorrado(tarjeta: Tarjeta): string[] {
+  const renglones = [
+    `¿Borrar «${tarjeta.nombre}»? Se borran sus piezas, sus grupos, sus anidados y el dibujo guardado. No se puede deshacer.`,
+  ];
+  if (tarjeta.presupuesto) {
+    renglones.push(`Su presupuesto ${tarjeta.presupuesto.codigo} no se borra: queda sin trabajo.`);
+  }
+  return renglones;
 }
