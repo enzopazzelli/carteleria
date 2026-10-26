@@ -1,3 +1,28 @@
+## 👋 Para Vale: el sprint que arranca (A17) — 2026-10-26
+
+Enzo pidió cerrar en un solo sprint todo lo chico que quedó suelto: cerca de sesenta pendientes repartidos en las tablas del plan maestro. Así, después quedan solo las cosas grandes: las pantallas de materiales y presupuestos, la aprobación del presupuesto y cobrar por lo usado.
+
+- **El diseño:** [`docs/plan/A17-pulir-lo-suelto/diseno.md`](docs/plan/A17-pulir-lo-suelto/diseno.md). Dice qué se arregla y qué decidió Enzo, y lista lo que queda esperando a alguien y lo grande que viene después.
+- **El plan:** [`docs/plan/A17-pulir-lo-suelto/plan.md`](docs/plan/A17-pulir-lo-suelto/plan.md). Son 41 tareas en 7 tandas. Cada tanda va en su propia rama y termina con una pausa para que Enzo la pruebe antes de fusionarla en `main`.
+
+**Lo que toca el motor (tu carril)**, por si tenés cambios en curso:
+- **`sparrow_worker.py`:**
+  - en la tanda 1, la etapa de vaciar chapas mide cuánto tarda de verdad cada consulta y no empieza una que no termina a tiempo;
+  - en la tanda 2, dos caminos para que Complejo dé 7 chapas más seguido: dos búsquedas a la vez dentro del mismo anidado, o el tiempo repartido en varias vueltas cortas. Se miden los dos y queda el que gane.
+- **`sparrow.py`** (tanda 1):
+  - la carpeta temporal pasa al lado de los datos;
+  - «entra en la chapa» usa los mismos giros que el anidado: con giro libre, cualquier ángulo;
+  - el registro dice de qué anidado es lo que escribió Sparrow.
+- **`huecos_primero.py`** (tanda 2): se prueban varios órdenes de piezas en cada hueco, y quedan si meten más piezas.
+- **`services/nesting/reacomodar.py`**, nuevo (tanda 3): al pasar una pieza a otra chapa en la pestaña Chapas, si no entra en lo libre, esa chapa se reacomoda con Sparrow, con «Deshacer».
+- **`services/seccionado/grilla.py`** (tanda 1): la segunda pasada prueba los ángulos del medio, en vez de repetir los que ya se habían probado.
+
+**Una pregunta para vos, que quedó anotada:** ¿tenés cambios en curso sobre `sparrow_worker.py`? ¿Ya habías probado otro reparto del tiempo entre las vueltas y el vaciado de chapas? Si alguna respuesta es sí, avisale a Enzo antes de la tanda 2.
+
+**Al arrancar el servidor:** desde la tanda 1, la base se actualiza sola. Antes de hacerlo, guarda un respaldo en `backend/local/respaldo-<fecha>-antes-de-<versión>/`.
+
+---
+
 ## 🧭 En qué estamos — 2026-10-26
 
 Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Lo que sigue, desde la reunión del 2026-10-22».
