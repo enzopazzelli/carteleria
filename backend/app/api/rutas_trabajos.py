@@ -103,6 +103,7 @@ def obtener_trabajo(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) 
 @router.delete("/trabajos/{trabajo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_trabajo(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -> None:
     trabajo = _trabajo_o_404(sesion, trabajo_id)
+    rechazar_si_hay_anidado_en_curso(sesion, GrupoDeCorte.trabajo_id == trabajo_id, "borrar el trabajo")
     if trabajo.archivo_guardado:
         Path(trabajo.archivo_guardado).unlink(missing_ok=True)
         _ruta_del_fondo(trabajo).unlink(missing_ok=True)

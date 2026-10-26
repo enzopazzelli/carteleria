@@ -15,6 +15,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..costeo import _ejecucion_para_costear
+from ..modelos.catalogo import Formato, Material
 from ..modelos.presupuesto import LineaCosto, Presupuesto
 from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza, Trabajo
 from ..pasos import GrupoParaPasos, TrabajoParaPasos, pasos_del_trabajo
@@ -22,12 +23,22 @@ from ..services.nesting.hojas_pdf import DisenioDelPdf
 from ..services.nesting.miniatura_svg import svg_de_miniatura
 from ..services.presupuesto.totales import calcular
 from .dependencias import obtener_sesion
-from .esquemas_inicio import PasosLeer, PresupuestoResumidoLeer, TarjetaLeer
+from .esquemas_inicio import (
+    FamiliaLeer,
+    MaterialesResumidosLeer,
+    PasosLeer,
+    PresupuestoResumidoLeer,
+    ResumenDelInicioLeer,
+    TarjetaLeer,
+)
 from .rutas_pdf_anidado import _disenio, _material
 from .rutas_presupuesto import _lineas_del_presupuesto
 from .rutas_trabajos import _trabajo_o_404
 
 router = APIRouter(tags=["inicio"])
+
+#: Cuántos presupuestos muestra el inicio (diseño §9, decisión de Claude).
+ULTIMOS_PRESUPUESTOS = 5
 
 
 def en_utc(fecha: datetime) -> datetime:
@@ -168,3 +179,37 @@ def obtener_miniatura(trabajo_id: int, sesion: Session = Depends(obtener_sesion)
     después de anidar; acá no se mira."""
     trabajo = _trabajo_o_404(sesion, trabajo_id)
     return Response(content=svg_de_miniatura(disenio_de_miniatura(sesion, trabajo)), media_type="image/svg+xml")
+
+
+# --- El resumen del inicio ----------------------------------------------------
+
+
+def _materiales_resumidos(sesion: Session) -> MaterialesResumidosLeer:
+    def contar(consulta) -> int:
+        return sesion.scalar(consulta) or 0
+
+    return MaterialesResumidosLeer(
+        materiales=contar(select(func.count(Material.id))),
+        medidas=contar(select(func.count(Formato.id)).where(Formato.es_retazo.is_(False))),
+        retazos=contar(select(func.count(Formato.id)).where(Formato.es_retazo.is_(True))),
+        por_familia=[
+            FamiliaLeer(familia=familia, materiales=cantidad)
+            for familia, cantidad in sesion.execute(
+                select(Material.familia, func.count(Material.id)).group_by(Material.familia).order_by(Material.familia)
+            )
+        ],
+    )
+
+
+@router.get("/resumen-del-inicio", response_model=ResumenDelInicioLeer)
+def obtener_resumen_del_inicio(sesion: Session = Depends(obtener_sesion)) -> ResumenDelInicioLeer:
+    """Los últimos presupuestos y lo que hay cargado de materiales, mientras
+    no tengan su propia pantalla."""
+    presupuestos = sesion.scalars(
+        select(Presupuesto).order_by(Presupuesto.id.desc()).limit(ULTIMOS_PRESUPUESTOS)
+    ).all()
+    return ResumenDelInicioLeer(
+        presupuestos=[presupuesto_resumido(sesion, presupuesto) for presupuesto in presupuestos],
+        total_presupuestos=sesion.scalar(select(func.count(Presupuesto.id))) or 0,
+        materiales=_materiales_resumidos(sesion),
+    )

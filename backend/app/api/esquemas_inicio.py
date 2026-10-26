@@ -44,3 +44,24 @@ class TarjetaLeer(BaseModel):
     chapas: list[str]
     #: El más reciente del trabajo.
     presupuesto: PresupuestoResumidoLeer | None
+
+
+class FamiliaLeer(BaseModel):
+    familia: str
+    materiales: int
+
+
+class MaterialesResumidosLeer(BaseModel):
+    materiales: int
+    #: Las medidas de chapa enteras: los formatos que no son retazo.
+    medidas: int
+    retazos: int
+    #: Por nombre de familia.
+    por_familia: list[FamiliaLeer]
+
+
+class ResumenDelInicioLeer(BaseModel):
+    #: Los más recientes primero.
+    presupuestos: list[PresupuestoResumidoLeer]
+    total_presupuestos: int
+    materiales: MaterialesResumidosLeer

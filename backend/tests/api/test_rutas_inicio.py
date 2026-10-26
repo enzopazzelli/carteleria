@@ -174,3 +174,48 @@ def test_las_chapas_de_un_grupo_sin_piezas_no_van_en_la_tarjeta(cliente, tmp_pat
     _grupo_vacio_con_un_anidado_viejo(cliente, trabajo["id"])
 
     assert cliente.get("/tarjetas").json()[0]["chapas"] == ["1 chapa · Chapa"]
+
+
+# --- El resumen del inicio ----------------------------------------------------
+
+
+def test_el_resumen_trae_los_5_presupuestos_mas_recientes(cliente):
+    trabajo = cliente.post("/trabajos", json={"nombre": "A"}).json()
+    ids = [_presupuesto(cliente, trabajo["id"], f"Cliente {n}")["id"] for n in range(6)]
+
+    resumen = cliente.get("/resumen-del-inicio").json()
+
+    assert [p["id"] for p in resumen["presupuestos"]] == ids[::-1][:5]
+    assert resumen["total_presupuestos"] == 6
+    assert resumen["presupuestos"][0]["cliente"] == "Cliente 5"
+
+
+def test_un_presupuesto_de_un_trabajo_borrado_queda_sin_trabajo(cliente):
+    trabajo = cliente.post("/trabajos", json={"nombre": "A"}).json()
+    presupuesto = _presupuesto(cliente, trabajo["id"])
+
+    cliente.delete(f"/trabajos/{trabajo['id']}")
+
+    fila = cliente.get("/resumen-del-inicio").json()["presupuestos"][0]
+    assert (fila["id"], fila["trabajo_id"], fila["trabajo"]) == (presupuesto["id"], None, None)
+    assert cliente.get("/tarjetas").json() == []
+
+
+def test_los_conteos_de_materiales(cliente):
+    chapa = cliente.post("/materiales", json={"nombre": "Chapa negra", "familia": "Chapas"}).json()
+    acrilico = cliente.post("/materiales", json={"nombre": "Acrílico", "familia": "Acrílicos"}).json()
+    cliente.post(f"/materiales/{chapa['id']}/formatos", json={"ancho_mm": "1220", "alto_mm": "2440"})
+    cliente.post(f"/materiales/{chapa['id']}/formatos", json={"ancho_mm": "600", "alto_mm": "400", "es_retazo": True})
+    cliente.post(f"/materiales/{acrilico['id']}/formatos", json={"ancho_mm": "1220", "alto_mm": "2440"})
+
+    assert cliente.get("/resumen-del-inicio").json()["materiales"] == {
+        "materiales": 2, "medidas": 2, "retazos": 1,
+        "por_familia": [{"familia": "Acrílicos", "materiales": 1}, {"familia": "Chapas", "materiales": 1}],
+    }
+
+
+def test_el_resumen_sin_nada(cliente):
+    assert cliente.get("/resumen-del-inicio").json() == {
+        "presupuestos": [], "total_presupuestos": 0,
+        "materiales": {"materiales": 0, "medidas": 0, "retazos": 0, "por_familia": []},
+    }
