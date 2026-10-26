@@ -2,8 +2,15 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from pathlib import Path
 
-from .test_rutas_ajuste import _trabajo_anidado_con_dos_piezas, cliente  # noqa: F401
+from sqlalchemy.orm import Session
+
+from .test_rutas_ajuste import _dxf_dos_piezas, _trabajo_anidado_con_dos_piezas, cliente  # noqa: F401
+
+from app.api.rutas_trabajos import _ruta_del_fondo
+from app.modelos import Trabajo
+from app.services.nesting.pdf_anidado import GRIS_OTRO, PALETA_CHAPAS
 
 
 def _tocado(cliente, indice: int = 0) -> datetime:
@@ -87,3 +94,83 @@ def test_un_trabajo_sin_piezas(cliente):
     tarjeta = cliente.get("/tarjetas").json()[0]
 
     assert (tarjeta["frase"], tarjeta["chapas"], tarjeta["presupuesto"]) == ("Falta cargar el dibujo", [], None)
+
+
+# --- La miniatura -------------------------------------------------------------
+
+
+def _dibujo_sin_grupos(cliente, tmp_path) -> dict:
+    trabajo = cliente.post("/trabajos", json={"nombre": "Sin anidar"}).json()
+    cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("dos.dxf", _dxf_dos_piezas(tmp_path), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+    return trabajo
+
+
+def test_la_miniatura_pinta_las_chapas(cliente, tmp_path):
+    trabajo, _grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+
+    r = cliente.get(f"/trabajos/{trabajo['id']}/miniatura?v=2026-10-26T14:17:00Z")
+
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"].startswith("image/svg+xml")
+    assert PALETA_CHAPAS[0] in r.text
+
+
+def test_sin_anidado_la_miniatura_va_en_gris(cliente, tmp_path):
+    trabajo = _dibujo_sin_grupos(cliente, tmp_path)
+
+    svg = cliente.get(f"/trabajos/{trabajo['id']}/miniatura").text
+
+    assert GRIS_OTRO in svg
+    assert PALETA_CHAPAS[0] not in svg
+
+
+def test_sin_el_dxf_guardado_la_miniatura_sale_igual(cliente, tmp_path):
+    trabajo, _grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    with Session(cliente.motor) as sesion:
+        guardado = sesion.get(Trabajo, trabajo["id"])
+        Path(guardado.archivo_guardado).unlink()
+        _ruta_del_fondo(guardado).unlink(missing_ok=True)
+
+    r = cliente.get(f"/trabajos/{trabajo['id']}/miniatura")
+
+    assert r.status_code == 200, r.text
+    assert PALETA_CHAPAS[0] in r.text
+
+
+def test_un_trabajo_sin_dibujo_lo_dice_en_la_miniatura(cliente):
+    trabajo = cliente.post("/trabajos", json={"nombre": "Vacío"}).json()
+
+    assert "Sin dibujo" in cliente.get(f"/trabajos/{trabajo['id']}/miniatura").text
+
+
+def test_la_miniatura_de_un_trabajo_que_no_existe_da_404(cliente):
+    assert cliente.get("/trabajos/999/miniatura").status_code == 404
+
+
+def _grupo_vacio_con_un_anidado_viejo(cliente, trabajo_id: int) -> None:
+    """Como «Rosa» en Parador12: un grupo que se anidó y después se quedó sin
+    piezas, va antes que los otros y su anidado sigue contando."""
+    from app.modelos.trabajo import EjecucionNesting
+
+    grupo = cliente.post(f"/trabajos/{trabajo_id}/grupos", json={"nombre": "Rosa", "orden": -1}).json()
+    with Session(cliente.motor) as sesion:
+        sesion.add(EjecucionNesting(grupo_id=grupo["id"], motor="sparrow", estado="lista", planchas_usadas=1))
+        sesion.commit()
+
+
+def test_la_miniatura_saltea_un_grupo_sin_piezas(cliente, tmp_path):
+    trabajo, _grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    _grupo_vacio_con_un_anidado_viejo(cliente, trabajo["id"])
+
+    assert PALETA_CHAPAS[0] in cliente.get(f"/trabajos/{trabajo['id']}/miniatura").text
+
+
+def test_las_chapas_de_un_grupo_sin_piezas_no_van_en_la_tarjeta(cliente, tmp_path):
+    trabajo, _grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    _grupo_vacio_con_un_anidado_viejo(cliente, trabajo["id"])
+
+    assert cliente.get("/tarjetas").json()[0]["chapas"] == ["1 chapa · Chapa"]

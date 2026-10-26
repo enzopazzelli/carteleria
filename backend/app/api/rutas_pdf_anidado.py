@@ -92,13 +92,16 @@ def _chapas(sesion: Session, ejecucion: EjecucionNesting, nombres: dict[str, str
     ]
 
 
-def _disenio(sesion: Session, trabajo: Trabajo, grupo: GrupoDeCorte, ejecucion: EjecucionNesting) -> DisenioDelPdf:
+def _disenio(
+    sesion: Session, trabajo: Trabajo, grupo: GrupoDeCorte | None, ejecucion: EjecucionNesting | None
+) -> DisenioDelPdf:
     """El diseño pintado por chapa, con las reglas de `estadosPorPieza`
-    (`frontend/src/components/Disenio/pintado.ts`)."""
+    (`frontend/src/components/Disenio/pintado.ts`). Sin grupo (la miniatura
+    de un trabajo sin anidar, A16), todo va como de otro grupo, en gris."""
     disenio = disenio_del_trabajo(sesion, trabajo)
     por_id: dict[int, Pieza] = {pieza.id: pieza for pieza in trabajo.piezas}
     colocaciones: dict[int, list] = {}
-    for colocacion in ejecucion.colocaciones:
+    for colocacion in ejecucion.colocaciones if ejecucion is not None else []:
         colocaciones.setdefault(colocacion.pieza_id, []).append(colocacion)
 
     piezas = []
@@ -110,7 +113,7 @@ def _disenio(sesion: Session, trabajo: Trabajo, grupo: GrupoDeCorte, ejecucion: 
         anillos = [al_disenio(anillo, posicion) for anillo in [pieza.contorno_mm, *pieza.agujeros_mm]]
         nombre = nombre_corto(pieza.id_origen)
         suyas = colocaciones.get(pieza.id, [])
-        if pieza.grupo_id != grupo.id or pieza.descartada:
+        if grupo is None or pieza.grupo_id != grupo.id or pieza.descartada:
             piezas.append(PiezaDelDisenio(nombre, anillos, "otro"))
         elif not suyas:
             piezas.append(PiezaDelDisenio(nombre, anillos, "falta"))

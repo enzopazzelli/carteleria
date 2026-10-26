@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -18,11 +18,14 @@ from ..costeo import _ejecucion_para_costear
 from ..modelos.presupuesto import LineaCosto, Presupuesto
 from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza, Trabajo
 from ..pasos import GrupoParaPasos, TrabajoParaPasos, pasos_del_trabajo
+from ..services.nesting.hojas_pdf import DisenioDelPdf
+from ..services.nesting.miniatura_svg import svg_de_miniatura
 from ..services.presupuesto.totales import calcular
 from .dependencias import obtener_sesion
 from .esquemas_inicio import PasosLeer, PresupuestoResumidoLeer, TarjetaLeer
-from .rutas_pdf_anidado import _material
+from .rutas_pdf_anidado import _disenio, _material
 from .rutas_presupuesto import _lineas_del_presupuesto
+from .rutas_trabajos import _trabajo_o_404
 
 router = APIRouter(tags=["inicio"])
 
@@ -89,6 +92,12 @@ def _cuantas_chapas(cantidad: int) -> str:
     return "1 chapa" if cantidad == 1 else f"{cantidad} chapas"
 
 
+def _con_piezas(grupo: GrupoDeCorte) -> bool:
+    """Un grupo que se quedó sin piezas que se corten no cuenta, aunque le
+    quede un anidado de antes (pasó con «Rosa» en Parador12)."""
+    return any(not pieza.descartada for pieza in grupo.piezas)
+
+
 def tarjeta_de(sesion: Session, trabajo: Trabajo, tocado_en: datetime) -> TarjetaLeer:
     a_cortar = [pieza for pieza in trabajo.piezas if not pieza.descartada]
     grupos, chapas = [], []
@@ -97,11 +106,11 @@ def tarjeta_de(sesion: Session, trabajo: Trabajo, tocado_en: datetime) -> Tarjet
         ultima = max(grupo.ejecuciones, key=lambda e: e.id, default=None)
         grupos.append(GrupoParaPasos(
             nombre=grupo.nombre,
-            con_piezas=any(not pieza.descartada for pieza in grupo.piezas),
+            con_piezas=_con_piezas(grupo),
             terminado=ejecucion is not None,
             ultimo=ultima.estado if ultima else None,
         ))
-        if ejecucion is not None:
+        if ejecucion is not None and _con_piezas(grupo):
             chapas.append(f"{_cuantas_chapas(ejecucion.planchas_usadas or 0)} · {_material(sesion, grupo, ejecucion)}")
 
     presupuesto = sesion.scalars(
@@ -137,3 +146,25 @@ def listar_tarjetas(
     if limite is not None:
         orden = orden[:limite]
     return [tarjeta_de(sesion, sesion.get(Trabajo, trabajo_id), tocado_en) for trabajo_id, tocado_en in orden]
+
+
+# --- La miniatura -------------------------------------------------------------
+
+
+def disenio_de_miniatura(sesion: Session, trabajo: Trabajo) -> DisenioDelPdf:
+    """Pinta el primer grupo con piezas, en el orden de los grupos, que tenga
+    un anidado que cuente; lo de los otros va en gris. Sin ninguno, todo en gris."""
+    for grupo in trabajo.grupos:
+        ejecucion, _avisos = _ejecucion_para_costear(grupo)
+        if ejecucion is not None and _con_piezas(grupo):
+            return _disenio(sesion, trabajo, grupo, ejecucion)
+    return _disenio(sesion, trabajo, None, None)
+
+
+@router.get("/trabajos/{trabajo_id}/miniatura")
+def obtener_miniatura(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -> Response:
+    """La miniatura de la tarjeta, como SVG. La pantalla le suma `?v=` con
+    cuándo se tocó el trabajo, para que el navegador no muestre una vieja
+    después de anidar; acá no se mira."""
+    trabajo = _trabajo_o_404(sesion, trabajo_id)
+    return Response(content=svg_de_miniatura(disenio_de_miniatura(sesion, trabajo)), media_type="image/svg+xml")
