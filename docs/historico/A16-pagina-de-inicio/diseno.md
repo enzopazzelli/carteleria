@@ -1,8 +1,8 @@
 # A16 · La página de inicio — diseño
 
-> **Estado:** escrito el 2026-10-25, después de una charla con bocetos (§3). **Aprobado por Enzo el 2026-10-26.** El plan está en [`plan.md`](plan.md).
+> **Estado:** escrito el 2026-10-25, después de una charla con bocetos (§3). **Aprobado por Enzo el 2026-10-26.** El plan está en [`plan.md`](plan.md): 7 tareas, con pausa al final de cada una. **Construido el 2026-10-26** en la rama `feat/pagina-de-inicio`: las tareas 1 a 6, con pausa al final de cada una. **Fusionado en `main` y subido ese día**, a pedido de Enzo, antes de la tarea 7; la carpeta pasó a `docs/historico/`. Cómo quedó y lo que falta, en §10.
 >
-> **De dónde sale.** Es el paso 1 de «En qué estamos» del README y la fila «Página de inicio con materiales y presupuestos» del [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md). Lo pidió Enzo el 2026-10-15: una página de inicio, el alta, la edición y la baja de materiales en pantalla, ver los presupuestos generados y la pantalla para retocar el presupuesto. El 2026-10-25 eligió hacerlo **de a una**: este diseño es solo la página de inicio. Las otras tres vienen después, cada una con su diseño. Suma también las «tarjetas en Trabajos», el paso 3 del README.
+> **De dónde sale.** Es el paso 1 de «En qué estamos» del README y la fila «Página de inicio con materiales y presupuestos» del [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md). Lo pidió Enzo el 2026-10-15: una página de inicio, el alta, la edición y la baja de materiales en pantalla, ver los presupuestos generados y la pantalla para retocar el presupuesto. El 2026-10-25 eligió hacerlo **de a una**: este diseño es solo la página de inicio. Las otras tres vienen después, cada una con su diseño. Suma también las «tarjetas en Trabajos», el paso 3 del README.
 >
 > **Sobre los valores.** No agrega parámetros al [`REGISTRO.md`](../../REGISTRO.md). Cuántos trabajos y presupuestos se muestran son detalles de la pantalla, no valores del negocio, igual que la paleta de A14.
 
@@ -202,3 +202,41 @@ En tramos, con pausa al final de cada uno para que Enzo lo vea:
 - La miniatura como imagen del servidor, pedida aparte.
 - Que las tarjetas se vuelvan a pedir al entrar y al volver a la pestaña, y no solas cada tantos segundos.
 - «Cotizador» como nombre en la barra, hasta que llegue el formato de la empresa (4.4).
+
+## 10. Cómo quedó
+
+Construido el 2026-10-26: las tareas 1 a 6 del plan, en la rama `feat/pagina-de-inicio`, con pausa al final de cada una para que Enzo la viera. Ese día Enzo pidió fusionarla en `main` y subirla antes de la tarea 7 (`a581c1f`, CI en verde). Pruebas del servidor, de 903 a 947; de la pantalla, de 210 a 226.
+
+**Lo construido:**
+1. **Los pasos de la tarjeta** (`app/pasos.py`): en qué quedó cada paso, la frase y a dónde lleva, con las reglas de §5.4. No lee la base: recibe lo ya leído, y así cada caso se prueba sin anidar.
+2. **Las tarjetas** (`GET /tarjetas`, en `api/rutas_inicio.py`). El servidor arma cada tarjeta entera. Cuándo se tocó es lo más reciente entre el trabajo, sus piezas, grupos, anidados, colocaciones, presupuestos y sus líneas, con una consulta por tabla, y viaja marcado como UTC: la base devuelve las fechas sin zona. La ruta es `/tarjetas` y no `/trabajos/tarjetas` porque `/trabajos/{trabajo_id}` se la quedaría.
+3. **La miniatura** (`GET /trabajos/{id}/miniatura`, dibujada en `nesting/miniatura_svg.py`). Es un SVG con el mismo diseño pintado del PDF de A15 (`_disenio`), que ahora acepta un trabajo sin anidar y lo deja en gris. La pantalla le suma `?v=` con cuándo se tocó, para que el navegador no muestre una vieja.
+4. **El resumen del inicio** (`GET /resumen-del-inicio`): los 5 presupuestos más recientes con su total, y los conteos de materiales, medidas, retazos y familias. **El freno al borrar:** `DELETE /trabajos/{id}` responde 409 si hay un anidado encolado o corriendo, con el mensaje de siempre.
+5. **La barra fija y el inicio** (`Barra.tsx`, `ConBarra.tsx`, `Inicio.tsx`), con la tarjeta (`Tarjeta/TarjetaTrabajo.tsx`) y «Nuevo trabajo». La hora se muestra en la de Argentina. El Costeo abre el presupuesto que viene en `?presupuesto=`, no el primero.
+6. **La sección Trabajos** (`/trabajos`, `Trabajos.tsx`), con el buscador y el «⋯» de cada tarjeta con su confirmación (`ConfirmarBorrado.tsx`). Se borró la lista vieja (`TrabajosLista.tsx`).
+
+**Lo recorrido**, sobre una copia de la base de Enzo con sus 5 trabajos (`backend/local/tmp-a14/a16`, ya borrada), con el guion `recorrido-a16.mjs` y las capturas en `backend/local/herramientas-a16/`, fuera de git:
+- **Las tarjetas** de los cinco trabajos, con sus pasos y frases: Complejo, «Falta anidar Calibre 22»; un parador, «El anidado de Chapa20 terminó con error»; parador1, «Falta el presupuesto». Las cinco se arman en 133 ms.
+- **Las miniaturas**, pasadas a imagen: cada pieza del color de su chapa, y en gris lo que no tiene anidado.
+- **El inicio en pantalla:** las horas, en la de Argentina. Con dos presupuestos en un trabajo, `?presupuesto=1` abre P-2026-0001.
+- **Trabajos:** «pena» encuentra «Cartel Peña»; un trabajo de prueba se borra desde el «⋯»; uno con un anidado corriendo no se borra, y el mensaje queda en el cuadro abierto. «Ver todos los trabajos» aparece con 7. Sin errores en la consola.
+
+**Desvíos del plan** (el detalle está en el registro de la ejecución):
+- **El borde de cada pieza de la miniatura va del color de la pieza**, no gris oscuro. Las letras huecas son aros finitos, y con un borde oscuro a cada lado se veían grises.
+- **Un grupo sin piezas no cuenta para la miniatura ni para las chapas de la tarjeta**, aunque le quede un anidado de antes. Lo mostró «Rosa» en Parador12: la miniatura pintaba ese grupo vacío y salía toda gris.
+- **La tarjeta es un recuadro con el enlace adentro y el «⋯» aparte**, no un enlace entero: un botón no puede ir adentro de un enlace.
+- **«Ver todos los trabajos»** pide 7 tarjetas y muestra 6, para saber si hay más.
+- **Se fusionó antes de la tarea 7**, a pedido de Enzo.
+
+**Después del cierre**, el 2026-10-26 y a pedido de Enzo, se borraron de su base los cuatro parador de prueba, sus dos presupuestos con sus líneas y los dos clientes. Queda Complejo. El respaldo está en `backend/local/respaldo-2026-10-26-antes-de-borrar-pruebas/`.
+
+**Lo que quedó vivo** (se sigue en el `PLAN-MAESTRO.md §7`, «Pendientes de la página de inicio (A16)»):
+
+| Pendiente | De dónde sale | Depende de |
+|---|---|---|
+| La tarea 7: el recorrido completo sobre una copia nueva, ver que la miniatura cambia al volver a anidar y cuánto tarda la de Complejo | Plan, tarea 7 | — |
+| Una revisión de toda la rama con ojos nuevos: las seis tareas las revisó solo quien las hizo | Plan | — |
+| Un grupo que se quedó sin piezas, con un anidado viejo, ya no cuenta en la tarjeta ni en la miniatura. Falta ver si el Costeo cobra esa chapa | Tarea 3 | — |
+| La primera vez que se arma el dibujo de un trabajo con piezas de antes de A14, se completan sus lugares en el diseño, y eso cuenta como tocarlo: sube una vez al primer lugar del inicio | Tarea 5 | — |
+| Cada miniatura pesa unos 165 KB, casi todo el fondo del DXF: con 6 en el inicio, cerca de 1 MB. Se puede simplificar el fondo | Tarea 3 | — |
+| Las pantallas de materiales, de presupuestos y de retocar el presupuesto. Sus lugares en la barra siguen apagados | §8 | Enzo elige el orden |
