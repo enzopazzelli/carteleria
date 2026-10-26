@@ -29,8 +29,9 @@ export default function WorkspaceLayout() {
     costeo: false,
   };
 
+  // La barra fija de arriba (A16) mide 3rem.
   return (
-    <div className="min-h-screen bg-paper text-ink flex">
+    <div className="min-h-[calc(100vh-3rem)] bg-paper text-ink flex">
       <aside className="w-64 border-r border-line p-4">
         <h2 className="font-semibold mb-1">{trabajo?.nombre ?? "..."}</h2>
         <p className="text-xs text-ink/60 mb-4">Trabajo #{id}</p>

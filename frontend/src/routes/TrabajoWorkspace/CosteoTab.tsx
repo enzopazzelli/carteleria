@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import {
   useAplicarOverride,
   useActualizarLineaLibre,
@@ -42,7 +42,11 @@ export default function CosteoTab() {
   const crearCliente = useCrearCliente();
   const crearPresupuesto = useCrearPresupuesto(id);
   const duplicar = useDuplicarPresupuesto();
-  const [presupuestoActivoId, setPresupuestoActivoId] = useState<number | null>(null);
+  // Desde el inicio (A16) se llega con `?presupuesto=`: se abre ese, no el primero.
+  const [busqueda] = useSearchParams();
+  const [presupuestoActivoId, setPresupuestoActivoId] = useState<number | null>(
+    () => Number(busqueda.get("presupuesto")) || null,
+  );
   const { data: costeo } = useCosteo(id);
   const [nombreCliente, setNombreCliente] = useState("");
   // "" = nada elegido todavía, "nuevo" = alta de cliente, o el id (como

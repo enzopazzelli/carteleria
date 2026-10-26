@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 from decimal import Decimal
+from pathlib import Path
 
 import ezdxf
 import pytest
@@ -1203,3 +1204,37 @@ def test_cargar_con_unas_correcciones_que_no_sirven_no_toca_las_piezas_del_traba
 
     assert respuesta.status_code == 400
     assert [p["id"] for p in cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()] == [pieza["id"]]
+
+
+@pytest.mark.parametrize("estado", ["encolada", "corriendo"])
+def test_mientras_corre_un_anidado_no_se_borra_el_trabajo(cliente, tmp_path, estado):
+    """El anidado que corre escribía sus resultados en un trabajo ya borrado (A16)."""
+    from app.modelos.trabajo import EjecucionNesting, Trabajo
+
+    trabajo, _ = _trabajo_con_una_pieza(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Calibre 22"}).json()
+    with Session(cliente.motor) as sesion:
+        sesion.add(EjecucionNesting(grupo_id=grupo["id"], motor="sparrow", estado=estado))
+        sesion.commit()
+        archivo = Path(sesion.get(Trabajo, trabajo["id"]).archivo_guardado)
+
+    respuesta = cliente.delete(f"/trabajos/{trabajo['id']}")
+
+    assert respuesta.status_code == 409
+    assert "«Calibre 22»" in mensaje_de(respuesta)
+    assert mensaje_de(respuesta).endswith("antes de borrar el trabajo.")
+    assert cliente.get(f"/trabajos/{trabajo['id']}").status_code == 200
+    assert archivo.exists()
+
+
+@pytest.mark.parametrize("estado", ["lista", "error", "cancelada"])
+def test_un_anidado_terminado_no_impide_borrar_el_trabajo(cliente, tmp_path, estado):
+    from app.modelos.trabajo import EjecucionNesting
+
+    trabajo, _ = _trabajo_con_una_pieza(cliente, tmp_path)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Chapa"}).json()
+    with Session(cliente.motor) as sesion:
+        sesion.add(EjecucionNesting(grupo_id=grupo["id"], motor="sparrow", estado=estado))
+        sesion.commit()
+
+    assert cliente.delete(f"/trabajos/{trabajo['id']}").status_code == 204

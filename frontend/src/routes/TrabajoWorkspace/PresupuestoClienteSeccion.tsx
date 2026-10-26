@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import Banner from "../../components/Banner";
+import { bajarArchivo } from "../../components/bajarArchivo";
 import { descargarPdf, type ItemCliente, type LineaCosto } from "../../api/presupuestos";
 import {
   useActualizarLineaCliente,
@@ -18,16 +19,6 @@ import {
 } from "./importes";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
-
-function bajarArchivo(contenido: Blob, nombre: string) {
-  const url = URL.createObjectURL(contenido);
-  const enlace = document.createElement("a");
-  enlace.href = url;
-  enlace.download = nombre;
-  enlace.click();
-  // El navegador ya tomó el archivo: se suelta la dirección temporal.
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 /** Espera a que no quede ningún guardado en curso: de esta sección o de
  * cualquier otra de la pestaña. El margen y el IVA están en la sección de
