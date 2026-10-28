@@ -318,6 +318,8 @@ Rama `feat/a17-2-complejo`.
   - las copias, en `backend/local/tmp-a17/complejo` (grupo 1) y `backend/local/tmp-a17/parador` (del respaldo del 2026-10-26, grupo 4);
   - una prueba corta del guion, con 20 s de máximo, dio el parador en 1 chapa y 30 piezas adentro con las tres variantes.
 - **Lo que depende de la medición:** cuál camino queda (y se saca el otro), la repetición de las mediciones de la tarea 12 y la medición del parador de la tarea 13.
+- **Llenar los huecos en otro orden** (tarea 13, el código): `meter_en_huecos` acepta varios órdenes (por área, por el lado más largo, la más angosta primero). Llena cada hueco una vez por orden y se queda con el plan que mete más área; si empatan, con el primero. **Por defecto sigue solo por área:** el anidado no cambia.
+  - **Pendiente, con la medición de la tarea 11:** el parador, 3 corridas con el orden de siempre y 3 con los tres órdenes por defecto (`ordenes` de `meter_en_huecos`), contra 30 piezas adentro y un sobrante de 1220 × 761. Si mete más sin pasar la mitad del tiempo máximo, quedan los tres por defecto; si no, se vuelve atrás y se anota acá.
 
 ## 9. Lo que decidí yo y conviene revisar
 
