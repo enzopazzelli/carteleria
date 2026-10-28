@@ -215,3 +215,31 @@ def test_corta_adentro_de_un_hueco_cuando_seguir_dice_que_no():
     adentro = meter_en_huecos([aro(lado=140, hueco=100), *chicos], 2, CUARTOS, 100,
                               seguir=lambda: next(respuestas, False))
     assert len(adentro) == 1
+
+
+def test_sin_huecos_da_lo_mismo_con_y_sin_la_casilla():
+    """Con piezas sin agujeros no hay nada que meter: marcar «Aprovechar
+    huecos» no cambia el anidado (A17). Con un solo hilo y la misma semilla,
+    Sparrow da siempre lo mismo."""
+    from decimal import Decimal as D
+
+    from app.services.nesting.models import ParametrosCorte, Pieza, Plancha, RotacionPermitida
+    from app.services.nesting.sparrow import OpcionesSparrow, anidar_sparrow
+    from app.services.nesting.validacion_manual import GeometriaPieza
+
+    medidas = {"1": (300, 200, 3), "2": (150, 400, 2), "3": (90, 90, 4)}
+    piezas = [Pieza(id_, D(ancho), D(alto), cantidad) for id_, (ancho, alto, cantidad) in medidas.items()]
+    geometrias = {
+        id_: GeometriaPieza(D(ancho), D(alto), [(D(x), D(y)) for x, y in rectangulo(ancho, alto)])
+        for id_, (ancho, alto, _) in medidas.items()
+    }
+
+    def posiciones(huecos):
+        resultado = anidar_sparrow(
+            piezas, geometrias, Plancha(D(1000), D(1000)), ParametrosCorte(D(2), D(10), D(5), RotacionPermitida.LIBRE_0_90),
+            OpcionesSparrow(segundos_por_busqueda=1, tiempo_maximo_s=20, simplificacion_mm=0, workers=1, semilla=7,
+                            usar_anidado_en_huecos=huecos),
+        )
+        return [(p.pieza_id, p.plancha_indice, p.x_mm, p.y_mm, p.angulo_libre_grados) for p in resultado.posiciones]
+
+    assert posiciones(True) == posiciones(False)
