@@ -41,3 +41,24 @@ export function textoParaCopiar(contenido: Contenido): string {
 export function falla(e: unknown, siNoEsDelServidor: string): string | ApiError {
   return e instanceof ApiError ? e : siNoEsDelServidor;
 }
+
+/** Un aviso por texto: los de igual `mensaje` se juntan en uno que nombra
+ * todas sus piezas y chapas, sin repetir. Con varias piezas fuera del
+ * margen, un solo aviso que las nombra a todas (A17). Quedan en el orden en
+ * que llegó el primero de cada texto. */
+export function juntarAvisos(avisos: Aviso[]): Aviso[] {
+  const porTexto = new Map<string, Aviso>();
+  for (const aviso of avisos) {
+    const previo = porTexto.get(aviso.mensaje);
+    if (!previo) {
+      porTexto.set(aviso.mensaje, { ...aviso, piezas: [...aviso.piezas], chapas: [...aviso.chapas] });
+      continue;
+    }
+    for (const pieza of aviso.piezas) if (!previo.piezas.includes(pieza)) previo.piezas.push(pieza);
+    for (const chapa of aviso.chapas) {
+      const esta = previo.chapas.some((c) => c.ejecucion_id === chapa.ejecucion_id && c.plancha === chapa.plancha);
+      if (!esta) previo.chapas.push(chapa);
+    }
+  }
+  return [...porTexto.values()];
+}

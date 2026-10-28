@@ -7,6 +7,7 @@ import { useAjustarColocacion } from "../../hooks/useNesting";
 import { useIluminado } from "../Disenio/Iluminado";
 import { colorDeChapa } from "../Disenio/pintado";
 import Mensaje from "../Mensaje/Mensaje";
+import { juntarAvisos } from "../Mensaje/contenido";
 import PlanoEditor from "../PlanoEditor/PlanoEditor";
 
 /** Una chapa grande para retocar a mano: lo que antes era Ajuste (A14,
@@ -35,7 +36,8 @@ export default function ChapaGrande({
   // poder decidir "es inválida" por el booleano `valida` que ya manda el
   // backend con ese propósito, no por si el string de motivo vino vacío.
   const [resultados, setResultados] = useState<Map<number, { valida: boolean; motivo: Aviso | null }>>(new Map());
-  const motivos = [...resultados.values()].flatMap((r) => (!r.valida && r.motivo ? [r.motivo] : []));
+  // Varias piezas fuera del margen: un solo aviso que las nombra (A17).
+  const motivos = juntarAvisos([...resultados.values()].flatMap((r) => (!r.valida && r.motivo ? [r.motivo] : [])));
   const invalidas = new Set([...resultados].filter(([, r]) => !r.valida).map(([colocacionId]) => colocacionId));
   const deLaChapa = colocaciones.filter((c) => c.plancha_indice === indice);
   const colocacionSeleccionada = deLaChapa.find((c) => c.id === seleccionada) ?? null;

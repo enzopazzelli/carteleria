@@ -129,9 +129,12 @@ export function urlPlano(ejecucionId: number, plancha: number): string {
   return `http://localhost:8000/ejecuciones/${ejecucionId}/plano?plancha=${plancha}`;
 }
 
-/** El plano de una chapa sin nombres de piezas, para su miniatura (A9). */
-export function urlPlanoMiniatura(ejecucionId: number, plancha: number): string {
-  return `${urlPlano(ejecucionId, plancha)}&etiquetas=false`;
+/** El plano de una chapa sin nombres de piezas, para su miniatura (A9).
+ * `version` cambia la dirección cuando cambia la chapa: si no, el navegador
+ * puede mostrar la imagen de antes (A17). */
+export function urlPlanoMiniatura(ejecucionId: number, plancha: number, version?: number): string {
+  const url = `${urlPlano(ejecucionId, plancha)}&etiquetas=false`;
+  return version === undefined ? url : `${url}&v=${version}`;
 }
 
 export function urlDxf(ejecucionId: number, plancha: number): string {

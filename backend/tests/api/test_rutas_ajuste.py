@@ -162,6 +162,8 @@ def test_mover_una_pieza_al_margen_es_invalido(cliente, tmp_path):
 
     assert respuesta.json()["valida"] is False
     assert "margen" in respuesta.json()["motivo"]["mensaje"]
+    # Nombra su pieza: así la pantalla junta varios avisos iguales en uno (A17).
+    assert respuesta.json()["motivo"]["piezas"] == [objetivo["pieza_id"]]
 
 
 def test_rotar_pieza_con_veta_a_angulo_libre_es_invalido(cliente, tmp_path):
