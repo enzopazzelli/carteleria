@@ -100,10 +100,10 @@ def _area_util(plancha, params):
 def _rotaciones(params):
     return [0,180] if params.rotaciones_permitidas is RotacionPermitida.SOLO_0_180 else [0,90,180,270]
 
-def _rotaciones_para_buscar(params, opciones):
+def _rotaciones_para_buscar(params, giro_libre):
     """Lo que se le pasa a Sparrow: `None` es cualquier ángulo. Con veta,
     siempre media vuelta."""
-    if opciones.giro_libre and params.rotaciones_permitidas is not RotacionPermitida.SOLO_0_180:
+    if giro_libre and params.rotaciones_permitidas is not RotacionPermitida.SOLO_0_180:
         return None
     return _rotaciones(params)
 
@@ -125,24 +125,30 @@ def angulos_que_entran(shell, rotations, width, height):
     if largo<=min(width,height)+1e-8: return None
     return [a for a in (rotations or range(360)) if _entra(shell,[a],width,height)]
 
-def piezas_que_no_entran(piezas, geometrias, plancha, params):
-    """Las piezas cuya silueta no entra en el área útil con ninguna rotación
-    permitida: el mismo chequeo que `preparar_entrada` hace antes de buscar.
-    No se descartan: son las que habría que seccionar (A5) para usar este
-    formato. Las que no tienen contorno las rechaza `preparar_entrada`."""
+def entra_en_la_chapa(contorno_local_mm, plancha, params, giro_libre):
+    """Si la silueta entra entera en el área útil con los giros del anidado
+    (A17): con giro libre, a cualquier ángulo, de a 1°; con veta, media
+    vuelta aunque se pida giro libre; si no, de a cuartos de vuelta. El
+    mismo chequeo que `preparar_entrada` hace antes de buscar."""
     _, width, height = _area_util(plancha, params)
-    rotations = _rotaciones(params)
+    angulos = angulos_que_entran(Polygon(contorno_local_mm), _rotaciones_para_buscar(params, giro_libre), width, height)
+    return angulos is None or bool(angulos)
+
+def piezas_que_no_entran(piezas, geometrias, plancha, params, giro_libre=False):
+    """Las piezas cuya silueta no entra en el área útil con ningún giro
+    permitido (`entra_en_la_chapa`). No se descartan: son las que habría
+    que seccionar (A5) para usar este formato. Las que no tienen contorno
+    las rechaza `preparar_entrada`."""
     return [p.id for p in piezas
             if (g := geometrias.get(p.id)) is not None and g.contorno_local_mm
-            and not _entra(Polygon(g.contorno_local_mm), rotations, width, height)]
+            and not entra_en_la_chapa(g.contorno_local_mm, plancha, params, giro_libre)]
 
 def preparar_entrada(piezas, geometrias, plancha, params, opciones):
     borde, width, height = _area_util(plancha, params)
     gap = float(params.kerf_mm + params.separacion_piezas_mm)
     if width <= 0 or height <= 0 or min(borde, gap) < 0:
         raise SinLugarUtil()
-    rotations = _rotaciones(params)
-    para_buscar = _rotaciones_para_buscar(params, opciones)
+    para_buscar = _rotaciones_para_buscar(params, opciones.giro_libre)
     items=[]; blocked=[]; invalidas=[]; normalizadas=[]; grandes=[]
     for p in piezas:
         g=geometrias.get(p.id)
@@ -157,10 +163,12 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
         if not original.is_valid:
             normalizadas.append(p.id)
         shell=Polygon(g.contorno_local_mm)
-        if not _entra(shell, rotations, width, height):
+        # Con los giros del anidado (A17): una pieza que solo entra en
+        # diagonal se acomoda inclinada, no se manda a seccionar.
+        angulos=angulos_que_entran(shell, para_buscar, width, height)
+        if angulos==[]:
             blocked.append(p.id)
             continue
-        angulos=angulos_que_entran(shell, para_buscar, width, height)
         # Se avisa solo con giro libre: sin él, la casilla no prometía inclinarlas.
         if angulos is not None and para_buscar is None: grandes.append(p.id)
         propios={} if angulos is None else {'rotations':angulos}
@@ -171,8 +179,6 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
     if blocked:
         raise PiezasQueNoEntran(blocked)
     if not items: raise ErrorPrevisto('No hay piezas para anidar.')
-    # «¿Entra en la chapa?» se decide con cuartos de vuelta aunque gire
-    # libre: una pieza que solo entra en diagonal se sigue mandando a seccionar.
     return {'items':items,'width':width,'height':height,'borde':borde,'gap':gap,'rotations':para_buscar,'options':vars(opciones),'normalizadas':normalizadas,'piezas_grandes':grandes,'area_minima_hueco_mm2':AREA_MINIMA_HUECO_MM2}
 
 def _piezas_del_aviso(ids):

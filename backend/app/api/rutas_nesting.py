@@ -575,19 +575,24 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
     # pestaña Piezas; hasta que se haga, ese formato queda sin planchas ni
     # costo.
     geometrias = _geometrias_del_grupo(grupo) if datos.motor == "sparrow" else {}
-    if datos.motor == "sparrow":
-        no_entran = [piezas_que_no_entran(piezas_dominio, geometrias, o.plancha, o.params) for o in opciones]
-    else:
-        no_entran = [MotorNestingRectangular(o.plancha, o.params).piezas_que_no_entran(piezas_dominio) for o in opciones]
-
     opciones_sparrow = None
-    nombres = nombres_de_piezas(piezas)
     if datos.motor == "sparrow":
         # Siempre con el sobrante arriba (A12): para elegir entre chapas
         # cuentan las chapas y el costo, no hacia dónde queda el sobrante.
         opciones_sparrow = OpcionesSparrow(
             **datos.model_dump(exclude={"motor", "formato_ids", "criterio", "sobrante"}), sobrante="arriba"
         )
+        # Con los giros del anidado (A17): con giro libre, una pieza que
+        # solo entra en diagonal no se manda a seccionar.
+        no_entran = [
+            piezas_que_no_entran(piezas_dominio, geometrias, o.plancha, o.params, giro_libre=opciones_sparrow.giro_libre)
+            for o in opciones
+        ]
+    else:
+        no_entran = [MotorNestingRectangular(o.plancha, o.params).piezas_que_no_entran(piezas_dominio) for o in opciones]
+
+    nombres = nombres_de_piezas(piezas)
+    if datos.motor == "sparrow":
         # Validar todos antes de iniciar búsquedas costosas.
         for opcion, formato, ids in zip(opciones, formatos, no_entran):
             if ids:

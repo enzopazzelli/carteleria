@@ -83,6 +83,17 @@ def test_una_pieza_que_entra_entera_no_se_secciona(cliente, tmp_path):
     assert "entra entera" in mensaje_de(respuesta)
 
 
+def test_no_se_secciona_una_pieza_que_entra_en_diagonal(cliente, tmp_path):
+    """En el lugar útil de 978 × 978, una franja de 1300 × 50 entra
+    inclinada (A17): con giro libre, el anidado la acomoda entera."""
+    _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=1300, alto=50)
+
+    respuesta = _proponer(cliente, pieza["id"], formato_id=formato["id"])
+
+    assert respuesta.status_code == 400
+    assert "entra entera en 1000×1000" in mensaje_de(respuesta)
+
+
 def test_un_formato_sin_parametros_de_corte_da_400(cliente, tmp_path):
     _trabajo, _formato, pieza = _trabajo_con_franja(cliente, tmp_path)
     material = cliente.post("/materiales", json={"nombre": "Sin parámetros"}).json()
