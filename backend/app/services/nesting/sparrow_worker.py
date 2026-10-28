@@ -56,6 +56,12 @@ def entra_en_una_chapa(ids,originals,shapes,data):
     if max(g.bounds[2] for _,g in parts)-izquierda>data['width']+0.001:return None
     return [colocacion(pi,izquierda,data) for pi,_ in parts]
 
+def alcanza_el_tiempo(ahora,limite,duraciones,minimo):
+    """Si una consulta más termina antes de `limite`. Cada consulta a
+    Sparrow tarda más que `minimo` (`segundos_por_busqueda`): manda la más
+    lenta de las que ya se hicieron (A17)."""
+    return ahora+max([minimo,*duraciones])<limite
+
 def resolver_una_pasada(data):
     width=data['width']
     originals,shapes=formas(data)
@@ -177,6 +183,8 @@ def resolver(data, salida=None):
                 temporal.write_text(json.dumps(completo),encoding='utf8');reemplazar(temporal,salida)
             best=completo;score=rank
             avanzar(mejor_chapas=score[0])
+    # Cuánto tardó cada consulta de vaciar chapas, de todas las pasadas.
+    duraciones=[]
     for intento in range(opts.get('intentos',3)):
         # No empezar una pasada que no va a terminar antes del límite.
         if intento and time.monotonic()+duracion>=limite: break
@@ -200,13 +208,17 @@ def resolver(data, salida=None):
         if opts.get('vaciar_chapas',True):
             avanzar(fase='vaciar')
             originals,shapes=formas(prueba);reserva=data['gap']/2
+            def consultar(ids):
+                t0=time.monotonic()
+                try:return entra_en_una_chapa(ids,originals,shapes,prueba)
+                finally:duraciones.append(time.monotonic()-t0)
             try:
                 for chapas in vaciar_chapas(
                     por_chapa(candidato),
                     lambda k:shapes[k].area,
                     (data['width']+2*reserva)*(data['height']+2*reserva),
-                    lambda ids:entra_en_una_chapa(ids,originals,shapes,prueba),
-                    lambda:time.monotonic()+opts['segundos_por_busqueda']<limite,
+                    consultar,
+                    lambda:alcanza_el_tiempo(time.monotonic(),limite,duraciones,opts['segundos_por_busqueda']),
                 ):
                     considerar([{**q,'sheet':s} for s,chapa in enumerate(chapas) for q in chapa])
                     if score[0]==minimo: break
