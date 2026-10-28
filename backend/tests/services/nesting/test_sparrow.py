@@ -837,3 +837,17 @@ def test_si_el_paso_de_huecos_falla_se_acomoda_sin_huecos_y_se_avisa(tmp_path, m
     assert convertir_y_validar(entrada, colocadas).planchas_usadas == 2
     assert avisos_escritos(salida) == ['No se pudieron meter piezas en los huecos: se acomodó sin aprovecharlos.']
     assert 'falla de prueba' in capsys.readouterr().err
+
+
+@pytest.mark.parametrize('sobrante',['costado','arriba'])
+def test_lo_que_escribe_el_worker_dice_de_que_anidado_es(monkeypatch,caplog,sobrante):
+    """Con varios anidados a la vez, la línea del registro tiene que decir de
+    cuál es (A17). El worker se cambia por uno que escribe y falla."""
+    import subprocess,sys
+    original=subprocess.Popen
+    def worker_que_escribe(args,**kw):
+        return original([sys.executable,'-c',"import sys; print('hola del worker', file=sys.stderr); sys.exit(1)"],**kw)
+    monkeypatch.setattr(subprocess,'Popen',worker_que_escribe)
+    with pytest.raises(ValueError):
+        anidar_sparrow(*datos(),OpcionesSparrow(segundos_por_busqueda=1,tiempo_maximo_s=20,sobrante=sobrante),nombre='el anidado #7')
+    assert 'Lo que escribió Sparrow en el anidado #7:\nhola del worker' in caplog.text

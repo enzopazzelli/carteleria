@@ -3,10 +3,12 @@
 Guarda, con fecha y hora, cada error inesperado y cada corrida o
 comparación que falla, con su traza: lo que la pantalla muestra en «Ver
 detalle técnico» y no se pierde al cerrar la página. Rota por tamaño
-(`PAR-54`, `PAR-55`)."""
+(`PAR-54`, `PAR-55`). Los avisos y errores salen también por la consola
+donde corre el servidor (A17)."""
 from __future__ import annotations
 
 import logging
+import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -26,6 +28,7 @@ def configurar_registro(carpeta: Path, tamano_bytes: int, archivos: int) -> Path
     ruta = carpeta / "servidor.log"
     logger = registro()
     logger.setLevel(logging.INFO)
+    _sumar_la_consola(logger)
     for manejador in list(logger.handlers):
         if not isinstance(manejador, RotatingFileHandler):
             continue
@@ -37,3 +40,16 @@ def configurar_registro(carpeta: Path, tamano_bytes: int, archivos: int) -> Path
     manejador.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logger.addHandler(manejador)
     return ruta
+
+
+def _sumar_la_consola(logger: logging.Logger) -> None:
+    """Con un archivo, `logging` deja de usar su salida de último recurso y
+    las trazas ya no se ven en la terminal del servidor. Se suma una sola
+    vez; `RotatingFileHandler` también es un `StreamHandler`, por eso se
+    compara el tipo exacto."""
+    if any(type(manejador) is logging.StreamHandler for manejador in logger.handlers):
+        return
+    consola = logging.StreamHandler(sys.stderr)
+    consola.setLevel(logging.WARNING)
+    consola.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    logger.addHandler(consola)

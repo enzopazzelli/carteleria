@@ -300,7 +300,9 @@ def _enderezar(resultado,ancho_mm):
         centro_libre_x_mm=ancho-p.centro_libre_y_mm,centro_libre_y_mm=p.centro_libre_x_mm,
     ) for p in resultado.posiciones])
 
-def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lambda:False,al_avanzar=None):
+def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lambda:False,al_avanzar=None,nombre='el cálculo'):
+    """`nombre` dice en el registro de qué es lo que escribió Sparrow: «el
+    anidado #14», «la comparación (1220×2440 mm)» (A17)."""
     opciones=opciones or OpcionesSparrow()
     if opciones.sobrante=='arriba':
         # Sparrow llena una franja del alto de la chapa, contra un borde de
@@ -309,7 +311,7 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
         # con la chapa y las piezas acostadas, y se endereza (A12).
         acostadas={k:_acostar(g) for k,g in geometrias.items()}
         resultado=anidar_sparrow(piezas,acostadas,Plancha(plancha.alto_mm,plancha.ancho_mm),params,
-                                 replace(opciones,sobrante='costado'),cancelada,al_avanzar)
+                                 replace(opciones,sobrante='costado'),cancelada,al_avanzar,nombre)
         return _enderezar(resultado,plancha.ancho_mm)
     entrada=preparar_entrada(piezas,geometrias,plancha,params,opciones)
     with tempfile.TemporaryDirectory(prefix='carteleria-sparrow-',dir=config.carpeta_temporal()) as d:
@@ -354,4 +356,4 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
                 # Lo técnico de los avisos (y de cualquier falla) no va a la
                 # pantalla: queda acá, en el registro del servidor (A9).
                 log.seek(0);escrito=log.read().strip()
-                if escrito:registro().warning('Lo que escribió el cálculo de Sparrow:\n%s',escrito[-4000:])
+                if escrito:registro().warning('Lo que escribió Sparrow en %s:\n%s',nombre,escrito[-4000:])

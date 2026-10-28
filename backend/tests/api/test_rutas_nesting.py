@@ -541,10 +541,12 @@ def test_comparar_formatos_sparrow_real_sin_modificar_grupo(cliente, tmp_path, m
         json={"ancho_mm": "500", "alto_mm": "500", "unidad_venta": "M2", "costo_unidad_venta": "10"},
     ).json()
     llamadas = []
+    nombres = []
     original = rutas_nesting.anidar_sparrow
 
     def registrar(piezas, geometrias, plancha, params, opciones, **kw):
         llamadas.append((geometrias, opciones))
+        nombres.append(kw.get("nombre"))
         return original(piezas, geometrias, plancha, params, opciones, **kw)
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
@@ -554,6 +556,9 @@ def test_comparar_formatos_sparrow_real_sin_modificar_grupo(cliente, tmp_path, m
     })
     assert respuesta.status_code == 200, respuesta.text
     assert len(llamadas) == 2
+    # Lo que escribe Sparrow dice de qué chapa de la comparación es (A17).
+    assert [n.split(" (")[0] for n in nombres] == ["la comparación"] * 2
+    assert nombres[0].startswith("la comparación (1000") and nombres[1].startswith("la comparación (500")
     assert all(g and o.semilla == 7 and o.segundos_por_busqueda == 1 and o.simplificacion_mm == 0 for g, o in llamadas)
     opciones = respuesta.json()
     assert all(o["motor"] == "sparrow" and o["planchas_usadas"] == 1 for o in opciones)
@@ -863,6 +868,28 @@ def test_mientras_corre_el_anidado_trae_su_progreso_y_al_terminar_no(cliente, tm
     }
     assert final["estado"] == "lista", final.get("error")
     assert final["progreso"] is None
+
+
+def test_lo_que_escribe_sparrow_dice_de_que_anidado_es(cliente, tmp_path, monkeypatch):
+    """Con varios anidados a la vez, la línea del registro dice de cuál es (A17)."""
+    from app.api import rutas_nesting
+
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    nombres = []
+    original = rutas_nesting.anidar_sparrow
+
+    def anotar(piezas, geometrias, plancha, params, opciones, **kw):
+        nombres.append(kw.get("nombre"))
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", anotar)
+    ejecucion = cliente.post(f"/grupos/{grupo['id']}/anidar", json={
+        "motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20,
+    }).json()
+    final = _esperar_estado(cliente, ejecucion["id"], timeout=20)
+
+    assert final["estado"] == "lista", final.get("error")
+    assert nombres == [f"el anidado #{ejecucion['id']}"]
 
 
 def test_un_anidado_rectangular_no_trae_progreso(cliente, tmp_path):

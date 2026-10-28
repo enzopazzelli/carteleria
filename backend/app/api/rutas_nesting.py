@@ -272,7 +272,8 @@ def _correr_anidado(ejecucion_id: int) -> None:
                 opciones = OpcionesSparrow(**(ejecucion.opciones or {}))
                 resultado = anidar_sparrow(piezas, geometrias, plancha, params, opciones,
                     cancelada=lambda: _esta_cancelada(ejecucion_id),
-                    al_avanzar=lambda avance: progreso.anotar(("ejecucion", ejecucion_id), avance))
+                    al_avanzar=lambda avance: progreso.anotar(("ejecucion", ejecucion_id), avance),
+                    nombre=f"el anidado #{ejecucion_id}")
             else:
                 resultado = MotorNestingRectangular(plancha, params).anidar(
                     piezas, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
@@ -672,6 +673,7 @@ def _correr_comparacion(
                 resultado = anidar_sparrow(
                     preparada.piezas, preparada.geometrias, opcion.plancha, opcion.params, preparada.opciones_sparrow,
                     cancelada=cancelada, al_avanzar=avanzar,
+                    nombre=f"la comparación ({comunes['formato_descripcion']})",
                 )
             except Exception as error:  # noqa: BLE001 - la falla de un formato queda en su fila
                 if cancelada():

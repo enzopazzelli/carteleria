@@ -1,6 +1,7 @@
 """El registro del servidor (A9, diseño §5.3)."""
 from __future__ import annotations
 
+import logging
 from logging.handlers import RotatingFileHandler
 
 import pytest
@@ -57,3 +58,30 @@ def test_otra_carpeta_reemplaza_el_archivo(tmp_path):
 
     archivos = [m for m in registro().handlers if isinstance(m, RotatingFileHandler)]
     assert [m.baseFilename for m in archivos] == [str(ruta.resolve())]
+
+
+def _consolas():
+    # `RotatingFileHandler` también es un `StreamHandler`: la consola es la
+    # que no escribe en un archivo.
+    return [m for m in registro().handlers if type(m) is logging.StreamHandler]
+
+
+def test_los_errores_salen_tambien_por_la_consola(tmp_path, capfd):
+    """Con el archivo, `logging` dejó de usar su salida de último recurso y
+    las trazas ya no se veían en la terminal del servidor (A17)."""
+    configurar_registro(tmp_path, 10_000, 2)
+
+    registro().error("falla x")
+    registro().info("solo en el archivo")
+    _vaciar()
+
+    err = capfd.readouterr().err
+    assert "falla x" in err
+    assert "solo en el archivo" not in err
+
+
+def test_configurar_dos_veces_no_duplica_la_consola(tmp_path):
+    configurar_registro(tmp_path / "a", 10_000, 2)
+    configurar_registro(tmp_path / "b", 10_000, 2)
+
+    assert len(_consolas()) == 1
