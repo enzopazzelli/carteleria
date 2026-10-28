@@ -36,9 +36,11 @@ _HOLGURA_CAJA_MM = 1e-3
 #: se afinan si la búsqueda tarda o se queda corta. Los ángulos gruesos
 #: van de a 5°: de a 15° el aro de Belgrano solo veía la grilla de 45°,
 #: que corta a lo largo de los rayos, y no las de 25°, 65°, 115° y 155°.
+#: Los finos prueban los del medio, de a 1° (A17): ±5° y ±10° ya los
+#: había probado la pasada gruesa.
 _ANGULOS_GRUESOS = tuple(range(0, 180, 5))
 _DIVISIONES_GRUESAS = 4
-_ANGULOS_FINOS = (-10, -5, 0, 5, 10)
+_ANGULOS_FINOS = (-4, -3, -2, -1, 0, 1, 2, 3, 4)
 _PASOS_FINOS = (-2, -1, 0, 1, 2)
 _DIVISIONES_FINAS = 16
 
@@ -230,8 +232,14 @@ def mejor_grilla(forma: Polygon, celda: tuple[float, float]) -> Seccionado:
         for j in range(_DIVISIONES_GRUESAS)
     ]
     mejor = min((seccionar_con_grilla(forma, celda, g) for g in gruesas), key=_costo)
-    base = mejor.grilla
-    finas = [
+    finas = _grillas_finas(mejor.grilla, celda)
+    return min([mejor, *(seccionar_con_grilla(forma, celda, g) for g in finas)], key=_costo)
+
+
+def _grillas_finas(base: Grilla, celda: tuple[float, float]) -> list[Grilla]:
+    """Las grillas de la segunda pasada, alrededor de la mejor gruesa."""
+    ancho, alto = celda
+    return [
         Grilla(
             (base.angulo_grados + delta) % 180,
             base.desplazamiento_x_mm + ancho * i / _DIVISIONES_FINAS,
@@ -241,7 +249,6 @@ def mejor_grilla(forma: Polygon, celda: tuple[float, float]) -> Seccionado:
         for i in _PASOS_FINOS
         for j in _PASOS_FINOS
     ]
-    return min([mejor, *(seccionar_con_grilla(forma, celda, g) for g in finas)], key=_costo)
 
 
 def tramo_orientado(tramo: Polygon, grilla: Grilla) -> Polygon:
