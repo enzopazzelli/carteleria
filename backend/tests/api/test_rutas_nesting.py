@@ -759,6 +759,29 @@ def test_sparrow_por_api_con_opciones_persistidas(cliente, tmp_path, huecos):
     assert len(cliente.get(f"/ejecuciones/{result['id']}/colocaciones").json())==1
 
 
+@pytest.mark.parametrize("giro_libre,estado", [(False, 400), (True, 202)])
+def test_el_aviso_previo_usa_el_giro_libre_del_pedido(cliente, tmp_path, giro_libre, estado):
+    """Una franja de 1300 × 50 solo entra inclinada en el lugar útil de
+    978 × 978 (A17). Sin giro libre, el aviso sale al pedir, no como una
+    corrida que termina en error."""
+    from .test_rutas_seccionado import _trabajo_con_franja
+
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=1300, alto=50)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Franja", "formato_id": formato["id"]}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={
+        "motor": "sparrow", "giro_libre": giro_libre, "segundos_por_busqueda": 1, "tiempo_maximo_s": 20, "simplificacion_mm": 0,
+    })
+
+    assert respuesta.status_code == estado, respuesta.text
+    if giro_libre:
+        assert _esperar_estado(cliente, respuesta.json()["id"], timeout=30)["estado"] == "lista"
+    else:
+        assert "no entran" in mensaje_de(respuesta)
+        assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json() == []
+
+
 def test_sparrow_preflight_no_encola_piezas_que_no_entran(cliente,tmp_path):
     _,grupo=_trabajo_con_grupo_listo(cliente,tmp_path,ancho=1000,alto=1000)
     r=cliente.post(f"/grupos/{grupo['id']}/anidar",json={"motor":"sparrow"})

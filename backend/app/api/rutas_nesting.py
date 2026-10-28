@@ -347,7 +347,10 @@ def anidar(
     try:
         plancha, params, piezas = _datos_para_anidar(sesion, grupo)
         if datos.motor == "sparrow":
-            preparar_entrada(piezas, _geometrias_del_grupo(grupo), plancha, params, OpcionesSparrow())
+            # Con las opciones del pedido, las mismas con que va a correr:
+            # «¿entra?» depende del giro libre (A17).
+            opciones = OpcionesSparrow(**datos.model_dump(exclude={"motor"}))
+            preparar_entrada(piezas, _geometrias_del_grupo(grupo), plancha, params, opciones)
     except ValueError as error:
         formato = sesion.get(Formato, grupo.formato_id) if grupo.formato_id else None
         raise para_el_usuario(
