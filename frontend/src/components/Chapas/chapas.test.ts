@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Colocacion, Ejecucion } from "../../api/nesting";
 import type { Pieza } from "../../api/piezasYgrupos";
-import { anidadoParaMostrar, anillosColocados, aprovechamientoDeChapa, areaDePieza, avisoDeReacomodo } from "./chapas";
+import {
+  anidadoParaMostrar, anillosColocados, aprovechamientoDeChapa, areaDePieza, avisoDeReacomodo, lasDeAdentro,
+} from "./chapas";
 
 function ejecucion(id: number, estado: Ejecucion["estado"], esDefinitiva = false): Ejecucion {
   return {
@@ -67,5 +69,24 @@ describe("anillosColocados", () => {
 describe("avisoDeReacomodo", () => {
   it("nombra la chapa contando desde 1 y la pieza que entró (A17)", () => {
     expect(avisoDeReacomodo(2, "B-3")).toBe("Se reacomodó la chapa 3 para que entre «B-3».");
+  });
+});
+
+describe("lasDeAdentro", () => {
+  // Un marco de 300 con un hueco de 200, centrado en (500, 500): el hueco va de 400 a 600.
+  const marco = cuadrado(1, 300, 200);
+  const chico = cuadrado(2, 50);
+  const piezas = new Map([[1, marco], [2, chico]]);
+
+  it("devuelve la que está entera adentro del hueco de la arrastrada (A17)", () => {
+    const arrastrada = colocacion(10, 1, 0, 500, 500);
+    expect(lasDeAdentro(arrastrada, [arrastrada, colocacion(11, 2, 0, 500, 500)], piezas)).toEqual([11]);
+  });
+
+  it("no devuelve una que está afuera ni una que pisa el borde del hueco", () => {
+    const arrastrada = colocacion(10, 1, 0, 500, 500);
+    const afuera = colocacion(12, 2, 0, 800, 800);
+    const enElBorde = colocacion(13, 2, 0, 600, 500);
+    expect(lasDeAdentro(arrastrada, [afuera, enElBorde], piezas)).toEqual([]);
   });
 });

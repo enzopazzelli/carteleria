@@ -114,6 +114,19 @@ export function useAjustarColocacion(ejecucionId: number) {
       );
       return { anteriores };
     },
+    // Lo que el servidor movió con ella, lo de sus huecos, queda en su lugar
+    // nuevo apenas contesta, sin esperar a que vuelva la lista entera (A17).
+    onSuccess: (resultado) => {
+      const movidas = new Map([resultado, ...resultado.tambien_movidas].map((m) => [m.id, m]));
+      queryClient.setQueryData<Colocacion[]>(clave, (actuales) =>
+        actuales?.map((c) => {
+          const movida = movidas.get(c.id);
+          if (!movida) return c;
+          const { centro_x_mm, centro_y_mm, angulo_grados, movida_a_mano } = movida;
+          return { ...c, centro_x_mm, centro_y_mm, angulo_grados, movida_a_mano };
+        })
+      );
+    },
     onError: (_error, _variables, contexto) => {
       if (contexto?.anteriores) queryClient.setQueryData(clave, contexto.anteriores);
     },

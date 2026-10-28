@@ -5,6 +5,7 @@ import { urlDxf, urlPlano } from "../../api/nesting";
 import type { Pieza } from "../../api/piezasYgrupos";
 import { useAjustarColocacion } from "../../hooks/useNesting";
 import { useIluminado } from "../Disenio/Iluminado";
+import { colorDeChapa } from "../Disenio/pintado";
 import Mensaje from "../Mensaje/Mensaje";
 import PlanoEditor from "../PlanoEditor/PlanoEditor";
 
@@ -89,16 +90,22 @@ export default function ChapaGrande({
         </div>
       )}
 
-      {colocacionSeleccionada && (
-        <div className="flex items-center gap-2 mb-3 text-sm">
-          <span className="text-ink/60">Rueda del mouse para rotar (Shift = más fino), o:</span>
-          {[-90, -15, 15, 90].map((delta) => (
-            <button key={delta} className="border border-line rounded px-2 py-1 hover:bg-line/40" onClick={() => alRotarSeleccionada(delta)}>
-              {delta > 0 ? `+${delta}°` : `${delta}°`}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* La fila está siempre: si apareciera al tocar una pieza, bajaría el editor (A17). */}
+      <div className="flex items-center gap-2 mb-3 text-sm">
+        <span className="text-ink/60">
+          {colocacionSeleccionada ? "Rueda del mouse para rotar (Shift = más fino), o:" : "Tocá una pieza para girarla."}
+        </span>
+        {[-90, -15, 15, 90].map((delta) => (
+          <button
+            key={delta}
+            className="border border-line rounded px-2 py-1 hover:bg-line/40 disabled:opacity-40 disabled:hover:bg-transparent"
+            disabled={!colocacionSeleccionada}
+            onClick={() => alRotarSeleccionada(delta)}
+          >
+            {delta > 0 ? `+${delta}°` : `${delta}°`}
+          </button>
+        ))}
+      </div>
 
       <PlanoEditor
         anchoPlanchaMm={anchoMm}
@@ -112,6 +119,7 @@ export default function ChapaGrande({
         onSeleccionar={setSeleccionada}
         iluminada={iluminado.pieza}
         onIluminar={iluminado.setPieza}
+        color={colorDeChapa(indice)}
       />
     </div>
   );
