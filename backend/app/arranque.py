@@ -15,6 +15,7 @@ decir por qué. Ahora se compara la versión de la base con la del código:
 """
 from __future__ import annotations
 
+import re
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -96,11 +97,26 @@ def _respaldar(base: Path, carpeta_datos: Path, hoy: date, version: str) -> Path
     return carpeta
 
 
-def _actualizar(url: str, respaldo: Path | None) -> None:
+def _respaldos_anteriores(carpeta_datos: Path, version: str) -> list[Path]:
+    """Los respaldos de antes de actualizar a `version`, del más viejo al
+    más nuevo. Si hay alguno y la base sigue atrasada, ya falló otro
+    intento: la actualización se pudo cortar a mitad de camino, y solo el
+    primero es seguro que guarda la base sana."""
+    patron = re.compile(r"respaldo-(\d{4}-\d{2}-\d{2})-antes-de-" + re.escape(version) + r"(?:-(\d+))?")
+    encontrados = []
+    for carpeta in carpeta_datos.glob(f"respaldo-*-antes-de-{version}*"):
+        if coincide := patron.fullmatch(carpeta.name):
+            encontrados.append(((coincide[1], int(coincide[2] or 1)), carpeta))
+    return [carpeta for _, carpeta in sorted(encontrados)]
+
+
+def _actualizar(url: str, respaldo: Path | None, primero: Path | None = None) -> None:
     try:
         command.upgrade(_config(url), "head")
     except Exception as error:
         donde = f" El respaldo quedó en {respaldo}." if respaldo else ""
+        if primero is not None:
+            donde += f" Ya había fallado otro intento: la base de antes del primero está en {primero}."
         raise ActualizacionFallida(f"No se pudo actualizar la base: {error}.{donde}", respaldo) from error
 
 
@@ -123,6 +139,7 @@ def poner_la_base_al_dia(url: str, carpeta_datos: Path, hoy: date) -> Path | Non
     direccion = make_url(url)
     if direccion.get_backend_name() != "sqlite":
         raise ActualizacionFallida("La base no es SQLite: actualizala a mano con `alembic upgrade head`.")
+    anteriores = _respaldos_anteriores(carpeta_datos, cabeza)
     respaldo = _respaldar(Path(direccion.database), carpeta_datos, hoy, cabeza)
-    _actualizar(url, respaldo)
+    _actualizar(url, respaldo, anteriores[0] if anteriores else None)
     return respaldo

@@ -130,12 +130,12 @@ def test_base_mas_nueva_no_arranca(tmp_path, monkeypatch):
     assert version_de_la_base(url) == "ffffffffffff"
 
 
+def _falla(*args, **kwargs):
+    raise RuntimeError("se cortó a mitad de camino")
+
+
 def test_actualizacion_que_falla_dice_donde_esta_el_respaldo(tmp_path, monkeypatch):
     base, url = _base_en(_ANTES, tmp_path, monkeypatch)
-
-    def _falla(*args, **kwargs):
-        raise RuntimeError("se cortó a mitad de camino")
-
     monkeypatch.setattr(arranque.command, "upgrade", _falla)
 
     with pytest.raises(ActualizacionFallida) as error:
@@ -143,6 +143,24 @@ def test_actualizacion_que_falla_dice_donde_esta_el_respaldo(tmp_path, monkeypat
     assert error.value.respaldo is not None and error.value.respaldo.exists()
     assert str(error.value.respaldo) in str(error.value)
     assert "se cortó a mitad de camino" in str(error.value)
+    assert "Ya había fallado" not in str(error.value)
+
+
+def test_si_vuelve_a_fallar_el_mensaje_nombra_el_primer_respaldo(tmp_path, monkeypatch):
+    """Una actualización que se corta puede dejar la base a medio camino:
+    el respaldo del segundo intento ya no es la base sana. El mensaje
+    nombra el del primero (revisión de la tanda 1)."""
+    base, url = _base_en(_ANTES, tmp_path, monkeypatch)
+    monkeypatch.setattr(arranque.command, "upgrade", _falla)
+    with pytest.raises(ActualizacionFallida):
+        poner_la_base_al_dia(url, base.parent, _HOY)
+
+    with pytest.raises(ActualizacionFallida) as error:
+        poner_la_base_al_dia(url, base.parent, date(2026, 10, 29))
+
+    primero = _respaldo(base.parent).parent
+    assert error.value.respaldo == base.parent / f"respaldo-2026-10-29-antes-de-{version_del_codigo()}"
+    assert f"Ya había fallado otro intento: la base de antes del primero está en {primero}." in str(error.value)
 
 
 def test_el_registro_sigue_escribiendo_despues_de_actualizar(tmp_path, monkeypatch):
