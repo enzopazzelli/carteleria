@@ -2,8 +2,9 @@
 
 Un anidado encolado o corriendo usa las piezas de cuando arrancó: cambiarlas
 a mitad de camino lo deja colgado, o con un resultado que apunta a piezas
-que ya no se cortan. Lo usan volver a cargar el dibujo y borrar el
-trabajo (`rutas_trabajos.py`), y seccionar o deshacer (`rutas_seccionado.py`).
+que ya no se cortan. Lo usan volver a cargar el dibujo, borrar el
+trabajo, cambiar una pieza y borrar un grupo (`rutas_trabajos.py`), y
+seccionar o deshacer (`rutas_seccionado.py`).
 """
 from __future__ import annotations
 

@@ -568,6 +568,11 @@ def actualizar_pieza(
         )
     if "grupo_id" in valores and valores["grupo_id"] is not None:
         _grupo_o_404(sesion, valores["grupo_id"])
+    # El anidado usa las piezas de cuando arrancó (A17): la del grupo de
+    # antes y la del de después, si se la mueve.
+    grupos = {pieza.grupo_id, valores.get("grupo_id", pieza.grupo_id)} - {None}
+    if grupos:
+        rechazar_si_hay_anidado_en_curso(sesion, GrupoDeCorte.id.in_(grupos), "cambiar la pieza")
     for campo, valor in valores.items():
         setattr(pieza, campo, valor)
     sesion.commit()
@@ -626,5 +631,6 @@ def actualizar_grupo(
 @router.delete("/grupos/{grupo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_grupo(grupo_id: int, sesion: Session = Depends(obtener_sesion)) -> None:
     grupo = _grupo_o_404(sesion, grupo_id)
+    rechazar_si_hay_anidado_en_curso(sesion, GrupoDeCorte.id == grupo_id, "borrar el grupo")
     sesion.delete(grupo)
     sesion.commit()

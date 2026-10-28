@@ -1251,6 +1251,71 @@ def test_mientras_corre_un_anidado_no_se_borra_el_trabajo(cliente, tmp_path, est
     assert archivo.exists()
 
 
+def _dos_grupos_uno_anidando(cliente, tmp_path) -> tuple[dict, dict, dict]:
+    """Una pieza y dos grupos: «Anidando», con un anidado corriendo, y
+    «Quieto», sin ninguno. La pieza queda sin grupo."""
+    from app.modelos.trabajo import EjecucionNesting
+
+    trabajo, pieza = _trabajo_con_una_pieza(cliente, tmp_path)
+    anidando = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Anidando"}).json()
+    quieto = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Quieto"}).json()
+    with Session(cliente.motor) as sesion:
+        sesion.add(EjecucionNesting(grupo_id=anidando["id"], motor="sparrow", estado="corriendo"))
+        sesion.commit()
+    return pieza, anidando, quieto
+
+
+@pytest.mark.parametrize(
+    "desde,cambio",
+    [
+        ("anidando", {"cantidad": 3}),
+        ("anidando", {"descartada": True}),
+        ("anidando", {"grupo_id": "quieto"}),
+        ("anidando", {"grupo_id": None}),
+        ("quieto", {"grupo_id": "anidando"}),
+        (None, {"grupo_id": "anidando"}),
+    ],
+)
+def test_no_se_cambia_una_pieza_con_un_anidado_corriendo(cliente, tmp_path, desde, cambio):
+    """El anidado usa las piezas de cuando arrancó (A17): ni la cantidad,
+    ni descartarla, ni moverla hacia su grupo o desde él."""
+    pieza, anidando, quieto = _dos_grupos_uno_anidando(cliente, tmp_path)
+    grupos = {"anidando": anidando["id"], "quieto": quieto["id"], None: None}
+    with Session(cliente.motor) as sesion:
+        from app.modelos.trabajo import Pieza
+
+        sesion.get(Pieza, pieza["id"]).grupo_id = grupos[desde]
+        sesion.commit()
+    pedido = {campo: grupos.get(valor, valor) if campo == "grupo_id" else valor for campo, valor in cambio.items()}
+
+    respuesta = cliente.patch(f"/piezas/{pieza['id']}", json=pedido)
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert "«Anidando»" in mensaje_de(respuesta)
+    assert mensaje_de(respuesta).endswith("antes de cambiar la pieza.")
+    [igual] = cliente.get(f"/trabajos/{pieza['trabajo_id']}/piezas").json()
+    assert (igual["grupo_id"], igual["cantidad"], igual["descartada"]) == (grupos[desde], pieza["cantidad"], False)
+
+
+def test_una_pieza_de_otro_grupo_se_cambia_aunque_otro_anide(cliente, tmp_path):
+    pieza, _anidando, quieto = _dos_grupos_uno_anidando(cliente, tmp_path)
+
+    assert cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": quieto["id"]}).status_code == 200
+    assert cliente.patch(f"/piezas/{pieza['id']}", json={"cantidad": 3}).status_code == 200
+
+
+def test_no_se_borra_un_grupo_con_un_anidado_corriendo(cliente, tmp_path):
+    pieza, anidando, quieto = _dos_grupos_uno_anidando(cliente, tmp_path)
+
+    respuesta = cliente.delete(f"/grupos/{anidando['id']}")
+
+    assert respuesta.status_code == 409
+    assert mensaje_de(respuesta).endswith("antes de borrar el grupo.")
+    assert cliente.delete(f"/grupos/{quieto['id']}").status_code == 204
+    grupos = cliente.get(f"/trabajos/{pieza['trabajo_id']}/grupos").json()
+    assert [grupo["id"] for grupo in grupos] == [anidando["id"]]
+
+
 @pytest.mark.parametrize("estado", ["lista", "error", "cancelada"])
 def test_un_anidado_terminado_no_impide_borrar_el_trabajo(cliente, tmp_path, estado):
     from app.modelos.trabajo import EjecucionNesting
