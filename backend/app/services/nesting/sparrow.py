@@ -85,6 +85,10 @@ class OpcionesSparrow:
     #: Búsquedas a la vez dentro del mismo anidado (A17, camino 1): cada una
     #: en su worker y con otra semilla; queda la de menos chapas.
     busquedas_a_la_vez: int = 1
+    #: El tiempo repartido en partes iguales entre las vueltas, cada una con
+    #: su vaciado (A17, camino 2), en vez de dejar vaciar a cada una hasta
+    #: el final.
+    repartir_tiempo: bool = False
 
 def ruta_de_avisos(salida):
     """Dónde deja el worker sus avisos, al lado de su resultado. Los escribe
