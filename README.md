@@ -110,9 +110,10 @@ cd carteleria
 cd backend
 python -m venv .venv
 .venv\Scripts\python -m pip install -r scripts/requirements-scripts.txt
-.venv\Scripts\python -m alembic upgrade head
 .venv\Scripts\python -m uvicorn app.api.app:app --reload
 ```
+
+La base se crea o se actualiza sola al arrancar; si estaba atrasada, antes guarda un respaldo en `backend/local/respaldo-…`.
 
 Usamos `.venv\Scripts\python` en vez de "activar" el entorno: evita el bloqueo de scripts de PowerShell y que se mezcle con otro Python. Cuando termine de arrancar, `http://localhost:8000/docs` tiene que mostrar la documentación de la API.
 
@@ -156,7 +157,7 @@ Abrí **exactamente** `http://localhost:5173` (no `127.0.0.1`, no otro puerto): 
 - **Kerf, margen y separación son provisorios** (2 / 10 / 5 mm): todavía no se confirmaron con el taller.
 - **El anidado acomoda el rectángulo que envuelve a cada pieza**, no su forma real: con piezas curvas o muy irregulares va a dejar huecos. "Aprovechar huecos" intenta meter piezas chicas adentro de los agujeros de otras.
 - **Todavía no hay** login, PDF del presupuesto, aprobación ni envío al cliente.
-- Todo lo que cargues se guarda en `backend/local/` (no se sube a Git). **Para empezar de cero:** frená el backend, borrá `backend/local/carteleria.db` y la carpeta `backend/local/archivos`, y repetí `alembic upgrade head` y el paso 3.
+- Todo lo que cargues se guarda en `backend/local/` (no se sube a Git). **Para empezar de cero:** frená el backend, borrá `backend/local/carteleria.db` y la carpeta `backend/local/archivos`, arrancá el backend de nuevo (crea la base vacía) y repetí el paso 3.
 
 ### Probar con tus propios DXF
 
@@ -439,8 +440,7 @@ Ya hay una API real, siguiendo [`docs/historico/PLAN-SLICE-VERTICAL.md`](docs/hi
 
 ```bash
 cd backend
-alembic upgrade head        # crea backend/local/carteleria.db
-uvicorn app.api.app:app --reload
+uvicorn app.api.app:app --reload   # crea o actualiza backend/local/carteleria.db
 ```
 
 Documentación interactiva en `http://localhost:8000/docs`. Los 5 pasos de `PLAN-SLICE-VERTICAL.md` ya están: ABM de catálogo (`CART-102`/`CART-105`), trabajos con subida y parseo de DXF (`CART-503`), grupos de corte (`CART-211`), anidado real en cola (`POST /grupos/{id}/anidar` con `rectpack` — Deepnest no está conectado a la API todavía) con costeo (`GET /trabajos/{id}/costeo`), y ajuste manual + exportación (`PATCH /colocaciones/{id}` para mover/rotar, `GET /ejecuciones/{id}/plano` y `.../dxf`) — sin autenticación (`CART-002` se difiere) y por eso **no se expone fuera de `localhost`**. El paso 6 (el frontend) también está: para probarlo en tu máquina, ver [Probar el sistema en tu computadora](#-probar-el-sistema-en-tu-computadora). De [`PLAN-SLICE-COTIZADOR.md`](docs/historico/PLAN-SLICE-COTIZADOR.md) (F3) los 6 pasos ya están: clientes y presupuestos en `BORRADOR` (`CART-301`), costo de material generado desde el anidado (`CART-302`), override manual con trazabilidad (`PATCH /lineas-costo/{id}/override`, `CART-303`), líneas libres de insumos/mano de obra/flete/instalación (`CART-304`-`306`), margen/IVA/total con redondeo único (`GET /presupuestos/{id}/totales`, `CART-307`) y el desglose completo (`GET /presupuestos/{id}/desglose`, `CART-308`). El PDF para el cliente (`CART-309`) también está, dibujado con ReportLab (`GET /presupuestos/{id}/pdf`, [`historico/1.3-pdf-del-presupuesto/`](docs/historico/1.3-pdf-del-presupuesto/diseno.md)); falta el documento interno (`CART-310`).

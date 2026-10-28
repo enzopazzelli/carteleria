@@ -106,7 +106,7 @@ Corrida con `--disenio-de "Muestra Vectores-267"` sobre `Muestra Vectores.dxf` (
 
 Simplificar hacia afuera 1–2 mm casi no cuesta material: `prepararPieza` ya agranda cada pieza medio kerf + separación (3,5 mm por lado con los provisorios), y la tolerancia entra en ese margen.
 
-**Pero no alcanza sola.** La corrida completa a 2 mm avanzó el cálculo de NFP de la primera evaluación a ~1,3 % por minuto (9 % a los 7 min): unas 27 veces más lento que la muestra, porque el motor arranca por los pares de las piezas más grandes y suma NFPs interiores de los huecos (sin simplificar en esta variante). `PAR-09` pide 120 s.
+**Pero no alcanza sola.** La corrida completa a 2 mm avanzó el cálculo de NFP de la primera evaluación a ~1,3 % por minuto (9 % a los 7 min): unas 27 veces más lento que la muestra, porque el motor arranca por los pares de las piezas más grandes y suma NFPs interiores de los huecos (sin simplificar en esta variante). `PAR-09` fija el tiempo máximo del anidado.
 
 **Palancas que quedan**, de más barata a más cara:
 1. Simplificar también los agujeros (hacia adentro, para que el hueco disponible nunca crezca).
@@ -115,7 +115,7 @@ Simplificar hacia afuera 1–2 mm casi no cuesta material: `prepararPieza` ya ag
 
 **Dónde está el costo de verdad (medido en el orden del motor).** Los primeros 80 pares tardan 101 s solo en NFP exteriores, y 71 s de esos salen de **6 pares: las 4 cuñas del anillo entre sí** (10–15 s cada uno, con ~115 vértices por cuña ya simplificada). No es cantidad de vértices: es el peor caso del método. `MinkowskiSum` genera un cuadrilátero por par de aristas (~13.000) y después los une; con dos arcos cóncavos casi iguales, esos cuadriláteros se superponen masivamente y la unión explota. El resto (~140 s en la corrida real) son los NFP interiores de los huecos.
 
-Criterio de producto (Enzo, 2026-09-25): si el anidado automático tarda más que hacerlo a mano, no aporta. `PAR-09` (120 s) es la vara.
+Criterio de producto (Enzo, 2026-09-25): si el anidado automático tarda más que hacerlo a mano, no aporta. `PAR-09`, el tiempo máximo del anidado, es la vara.
 
 **Cómo repetirlo.**
 
@@ -132,7 +132,7 @@ python -X utf8 scripts/comparar_motores.py --dxf "<ruta>/Muestra Vectores.dxf" -
 **Qué no quedó respondido.** Si Deepnest iguala o mejora las 8 chapas: en esta máquina y con este código no llega a devolver un resultado en un tiempo razonable, y el criterio de producto es que el anidado automático no tarde más que hacerlo a mano.
 
 **Qué quedaba abierto para decidir.** Actualizado el 2026-09-26: los tres puntos ya están dados de alta en `REGISTRO.md`, y el rumbo y el orden de trabajo están en [`PLAN-RUMBO-ANIDADO-Y-REVISION.md`](PLAN-RUMBO-ANIDADO-Y-REVISION.md).
-- ¿Cuánto tarda el diseñador en armar las hojas de un trabajo como Belgrano? Sin ese número, "no tarda más que a mano" no tiene con qué compararse; hoy solo está `PAR-09` (120 s) como vara. **Resuelto:** la empresa dio un rango, cargado en `B-17`; falta saber si incluye partir el aro.
+- ¿Cuánto tarda el diseñador en armar las hojas de un trabajo como Belgrano? Sin ese número, "no tarda más que a mano" no tiene con qué compararse; hoy solo está `PAR-09` como vara. **Resuelto:** la empresa dio un rango, cargado en `B-17`; falta saber si incluye partir el aro.
 - `P-03`: margen y kerf reales del taller. Si son mayores que cero, el propio anidado manual de la muestra no se podría cortar tal cual. **Actualizado:** se partió en *entre piezas vecinas* (hay una estimación) y *margen de borde* (sin dato). El borde es el que decide el caso: pregunta nueva `P-28`.
 - Rumbo técnico para piezas grandes y curvas: las mismas 4 cuñas de 2.292 × 1.220 mm son las que no entran con el margen provisorio y las que hacen explotar el cálculo de Deepnest. Una alternativa a evaluar es tratarlas aparte del anidado genérico (letras y piezas chicas al motor; cuñas con reglas propias), que se conecta con el sub-proyecto 2 (seccionado). **Actualizado:** las «cuñas» son 8 tramos del aro grande de Belgrano, **uno por hoja** (4 de 2292 × 1220 y 4 de 1941 × 1085), y cada uno ocupa entre 10 % y 21 % del área de su hoja. El número de chapas del diseñador lo fija cómo se partió el aro, no cómo se acomodaron las letras: el 37,3 % de aprovechamiento es el costo de esas bandas finas. La recomendación es sacarlas del anidado genérico y anidar solo las letras en los huecos; detalle y tabla por hoja en `PLAN-RUMBO-ANIDADO-Y-REVISION.md §2.1` y `§3`.
 

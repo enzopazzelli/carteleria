@@ -388,6 +388,20 @@ def test_si_el_bloque_pisa_algo_se_mueve_igual_y_avisa(cliente, tmp_path):
     assert _centro(movida) == pytest.approx((cx + sx - gx, cy + sy - gy), abs=1e-6)
 
 
+def test_la_de_adentro_se_controla_si_su_bloque_pisa_algo(cliente, tmp_path):
+    """La grande va encima de la suelta: la de adentro cae sobre la suelta y
+    también queda en rojo, no solo la grande (A17)."""
+    _ejecucion, por_medida = _anidado_con_una_adentro(cliente, tmp_path, tercera=True)
+    grande, chica, suelta = por_medida["200"], por_medida["30"], por_medida["100"]
+    sx, sy = _centro(suelta)
+
+    cuerpo = cliente.patch(f"/colocaciones/{grande['id']}", json={"centro_x_mm": str(sx), "centro_y_mm": str(sy)}).json()
+
+    [movida] = cuerpo["tambien_movidas"]
+    assert movida["id"] == chica["id"]
+    assert movida["valida"] is False
+
+
 def test_una_metida_a_mano_tambien_viaja(cliente, tmp_path):
     _ejecucion, por_medida = _anidado_con_una_adentro(cliente, tmp_path, huecos=False)
     grande, chica = por_medida["200"], por_medida["30"]

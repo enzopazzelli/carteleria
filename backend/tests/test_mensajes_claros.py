@@ -101,7 +101,7 @@ TECNICOS_PERMITIDOS = (
     "Sparrow devolvió piezas faltantes o duplicadas.",  # ResultadoQueNoPasaElControl → detalle
     "Colocación inválida devuelta por Sparrow.",  # ídem
     "Rotación no permitida devuelta por Sparrow.",  # ídem
-    "Lo que escribió el cálculo de Sparrow:",  # registro del servidor
+    "Lo que escribió Sparrow en ",  # registro del servidor
     "Las correcciones no son un JSON válido (",  # detalle de la lectura del dibujo
 )
 

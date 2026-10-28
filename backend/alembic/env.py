@@ -8,6 +8,10 @@ PostgreSQL es cambiar `DATABASE_URL` y nada más.
 COLUMN` ni `DROP CONSTRAINT`: Alembic tiene que recrear la tabla y copiar
 los datos. Sin esto, la primera migración que cambie una columna falla.
 Con PostgreSQL el modo batch no molesta.
+
+Al arrancar, la app actualiza la base sola (`app/arranque.py`) y pasa la
+URL en `config.attributes["url"]`, con `sin_logging`: `fileConfig` apaga
+los loggers que ya existen y el registro del servidor quedaría mudo.
 """
 from __future__ import annotations
 
@@ -24,9 +28,9 @@ from app.config import url_de_base  # noqa: E402
 from app.modelos import Base  # noqa: E402
 
 config = context.config
-config.set_main_option("sqlalchemy.url", url_de_base())
+config.set_main_option("sqlalchemy.url", config.attributes.get("url") or url_de_base())
 
-if config.config_file_name is not None:
+if config.config_file_name is not None and not config.attributes.get("sin_logging"):
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata

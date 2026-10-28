@@ -15,10 +15,9 @@ from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato
 from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza
-from ..services.nesting.engine import MotorNestingRectangular
 from ..services.nesting.geometria_material import poligono_material
 from ..services.nesting.models import ParametrosCorte, Plancha
-from ..services.nesting.models import Pieza as PiezaDominio
+from ..services.nesting.sparrow import entra_en_la_chapa
 from ..services.disenio import PosicionEnDisenio, posicion_de_tramo
 from ..services.seccionado import (
     Grilla,
@@ -110,12 +109,21 @@ def _forma(pieza: Pieza) -> Polygon:
 
 
 def _validar_que_no_entra(pieza: Pieza, plancha: Plancha, params: ParametrosCorte) -> None:
-    caja = PiezaDominio(id=str(pieza.id), ancho_mm=pieza.ancho_mm, alto_mm=pieza.alto_mm)
-    if not MotorNestingRectangular(plancha, params).piezas_que_no_entran([caja]):
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            f"«{pieza.id_origen}» entra entera en {plancha.ancho_mm}×{plancha.alto_mm}: no hace falta seccionarla.",
+    # Con su forma y con giro libre, como la anida Sparrow (A17): una pieza
+    # que entra en diagonal no se corta. Sin giro libre el anidado no la
+    # acepta, así que el mensaje dice cómo anidarla.
+    contorno = [(float(x), float(y)) for x, y in pieza.contorno_mm]
+    if not entra_en_la_chapa(contorno, plancha, params, giro_libre=True):
+        return
+    medida = f"{plancha.ancho_mm}×{plancha.alto_mm}"
+    if entra_en_la_chapa(contorno, plancha, params, giro_libre=False):
+        mensaje = f"«{pieza.id_origen}» entra entera en {medida}: no hace falta seccionarla."
+    else:
+        mensaje = (
+            f"«{pieza.id_origen}» entra entera en {medida} si se la gira: "
+            "anidala con «Girar a cualquier ángulo» marcado. No hace falta seccionarla."
         )
+    raise HTTPException(status.HTTP_400_BAD_REQUEST, mensaje)
 
 
 def _a_lista(coordenadas) -> list[list[float]]:

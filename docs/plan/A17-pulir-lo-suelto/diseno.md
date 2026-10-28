@@ -270,6 +270,44 @@ Esta lista reemplaza, en el plan maestro, las filas de las tablas de pendientes 
 
 *Se completa al cerrar cada tanda: qué se hizo, lo medido y lo que se cerró sin cambios porque ya no pasaba.*
 
+### 8.1 Tanda 1 — El arranque y los arreglos del motor (2026-10-28)
+
+Rama `fix/a17-1-arranque-y-motor`, 9 commits. Ninguna tarea se cerró sin cambios: los ocho pendientes seguían.
+
+- **La base se pone al día al arrancar** (`app/arranque.py`).
+  - Recorrido sobre una copia de la base real, bajada a `c3a91f4e7b20`: el servidor guardó el respaldo en `respaldo-2026-10-28-antes-de-d4b2e8a1f630/`, con la versión vieja y los 3 trabajos, y la actualizó. La línea salió en la consola y en el registro.
+  - Un segundo arranque, con la base ya al día, no hizo otro respaldo.
+  - El README ya no pide `alembic upgrade head`, ni en el paso 2 ni en «Para empezar de cero».
+- **La carpeta temporal** es `<datos>/tmp`: la usan el anidado, ver la lectura del DXF y cargarlo.
+- **Vaciar chapas** mide cuánto tarda cada consulta a Sparrow y no empieza una que, con la más lenta hasta ahora, no termina antes del límite.
+- **«¿Entra en la chapa?»** usa los giros del anidado en la comparación, en el anidado y en el seccionado.
+  - **Fuera del plan:** también cambió la pregunta que hace el anidado antes de buscar (`preparar_entrada`). Si no, la comparación decía «entra», el anidado la rechazaba y el seccionado no la cortaba: la pieza quedaba sin salida.
+  - **Decisión de Enzo (2026-10-28):** cuando la pieza entra solo girada, el seccionado dice cómo anidarla: «…entra entera en … si se la gira: anidala con «Girar a cualquier ángulo» marcado. No hace falta seccionarla.».
+- **La pasada fina del seccionado,** medida sobre el aro de Complejo con la chapa de 1220 × 2440:
+
+  | | Tramos | Soldadura | Ángulo | Búsqueda |
+  |---|---|---|---|---|
+  | Antes | 8 | 2899,8 mm | 80° | 12,3 s |
+  | Después | 8 | 2750,0 mm | 76° | 13,8 s |
+
+  El aro ya seccionado de la base real no cambia: lo nuevo vale para la próxima propuesta.
+
+  **Ojo (revisión de la tanda):** la pasada fina ya no prueba ±5° y ±10° con corrimientos finos, y la gruesa los probó solo con 4 × 4 corrimientos. En el aro mejoró. En otra forma podría salir algo peor que antes: si pasa, se suman.
+- **Con un anidado corriendo** no se cambia ninguna pieza de su grupo, ni se mueve una hacia él o desde él, ni se borra el grupo.
+- **El registro** escribe los avisos y errores también en la consola, una sola vez. La línea de Sparrow dice «el anidado #N» o «la comparación (… mm)».
+- **Las pruebas que faltaban** pasaron de entrada. La de vaciar chapas arranca en el proceso aparte con una primera vuelta de mentira, una pieza por chapa: con piezas reales, la primera vuelta ya da el mínimo y vaciar no arranca. Con la etapa apagada, falla.
+- **Las pruebas completas,** después de los arreglos de la revisión: el servidor, 991 de 991; la pantalla, 226 de 226 y sin errores de tipos.
+- **La revisión de la rama** (un revisor aparte) encontró dos cosas, ya arregladas con su prueba:
+  - el aviso previo al anidar usaba las opciones por defecto: sin giro libre, una pieza que solo entra inclinada arrancaba un anidado condenado a terminar en error, en vez del aviso al pedir;
+  - si la actualización de la base vuelve a fallar, el respaldo nuevo puede ser de una base a medio actualizar: el mensaje nombra también el primero.
+- **Quedan para decidir:**
+  - si el respaldo mismo falla, sale una traza cruda;
+  - un guion de prueba, `leer_un_dxf.py`, ahora también actualiza la base que lee;
+  - un comentario viejo en el worker;
+  - una prueba que compara posiciones exactas de Sparrow y podría fallar a veces;
+  - con el motor rectangular, la franja de la separación;
+  - la carpeta `tmp` no se limpia si el servidor muere a mitad de un anidado.
+
 ## 9. Lo que decidí yo y conviene revisar
 
 - **El orden de las tandas.** Una rama por tanda, que se fusiona con el ok de Enzo en cada pausa.

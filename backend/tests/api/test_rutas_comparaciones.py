@@ -297,6 +297,27 @@ def test_la_comparacion_con_huecos_mete_la_chica_en_el_hueco(cliente, tmp_path, 
     assert fila["planchas_usadas"] == chapas
 
 
+@pytest.mark.parametrize("giro_libre,a_seccionar", [(True, 0), (False, 1)])
+def test_una_pieza_que_entra_en_diagonal_no_se_manda_a_seccionar(cliente, tmp_path, giro_libre, a_seccionar):
+    """En el lugar útil de 978 × 978, una franja de 1300 × 50 solo entra
+    inclinada (A17): con giro libre se anida, sin él hay que seccionarla."""
+    from .test_rutas_seccionado import _trabajo_con_franja
+
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=1300, alto=50)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Franja", "formato_id": formato["id"]}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    pedido = {**_SPARROW_RAPIDO, "formato_ids": [formato["id"]], "giro_libre": giro_libre}
+
+    arrancada = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json=pedido)
+    final = _esperar_comparacion(cliente, arrancada.json()["id"])
+
+    assert arrancada.status_code == 202, mensaje_de(arrancada)
+    assert final["estado"] == "lista", final["error"]
+    [fila] = final["opciones"]
+    assert len(fila["piezas_a_seccionar"]) == a_seccionar
+    assert fila["planchas_usadas"] == (1 if giro_libre else None)
+
+
 def test_la_comparacion_rectangular_con_huecos_se_rechaza(cliente, tmp_path):
     _trabajo, grupo = _trabajo_con_pieza_hueca_y_pieza_chica(cliente, tmp_path)
     pedido = {"motor": "rectpack", "formato_ids": [grupo["formato_id"]], "usar_anidado_en_huecos": True}

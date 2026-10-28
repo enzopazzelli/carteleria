@@ -541,10 +541,12 @@ def test_comparar_formatos_sparrow_real_sin_modificar_grupo(cliente, tmp_path, m
         json={"ancho_mm": "500", "alto_mm": "500", "unidad_venta": "M2", "costo_unidad_venta": "10"},
     ).json()
     llamadas = []
+    nombres = []
     original = rutas_nesting.anidar_sparrow
 
     def registrar(piezas, geometrias, plancha, params, opciones, **kw):
         llamadas.append((geometrias, opciones))
+        nombres.append(kw.get("nombre"))
         return original(piezas, geometrias, plancha, params, opciones, **kw)
 
     monkeypatch.setattr(rutas_nesting, "anidar_sparrow", registrar)
@@ -554,6 +556,9 @@ def test_comparar_formatos_sparrow_real_sin_modificar_grupo(cliente, tmp_path, m
     })
     assert respuesta.status_code == 200, respuesta.text
     assert len(llamadas) == 2
+    # Lo que escribe Sparrow dice de qué chapa de la comparación es (A17).
+    assert [n.split(" (")[0] for n in nombres] == ["la comparación"] * 2
+    assert nombres[0].startswith("la comparación (1000") and nombres[1].startswith("la comparación (500")
     assert all(g and o.semilla == 7 and o.segundos_por_busqueda == 1 and o.simplificacion_mm == 0 for g, o in llamadas)
     opciones = respuesta.json()
     assert all(o["motor"] == "sparrow" and o["planchas_usadas"] == 1 for o in opciones)
@@ -754,6 +759,29 @@ def test_sparrow_por_api_con_opciones_persistidas(cliente, tmp_path, huecos):
     assert len(cliente.get(f"/ejecuciones/{result['id']}/colocaciones").json())==1
 
 
+@pytest.mark.parametrize("giro_libre,estado", [(False, 400), (True, 202)])
+def test_el_aviso_previo_usa_el_giro_libre_del_pedido(cliente, tmp_path, giro_libre, estado):
+    """Una franja de 1300 × 50 solo entra inclinada en el lugar útil de
+    978 × 978 (A17). Sin giro libre, el aviso sale al pedir, no como una
+    corrida que termina en error."""
+    from .test_rutas_seccionado import _trabajo_con_franja
+
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=1300, alto=50)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "Franja", "formato_id": formato["id"]}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+
+    respuesta = cliente.post(f"/grupos/{grupo['id']}/anidar", json={
+        "motor": "sparrow", "giro_libre": giro_libre, "segundos_por_busqueda": 1, "tiempo_maximo_s": 20, "simplificacion_mm": 0,
+    })
+
+    assert respuesta.status_code == estado, respuesta.text
+    if giro_libre:
+        assert _esperar_estado(cliente, respuesta.json()["id"], timeout=30)["estado"] == "lista"
+    else:
+        assert "no entran" in mensaje_de(respuesta)
+        assert cliente.get(f"/grupos/{grupo['id']}/ejecuciones").json() == []
+
+
 def test_sparrow_preflight_no_encola_piezas_que_no_entran(cliente,tmp_path):
     _,grupo=_trabajo_con_grupo_listo(cliente,tmp_path,ancho=1000,alto=1000)
     r=cliente.post(f"/grupos/{grupo['id']}/anidar",json={"motor":"sparrow"})
@@ -863,6 +891,28 @@ def test_mientras_corre_el_anidado_trae_su_progreso_y_al_terminar_no(cliente, tm
     }
     assert final["estado"] == "lista", final.get("error")
     assert final["progreso"] is None
+
+
+def test_lo_que_escribe_sparrow_dice_de_que_anidado_es(cliente, tmp_path, monkeypatch):
+    """Con varios anidados a la vez, la línea del registro dice de cuál es (A17)."""
+    from app.api import rutas_nesting
+
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    nombres = []
+    original = rutas_nesting.anidar_sparrow
+
+    def anotar(piezas, geometrias, plancha, params, opciones, **kw):
+        nombres.append(kw.get("nombre"))
+        return original(piezas, geometrias, plancha, params, opciones, **kw)
+
+    monkeypatch.setattr(rutas_nesting, "anidar_sparrow", anotar)
+    ejecucion = cliente.post(f"/grupos/{grupo['id']}/anidar", json={
+        "motor": "sparrow", "segundos_por_busqueda": 1, "tiempo_maximo_s": 20,
+    }).json()
+    final = _esperar_estado(cliente, ejecucion["id"], timeout=20)
+
+    assert final["estado"] == "lista", final.get("error")
+    assert nombres == [f"el anidado #{ejecucion['id']}"]
 
 
 def test_un_anidado_rectangular_no_trae_progreso(cliente, tmp_path):
@@ -1035,6 +1085,7 @@ def test_el_arranque_corta_las_colgadas_solo_con_la_base_de_verdad(monkeypatch):
     modulo = importlib.import_module("app.api.app")
     llamadas = []
     monkeypatch.setattr(rutas_nesting, "cortar_corridas_colgadas", lambda: llamadas.append(1) or 0)
+    monkeypatch.setattr(modulo, "poner_la_base_al_dia", lambda *args: None)
     monkeypatch.setattr(modulo, "inicializar", lambda: None)
     monkeypatch.setattr(modulo, "configurar_registro", lambda *args: None)
 
@@ -1049,6 +1100,61 @@ def test_el_arranque_corta_las_colgadas_solo_con_la_base_de_verdad(monkeypatch):
     finally:
         modulo.app.dependency_overrides.pop(obtener_sesion, None)
     assert llamadas == [1]
+
+
+def _arranque_sin_base(monkeypatch, *, al_dia, cortar):
+    """La app de verdad, con la actualización y la limpieza cambiadas: no
+    se toca ninguna base."""
+    import importlib
+
+    from app.api import rutas_nesting
+
+    modulo = importlib.import_module("app.api.app")
+    monkeypatch.setattr(modulo, "poner_la_base_al_dia", al_dia)
+    monkeypatch.setattr(rutas_nesting, "cortar_corridas_colgadas", cortar)
+    monkeypatch.setattr(modulo, "inicializar", lambda: None)
+    monkeypatch.setattr(modulo, "configurar_registro", lambda *args: None)
+    return modulo
+
+
+def test_el_arranque_no_actualiza_con_otra_base(monkeypatch):
+    llamadas = []
+    modulo = _arranque_sin_base(monkeypatch, al_dia=lambda *args: llamadas.append(args), cortar=lambda: 0)
+
+    modulo.app.dependency_overrides[obtener_sesion] = lambda: None
+    try:
+        with TestClient(modulo.app):
+            pass
+    finally:
+        modulo.app.dependency_overrides.pop(obtener_sesion, None)
+    assert llamadas == []
+
+
+def test_si_cortar_colgadas_falla_el_servidor_arranca(monkeypatch, caplog):
+    def _falla():
+        raise RuntimeError("no such column: ejecuciones_nesting.error_datos")
+
+    modulo = _arranque_sin_base(monkeypatch, al_dia=lambda *args: None, cortar=_falla)
+
+    with TestClient(modulo.app) as cliente:
+        assert cliente.get("/no-existe").status_code == 404
+    assert "No se pudieron cortar los anidados colgados al arrancar" in caplog.text
+
+
+def test_si_la_base_no_se_puede_actualizar_el_servidor_no_arranca(monkeypatch, caplog):
+    from app.arranque import BaseMasNueva
+
+    def _mas_nueva(*args):
+        raise BaseMasNueva("La base está en la versión ffffffffffff, más nueva que el código.")
+
+    cortadas = []
+    modulo = _arranque_sin_base(monkeypatch, al_dia=_mas_nueva, cortar=lambda: cortadas.append(1) or 0)
+
+    with pytest.raises(BaseMasNueva):
+        with TestClient(modulo.app):
+            pass
+    assert cortadas == []
+    assert "más nueva que el código" in caplog.text
 
 
 # --- Material usado en ancho × alto (A12) -----------------------------------

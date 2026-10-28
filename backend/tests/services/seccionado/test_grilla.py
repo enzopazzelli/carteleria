@@ -156,6 +156,13 @@ def test_la_mejor_grilla_del_aro_no_corta_a_lo_largo_de_los_rayos(mejor_del_aro)
     assert mejor_del_aro.soldadura_mm < 2000
 
 
+def test_la_pasada_fina_no_repite_angulos_gruesos():
+    """Los gruesos van de a 5°: la fina prueba los del medio, de a 1° (A17)."""
+    finas = modulo_grilla._grillas_finas(Grilla(35, 0, 0), celda_util(_CHAPA, _PARAMS))
+
+    assert {grilla.angulo_grados for grilla in finas} == set(range(31, 40))
+
+
 def test_la_mejor_grilla_es_siempre_la_misma():
     panel = box(0, 0, 3000, 1000)
     celda = celda_util(_CHAPA, _PARAMS)

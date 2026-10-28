@@ -272,7 +272,8 @@ def _correr_anidado(ejecucion_id: int) -> None:
                 opciones = OpcionesSparrow(**(ejecucion.opciones or {}))
                 resultado = anidar_sparrow(piezas, geometrias, plancha, params, opciones,
                     cancelada=lambda: _esta_cancelada(ejecucion_id),
-                    al_avanzar=lambda avance: progreso.anotar(("ejecucion", ejecucion_id), avance))
+                    al_avanzar=lambda avance: progreso.anotar(("ejecucion", ejecucion_id), avance),
+                    nombre=f"el anidado #{ejecucion_id}")
             else:
                 resultado = MotorNestingRectangular(plancha, params).anidar(
                     piezas, tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
@@ -346,7 +347,10 @@ def anidar(
     try:
         plancha, params, piezas = _datos_para_anidar(sesion, grupo)
         if datos.motor == "sparrow":
-            preparar_entrada(piezas, _geometrias_del_grupo(grupo), plancha, params, OpcionesSparrow())
+            # Con las opciones del pedido, las mismas con que va a correr:
+            # «¿entra?» depende del giro libre (A17).
+            opciones = OpcionesSparrow(**datos.model_dump(exclude={"motor"}))
+            preparar_entrada(piezas, _geometrias_del_grupo(grupo), plancha, params, opciones)
     except ValueError as error:
         formato = sesion.get(Formato, grupo.formato_id) if grupo.formato_id else None
         raise para_el_usuario(
@@ -575,19 +579,24 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
     # pestaña Piezas; hasta que se haga, ese formato queda sin planchas ni
     # costo.
     geometrias = _geometrias_del_grupo(grupo) if datos.motor == "sparrow" else {}
-    if datos.motor == "sparrow":
-        no_entran = [piezas_que_no_entran(piezas_dominio, geometrias, o.plancha, o.params) for o in opciones]
-    else:
-        no_entran = [MotorNestingRectangular(o.plancha, o.params).piezas_que_no_entran(piezas_dominio) for o in opciones]
-
     opciones_sparrow = None
-    nombres = nombres_de_piezas(piezas)
     if datos.motor == "sparrow":
         # Siempre con el sobrante arriba (A12): para elegir entre chapas
         # cuentan las chapas y el costo, no hacia dónde queda el sobrante.
         opciones_sparrow = OpcionesSparrow(
             **datos.model_dump(exclude={"motor", "formato_ids", "criterio", "sobrante"}), sobrante="arriba"
         )
+        # Con los giros del anidado (A17): con giro libre, una pieza que
+        # solo entra en diagonal no se manda a seccionar.
+        no_entran = [
+            piezas_que_no_entran(piezas_dominio, geometrias, o.plancha, o.params, giro_libre=opciones_sparrow.giro_libre)
+            for o in opciones
+        ]
+    else:
+        no_entran = [MotorNestingRectangular(o.plancha, o.params).piezas_que_no_entran(piezas_dominio) for o in opciones]
+
+    nombres = nombres_de_piezas(piezas)
+    if datos.motor == "sparrow":
         # Validar todos antes de iniciar búsquedas costosas.
         for opcion, formato, ids in zip(opciones, formatos, no_entran):
             if ids:
@@ -667,6 +676,7 @@ def _correr_comparacion(
                 resultado = anidar_sparrow(
                     preparada.piezas, preparada.geometrias, opcion.plancha, opcion.params, preparada.opciones_sparrow,
                     cancelada=cancelada, al_avanzar=avanzar,
+                    nombre=f"la comparación ({comunes['formato_descripcion']})",
                 )
             except Exception as error:  # noqa: BLE001 - la falla de un formato queda en su fila
                 if cancelada():
