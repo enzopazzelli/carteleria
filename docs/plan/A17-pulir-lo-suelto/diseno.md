@@ -308,6 +308,17 @@ Rama `fix/a17-1-arranque-y-motor`, 9 commits. Ninguna tarea se cerró sin cambio
   - con el motor rectangular, la franja de la separación;
   - la carpeta `tmp` no se limpia si el servidor muere a mitad de un anidado.
 
+### 8.2 Tanda 2 — Complejo en 7 chapas y las mediciones (en curso)
+
+Rama `feat/a17-2-complejo`.
+
+- **Los dos caminos, como opciones apagadas** (tareas 9 y 10): `busquedas_a_la_vez` (dos búsquedas a la vez, cada una con otra semilla; queda la de menos chapas) y `repartir_tiempo` (cada vuelta busca y vacía en su parte del tiempo). Con las dos apagadas, el anidado es el de antes.
+- **Pendiente: la medición de la tarea 11** (Enzo, 2026-10-28: «no corras la prueba, anotala como pendiente»). Está todo listo para correrla, con la máquina libre, unos 75 minutos:
+  - los guiones, fuera de git, en `backend/local/herramientas-a17/`: `copiar_base.py` (acepta `--desde <respaldo>`) y `medir_complejo.py`, que alterna las tres variantes y anota cada corrida en un `.jsonl`;
+  - las copias, en `backend/local/tmp-a17/complejo` (grupo 1) y `backend/local/tmp-a17/parador` (del respaldo del 2026-10-26, grupo 4);
+  - una prueba corta del guion, con 20 s de máximo, dio el parador en 1 chapa y 30 piezas adentro con las tres variantes.
+- **Lo que depende de la medición:** cuál camino queda (y se saca el otro), la repetición de las mediciones de la tarea 12 y la medición del parador de la tarea 13.
+
 ## 9. Lo que decidí yo y conviene revisar
 
 - **El orden de las tandas.** Una rama por tanda, que se fusiona con el ok de Enzo en cada pausa.
