@@ -16,6 +16,8 @@ colocación de una pieza que el diseñador ya sacó del trabajo.
 from __future__ import annotations
 
 import math
+import threading
+from dataclasses import dataclass, replace
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -30,7 +32,10 @@ from ..services.nesting.exportacion_dxf import exportar_plancha_a_dxf, nombre_de
 from ..services.nesting.huecos_primero import lugar_libre
 from ..services.nesting.material_usado import MaterialUsado, material_usado
 from ..services.nesting.models import ParametrosCorte, Plancha, PosicionPieza, ResultadoAnidado, RotacionPermitida
+from ..services.nesting.models import Pieza as PiezaDominio
 from ..services.nesting.mover_entre_chapas import angulos_permitidos, libre_de_chapa
+from ..services.nesting.reacomodar import reacomodar_chapa
+from ..services.nesting.sparrow import OpcionesSparrow
 from ..services.nesting.validacion_manual import (
     GeometriaPieza,
     PosicionManual,
@@ -53,7 +58,7 @@ from .esquemas_nesting import (
     MedidaLeer,
     MovidaDeChapaLeer,
 )
-from .rutas_nesting import _ejecucion_o_404, geometria_desde_pieza
+from .rutas_nesting import _ejecucion_o_404, centro_y_angulo, geometria_desde_pieza
 
 router = APIRouter(tags=["ajuste"])
 
@@ -193,6 +198,8 @@ def ajustar_colocacion(
         movida.centro_x_mm, movida.centro_y_mm, movida.angulo_grados = nuevas[movida.id]
         movida.movida_a_mano = True
         leidas.append((movida, resultado_validacion))
+    # Un cambio en el anidado: lo de deshacer un reacomodo ya no vale (A17).
+    _olvidar_para_deshacer(ejecucion.id)
     sesion.commit()
 
     principal, *tambien = [
@@ -291,7 +298,22 @@ def pasar_a_otra_chapa(
     angulos = angulos_permitidos(params.rotaciones_permitidas, bool((ejecucion.opciones or {}).get("giro_libre", False)))
     exterior = Polygon(_poligono_centrado(geometrias[colocacion.id]).exterior)
     lugar = lugar_libre(libre_de_chapa(plancha, params, ocupadas), exterior, angulos)
-    if lugar is None:
+    reacomodo = None
+    if lugar is None and destino < total and ejecucion.motor == "sparrow":
+        # No entra en lo libre de una chapa que ya existe: se la vuelve a
+        # acomodar entera, ya con la pieza (A17).
+        en_destino = [c for c in activas if c.plancha_indice == destino]
+        reacomodo = _reacomodar(ejecucion, colocacion, de_adentro, en_destino, geometrias, plancha, params)
+        if reacomodo is None:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                {
+                    "mensaje": f"No entra en la chapa {destino + 1} ni reacomodándola: probá con otra chapa o con una nueva.",
+                    "piezas": [pieza.id],
+                    "chapas": [],
+                },
+            )
+    elif lugar is None:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
             {
@@ -301,13 +323,24 @@ def pasar_a_otra_chapa(
             },
         )
 
-    angulo, x, y = (Decimal(str(round(valor, 6))) for valor in lugar)
-    for adentro in de_adentro:  # antes de mover la contenedora: se calcula desde dónde estaba
-        adentro.centro_x_mm, adentro.centro_y_mm, adentro.angulo_grados = _llevada_con(adentro, colocacion, x, y, angulo)
-    colocacion.centro_x_mm, colocacion.centro_y_mm, colocacion.angulo_grados = x, y, angulo
-    for movida in [colocacion, *de_adentro]:
-        movida.plancha_indice = destino
-        movida.movida_a_mano = True
+    # Un cambio en el anidado: lo de deshacer de antes ya no vale.
+    _olvidar_para_deshacer(ejecucion.id)
+    foto = _foto_de(ejecucion) if reacomodo is not None else None
+    if reacomodo is not None:
+        pasadas = {colocacion.id, *(c.id for c in de_adentro)}
+        for otra in ejecucion.colocaciones:
+            if otra.id in reacomodo:
+                otra.centro_x_mm, otra.centro_y_mm, otra.angulo_grados = reacomodo[otra.id]
+                otra.plancha_indice = destino
+                otra.movida_a_mano = otra.id in pasadas
+    else:
+        angulo, x, y = (Decimal(str(round(valor, 6))) for valor in lugar)
+        for adentro in de_adentro:  # antes de mover la contenedora: se calcula desde dónde estaba
+            adentro.centro_x_mm, adentro.centro_y_mm, adentro.angulo_grados = _llevada_con(adentro, colocacion, x, y, angulo)
+        colocacion.centro_x_mm, colocacion.centro_y_mm, colocacion.angulo_grados = x, y, angulo
+        for movida in [colocacion, *de_adentro]:
+            movida.plancha_indice = destino
+            movida.movida_a_mano = True
     if destino == total:
         ejecucion.planchas_usadas = total + 1
 
@@ -325,12 +358,122 @@ def pasar_a_otra_chapa(
     resultado, geometrias_por_pieza = _resultado_y_geometrias(ejecucion)
     ejecucion.aprovechamiento_pct = calcular_aprovechamiento(resultado, plancha, geometrias_por_pieza).porcentaje_aprovechamiento
     sesion.commit()
+    if foto is None:
+        return _movida(ejecucion, chapa_quitada=chapa_quitada)
+    with _candado:
+        _para_deshacer[ejecucion.id] = foto
+    reacomodada = destino - 1 if chapa_quitada is not None and chapa_quitada < destino else destino
+    return _movida(ejecucion, chapa_quitada=chapa_quitada, reacomodada=reacomodada, puede_deshacer=True)
+
+
+def _movida(ejecucion, **extra) -> MovidaDeChapaLeer:
     return MovidaDeChapaLeer(
         colocaciones=[ColocacionLeer.model_validate(c) for c in sorted(ejecucion.colocaciones, key=lambda c: c.id)],
         planchas_usadas=ejecucion.planchas_usadas,
         aprovechamiento_pct=ejecucion.aprovechamiento_pct,
-        chapa_quitada=chapa_quitada,
+        **extra,
     )
+
+
+def _reacomodar(
+    ejecucion, colocacion: Colocacion, de_adentro: list[Colocacion], en_destino: list[Colocacion],
+    geometrias: dict[int, GeometriaPieza], plancha: Plancha, params: ParametrosCorte,
+) -> dict[int, tuple[Decimal, Decimal, Decimal]] | None:
+    """Dónde queda cada colocación de la chapa de destino y la que se pasa,
+    con lo de adentro de sus huecos, si entran todas en la chapa; o `None`.
+
+    A Sparrow va cada colocación como una pieza aparte, con su `id`: así
+    cada posición vuelve a la colocación de la que salió, aunque sea una de
+    varias copias. Una pieza con algo en sus huecos va como un bloque, con
+    los huecos tapados, y lo de adentro la sigue como al arrastrarla
+    (`_llevada_con`): sigue adentro, y nada se mete encima."""
+    adentro_de = {c.id: _las_de_adentro(c, en_destino, geometrias) for c in en_destino}
+    adentro_de[colocacion.id] = de_adentro
+    de_algun_hueco = {otra.id for adentras in adentro_de.values() for otra in adentras}
+    bloques = [c for c in [*en_destino, colocacion] if c.id not in de_algun_hueco]
+    piezas = [PiezaDominio(id=str(c.id), ancho_mm=c.pieza.ancho_mm, alto_mm=c.pieza.alto_mm) for c in bloques]
+    para_sparrow = {
+        str(c.id): replace(geometrias[c.id], agujeros_local_mm=[]) if adentro_de[c.id] else geometrias[c.id]
+        for c in bloques
+    }
+    opciones = OpcionesSparrow(**(ejecucion.opciones or {}))
+    posiciones = reacomodar_chapa(piezas, para_sparrow, plancha, params, opciones, config.TIEMPO_PARA_REACOMODAR_S)
+    if posiciones is None:
+        return None
+    por_id = {c.id: c for c in bloques}
+    nuevas: dict[int, tuple[Decimal, Decimal, Decimal]] = {}
+    for posicion in posiciones:
+        bloque = por_id[int(posicion.pieza_id.split("#")[0])]
+        nuevas[bloque.id] = centro_y_angulo(posicion)
+        for adentro in adentro_de[bloque.id]:  # desde donde estaba el bloque, antes de moverlo
+            nuevas[adentro.id] = _llevada_con(adentro, bloque, *nuevas[bloque.id])
+    return nuevas
+
+
+# --- Deshacer el reacomodo (A17) -------------------------------------------
+
+
+@dataclass(frozen=True)
+class _Foto:
+    """Todas las colocaciones del anidado antes del reacomodo, también las
+    de piezas descartadas, con las chapas y el aprovechamiento."""
+
+    #: `(pieza_id, instancia, chapa, centro_x, centro_y, angulo, movida_a_mano)`.
+    colocaciones: tuple[tuple[int, int, int, Decimal, Decimal, Decimal, bool], ...]
+    planchas_usadas: int
+    aprovechamiento_pct: Decimal | None
+
+
+#: Lo que hace falta para deshacer el último reacomodo de cada anidado, en la
+#: memoria del servidor, como las comparaciones: vale hasta el próximo cambio
+#: en ese anidado, y si el servidor se reinicia, se pierde.
+_para_deshacer: dict[int, _Foto] = {}
+_candado = threading.Lock()
+
+
+def _foto_de(ejecucion) -> _Foto:
+    return _Foto(
+        colocaciones=tuple(
+            (c.pieza_id, c.instancia, c.plancha_indice, c.centro_x_mm, c.centro_y_mm, c.angulo_grados, c.movida_a_mano)
+            for c in ejecucion.colocaciones
+        ),
+        planchas_usadas=ejecucion.planchas_usadas,
+        aprovechamiento_pct=ejecucion.aprovechamiento_pct,
+    )
+
+
+def _olvidar_para_deshacer(ejecucion_id: int) -> None:
+    with _candado:
+        _para_deshacer.pop(ejecucion_id, None)
+
+
+@router.post("/ejecuciones/{ejecucion_id}/deshacer-reacomodo", response_model=MovidaDeChapaLeer)
+def deshacer_reacomodo(ejecucion_id: int, sesion: Session = Depends(obtener_sesion)) -> MovidaDeChapaLeer:
+    """Deja el anidado como estaba antes del último reacomodo: cada
+    colocación en su chapa y su lugar, y la chapa que se había quitado,
+    de vuelta. Cada colocación vuelve a su fila, así no cambia su `id`."""
+    ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
+    with _candado:
+        foto = _para_deshacer.pop(ejecucion_id, None)
+    if foto is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Ya hubo otro cambio en este anidado, o se reinició el servidor: no se puede deshacer.",
+        )
+    por_clave = {(c.pieza_id, c.instancia): c for c in ejecucion.colocaciones}
+    for pieza_id, instancia, chapa, centro_x, centro_y, angulo, movida_a_mano in foto.colocaciones:
+        colocacion = por_clave.get((pieza_id, instancia))
+        if colocacion is None:
+            # Era de una pieza descartada en la chapa que se quitó.
+            colocacion = Colocacion(ejecucion_id=ejecucion.id, pieza_id=pieza_id, instancia=instancia)
+            ejecucion.colocaciones.append(colocacion)
+        colocacion.plancha_indice = chapa
+        colocacion.centro_x_mm, colocacion.centro_y_mm, colocacion.angulo_grados = centro_x, centro_y, angulo
+        colocacion.movida_a_mano = movida_a_mano
+    ejecucion.planchas_usadas = foto.planchas_usadas
+    ejecucion.aprovechamiento_pct = foto.aprovechamiento_pct
+    sesion.commit()
+    return _movida(ejecucion)
 
 
 # --- Exportación: plano (SVG) y DXF de corte ------------------------------

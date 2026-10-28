@@ -10,7 +10,8 @@ from decimal import Decimal
 import ezdxf
 import pytest
 from fastapi.testclient import TestClient
-from shapely.geometry import Polygon
+from shapely import affinity
+from shapely.geometry import Polygon, box
 from sqlalchemy.orm import Session
 
 from .ayudas import mensaje_de
@@ -576,3 +577,201 @@ def test_recalcula_el_aprovechamiento(cliente, tmp_path):
     assert Decimal(cuerpo["aprovechamiento_pct"]) == pytest.approx(
         Decimal(antes["aprovechamiento_pct"]) / 2, abs=Decimal("0.01")
     )
+
+
+# --- Reacomodar la chapa de destino (A17) -----------------------------------
+#
+# `docs/plan/A17-pulir-lo-suelto/diseno.md §4.3.1`. El anidado se arma a
+# mano: cuadrados en chapas de 1000 × 1000, margen 10, separación 10 y kerf 0
+# (lugar útil de 980 × 980). Dos cuadrados de 400 en la columna del medio
+# dejan a los costados franjas de 280: otro de 400 no entra en lo libre, pero
+# reacomodando entran los tres.
+
+_EN_EL_MEDIO = [(500, 220), (500, 770)]
+
+
+def _anidado_a_mano(cliente, tmp_path, piezas, colocaciones, *, motor="sparrow"):
+    """`piezas`: `(lado, hueco)` de cada cuadrado, con el lado de un hueco
+    cuadrado en el medio o `None`. `colocaciones`: `(pieza, instancia, chapa,
+    centro_x, centro_y)`. Devuelve el anidado, las piezas en el orden de
+    `piezas` y las colocaciones en el orden de `colocaciones`."""
+    material = cliente.post("/materiales", json={"nombre": "Chapa"}).json()
+    formato = cliente.post(
+        f"/materiales/{material['id']}/formatos", json={"ancho_mm": "1000", "alto_mm": "1000"}
+    ).json()
+    cliente.put(f"/materiales/{material['id']}/parametros-corte", json={
+        "kerf_mm": "0", "margen_borde_mm": "10", "separacion_piezas_mm": "10", "rotaciones_permitidas": "LIBRE_0_90",
+    })
+    trabajo = cliente.post("/trabajos", json={"nombre": "Reacomodar"}).json()
+    documento = ezdxf.new()
+    msp = documento.modelspace()
+    for i, (lado, hueco) in enumerate(piezas):
+        x = i * 1000
+        msp.add_lwpolyline([(x, 0), (x + lado, 0), (x + lado, lado), (x, lado)], close=True)
+        if hueco:
+            a, b = x + (lado - hueco) / 2, (lado - hueco) / 2
+            msp.add_lwpolyline([(a, b), (a + hueco, b), (a + hueco, b + hueco), (a, b + hueco)], close=True)
+    ruta = tmp_path / "cuadrados.dxf"
+    documento.saveas(ruta)
+    cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("cuadrados.dxf", ruta.read_bytes(), "application/dxf")},
+        # Un hueco de 120 es más grande que el que el lector toma por agujero sin preguntar.
+        data={"escala_a_mm": "1", "tamano_maximo_agujero_mm": "200"},
+    )
+    cargadas = sorted(cliente.get(f"/trabajos/{trabajo['id']}/piezas").json(), key=lambda p: Decimal(p["disenio_x_mm"]))
+    assert len(cargadas) == len(piezas)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "G1", "formato_id": formato["id"]}).json()
+    copias = {}
+    for pieza, instancia, *_ in colocaciones:
+        copias[pieza] = max(copias.get(pieza, 0), instancia + 1)
+    for i, pieza in enumerate(cargadas):
+        cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"], "cantidad": copias.get(i, 1)})
+    with Session(cliente.motor) as sesion:
+        ejecucion = EjecucionNesting(
+            grupo_id=grupo["id"], motor=motor, estado=EstadoEjecucion.LISTA.value,
+            planchas_usadas=1 + max(chapa for _, _, chapa, _, _ in colocaciones),
+            parametros={
+                "kerf_mm": "0", "margen_borde_mm": "10", "separacion_piezas_mm": "10", "rotaciones_permitidas": "LIBRE_0_90",
+                "formato": {"id": formato["id"], "ancho_mm": "1000", "alto_mm": "1000", "material_nombre": "Chapa", "espesor": None},
+            },
+            opciones={"segundos_por_busqueda": 1, "simplificacion_mm": 0, "giro_libre": True, "sobrante": "arriba"},
+        )
+        sesion.add(ejecucion)
+        sesion.flush()
+        filas = [
+            Colocacion(
+                ejecucion_id=ejecucion.id, pieza_id=cargadas[pieza]["id"], instancia=instancia, plancha_indice=chapa,
+                centro_x_mm=Decimal(x), centro_y_mm=Decimal(y), angulo_grados=Decimal(0),
+            )
+            for pieza, instancia, chapa, x, y in colocaciones
+        ]
+        sesion.add_all(filas)
+        sesion.commit()
+        return ejecucion.id, cargadas, [fila.id for fila in filas]
+
+
+def _cuadrado(colocacion, lado) -> Polygon:
+    x, y = _centro(colocacion)
+    caja = box(x - lado / 2, y - lado / 2, x + lado / 2, y + lado / 2)
+    return affinity.rotate(caja, float(colocacion["angulo_grados"]), origin=(x, y))
+
+
+def _sin_pisarse(poligonos, separacion=10) -> bool:
+    return all(a.distance(b) >= separacion - 1e-3 for i, a in enumerate(poligonos) for b in poligonos[i + 1:])
+
+
+def _foto(colocaciones) -> dict:
+    return {
+        (c["pieza_id"], c["instancia"]): (
+            c["id"], c["plancha_indice"], c["centro_x_mm"], c["centro_y_mm"], c["angulo_grados"], c["movida_a_mano"]
+        )
+        for c in colocaciones
+    }
+
+
+def _tres_de_400(cliente, tmp_path, *, motor="sparrow"):
+    """Dos de 400 en el medio de la chapa 0 y una de 400 sola en la chapa 1."""
+    return _anidado_a_mano(
+        cliente, tmp_path, [(400, None)] * 3,
+        [(0, 0, 0, *_EN_EL_MEDIO[0]), (1, 0, 0, *_EN_EL_MEDIO[1]), (2, 0, 1, 500, 500)], motor=motor,
+    )
+
+
+def test_reacomoda_la_chapa_si_no_entra_en_lo_libre(cliente, tmp_path):
+    ejecucion_id, _, (una, otra, pasada) = _tres_de_400(cliente, tmp_path)
+
+    respuesta = _pasar(cliente, pasada, 0)
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert (cuerpo["reacomodada"], cuerpo["puede_deshacer"]) == (0, True)
+    assert (cuerpo["planchas_usadas"], cuerpo["chapa_quitada"]) == (1, 1)
+    despues = {c["id"]: c for c in cuerpo["colocaciones"]}
+    assert {c["plancha_indice"] for c in despues.values()} == {0}
+    assert despues[pasada]["movida_a_mano"] is True
+    assert despues[una]["movida_a_mano"] is False and despues[otra]["movida_a_mano"] is False
+    assert _sin_pisarse([_cuadrado(c, 400) for c in despues.values()])
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}").json()["planchas_usadas"] == 1
+
+
+def test_no_entra_ni_reacomodando(cliente, tmp_path):
+    esquinas = [(235, 235), (695, 235), (235, 695), (695, 695)]
+    ejecucion_id, cargadas, ids = _anidado_a_mano(
+        cliente, tmp_path, [(450, None)] * 5,
+        [*((i, 0, 0, x, y) for i, (x, y) in enumerate(esquinas)), (4, 0, 1, 500, 500)],
+    )
+    antes = _colocaciones(cliente, ejecucion_id)
+
+    respuesta = _pasar(cliente, ids[4], 0)
+
+    assert respuesta.status_code == 409
+    assert mensaje_de(respuesta) == "No entra en la chapa 1 ni reacomodándola: probá con otra chapa o con una nueva."
+    assert respuesta.json()["detail"]["piezas"] == [cargadas[4]["id"]]
+    assert _colocaciones(cliente, ejecucion_id) == antes
+
+
+def test_deshacer_deja_todo_como_estaba(cliente, tmp_path):
+    ejecucion_id, _, (_, _, pasada) = _tres_de_400(cliente, tmp_path)
+    antes = _foto(_colocaciones(cliente, ejecucion_id))
+    assert _pasar(cliente, pasada, 0).status_code == 200
+
+    respuesta = cliente.post(f"/ejecuciones/{ejecucion_id}/deshacer-reacomodo")
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert (cuerpo["planchas_usadas"], cuerpo["puede_deshacer"], cuerpo["reacomodada"]) == (2, False, None)
+    assert _foto(cuerpo["colocaciones"]) == antes
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}").json()["planchas_usadas"] == 2
+
+
+def test_deshacer_despues_de_otro_cambio_da_409(cliente, tmp_path):
+    ejecucion_id, _, (una, _, pasada) = _tres_de_400(cliente, tmp_path)
+    cuerpo = _pasar(cliente, pasada, 0).json()
+    x, y = _centro(next(c for c in cuerpo["colocaciones"] if c["id"] == una))
+    cliente.patch(f"/colocaciones/{una}", json={"centro_x_mm": str(x + 1), "centro_y_mm": str(y)})
+
+    respuesta = cliente.post(f"/ejecuciones/{ejecucion_id}/deshacer-reacomodo")
+
+    assert respuesta.status_code == 409
+    assert mensaje_de(respuesta) == "Ya hubo otro cambio en este anidado, o se reinició el servidor: no se puede deshacer."
+
+
+def test_una_pieza_con_dos_copias_no_se_pierde(cliente, tmp_path):
+    ejecucion_id, cargadas, (_, _, pasada) = _anidado_a_mano(
+        cliente, tmp_path, [(400, None)] * 2,
+        [(0, 0, 0, *_EN_EL_MEDIO[0]), (0, 1, 0, *_EN_EL_MEDIO[1]), (1, 0, 1, 500, 500)],
+    )
+
+    cuerpo = _pasar(cliente, pasada, 0).json()
+
+    assert sorted((c["pieza_id"], c["instancia"]) for c in cuerpo["colocaciones"]) == sorted(
+        [(cargadas[0]["id"], 0), (cargadas[0]["id"], 1), (cargadas[1]["id"], 0)]
+    )
+    assert {c["plancha_indice"] for c in cuerpo["colocaciones"]} == {0}
+    assert _sin_pisarse([_cuadrado(c, 400) for c in cuerpo["colocaciones"]])
+
+
+def test_lo_de_adentro_viaja_al_reacomodar(cliente, tmp_path):
+    """La que se pasa es un marco de 400 con un hueco de 120 y un cuadrado
+    de 80 adentro: los dos terminan en la chapa 0, el de 80 en el hueco."""
+    ejecucion_id, _, (_, _, marco, adentro) = _anidado_a_mano(
+        cliente, tmp_path, [(400, None), (400, None), (400, 120), (80, None)],
+        [(0, 0, 0, *_EN_EL_MEDIO[0]), (1, 0, 0, *_EN_EL_MEDIO[1]), (2, 0, 1, 500, 500), (3, 0, 1, 500, 500)],
+    )
+
+    cuerpo = _pasar(cliente, marco, 0).json()
+
+    despues = {c["id"]: c for c in cuerpo["colocaciones"]}
+    assert cuerpo["reacomodada"] == 0
+    assert despues[marco]["plancha_indice"] == despues[adentro]["plancha_indice"] == 0
+    assert _cuadrado(despues[marco], 120).contains(_cuadrado(despues[adentro], 80))
+
+
+def test_anidado_rectangular_no_reacomoda(cliente, tmp_path):
+    _, _, (_, _, pasada) = _tres_de_400(cliente, tmp_path, motor="rectpack")
+
+    respuesta = _pasar(cliente, pasada, 0)
+
+    assert respuesta.status_code == 409
+    assert "No hay lugar" in mensaje_de(respuesta)

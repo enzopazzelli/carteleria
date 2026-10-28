@@ -149,6 +149,11 @@ class MovidaDeChapaLeer(BaseModel):
     aprovechamiento_pct: Decimal | None
     #: La chapa que quedó vacía y se quitó (las que seguían bajaron un número).
     chapa_quitada: int | None = None
+    #: La chapa que se reacomodó para que entre la pieza (A17), con su número
+    #: final: si se quitó una de antes, ya bajó uno.
+    reacomodada: int | None = None
+    #: Si «Deshacer» puede dejar todo como antes del reacomodo.
+    puede_deshacer: bool = False
 
 
 # --- Costeo (envuelve `app/costeo.py`, no lo reemplaza) -------------------

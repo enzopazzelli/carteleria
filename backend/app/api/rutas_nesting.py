@@ -39,6 +39,7 @@ from ..services.nesting.sparrow import anidar_sparrow, piezas_que_no_entran, pre
 from ..services.nesting.models import (
     ParametrosCorte,
     Plancha,
+    PosicionPieza,
     RotacionPermitida,
 )
 from ..services.nesting.models import Pieza as PiezaDominio
@@ -86,6 +87,20 @@ def geometria_desde_pieza(pieza: Pieza) -> GeometriaPieza:
         contorno_local_mm=_puntos_decimal(pieza.contorno_mm),
         agujeros_local_mm=[_puntos_decimal(agujero) for agujero in pieza.agujeros_mm],
     )
+
+
+def centro_y_angulo(posicion: PosicionPieza) -> tuple[Decimal, Decimal, Decimal]:
+    """Cómo se guarda una posición del motor en una `Colocacion`: el centro
+    de la pieza y su ángulo. La usan el anidado y el reacomodo de una chapa
+    (A17): las dos tienen que guardar lo mismo."""
+    angulo = (
+        posicion.angulo_libre_grados
+        if posicion.angulo_libre_grados is not None
+        else (Decimal(90) if posicion.rotada_90 else Decimal(0))
+    )
+    centro_x = posicion.centro_libre_x_mm if posicion.centro_libre_x_mm is not None else posicion.x_mm + posicion.ancho_colocado_mm / 2
+    centro_y = posicion.centro_libre_y_mm if posicion.centro_libre_y_mm is not None else posicion.y_mm + posicion.alto_colocado_mm / 2
+    return centro_x, centro_y, angulo
 
 
 def _ejecucion_o_404(sesion: Session, ejecucion_id: int) -> EjecucionNesting:
@@ -302,19 +317,15 @@ def _correr_anidado(ejecucion_id: int) -> None:
         aprovechamiento = calcular_aprovechamiento(resultado, plancha, geometrias)
         for posicion in resultado.posiciones:
             pieza_id_str, instancia_str = posicion.pieza_id.split("#")
-            angulo = (
-                posicion.angulo_libre_grados
-                if posicion.angulo_libre_grados is not None
-                else (Decimal(90) if posicion.rotada_90 else Decimal(0))
-            )
+            centro_x, centro_y, angulo = centro_y_angulo(posicion)
             sesion.add(
                 Colocacion(
                     ejecucion_id=ejecucion.id,
                     pieza_id=int(pieza_id_str),
                     instancia=int(instancia_str),
                     plancha_indice=posicion.plancha_indice,
-                    centro_x_mm=posicion.centro_libre_x_mm if posicion.centro_libre_x_mm is not None else posicion.x_mm + posicion.ancho_colocado_mm / 2,
-                    centro_y_mm=posicion.centro_libre_y_mm if posicion.centro_libre_y_mm is not None else posicion.y_mm + posicion.alto_colocado_mm / 2,
+                    centro_x_mm=centro_x,
+                    centro_y_mm=centro_y,
                     angulo_grados=angulo,
                 )
             )
