@@ -177,7 +177,8 @@ def _libre(hueco: _Hueco, puestas: list[Polygon], gap: float):
 
 
 def _llenar_hueco(hueco: _Hueco, candidatas: list[_Pieza], gap: float, seguir: Callable[[], bool]) -> list[tuple[_Pieza, Adentro]]:
-    """Tantas candidatas como entren, de la de más área a la de menos, cada
+    """Tantas candidatas como entren, en el orden en que vienen (el de
+    `meter_en_huecos`: por defecto, de la de más área a la de menos), cada
     una en el lugar más abajo y a la izquierda donde entra (contra la pared:
     así lo libre que sobra queda junto). `seguir` se consulta antes de cada
     pieza que se intenta poner."""
@@ -246,6 +247,25 @@ def _llenar_hueco(hueco: _Hueco, candidatas: list[_Pieza], gap: float, seguir: C
     return plan
 
 
+def _lados(pieza: _Pieza) -> tuple[float, float]:
+    """El lado más corto y el más largo de la caja de la pieza, sin girar."""
+    x0, y0, x1, y1 = pieza.exterior.bounds
+    return min(x1 - x0, y1 - y0), max(x1 - x0, y1 - y0)
+
+
+#: En qué orden se prueban las candidatas de un hueco (A17). El primero de
+#: `meter_en_huecos` manda si dos planes meten lo mismo.
+_ORDENES: dict[str, Callable[[_Pieza], object]] = {
+    #: De mayor a menor área, como siempre.
+    "area": lambda p: -p.area,
+    #: De mayor a menor lado de su caja: las largas antes de que algo
+    #: compacto les corte el paso.
+    "lado": lambda p: -_lados(p)[1],
+    #: La más angosta primero; entre dos igual de angostas, la de más área.
+    "angosta": lambda p: (_lados(p)[0], -p.area),
+}
+
+
 def lugar_libre(libre, exterior: Polygon, angulos: list[float]) -> tuple[float, float, float] | None:
     """El lugar más abajo y a la izquierda donde entra `exterior` adentro de
     `libre`, probando `angulos`: `(angulo, tx, ty)` es girarlo alrededor de
@@ -270,6 +290,7 @@ def meter_en_huecos(
     area_minima_mm2: float,
     al_avanzar: Callable[[int, int], None] = lambda hechos, total: None,
     seguir: Callable[[], bool] = lambda: True,
+    ordenes: tuple[str, ...] = ("area",),
 ) -> list[Adentro]:
     """Qué piezas van adentro de qué huecos, en el orden en que se metieron:
     la contenedora de cada una o no está en la lista, o está antes.
@@ -277,9 +298,12 @@ def meter_en_huecos(
     Los huecos se llenan del más grande al más chico. Así una candidata
     nunca tiene nada adentro todavía (sus huecos son más chicos que el que
     se está llenando), y una pieza metida en un hueco recibe después las
-    suyas: la rueda, el caballito, la piecita."""
+    suyas: la rueda, el caballito, la piecita.
+
+    Con varios `ordenes` (`_ORDENES`), cada hueco se llena una vez por orden
+    y queda el plan que mete más área, mientras `seguir()` (A17)."""
     piezas = {item["id"]: _pieza(item) for item in items}
-    orden = sorted(piezas.values(), key=lambda p: -p.area)
+    ordenadas = {orden: sorted(piezas.values(), key=_ORDENES[orden]) for orden in ordenes}
     huecos: list[tuple[str, Polygon]] = []
     for item in items:
         # Del material ya arreglado: dos huecos que se pisan cuentan como uno.
@@ -298,8 +322,16 @@ def meter_en_huecos(
         util = poligono.buffer(-gap) if gap > 0 else poligono
         if not util.is_empty:
             hueco = _Hueco(dueno, poligono, util, tuple(_angulos(poligono, rotaciones)))
-            candidatas = [p for p in orden if p.id != dueno and p.id not in ubicadas and p.id not in con_algo_adentro]
-            plan = _llenar_hueco(hueco, candidatas, gap, seguir)
+            planes = []
+            for orden in ordenes:
+                if planes and not seguir():
+                    break
+                candidatas = [
+                    p for p in ordenadas[orden] if p.id != dueno and p.id not in ubicadas and p.id not in con_algo_adentro
+                ]
+                planes.append(_llenar_hueco(hueco, candidatas, gap, seguir))
+            # `max` se queda con el primero de los empatados.
+            plan = max(planes, key=lambda plan: sum(pieza.area for pieza, _ in plan))
             for pieza, puesta in plan:
                 adentro.append(puesta)
                 ubicadas.add(pieza.id)

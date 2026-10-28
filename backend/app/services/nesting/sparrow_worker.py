@@ -62,6 +62,13 @@ def alcanza_el_tiempo(ahora,limite,duraciones,minimo):
     lenta de las que ya se hicieron (A17)."""
     return ahora+max([minimo,*duraciones])<limite
 
+def limite_de_la_vuelta(inicio,maximo,intentos,intento,repartir):
+    """Hasta cuándo puede vaciar chapas la vuelta `intento` (A17, camino 2).
+    Sin repartir, todas hasta el final, como antes; repartiendo, cada una
+    hasta el final de su parte del tiempo."""
+    if not repartir:return inicio+maximo-1
+    return inicio+(intento+1)*maximo/intentos-1
+
 def resolver_una_pasada(data):
     width=data['width']
     originals,shapes=formas(data)
@@ -212,13 +219,14 @@ def resolver(data, salida=None):
                 t0=time.monotonic()
                 try:return entra_en_una_chapa(ids,originals,shapes,prueba)
                 finally:duraciones.append(time.monotonic()-t0)
+            hasta=limite_de_la_vuelta(inicio,opts['tiempo_maximo_s'],opts.get('intentos',3),intento,opts.get('repartir_tiempo',False))
             try:
                 for chapas in vaciar_chapas(
                     por_chapa(candidato),
                     lambda k:shapes[k].area,
                     (data['width']+2*reserva)*(data['height']+2*reserva),
                     consultar,
-                    lambda:alcanza_el_tiempo(time.monotonic(),limite,duraciones,opts['segundos_por_busqueda']),
+                    lambda:alcanza_el_tiempo(time.monotonic(),hasta,duraciones,opts['segundos_por_busqueda']),
                 ):
                     considerar([{**q,'sheet':s} for s,chapa in enumerate(chapas) for q in chapa])
                     if score[0]==minimo: break

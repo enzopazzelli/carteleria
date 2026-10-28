@@ -1,6 +1,6 @@
 """Motor Sparrow experimental con proceso aislado y validación original."""
 from __future__ import annotations
-import json, math, os, subprocess, sys, tempfile, time
+import json, math, os, subprocess, sys, tempfile, threading, time
 from pathlib import Path
 from decimal import Decimal
 from dataclasses import dataclass, replace
@@ -82,6 +82,13 @@ class OpcionesSparrow:
     #: alto. Si no se dice, al costado, como antes: la pantalla manda
     #: arriba, y la comparación de chapas siempre arriba.
     sobrante: str = "costado"
+    #: Búsquedas a la vez dentro del mismo anidado (A17, camino 1): cada una
+    #: en su worker y con otra semilla; queda la de menos chapas.
+    busquedas_a_la_vez: int = 1
+    #: El tiempo repartido en partes iguales entre las vueltas, cada una con
+    #: su vaciado (A17, camino 2), en vez de dejar vaciar a cada una hasta
+    #: el final.
+    repartir_tiempo: bool = False
 
 def ruta_de_avisos(salida):
     """Dónde deja el worker sus avisos, al lado de su resultado. Los escribe
@@ -314,6 +321,46 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
                                  replace(opciones,sobrante='costado'),cancelada,al_avanzar,nombre)
         return _enderezar(resultado,plancha.ancho_mm)
     entrada=preparar_entrada(piezas,geometrias,plancha,params,opciones)
+    if opciones.busquedas_a_la_vez>1:return _a_la_vez(entrada,opciones,cancelada,al_avanzar,nombre)
+    return _una_busqueda(entrada,opciones,cancelada,al_avanzar,nombre)
+
+def _la_mejor(resultados):
+    """La de menos chapas entre las que terminaron; si empatan, la primera
+    (`min` se queda con la primera de las empatadas)."""
+    return min((r for r in resultados if r is not None),key=lambda r:r.planchas_usadas)
+
+def _juntar_avances(avances):
+    """Para la barra: cómo va la primera búsqueda que ya contó algo, con el
+    mejor número de chapas de todas."""
+    base=next((a for a in avances if a),{})
+    chapas=[a['mejor_chapas'] for a in avances if a.get('mejor_chapas') is not None]
+    return {**base,**({'mejor_chapas':min(chapas)} if chapas else {})}
+
+def _a_la_vez(entrada,opciones,cancelada,al_avanzar,nombre):
+    """`busquedas_a_la_vez` búsquedas en paralelo, cada una con su worker,
+    su carpeta y la semilla `semilla + 7919·k` (A17, camino 1). Cancelar
+    corta todas: miran la misma `cancelada`. Si una falla y otra termina,
+    vale la que terminó; si fallan todas, el error de la primera."""
+    n=opciones.busquedas_a_la_vez
+    avances=[{} for _ in range(n)];resultados=[None]*n;errores=[None]*n
+    cerrojo=threading.Lock()
+    def correr(k):
+        propia={**entrada,'options':{**entrada['options'],'semilla':(opciones.semilla+7919*k)%2147483648}}
+        def avanzar(avance):
+            with cerrojo:
+                avances[k]=avance
+                if al_avanzar is not None:al_avanzar(_juntar_avances(avances))
+        try:resultados[k]=_una_busqueda(propia,opciones,cancelada,avanzar,f'{nombre} (búsqueda {k+1})')
+        except Exception as error:errores[k]=error
+    hilos=[threading.Thread(target=correr,args=(k,),daemon=True) for k in range(n)]
+    for hilo in hilos:hilo.start()
+    for hilo in hilos:hilo.join()
+    if all(r is None for r in resultados):raise next(e for e in errores if e is not None)
+    return _la_mejor(resultados)
+
+def _una_busqueda(entrada,opciones,cancelada,al_avanzar,nombre):
+    """Un worker de Sparrow, vigilado: cancelar, el tiempo máximo, la barra
+    y lo que escribió, al registro."""
     with tempfile.TemporaryDirectory(prefix='carteleria-sparrow-',dir=config.carpeta_temporal()) as d:
         inp,out=Path(d)/'entrada.json',Path(d)/'salida.json'
         inp.write_text(json.dumps(entrada),encoding='utf8')

@@ -243,3 +243,29 @@ def test_sin_huecos_da_lo_mismo_con_y_sin_la_casilla():
         return [(p.pieza_id, p.plancha_indice, p.x_mm, p.y_mm, p.angulo_libre_grados) for p in resultado.posiciones]
 
     assert posiciones(True) == posiciones(False)
+
+
+def test_con_varios_ordenes_queda_el_que_mete_mas():
+    """Por área, la cuadrada entra primero y tapa el hueco; por el lado más
+    largo, las dos largas entran una arriba de la otra y meten más (A17)."""
+    marco = item("marco#0", rectangulo(140, 120), [rectangulo(100, 80, 20, 20)])
+    cuadrada = item("cuadrada#0", rectangulo(70, 70))
+    larga = item("larga#0", rectangulo(100, 40))
+    otra_larga = item("otra#0", rectangulo(100, 38))
+    items = [marco, cuadrada, larga, otra_larga]
+
+    solo_por_area = meter_en_huecos(items, 0, CUARTOS, 100)
+    con_varios = meter_en_huecos(items, 0, CUARTOS, 100, ordenes=("area", "lado", "angosta"))
+
+    assert [a.id for a in solo_por_area] == ["cuadrada#0"]
+    assert sorted(a.id for a in con_varios) == ["larga#0", "otra#0"]
+
+
+def test_si_empatan_queda_el_primer_orden():
+    """Un aro con un cuadrado que entra igual en cualquier orden: el plan
+    es el de siempre, el del orden por área."""
+    items = [aro(), item("chico#0", cuadrado(20))]
+
+    assert meter_en_huecos(items, 0, CUARTOS, 100, ordenes=("area", "lado", "angosta")) == meter_en_huecos(
+        items, 0, CUARTOS, 100
+    )
