@@ -47,7 +47,6 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
   - en el DXF, lo de adentro va primero;
   - un anidado que quedó colgado al cerrar el programa pasa a error al arrancar.
 - Ver [`docs/historico/A10-huecos-primero/`](docs/historico/A10-huecos-primero/diseno.md).
-- El visor de prueba (`Visor de anidado.cmd`) suma Sparrow con huecos en su selector de motor.
 - Cómo probar Sparrow (semilla, tiempo, simplificación, cancelar): [`docs/GUIA-SPARROW-PRUEBAS.md`](docs/GUIA-SPARROW-PRUEBAS.md).
 
 **Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, también llenar mejor los huecos, que se sumó después, ver y mover las chapas (A14), el diseño anidado en PDF (A15) y la página de inicio con las tarjetas (A16). El orden de lo que queda es una propuesta, para que Enzo lo confirme.
@@ -65,7 +64,6 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - en la comparación de chapas, el aviso de las piezas grandes muestra las de la primera chapa que lo dio;
 - Complejo entra en 7 chapas (lo encontraron dos anidados que corrían a la vez), pero de a uno siempre da 8: falta que la búsqueda lo encuentre seguido;
 - en la chapa grande (la de Chapas, que antes era Ajuste), al tocar una pieza el editor salta un poco hacia abajo (aparecen los botones para rotarla);
-- el editor del visor de prueba todavía se ve de cabeza;
 - al pasar una pieza a otra chapa en Complejo, casi nada entra: lo libre queda repartido entre los rayos del aro.
 
 El detalle está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Pendientes de aprovechar huecos primero (A10)», «Pendientes del giro de las piezas grandes (A11)», «Pendientes del material usado en ancho × alto (A12)», «Pendientes de las chapas en conjunto (A14)» y, lo de las 7 chapas, «Pendientes del reparto por chapa».
