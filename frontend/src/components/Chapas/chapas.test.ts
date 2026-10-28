@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Colocacion, Ejecucion } from "../../api/nesting";
 import type { Pieza } from "../../api/piezasYgrupos";
-import { anidadoParaMostrar, anillosColocados, aprovechamientoDeChapa, areaDePieza } from "./chapas";
+import { anidadoParaMostrar, anillosColocados, aprovechamientoDeChapa, areaDePieza, avisoDeReacomodo } from "./chapas";
 
 function ejecucion(id: number, estado: Ejecucion["estado"], esDefinitiva = false): Ejecucion {
   return {
@@ -61,5 +61,11 @@ describe("anillosColocados", () => {
     const ys = exterior.map(([, y]) => y);
     expect(Math.min(...xs)).toBeCloseTo(450);
     expect(Math.max(...ys)).toBeCloseTo(350);
+  });
+});
+
+describe("avisoDeReacomodo", () => {
+  it("nombra la chapa contando desde 1 y la pieza que entró (A17)", () => {
+    expect(avisoDeReacomodo(2, "B-3")).toBe("Se reacomodó la chapa 3 para que entre «B-3».");
   });
 });

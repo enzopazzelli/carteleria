@@ -53,3 +53,9 @@ export function anillosColocados(pieza: Pieza, colocacion: Colocacion): [number,
     }),
   );
 }
+
+/** El aviso de que una chapa se reacomodó para que entre una pieza (A17).
+ * `indice` es el de la chapa, desde 0; el aviso la cuenta desde 1. */
+export function avisoDeReacomodo(indice: number, nombre: string): string {
+  return `Se reacomodó la chapa ${indice + 1} para que entre «${nombre}».`;
+}

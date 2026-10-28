@@ -89,6 +89,12 @@ export default function Mosaico({
     arrastre?.moviendo && arrastre.sobre === indice && indice !== arrastre.origen ? "ring-4 ring-offset-2 ring-ink/50" : "";
 
   return (
+    <>
+    {pasando && (
+      <p className="text-sm text-ink/60 mb-2">
+        Pasando la pieza… Si no entra en lo libre, se reacomoda la chapa, y puede tardar hasta medio minuto.
+      </p>
+    )}
     <div
       className={`grid gap-3 select-none ${arrastre?.moviendo ? "cursor-grabbing" : ""}`}
       style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}
@@ -164,5 +170,6 @@ export default function Mosaico({
         </figure>
       )}
     </div>
+    </>
   );
 }

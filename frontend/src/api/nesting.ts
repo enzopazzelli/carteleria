@@ -109,11 +109,20 @@ export interface MovidaDeChapa {
   aprovechamiento_pct: string | null;
   /** La chapa que quedó vacía y se quitó: las que seguían bajaron un número. */
   chapa_quitada: number | null;
+  /** La chapa que se reacomodó para que entre la pieza (A17), con su número final. */
+  reacomodada: number | null;
+  /** Si «Deshacer» puede dejar todo como antes del reacomodo. */
+  puede_deshacer: boolean;
 }
 
 /** `planchaDestino` igual a la cantidad de chapas es una chapa nueva, al final. */
 export function moverAOtraChapa(colocacionId: number, planchaDestino: number): Promise<MovidaDeChapa> {
   return apiPost<MovidaDeChapa>(`/colocaciones/${colocacionId}/a-otra-chapa`, { plancha_destino: planchaDestino });
+}
+
+/** Deja el anidado como estaba antes del último reacomodo (A17). */
+export function deshacerReacomodo(ejecucionId: number): Promise<MovidaDeChapa> {
+  return apiPost<MovidaDeChapa>(`/ejecuciones/${ejecucionId}/deshacer-reacomodo`, {});
 }
 
 export function urlPlano(ejecucionId: number, plancha: number): string {

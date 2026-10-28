@@ -3,16 +3,17 @@ import { useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { urlPdfAnidado } from "../../api/nesting";
 import type { GrupoDeCorte } from "../../api/piezasYgrupos";
+import Banner from "../../components/Banner";
 import ChapaGrande from "../../components/Chapas/ChapaGrande";
 import Mosaico from "../../components/Chapas/Mosaico";
-import { anidadoParaMostrar } from "../../components/Chapas/chapas";
+import { anidadoParaMostrar, avisoDeReacomodo } from "../../components/Chapas/chapas";
 import DisenioInicial from "../../components/Disenio/DisenioInicial";
 import { IluminadoProvider } from "../../components/Disenio/Iluminado";
 import { estadosPorPieza } from "../../components/Disenio/pintado";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import { useFormato } from "../../hooks/useCatalogo";
 import { useGrupos } from "../../hooks/useGrupos";
-import { useColocaciones, useEjecucionesDeGrupo, useMoverAOtraChapa } from "../../hooks/useNesting";
+import { useColocaciones, useDeshacerReacomodo, useEjecucionesDeGrupo, useMoverAOtraChapa } from "../../hooks/useNesting";
 import { usePiezas } from "../../hooks/usePiezas";
 import { usePresupuestosDelTrabajo } from "../../hooks/usePresupuestos";
 
@@ -87,6 +88,9 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
   /** Por qué no se pudo pasar la última pieza (no hay lugar, anidado en curso...). */
   const [problema, setProblema] = useState<ApiError | null>(null);
   const [avisoPresupuesto, setAvisoPresupuesto] = useState(false);
+  /** La chapa que se reacomodó para que entre una pieza, mientras «Deshacer» vale (A17). */
+  const [reacomodo, setReacomodo] = useState<{ chapa: number; nombre: string } | null>(null);
+  const deshacer = useDeshacerReacomodo(anidado?.id ?? -1);
 
   if (!anidado) {
     return <p className="text-sm text-ink/60">Este grupo todavía no tiene un anidado terminado: anidalo en la pestaña Anidado.</p>;
@@ -116,13 +120,32 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
    * la pieza queda donde estaba y el mensaje dice por qué. */
   async function alPasar(colocacionId: number, destino: number) {
     setProblema(null);
+    setReacomodo(null);
     const antes = anidado!.planchas_usadas;
     try {
       const movida = await mover.mutateAsync({ colocacionId, planchaDestino: destino });
       if (movida.planchas_usadas !== antes && (presupuestos?.length ?? 0) > 0) setAvisoPresupuesto(true);
+      if (movida.reacomodada !== null && movida.puede_deshacer) {
+        const pasada = colocaciones.find((c) => c.id === colocacionId);
+        const nombre = piezas!.find((p) => p.id === pasada?.pieza_id)?.id_origen ?? "la pieza";
+        setReacomodo({ chapa: movida.reacomodada, nombre });
+      }
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       setProblema(error);
+    }
+  }
+
+  /** Deja todo como antes del reacomodo; si ya no se puede, el mensaje dice por qué. */
+  async function alDeshacer() {
+    setProblema(null);
+    try {
+      await deshacer.mutateAsync();
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error;
+      setProblema(error);
+    } finally {
+      setReacomodo(null);
     }
   }
 
@@ -130,6 +153,16 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
     <div className="space-y-4">
       <DisenioInicial trabajoId={trabajoId} modo="por_chapa" estados={estados} alClicPieza={irASuChapa} />
       {problema && <Mensaje variante="error" que={problema} trabajoId={trabajoId} />}
+      {reacomodo && (
+        <Banner variante="aviso">
+          <div className="flex items-center gap-3">
+            <p>{avisoDeReacomodo(reacomodo.chapa, reacomodo.nombre)}</p>
+            <button type="button" className="underline" onClick={alDeshacer} disabled={deshacer.isPending}>
+              {deshacer.isPending ? "Deshaciendo…" : "Deshacer"}
+            </button>
+          </div>
+        </Banner>
+      )}
       {avisoPresupuesto && <Mensaje variante="aviso" que={AVISO_PRESUPUESTO} />}
       {faltan.length > 0 && (
         <Mensaje
@@ -146,7 +179,8 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
         <p className="text-sm text-ink/60">Cargando las medidas de la chapa...</p>
       ) : abierta !== null && abierta < (anidado.planchas_usadas ?? 0) ? (
         <ChapaGrande trabajoId={trabajoId} ejecucion={anidado} piezas={piezas} colocaciones={colocaciones}
-          indice={abierta} anchoMm={anchoMm} altoMm={altoMm} alVolver={() => setAbierta(null)} />
+          indice={abierta} anchoMm={anchoMm} altoMm={altoMm} alVolver={() => setAbierta(null)}
+          alCambiar={() => setReacomodo(null)} />
       ) : (
         <Mosaico ejecucion={anidado} piezas={piezas} colocaciones={colocaciones} anchoMm={anchoMm} altoMm={altoMm}
           alDobleClic={setAbierta} alPasar={alPasar} pasando={mover.isPending} />

@@ -20,9 +20,13 @@ interface ChapaGrandeProps {
   anchoMm: number;
   altoMm: number;
   alVolver: () => void;
+  /** Avisa que se movió o giró una pieza: un cambio en el anidado (A17). */
+  alCambiar?: () => void;
 }
 
-export default function ChapaGrande({ trabajoId, ejecucion, piezas, colocaciones, indice, anchoMm, altoMm, alVolver }: ChapaGrandeProps) {
+export default function ChapaGrande({
+  trabajoId, ejecucion, piezas, colocaciones, indice, anchoMm, altoMm, alVolver, alCambiar,
+}: ChapaGrandeProps) {
   const ajustar = useAjustarColocacion(ejecucion.id);
   const iluminado = useIluminado();
   const [seleccionada, setSeleccionada] = useState<number | null>(null);
@@ -47,10 +51,12 @@ export default function ChapaGrande({ trabajoId, ejecucion, piezas, colocaciones
   }
 
   async function alMover(colocacionId: number, centroXMm: number, centroYMm: number) {
+    alCambiar?.();
     anotar(await ajustar.mutateAsync({ colocacionId, datos: { centro_x_mm: centroXMm, centro_y_mm: centroYMm } }));
   }
 
   async function alRotar(colocacionId: number, anguloGrados: number) {
+    alCambiar?.();
     anotar(await ajustar.mutateAsync({ colocacionId, datos: { angulo_grados: anguloGrados } }));
   }
 

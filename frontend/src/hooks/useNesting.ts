@@ -3,6 +3,7 @@ import {
   ajustarColocacion,
   anidar,
   borrarEjecucion,
+  deshacerReacomodo,
   listarColocaciones,
   listarEjecucionesDeGrupo,
   marcarDefinitiva,
@@ -131,12 +132,23 @@ export function useMoverAOtraChapa(ejecucionId: number) {
   return useMutation({
     mutationFn: ({ colocacionId, planchaDestino }: { colocacionId: number; planchaDestino: number }) =>
       moverAOtraChapa(colocacionId, planchaDestino),
-    onSuccess: (movida) => {
-      queryClient.setQueryData(["colocaciones", ejecucionId], movida.colocaciones);
-      queryClient.invalidateQueries({ queryKey: ["ejecuciones"] });
-      queryClient.invalidateQueries({ queryKey: ["ejecucion", ejecucionId] });
-      queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
-      queryClient.invalidateQueries({ queryKey: ["costeo"] });
-    },
+    onSuccess: (movida) => alCambiarLasChapas(queryClient, ejecucionId, movida.colocaciones),
   });
+}
+
+/** «Deshacer» del reacomodo (A17): pone las colocaciones como al pasar una pieza. */
+export function useDeshacerReacomodo(ejecucionId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => deshacerReacomodo(ejecucionId),
+    onSuccess: (movida) => alCambiarLasChapas(queryClient, ejecucionId, movida.colocaciones),
+  });
+}
+
+function alCambiarLasChapas(queryClient: ReturnType<typeof useQueryClient>, ejecucionId: number, colocaciones: Colocacion[]) {
+  queryClient.setQueryData(["colocaciones", ejecucionId], colocaciones);
+  queryClient.invalidateQueries({ queryKey: ["ejecuciones"] });
+  queryClient.invalidateQueries({ queryKey: ["ejecucion", ejecucionId] });
+  queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
+  queryClient.invalidateQueries({ queryKey: ["costeo"] });
 }
