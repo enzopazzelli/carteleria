@@ -3,8 +3,10 @@
 Correr localmente (desde `backend/`, con el entorno de
 `requirements.txt` instalado):
 
-    alembic upgrade head
     uvicorn app.api.app:app --reload
+
+La base se crea o se actualiza sola al arrancar (`app/arranque.py`); si
+estaba atrasada, antes guarda un respaldo en `local/respaldo-…`.
 
 Sin autenticación (`CART-002` se difiere a propósito): **no se expone
 fuera de `localhost`** hasta que exista.
@@ -13,13 +15,15 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import date
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .. import config
+from ..arranque import ActualizacionFallida, BaseMasNueva, poner_la_base_al_dia
 from ..modelos.base import inicializar
-from ..registro import configurar_registro
+from ..registro import configurar_registro, registro
 from . import rutas_nesting
 from .dependencias import obtener_sesion
 from .manejadores import registrar_manejadores
@@ -38,16 +42,29 @@ from .rutas_trabajos import router as router_trabajos
 
 @asynccontextmanager
 async def _ciclo_de_vida(app: FastAPI) -> AsyncIterator[None]:
-    # Bindea `Sesion` al motor real. Las tablas las crea Alembic
-    # (`alembic upgrade head`) — esta app nunca llama `create_all`.
+    # Bindea `Sesion` al motor real. Las tablas las crea Alembic — esta app
+    # nunca llama `create_all`.
     inicializar()
     configurar_registro(config.DIRECTORIO_REGISTRO, config.TAMANO_REGISTRO_BYTES, config.ARCHIVOS_DE_REGISTRO)
-    # Los anidados que corrían cuando se cerró no siguen (A10). Solo con la
-    # base de verdad: una prueba arranca la app con otra
+    # Solo con la base de verdad: una prueba arranca la app con otra
     # (`dependency_overrides`) y no tiene que tocar la de `Sesion`, que
     # puede ser la real.
     if obtener_sesion not in app.dependency_overrides:
-        rutas_nesting.cortar_corridas_colgadas()
+        # La base se pone al día antes que nada (A17). Si no se puede, el
+        # servidor no arranca: con una base a medio camino fallaría todo.
+        try:
+            respaldo = poner_la_base_al_dia(config.url_de_base(), config.DIRECTORIO_DATOS, date.today())
+        except (BaseMasNueva, ActualizacionFallida) as error:
+            registro().error(str(error))
+            raise
+        if respaldo is not None:
+            registro().warning("La base estaba atrasada y se actualizó. El respaldo quedó en %s", respaldo)
+        # Los anidados que corrían cuando se cerró no siguen (A10). Si
+        # falla, queda en el registro y el servidor arranca igual.
+        try:
+            rutas_nesting.cortar_corridas_colgadas()
+        except Exception:
+            registro().exception("No se pudieron cortar los anidados colgados al arrancar")
     yield
 
 

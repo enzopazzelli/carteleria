@@ -1035,6 +1035,7 @@ def test_el_arranque_corta_las_colgadas_solo_con_la_base_de_verdad(monkeypatch):
     modulo = importlib.import_module("app.api.app")
     llamadas = []
     monkeypatch.setattr(rutas_nesting, "cortar_corridas_colgadas", lambda: llamadas.append(1) or 0)
+    monkeypatch.setattr(modulo, "poner_la_base_al_dia", lambda *args: None)
     monkeypatch.setattr(modulo, "inicializar", lambda: None)
     monkeypatch.setattr(modulo, "configurar_registro", lambda *args: None)
 
@@ -1049,6 +1050,61 @@ def test_el_arranque_corta_las_colgadas_solo_con_la_base_de_verdad(monkeypatch):
     finally:
         modulo.app.dependency_overrides.pop(obtener_sesion, None)
     assert llamadas == [1]
+
+
+def _arranque_sin_base(monkeypatch, *, al_dia, cortar):
+    """La app de verdad, con la actualización y la limpieza cambiadas: no
+    se toca ninguna base."""
+    import importlib
+
+    from app.api import rutas_nesting
+
+    modulo = importlib.import_module("app.api.app")
+    monkeypatch.setattr(modulo, "poner_la_base_al_dia", al_dia)
+    monkeypatch.setattr(rutas_nesting, "cortar_corridas_colgadas", cortar)
+    monkeypatch.setattr(modulo, "inicializar", lambda: None)
+    monkeypatch.setattr(modulo, "configurar_registro", lambda *args: None)
+    return modulo
+
+
+def test_el_arranque_no_actualiza_con_otra_base(monkeypatch):
+    llamadas = []
+    modulo = _arranque_sin_base(monkeypatch, al_dia=lambda *args: llamadas.append(args), cortar=lambda: 0)
+
+    modulo.app.dependency_overrides[obtener_sesion] = lambda: None
+    try:
+        with TestClient(modulo.app):
+            pass
+    finally:
+        modulo.app.dependency_overrides.pop(obtener_sesion, None)
+    assert llamadas == []
+
+
+def test_si_cortar_colgadas_falla_el_servidor_arranca(monkeypatch, caplog):
+    def _falla():
+        raise RuntimeError("no such column: ejecuciones_nesting.error_datos")
+
+    modulo = _arranque_sin_base(monkeypatch, al_dia=lambda *args: None, cortar=_falla)
+
+    with TestClient(modulo.app) as cliente:
+        assert cliente.get("/no-existe").status_code == 404
+    assert "No se pudieron cortar los anidados colgados al arrancar" in caplog.text
+
+
+def test_si_la_base_no_se_puede_actualizar_el_servidor_no_arranca(monkeypatch, caplog):
+    from app.arranque import BaseMasNueva
+
+    def _mas_nueva(*args):
+        raise BaseMasNueva("La base está en la versión ffffffffffff, más nueva que el código.")
+
+    cortadas = []
+    modulo = _arranque_sin_base(monkeypatch, al_dia=_mas_nueva, cortar=lambda: cortadas.append(1) or 0)
+
+    with pytest.raises(BaseMasNueva):
+        with TestClient(modulo.app):
+            pass
+    assert cortadas == []
+    assert "más nueva que el código" in caplog.text
 
 
 # --- Material usado en ancho × alto (A12) -----------------------------------
