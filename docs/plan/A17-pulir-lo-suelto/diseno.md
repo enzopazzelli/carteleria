@@ -320,6 +320,29 @@ Rama `feat/a17-2-complejo`.
 - **Lo que depende de la medición:** cuál camino queda (y se saca el otro), la repetición de las mediciones de la tarea 12 y la medición del parador de la tarea 13.
 - **Llenar los huecos en otro orden** (tarea 13, el código): `meter_en_huecos` acepta varios órdenes (por área, por el lado más largo, la más angosta primero). Llena cada hueco una vez por orden y se queda con el plan que mete más área; si empatan, con el primero. **Por defecto sigue solo por área:** el anidado no cambia.
   - **Pendiente, con la medición de la tarea 11:** el parador, 3 corridas con el orden de siempre y 3 con los tres órdenes por defecto (`ordenes` de `meter_en_huecos`), contra 30 piezas adentro y un sobrante de 1220 × 761. Si mete más sin pasar la mitad del tiempo máximo, quedan los tres por defecto; si no, se vuelve atrás y se anota acá.
+- **Fusionada en `main` sin cerrar** (`0fbb8b1`, a pedido de Enzo): todo lo nuevo, apagado. Siguen pendientes las mediciones de las tareas 11, 12 y 13.
+
+### 8.3 Tanda 3 — Chapas (2026-10-28)
+
+Rama `feat/a17-3-chapas`.
+
+- **Reacomodar la chapa de destino** (tareas 14 y 15). Si la pieza no entra en lo libre de una chapa que ya existe, la chapa se acomoda de nuevo con Sparrow, hasta `PAR-57` (30 s), con «Deshacer».
+  - A Sparrow va cada colocación por separado, no una pieza con su cantidad: cada posición vuelve a su colocación y ninguna copia se pierde ni se duplica.
+  - Una pieza con algo en sus huecos va como un bloque, con los huecos tapados; lo de adentro la sigue. El costo: un hueco vacío de esa pieza no se aprovecha al reacomodar.
+  - «Deshacer» devuelve cada colocación a su lugar, con el mismo número.
+- **La chapa grande** (tarea 16): con el color de su chapa; la fila de girar está siempre (sin pieza, apagada y con «Tocá una pieza para girarla.»); al arrastrar, la pieza va centrada en el puntero y lo de sus huecos la acompaña.
+- **Un aviso para varias piezas en rojo, y la miniatura al día** (tarea 17). El servidor ya nombraba la pieza en el aviso del margen: esa parte se cerró sin cambios en el código, con una prueba que lo vigila.
+- **El diseño chiquito, recortado** alrededor de la pieza (tarea 18): un cuadrado de tres veces su lado más largo, que se corre en los bordes del cartel. La caja del dibujo se calcula de a un punto.
+  - **Fuera del plan, con el ok de Enzo:** el mismo arreglo en el dibujo de la lectura del DXF, que con 300 000 puntos se rompía («Maximum call stack size exceeded»).
+- **El visor de prueba se borró** (tarea 19), a pedido de Enzo: «Hace mucho no uso el visor de anidado.cmd, si consideras que podemos borrarlo hagámoslo». Lo reemplaza la pestaña Chapas. Para medir Deepnest sigue `comparar_motores.py`.
+- **El recorrido en Chrome sin ventana**, sobre una copia de la base con Complejo anidado ahí (8 chapas):
+  - la chapa grande, con el azul de la chapa 1; el editor no salta al elegir una pieza;
+  - en el Parador, una pieza arrastrada lleva sus 6 piezas de adentro, y al soltar no saltan;
+  - una letra de la chapa 8 a la chapa 2: «No entra en la chapa 2 ni reacomodándola», en 28,8 s; a la chapa 3: «Se reacomodó la chapa 3 para que entre «trabajo-1-23».», en 5,6 s; «Deshacer» dejó todas las colocaciones como antes;
+  - el diseño chiquito en los avisos de Anidado; con los tramos del aro, que son casi del tamaño del cartel, se ve casi todo;
+  - con una pantalla de 900 × 600, el clic en una pieza del diseño baja hasta su chapa (punto 8 de §4.3).
+- **Visto en el recorrido, para la tanda 5:** Anidado muestra los avisos solo del anidado recién lanzado, no los del historial (tarea 27).
+- **Las pruebas completas:** el servidor, 1004 de 1004; la pantalla, 238 de 238 y sin errores de tipos.
 
 ## 9. Lo que decidí yo y conviene revisar
 
