@@ -37,6 +37,17 @@ COLA = os.getenv("CARTELERIA_COLA", "proceso")
 #: tiene que poder re-parsearse con otra escala sin volver a subirlo.
 DIRECTORIO_ARCHIVOS = DIRECTORIO_DATOS / "archivos"
 
+#: Los archivos de trabajo de cada anidado y de cada lectura del DXF, que
+#: se borran al terminar (A17). Al lado de los datos y no en la carpeta
+#: temporal del sistema, que está en C: y suele estar lleno.
+DIRECTORIO_TEMPORAL = DIRECTORIO_DATOS / "tmp"
+
+
+def carpeta_temporal() -> Path:
+    DIRECTORIO_TEMPORAL.mkdir(parents=True, exist_ok=True)
+    return DIRECTORIO_TEMPORAL
+
+
 #: Ruta al motor de nesting irregular (`nesting-engine/`).
 RUTA_MOTOR_DEEPNEST = Path(os.getenv("CARTELERIA_MOTOR", RAIZ.parent / "nesting-engine"))
 

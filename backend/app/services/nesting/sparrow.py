@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 import numpy as np
 from shapely.geometry import Polygon, box
 from shapely import affinity
+from ... import config
 from ...mensajes import Aviso, ErrorPrevisto
 from ...registro import registro
 from .models import Plancha, ResultadoAnidado, PosicionPieza, RotacionPermitida
@@ -305,7 +306,7 @@ def anidar_sparrow(piezas,geometrias,plancha,params,opciones=None,cancelada=lamb
                                  replace(opciones,sobrante='costado'),cancelada,al_avanzar)
         return _enderezar(resultado,plancha.ancho_mm)
     entrada=preparar_entrada(piezas,geometrias,plancha,params,opciones)
-    with tempfile.TemporaryDirectory(prefix='carteleria-sparrow-') as d:
+    with tempfile.TemporaryDirectory(prefix='carteleria-sparrow-',dir=config.carpeta_temporal()) as d:
         inp,out=Path(d)/'entrada.json',Path(d)/'salida.json'
         inp.write_text(json.dumps(entrada),encoding='utf8')
         # En Windows el worker escribiría su error en cp1252, y la «í» de

@@ -579,6 +579,30 @@ def _ver_lectura(cliente, trabajo_id, contenido, *, escala_a_mm="1", correccione
     )
 
 
+@pytest.mark.parametrize("ver_o_cargar", [_ver_lectura, _subir])
+def test_leer_el_dxf_usa_la_carpeta_de_los_datos(cliente, tmp_path, monkeypatch, ver_o_cargar):
+    """La del sistema está en C:, que suele estar lleno (A17, diseño §4.1)."""
+    import tempfile
+
+    from app import config
+
+    monkeypatch.setattr(config, "DIRECTORIO_TEMPORAL", tmp_path / "t")
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "o.dxf", lambda msp: _octogono(msp, 0, 0, 500))
+    original = tempfile.TemporaryDirectory
+    usadas = []
+
+    def _anotar(*args, **kwargs):
+        usadas.append(kwargs.get("dir"))
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(tempfile, "TemporaryDirectory", _anotar)
+
+    assert ver_o_cargar(cliente, trabajo["id"], contenido).status_code == 200
+    assert usadas == [tmp_path / "t"]
+    assert list((tmp_path / "t").iterdir()) == []
+
+
 def test_ver_la_lectura_no_guarda_nada(cliente, tmp_path):
     from app import config
 

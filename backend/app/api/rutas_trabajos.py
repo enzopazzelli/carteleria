@@ -436,7 +436,7 @@ async def leer_dxf(
     _trabajo_o_404(sesion, trabajo_id)
     marcadas = _correcciones(correcciones)
     sufijo = Path(archivo.filename or "trabajo.dxf").suffix or ".dxf"
-    with tempfile.TemporaryDirectory() as carpeta:
+    with tempfile.TemporaryDirectory(dir=config.carpeta_temporal()) as carpeta:
         # Con el nombre que le da la carga: de ahí salen los `id` de las
         # piezas, y tienen que ser los mismos que van a quedar guardados.
         ruta = Path(carpeta) / f"trabajo-{trabajo_id}{sufijo}"
@@ -490,7 +490,7 @@ async def subir_dxf(
     contenido = await archivo.read()
     sufijo = Path(archivo.filename or "trabajo.dxf").suffix or ".dxf"
     nombre = f"trabajo-{trabajo_id}{sufijo}"
-    with tempfile.TemporaryDirectory() as carpeta:
+    with tempfile.TemporaryDirectory(dir=config.carpeta_temporal()) as carpeta:
         # Se lee antes de guardarlo: si la carga se rechaza, el trabajo se
         # queda con el archivo de sus piezas. Con el nombre que va a tener
         # guardado, porque de ahí salen los `id` de las piezas.
