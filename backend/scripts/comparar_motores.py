@@ -146,7 +146,7 @@ def _mayor_rectangulo_libre(ocupado, plancha: Plancha, paso_mm: float = 20.0) ->
 
     **Es la métrica que le importa al flujo real del taller**, más que la
     compacidad: cuando el operario deselecciona piezas y manda el resto a
-    otra tanda (`CART-210`, y lo que ya hace el visor interactivo), lo que
+    otra tanda (`CART-210`, los grupos de corte de la app), lo que
     decide si esa tanda entra no es qué tan apretado quedó el layout, sino
     si sobró un pedazo de plancha entero y utilizable. Dos layouts con el
     mismo aprovechamiento pueden dejar, uno, una franja fina inservible y

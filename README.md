@@ -58,13 +58,11 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 | — | **Colores de referencia por pieza** | Los DXF que llegan no traen color | Elegir un color por pieza (la «O» de Complejo en rojo) y que se vea en el plano, en Chapas y en el PDF, para reconocerla anidada | En espera (Enzo, 2026-10-22) |
 | — | **Entrada `.cdr`** | Solo se lee DXF | Leer el archivo de CorelDRAW directo. Ya hay un estudio que funcionó con LibreOffice, sin CorelDRAW: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | En espera (Enzo, 2026-10-22) |
 
-**Mejoras chicas del motor que quedaron anotadas:**
-- con una base sin actualizar, el servidor no arranca;
-- faltan dos comprobaciones en las pruebas;
-- en la comparación de chapas, el aviso de las piezas grandes muestra las de la primera chapa que lo dio;
-- Complejo entra en 7 chapas (lo encontraron dos anidados que corrían a la vez), pero de a uno siempre da 8: falta que la búsqueda lo encuentre seguido;
-- en la chapa grande (la de Chapas, que antes era Ajuste), al tocar una pieza el editor salta un poco hacia abajo (aparecen los botones para rotarla);
-- al pasar una pieza a otra chapa en Complejo, casi nada entra: lo libre queda repartido entre los rayos del aro.
+**Mejoras chicas del motor que quedaron anotadas** (al día con A17, 2026-10-29):
+- en la comparación de chapas, el aviso de las piezas grandes muestra las de la primera chapa que lo dio (va en la tanda 4 de A17);
+- Complejo entra en 7 chapas (lo encontraron dos anidados que corrían a la vez), pero de a uno siempre da 8: falta que la búsqueda lo encuentre seguido. Los dos caminos de la tanda 2 de A17 ya están en el código, apagados, hasta medirlos.
+
+**Ya resueltas en A17:** el servidor pone la base al día solo al arrancar, y están las dos comprobaciones que faltaban en las pruebas (tanda 1). En la chapa grande el editor ya no salta, y al pasar una pieza a una chapa donde no entra en lo libre, esa chapa se reacomoda con Sparrow, con «Deshacer» (tanda 3).
 
 El detalle está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Pendientes de aprovechar huecos primero (A10)», «Pendientes del giro de las piezas grandes (A11)», «Pendientes del material usado en ancho × alto (A12)», «Pendientes de las chapas en conjunto (A14)» y, lo de las 7 chapas, «Pendientes del reparto por chapa».
 

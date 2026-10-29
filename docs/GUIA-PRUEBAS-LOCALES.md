@@ -142,7 +142,9 @@ Mismas reglas de siempre: el HTML sale a `local/` (ignorado por git) y Deepnest 
 
 ## 3 quinquies. Qué falta para que esto sea una web de verdad
 
-El visor **ya es una página web** — HTTP, HTML, JavaScript — pero es una herramienta local de una sola persona. Lo que falta no es "portarlo", es lo que hoy no tiene:
+**Esta sección es de cuando el visor interactivo era la única pantalla.** El visor se borró el 2026-10-28 (A17). La app de hoy ya resolvió casi todo lo de la tabla: cada trabajo guarda su estado en la base (SQLite), el servidor es FastAPI y el anidado corre en una cola aparte del pedido, con su barra de avance. Siguen faltando la autenticación (el login) y llevarla a un servidor para varias personas. La tabla queda como estaba, para la historia.
+
+Lo que decía entonces: el visor **ya es una página web** — HTTP, HTML, JavaScript — pero es una herramienta local de una sola persona. Lo que falta no es "portarlo", es lo que hoy no tiene:
 
 | Falta | Por qué bloquea |
 |---|---|

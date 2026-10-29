@@ -121,8 +121,8 @@ class ColocacionActualizar(BaseModel):
 class ColocacionAjusteLeer(ColocacionLeer):
     """La colocación resultante, más si la posición pedida es válida.
 
-    Se aplica SIEMPRE, sea válida o no — es la misma decisión que ya
-    tomó el visor interactivo (`GUIA-PRUEBAS-LOCALES.md`): bloquear
+    Se aplica SIEMPRE, sea válida o no — es la decisión que venía del
+    visor interactivo, borrado en A17: bloquear
     frustra el ajuste fino cerca de una posición válida y es
     incompatible con el corte de línea compartida. El cliente decide
     cómo mostrar el conflicto (ej. resaltarlo), no esta API."""
