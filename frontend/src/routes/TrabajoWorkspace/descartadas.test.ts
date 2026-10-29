@@ -1,0 +1,27 @@
+import { describe, expect, it } from "vitest";
+import type { Pieza } from "../../api/piezasYgrupos";
+import { separarDescartadas } from "./descartadas";
+
+function pieza(id: number, extra: Partial<Pieza> = {}): Pieza {
+  return {
+    id, trabajo_id: 1, grupo_id: null, id_origen: `p${id}`, cantidad: 1, ancho_mm: "100", alto_mm: "100",
+    contorno_mm: [], agujeros_mm: [], descartada: false, contorno_recto: false, seccionada_de_id: null, seccionado: null,
+    disenio_x_mm: null, disenio_y_mm: null, disenio_angulo_grados: null, ...extra,
+  };
+}
+
+describe("separarDescartadas", () => {
+  // Complejo tiene 35 descartadas, 25 de ellas los huecos del aro (A17).
+  it("una descartada común va plegada, y una seccionada queda a la vista encabezando sus tramos", () => {
+    const seccionado = { formato_id: 1, angulo_grados: 0, desplazamiento_x_mm: 0, desplazamiento_y_mm: 0, tramos: 2, soldadura_mm: 500, cortes: [] };
+    const comun = pieza(1);
+    const hueco = pieza(2, { descartada: true });
+    const aro = pieza(3, { descartada: true, seccionado });
+    const tramo = pieza(4, { seccionada_de_id: 3 });
+
+    const { aLaVista, plegadas } = separarDescartadas([comun, hueco, aro, tramo]);
+
+    expect(aLaVista.map((p) => p.id)).toEqual([1, 3, 4]);
+    expect(plegadas.map((p) => p.id)).toEqual([2]);
+  });
+});
