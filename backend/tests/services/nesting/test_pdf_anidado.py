@@ -16,7 +16,16 @@ from app.services.nesting.hojas_pdf import (
     TrabajoDelPdf,
     armar_hojas,
 )
-from app.services.nesting.pdf_anidado import AVISO_DE_VENCIDO, GRIS_OTRO, PALETA_CHAPAS, ROJO_FALTA, dibujar_pdf
+from app.services.nesting.pdf_anidado import (
+    _PUNTOS_NUMERO,
+    _PUNTOS_NUMERO_MINIMO,
+    AVISO_DE_VENCIDO,
+    GRIS_OTRO,
+    PALETA_CHAPAS,
+    ROJO_FALTA,
+    _puntos_para,
+    dibujar_pdf,
+)
 
 RAIZ = Path(__file__).parents[4]
 
@@ -109,6 +118,24 @@ def test_la_paleta_es_la_de_la_pantalla():
     arreglo = re.search(r"PALETA_CHAPAS[^=]*=\s*\[(.*?)\]", fuente, re.S).group(1)
     assert list(PALETA_CHAPAS) == re.findall(r'"(#[0-9a-f]{6})"', arreglo)
     assert ROJO_FALTA in fuente and GRIS_OTRO in fuente
+
+
+def test_el_numero_de_una_pieza_chica_se_achica_hasta_el_minimo():
+    """En la chapa 1 de parador1 (41 piezas) los números se leían, pero
+    justo: el de una pieza chica se salía sobre las vecinas (A17)."""
+    assert _PUNTOS_NUMERO_MINIMO == 4
+    assert _puntos_para(_rectangulo(30, 30), 20, "497") == _PUNTOS_NUMERO_MINIMO
+
+
+def test_el_numero_de_una_pieza_grande_va_del_tamanio_de_siempre():
+    assert _puntos_para(_rectangulo(1000, 1000), 20, "497") == _PUNTOS_NUMERO
+
+
+def test_el_numero_entra_a_lo_ancho_de_la_pieza():
+    """«39/unida» ocupa más que «497»: en la misma pieza va más chico. A 7
+    puntos, a 1:20, «497» ocupa 78 mm de chapa y «39/unida», 193."""
+    pieza = _rectangulo(120, 120)
+    assert _PUNTOS_NUMERO_MINIMO < _puntos_para(pieza, 20, "39/unida") < _puntos_para(pieza, 20, "497")
 
 
 def test_el_aviso_del_anidado_vencido_es_el_de_chapas():

@@ -4,6 +4,13 @@ from datetime import datetime
 import pytest
 
 from app.services.nesting.hojas_pdf import (
+    A4_CORTO_MM,
+    DEBAJO_CHAPA_MM,
+    ENCABEZADO_MM,
+    MARGEN_MM,
+    PIE_MM,
+    ROTULOS_MM,
+    TITULO_CHAPA_MM,
     BloqueDelPdf,
     Caja,
     ChapaDelPdf,
@@ -101,3 +108,16 @@ def test_al_papel_no_espeja():
 
 def test_sin_bloques_no_hay_hojas():
     assert armar_hojas(_trabajo([])) == []
+
+
+def test_las_chapas_bajas_quedan_centradas_en_el_alto():
+    """Una chapa de 2440 × 600 quedaba pegada al pie, con todo el blanco
+    arriba (Enzo, A17): el blanco se reparte arriba y abajo."""
+    hoja = next(h for h in armar_hojas(_trabajo([_bloque(1, 2440, 600)])) if h.tipo == "chapas")
+    caja = hoja.chapas[0].caja
+
+    abajo = caja.y_mm - ROTULOS_MM - DEBAJO_CHAPA_MM - (MARGEN_MM + PIE_MM)
+    arriba = (A4_CORTO_MM - MARGEN_MM - ENCABEZADO_MM) - (caja.y_mm + caja.alto_mm + TITULO_CHAPA_MM)
+
+    assert abajo > 0
+    assert arriba == pytest.approx(abajo, abs=0.5)
