@@ -9,6 +9,7 @@ sobre lo que `parsear_dxf` ya devolvió.
 """
 from __future__ import annotations
 
+import threading
 from dataclasses import replace
 from decimal import Decimal
 
@@ -52,12 +53,41 @@ def _ids_por_disenio(disenios) -> list[set[str]]:
     return sorted(({p.id for p in d.piezas} for d in disenios), key=lambda ids: min(ids))
 
 
+def _termina(funcion, segundos: float = 5):
+    """Lo que da `funcion`, corrida aparte: si no termina a tiempo la prueba
+    falla, en vez de colgar todas las pruebas con una vuelta infinita."""
+    resultado = {}
+    hilo = threading.Thread(target=lambda: resultado.setdefault("valor", funcion()), daemon=True)
+    hilo.start()
+    hilo.join(segundos)
+    assert "valor" in resultado, f"no terminó en {segundos} s"
+    return resultado["valor"]
+
+
+def _dos_que_se_contienen_una_a_otra() -> list[PiezaImportada]:
+    """Una vuelta en `contenida_en_id`: el parser ya no la arma (dos copias
+    de una forma se leen como una, A17), pero colgaba la lectura entera."""
+    return [
+        _rectangulo("a", 0, 0, 50, 50, contenida_en_id="b"),
+        _rectangulo("b", 0, 0, 50, 50, contenida_en_id="a"),
+        _rectangulo("x", 10, 10, 5, 5, contenida_en_id="a"),
+    ]
+
+
 def test_dos_piezas_lejanas_son_dos_disenios():
     piezas = [_rectangulo("a", 0, 0, 50, 50), _rectangulo("b", 1000, 0, 50, 50)]
 
     disenios = agrupar_en_disenios(piezas, _UMBRAL_MM)
 
     assert _ids_por_disenio(disenios) == [{"a"}, {"b"}]
+
+
+def test_dos_piezas_que_se_contienen_una_a_otra_van_a_un_mismo_disenio():
+    piezas = [*_dos_que_se_contienen_una_a_otra(), _rectangulo("c", 1000, 0, 50, 50)]
+
+    disenios = _termina(lambda: agrupar_en_disenios(piezas, _UMBRAL_MM))
+
+    assert _ids_por_disenio(disenios) == [{"a", "b", "x"}, {"c"}]
 
 
 def test_dos_piezas_a_menos_del_umbral_son_un_mismo_disenio():
@@ -264,6 +294,12 @@ def _roles(piezas: list[PiezaImportada]) -> dict[str, tuple]:
             disenio, hojas, [_CHAPA], _TOLERANCIA_GEMELA, _AREA_MINIMA_GEMELA_MM2, _FRACCION_MINIMA_EN_HOJA, _COLORES_DE_ROTULO
         )
     }
+
+
+def test_los_roles_se_sugieren_aunque_dos_piezas_se_contengan_una_a_otra():
+    roles = _termina(lambda: _roles(_dos_que_se_contienen_una_a_otra()))
+
+    assert set(roles) == {"a", "b", "x"}
 
 
 def test_el_rectangulo_de_una_hoja_es_marco_de_chapa():

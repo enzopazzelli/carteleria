@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import enum
 import math
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Iterator, Mapping
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
@@ -94,14 +94,29 @@ def agrupar_en_disenios(piezas: list[PiezaImportada], distancia_maxima_mm: Decim
     return [DisenioDetectado(piezas=grupo) for grupo in grupos.values()]
 
 
+def _contenedoras(pieza: PiezaImportada, por_id: dict[str, PiezaImportada]) -> Iterator[PiezaImportada]:
+    """Las piezas que contienen a `pieza`, de adentro hacia afuera, por
+    `contenida_en_id`. Si la cadena vuelve a una pieza que ya pasó, termina
+    ahí: el parser no arma vueltas (dos copias de una forma se leen como
+    una), pero una vuelta colgaba la lectura entera (A17)."""
+    vistas = {pieza.id}
+    actual = pieza
+    while actual.contenida_en_id in por_id and actual.contenida_en_id not in vistas:
+        actual = por_id[actual.contenida_en_id]
+        vistas.add(actual.id)
+        yield actual
+
+
 def _raiz(pieza: PiezaImportada, por_id: dict[str, PiezaImportada]) -> str:
     """Sube por `contenida_en_id` hasta la pieza que no está adentro de
     ninguna: una letra dentro de un marco, o el ojal de esa letra, van
-    al diseño del marco."""
-    actual = pieza
-    while actual.contenida_en_id is not None and actual.contenida_en_id in por_id:
-        actual = por_id[actual.contenida_en_id]
-    return actual.id
+    al diseño del marco. En una vuelta, la raíz es la de `id` menor de la
+    vuelta: la misma desde cualquiera de sus piezas."""
+    cadena = [pieza.id, *(contenedora.id for contenedora in _contenedoras(pieza, por_id))]
+    siguiente = por_id[cadena[-1]].contenida_en_id
+    if siguiente not in por_id:
+        return cadena[-1]
+    return min(cadena[cadena.index(siguiente) :])
 
 
 # --- Hojas ya dibujadas (CART-510) -----------------------------------------
@@ -267,12 +282,7 @@ def _son_gemelas(a: tuple[float, float], b: tuple[float, float], tolerancia: flo
 
 
 def _hoja_que_la_contiene(pieza: PiezaImportada, por_id: dict[str, PiezaImportada], hojas: set[str]) -> str | None:
-    actual = pieza
-    while actual.contenida_en_id is not None and actual.contenida_en_id in por_id:
-        if actual.contenida_en_id in hojas:
-            return actual.contenida_en_id
-        actual = por_id[actual.contenida_en_id]
-    return None
+    return next((contenedora.id for contenedora in _contenedoras(pieza, por_id) if contenedora.id in hojas), None)
 
 
 def _hoja_de_cada_pieza(
@@ -405,14 +415,9 @@ def _heredar_referencia_de_gemelas(roles: list[PiezaConRol], por_id: dict[str, P
     resultado = []
     for rol in roles:
         if rol.rol is Rol.CORTAR and rol.gemela_id is None and not rol.corregida:
-            actual = por_id[rol.pieza_id]
-            while actual.contenida_en_id is not None and actual.contenida_en_id in por_id:
-                if actual.contenida_en_id in por_gemela:
-                    rol = PiezaConRol(
-                        rol.pieza_id, Rol.REFERENCIA, f"adentro de {actual.contenida_en_id}, que ya está en una hoja"
-                    )
-                    break
-                actual = por_id[actual.contenida_en_id]
+            con_gemela = next((c.id for c in _contenedoras(por_id[rol.pieza_id], por_id) if c.id in por_gemela), None)
+            if con_gemela is not None:
+                rol = PiezaConRol(rol.pieza_id, Rol.REFERENCIA, f"adentro de {con_gemela}, que ya está en una hoja")
         resultado.append(rol)
     return resultado
 
@@ -453,10 +458,7 @@ def _marcar_contrapiezas(
     rol_de = {r.pieza_id: r for r in roles}
 
     def _profundidad(pieza_id: str) -> int:
-        profundidad, actual = 0, por_id[pieza_id]
-        while actual.contenida_en_id in por_id:
-            profundidad, actual = profundidad + 1, por_id[actual.contenida_en_id]
-        return profundidad
+        return sum(1 for _ in _contenedoras(por_id[pieza_id], por_id))
 
     def _se_corta(pieza_id: str) -> bool:
         rol = rol_de[pieza_id]
