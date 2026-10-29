@@ -10,9 +10,17 @@ import {
   porcentajeParaGuardar,
   mismoImporte,
   mostrarImporte,
+  mostrarMedidas,
   mostrarMm,
   mostrarPorcentaje,
 } from "./importes";
+
+describe("mostrarMedidas", () => {
+  // La lista de piezas de Grupos mostraba «388.7470000000012×641.1700000000001 mm» (revisión de la tanda 7).
+  it("ancho por alto, en milímetros enteros", () => {
+    expect(mostrarMedidas("388.7470000000012", "641.1700000000001")).toBe("389×641 mm");
+  });
+});
 
 describe("mostrarMm", () => {
   // La tabla de Piezas mostraba «388.7470000000012 mm» (A17): en mm enteros, como Grupos.

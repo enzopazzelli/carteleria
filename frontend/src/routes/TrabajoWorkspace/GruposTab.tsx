@@ -23,6 +23,7 @@ import Mensaje from "../../components/Mensaje/Mensaje";
 import ConDisenioAlCostado from "../../components/Disenio/ConDisenioAlCostado";
 import PiezaNombrada from "../../components/PiezaNombrada";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
+import { mostrarMedidas } from "./importes";
 
 /** La medida de la chapa y, si alguna pieza seccionada entra entera en
  * ella, el aviso de que para usarla hay que deshacer el seccionado (A17). */
@@ -301,7 +302,7 @@ function GruposDelTrabajo() {
                   />
                   <PiezaNombrada pieza={pieza} trabajoId={id} />
                   <span className="font-mono text-ink/60">
-                    {pieza.ancho_mm}×{pieza.alto_mm} mm
+                    {mostrarMedidas(pieza.ancho_mm, pieza.alto_mm)}
                   </span>
                 </label>
               </li>
@@ -462,7 +463,7 @@ function GruposDelTrabajo() {
                             Hay que seccionar {opcion.piezas_a_seccionar.length} pieza(s):{" "}
                             {opcion.piezas_a_seccionar
                               .slice(0, 3)
-                              .map((p) => `${Math.round(Number(p.ancho_mm))}×${Math.round(Number(p.alto_mm))} mm`)
+                              .map((p) => mostrarMedidas(p.ancho_mm, p.alto_mm))
                               .join(", ")}
                             {opcion.piezas_a_seccionar.length > 3 && "…"}
                           </Link>

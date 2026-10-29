@@ -273,6 +273,7 @@ Esta lista reemplaza, en el plan maestro, las filas de las tablas de pendientes 
 6. **La importación de varios diseños en pantalla.** Hoy existe solo por la API (`/importaciones/dxf/...`): no une ni deja corregir, cada trabajo tendría de fondo el archivo entero, y sus mensajes se revisaron sin miniaturas. (Su comparación es la de Grupos, que desde la tanda 4 ya no se cae entera si falla un formato.)
 7. **En espera por decisión de Enzo** (2026-10-22): los colores de referencia por pieza y leer el `.cdr`.
 8. **Lo de afuera** (etapa 4): el servidor real, el mail real, WhatsApp, y el logo y los datos fiscales en el PDF.
+9. **Una sola regla de qué anidado cuenta para el presupuesto, y por qué no** (revisión de la tanda 7). Hoy se decide en cuatro lugares: el costeo, la tarjeta del inicio, el PDF y Chapas. Solo el costeo mira si cambió la chapa del grupo después de anidar. En ese caso, el costeo no lo cobra y da tres avisos que se contradicen, mientras la tarjeta lo da por hecho y Chapas no avisa. Es de antes de A17.
 
 ## 8. Cómo quedó
 
@@ -495,6 +496,24 @@ Rama `feat/a17-7-presupuesto-inicio-pdf`.
   - al anidar el parador, su miniatura cambia de dirección y se vuelve a cargar;
   - con una cantidad cambiada: «Falta volver a anidar parador», «Sin chapas», el aviso en Chapas, y el costeo sin costo y con su aviso; con la cantidad de antes, vuelve a estar al día;
   - las 104 medidas de Piezas del parador, en milímetros enteros.
+- **La revisión de la rama** (un revisor aparte): sin nada grave. Comprobó con los dos motores que no hay falsos vencidos: una pieza de cantidad 2, una descartada antes de anidar, un pase a mano a una chapa nueva, Sparrow con piezas en huecos y un reacomodo.
+  - **Importante, arreglado:** con la opción a, ninguna pantalla decía que se cobra otro anidado que el elegido.
+    - El Costeo ahora muestra los avisos de cada grupo, que antes no se veían.
+    - Anidado elige y describe el anidado con la regla del presupuesto, y marca los vencidos en el historial.
+    - El PDF dice cuál se cobra y por qué.
+  - **Lo chico, arreglado:**
+    - el costeo mira primero el elegido, en vez de revisar todo el historial;
+    - el aviso dice cuál se usó cuando no es el más reciente;
+    - la regla del vencido vive junto al modelo del anidado;
+    - las medidas de la lista de piezas de Grupos van en milímetros enteros;
+    - cambiar piezas o grupos vuelve a pedir los anidados y el costeo;
+    - un comentario.
+  - **Queda anotado:**
+    - la lista de anidados calcula «vencido» de cada uno cargando sus colocaciones (unos 3 ms por anidado). Contarlas en la base lo haría más rápido;
+    - qué anidado cuenta para el presupuesto se decide en cuatro lugares, y solo el costeo mira si cambió la chapa del grupo (§7.9);
+    - las líneas ya guardadas de un presupuesto siguen con su costo hasta «Recalcular materiales», como siempre;
+    - la cantidad de una pieza se puede poner en 0 por la API.
+- **Las pruebas completas, después de los arreglos:** el servidor, 1076 bien y 3 fallas conocidas; la pantalla, 272 de 272 y sin errores de tipos.
 
 ## 9. Lo que decidí yo y conviene revisar
 

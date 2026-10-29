@@ -16,6 +16,7 @@ identificar qué materiales se van a usar y cotizarlos" — ver
 from __future__ import annotations
 
 import enum
+from collections import Counter
 from decimal import Decimal
 
 from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text
@@ -225,10 +226,18 @@ class EjecucionNesting(Base):
     @property
     def vencido(self) -> bool:
         """Terminado, pero lo que se corta de su grupo cambió después: no se
-        cobra (A17, `costeo.anidado_vigente`). Uno sin terminar no lo está."""
-        from ..costeo import anidado_vigente  # costeo importa los modelos
-
+        cobra (A17, `anidado_vigente`). Uno sin terminar no lo está."""
         return self.estado == EstadoEjecucion.LISTA.value and not anidado_vigente(self.grupo, self)
+
+
+def anidado_vigente(grupo: GrupoDeCorte, ejecucion: EjecucionNesting) -> bool:
+    """Lo que se anidó es lo que hoy se corta del grupo: cada pieza que se
+    corta, con una colocación por copia (A17). Sacar, sumar, descartar o
+    seccionar una pieza, o cambiar su cantidad, lo vence. Un grupo que se
+    quedó sin piezas que se corten no tiene anidado vigente. La usan el
+    costeo, la tarjeta del inicio y el PDF."""
+    a_cortar = {pieza.id: pieza.cantidad for pieza in grupo.piezas if not pieza.descartada}
+    return bool(a_cortar) and Counter(c.pieza_id for c in ejecucion.colocaciones) == a_cortar
 
 
 class Colocacion(Base):

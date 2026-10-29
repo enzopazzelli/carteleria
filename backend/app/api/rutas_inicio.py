@@ -168,7 +168,9 @@ def listar_tarjetas(
 
 def disenio_de_miniatura(sesion: Session, trabajo: Trabajo) -> DisenioDelPdf:
     """Pinta el primer grupo con piezas, en el orden de los grupos, que tenga
-    un anidado que cuente; lo de los otros va en gris. Sin ninguno, todo en gris."""
+    un anidado terminado, el que cuenta para el presupuesto; también si está
+    vencido (A17), porque la miniatura muestra lo que se anidó. Lo de los
+    otros va en gris. Sin ninguno, todo en gris."""
     for grupo in trabajo.grupos:
         ejecucion, _avisos = _ejecucion_para_costear(grupo)
         if ejecucion is not None and _con_piezas(grupo):

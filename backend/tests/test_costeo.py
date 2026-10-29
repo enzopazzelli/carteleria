@@ -494,3 +494,42 @@ def test_un_anidado_sin_terminar_no_esta_vencido(sesion):
     _, grupo = _trabajo_con_grupo(sesion, formato, estado="corriendo", definitiva=False)
 
     assert EjecucionLeer.model_validate(grupo.ejecuciones[0]).vencido is False
+
+
+def test_sin_elegido_y_el_mas_reciente_vencido_el_aviso_dice_cual_se_uso(sesion):
+    """Se usa uno más viejo que está al día: el aviso decía «se usó el más
+    reciente» (revisión de la tanda 7)."""
+    _, formato = _material_con_formato(sesion)
+    trabajo, grupo = _trabajo_con_grupo(sesion, formato, definitiva=False)
+    al_dia = grupo.ejecuciones[0]
+    nueva = _pieza(sesion, trabajo, grupo, "pieza-nueva")
+    _anidar(sesion, grupo, definitiva=False)
+    nueva.grupo_id = None  # el más reciente queda con una de más
+    sesion.commit()
+
+    linea = resumen_materiales(sesion, trabajo.id).lineas[0]
+
+    assert linea.ejecucion_id == al_dia.id
+    assert linea.advertencias == [
+        f"Grupo «Grupo 1»: ningún anidado está elegido para cotizar; se usó el #{al_dia.id}, "
+        "el más reciente al día. Confirmá cuál vale antes de cotizar en serio."
+    ]
+
+
+def test_con_el_elegido_al_dia_no_se_revisan_los_otros(sesion, monkeypatch):
+    """Con meses de pruebas sobre un trabajo, revisar cada anidado del
+    historial cuesta unos 3 ms por anidado (revisión de la tanda 7)."""
+    from app import costeo
+
+    _, formato = _material_con_formato(sesion)
+    trabajo, grupo = _trabajo_con_grupo(sesion, formato)
+    for _ in range(5):
+        _anidar(sesion, grupo, definitiva=False)
+    sesion.commit()
+    revisados = []
+    original = costeo.anidado_vigente
+    monkeypatch.setattr(costeo, "anidado_vigente", lambda g, e: revisados.append(e.id) or original(g, e))
+
+    costeo._ejecucion_para_costear(grupo)
+
+    assert len(revisados) == 1
