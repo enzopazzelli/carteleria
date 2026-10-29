@@ -55,6 +55,8 @@ def test_la_propuesta_busca_la_mejor_grilla_sin_guardar_nada(cliente, tmp_path):
     assert respuesta.status_code == 200, respuesta.text
     propuesta = respuesta.json()
     assert len(propuesta["tramos"]) == 2
+    # Los dos tramos se tocan: el servidor les da colores distintos (A17).
+    assert {tramo["color"] for tramo in propuesta["tramos"]} == {0, 1}
     assert propuesta["soldadura_mm"] == pytest.approx(500)
     assert (propuesta["celda_ancho_mm"], propuesta["celda_alto_mm"]) == (973, 973)
     [igual] = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()

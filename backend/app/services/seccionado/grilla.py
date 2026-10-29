@@ -120,6 +120,26 @@ def _cortes_entre(tramos: list[Polygon]) -> list[LineString]:
     return cortes
 
 
+def colores_de_tramos(tramos: list[Polygon]) -> list[int]:
+    """El color de cada tramo, para dibujarlos (A17): el primero que no
+    tiene ninguno de sus vecinos ya pintados. Son vecinos los que se tocan
+    por un lado o por una esquina. Se recorren de abajo hacia arriba y de
+    izquierda a derecha; en una cuadrícula alcanzan cuatro colores.
+
+    No sale de la celda de la grilla: un tramo con un pedacito pegado
+    (`_pegar_pedacitos`) ocupa parte de dos celdas."""
+    cajas = [tramo.bounds for tramo in tramos]
+    orden = sorted(range(len(tramos)), key=lambda i: (round(tramos[i].centroid.y, 3), round(tramos[i].centroid.x, 3)))
+    colores: dict[int, int] = {}
+    for i in orden:
+        usados = {
+            color for j, color in colores.items()
+            if _cajas_se_tocan(cajas[i], cajas[j]) and tramos[i].distance(tramos[j]) <= _TOLERANCIA_MM
+        }
+        colores[i] = next(color for color in range(len(tramos) + 1) if color not in usados)
+    return [colores[i] for i in range(len(tramos))]
+
+
 def _cabe(poligono: Polygon, ancho: float, alto: float) -> bool:
     x0, y0, x1, y1 = poligono.bounds
     return x1 - x0 <= ancho + _TOLERANCIA_MM and y1 - y0 <= alto + _TOLERANCIA_MM

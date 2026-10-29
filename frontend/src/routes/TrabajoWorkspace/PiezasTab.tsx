@@ -366,7 +366,9 @@ function PiezasDelTrabajo() {
             {ordenadas.map((pieza) => (
               <Fragment key={pieza.id}>
                 <tr
-                  className={`border-b border-line ${pieza.descartada ? "opacity-40" : ""} ${iluminado.pieza === pieza.id ? "bg-bronze/20" : ""}`}
+                  // La seccionada también queda descartada (se cortan sus
+                  // tramos), pero no se apaga: sus enlaces se usan (A17).
+                  className={`border-b border-line ${pieza.descartada && !pieza.seccionado ? "opacity-40" : ""} ${iluminado.pieza === pieza.id ? "bg-bronze/20" : ""}`}
                   onMouseEnter={() => iluminado.setPieza(pieza.id)}
                   onMouseLeave={() => iluminado.setPieza(null)}
                 >

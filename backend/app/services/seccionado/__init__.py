@@ -3,8 +3,18 @@
 Diseño: `docs/historico/A5-seccionado/diseno.md`."""
 from __future__ import annotations
 
-from .grilla import Grilla, Seccionado, celda_util, esquina_girada, mejor_grilla, seccionar_con_grilla, tramo_orientado
+from .grilla import (
+    Grilla,
+    Seccionado,
+    celda_util,
+    colores_de_tramos,
+    esquina_girada,
+    mejor_grilla,
+    seccionar_con_grilla,
+    tramo_orientado,
+)
 
 __all__ = [
-    "Grilla", "Seccionado", "celda_util", "esquina_girada", "mejor_grilla", "seccionar_con_grilla", "tramo_orientado",
+    "Grilla", "Seccionado", "celda_util", "colores_de_tramos", "esquina_girada", "mejor_grilla", "seccionar_con_grilla",
+    "tramo_orientado",
 ]

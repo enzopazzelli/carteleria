@@ -4,13 +4,14 @@ import type { Formato } from "../../api/catalogo";
 import { proponerSeccionado, type GrillaSeccionado, type Pieza, type PropuestaSeccionado } from "../../api/piezasYgrupos";
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import { useAplicarSeccionado } from "../../hooks/usePiezas";
-import { desplazamientoEnGrilla, grillaGuardada, leerAngulo, lineasDeGrilla } from "./geometria";
+import { desplazamientoEnGrilla, enMmEnteros, grillaGuardada, leerAngulo, lineasDeGrilla } from "./geometria";
 import { crearTurnos } from "./turnos";
 import Mensaje from "../Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../Mensaje/contenido";
 
 const LADO_DIBUJO_PX = 560;
-const COLORES_TRAMOS = ["#2b6cb0", "#2f855a"];
+// El servidor elige cuál le toca a cada tramo, distinto del de sus vecinos (A17).
+const COLORES_TRAMOS = ["#2b6cb0", "#2f855a", "#c05621", "#6b46c1", "#b83280", "#2c7a7b"];
 // Menos que esto entre apretar y soltar es un click, no un arrastre.
 const UMBRAL_ARRASTRE_PX = 3;
 
@@ -115,8 +116,8 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
     const [dx, dy] = desplazamientoEnGrilla(dxPx / escala, -dyPx / escala, propuesta.angulo_grados);
     void pedir({
       angulo_grados: propuesta.angulo_grados,
-      desplazamiento_x_mm: propuesta.desplazamiento_x_mm + dx,
-      desplazamiento_y_mm: propuesta.desplazamiento_y_mm + dy,
+      desplazamiento_x_mm: enMmEnteros(propuesta.desplazamiento_x_mm + dx),
+      desplazamiento_y_mm: enMmEnteros(propuesta.desplazamiento_y_mm + dy),
     });
   }
 
@@ -237,7 +238,7 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
             key={i}
             d={[anillo(tramo.contorno_mm), ...tramo.agujeros_mm.map(anillo)].join(" ")}
             fillRule="evenodd"
-            fill={COLORES_TRAMOS[i % COLORES_TRAMOS.length]}
+            fill={COLORES_TRAMOS[tramo.color % COLORES_TRAMOS.length]}
             fillOpacity={0.5}
           />
         ))}

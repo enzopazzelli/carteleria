@@ -23,6 +23,7 @@ from ..services.seccionado import (
     Grilla,
     Seccionado,
     celda_util,
+    colores_de_tramos,
     esquina_girada,
     mejor_grilla,
     seccionar_con_grilla,
@@ -132,7 +133,7 @@ def _a_lista(coordenadas) -> list[list[float]]:
 
 def _propuesta(resultado: Seccionado, celda: tuple[float, float]) -> PropuestaLeer:
     tramos = []
-    for tramo in resultado.tramos:
+    for tramo, color in zip(resultado.tramos, colores_de_tramos(resultado.tramos)):
         _, _, ancho, alto = tramo_orientado(tramo, resultado.grilla).bounds
         tramos.append(
             TramoPropuesto(
@@ -141,6 +142,7 @@ def _propuesta(resultado: Seccionado, celda: tuple[float, float]) -> PropuestaLe
                 ancho_mm=round(ancho, 3),
                 alto_mm=round(alto, 3),
                 area_mm2=round(tramo.area, 3),
+                color=color,
             )
         )
     return PropuestaLeer(

@@ -18,6 +18,7 @@ from app.services.seccionado import (
     Grilla,
     Seccionado,
     celda_util,
+    colores_de_tramos,
     mejor_grilla,
     seccionar_con_grilla,
     tramo_orientado,
@@ -269,3 +270,32 @@ def test_el_pegado_del_modulo_da_los_mismos_tramos_que_el_de_referencia(nombre, 
     assert [[c.wkt for c in r.cortes] for r in del_modulo] == [[c.wkt for c in r.cortes] for r in de_referencia]
     # Si la batería no pegara nada, lo de arriba no probaría el pegado.
     assert sum(len(r.tramos) for r in de_referencia) < sum(len(r.tramos) for r in sin_pegar)
+
+
+def _vecinos(tramos: list[Polygon]) -> list[tuple[int, int]]:
+    """Los pares que se tocan por un lado o por una esquina."""
+    return [(i, j) for i in range(len(tramos)) for j in range(i + 1, len(tramos)) if tramos[i].distance(tramos[j]) < 1e-6]
+
+
+def test_los_tramos_vecinos_por_lado_o_por_esquina_tienen_colores_distintos():
+    """Una cuadrícula de 3 × 3 (A17): cada tramo toca a los de al lado y a
+    los de las esquinas, y alcanzan cuatro colores."""
+    tramos = [box(x * 100, y * 100, x * 100 + 100, y * 100 + 100) for y in range(3) for x in range(3)]
+
+    colores = colores_de_tramos(tramos)
+
+    assert len(colores) == len(tramos)
+    assert all(colores[i] != colores[j] for i, j in _vecinos(tramos))
+    assert len(set(colores)) <= 4
+
+
+def test_un_tramo_que_ocupa_dos_celdas_tampoco_repite_color_con_sus_vecinos():
+    """Una franja de 80 mm de ancho que cruza la línea x = 100: en cada fila,
+    los dos pedacitos se pegan en un tramo que ocupa parte de dos celdas. Por
+    eso el color no puede salir de la celda (A17)."""
+    resultado = seccionar_con_grilla(box(60, 0, 140, 250), (100, 100), Grilla(0, 0, 0))
+    assert len(resultado.tramos) == 3
+
+    colores = colores_de_tramos(resultado.tramos)
+
+    assert all(colores[i] != colores[j] for i, j in _vecinos(resultado.tramos))

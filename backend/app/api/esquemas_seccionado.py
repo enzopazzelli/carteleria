@@ -47,6 +47,9 @@ class TramoPropuesto(BaseModel):
     ancho_mm: float
     alto_mm: float
     area_mm2: float
+    #: Con qué color de la paleta de la pantalla se lo pinta: distinto del
+    #: de cada tramo que lo toca, por un lado o por una esquina (A17).
+    color: int
 
 
 class PropuestaLeer(BaseModel):

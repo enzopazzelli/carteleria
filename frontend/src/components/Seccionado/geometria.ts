@@ -91,6 +91,12 @@ export function lineasDeGrilla(
   });
 }
 
+/** Un corrimiento de la grilla en mm enteros: arrastrarla dejaba medidas
+ * como 1219,37 mm (A17). */
+export function enMmEnteros(valor: number): number {
+  return Math.round(valor);
+}
+
 /** Un arrastre sobre el dibujo (en mm, marco de la pieza) pasado al
  * marco girado de la grilla, que es donde vive el desplazamiento. */
 export function desplazamientoEnGrilla(dxMm: number, dyMm: number, anguloGrados: number): [number, number] {

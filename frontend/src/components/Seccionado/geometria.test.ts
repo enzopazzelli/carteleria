@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   desplazamientoEnGrilla,
+  enMmEnteros,
   entraEnAlgunFormato,
   grillaGuardada,
   leerAngulo,
@@ -8,6 +9,14 @@ import {
   originalesASeccionar,
   porQueSeccionar,
 } from "./geometria";
+
+describe("enMmEnteros", () => {
+  // Al soltar la grilla, el corrimiento queda en mm enteros (A17).
+  it("redondea al milímetro", () => {
+    expect(enMmEnteros(1219.37)).toBe(1219);
+    expect(enMmEnteros(1219.5)).toBe(1220);
+  });
+});
 
 describe("leerAngulo", () => {
   it("lee un número, con coma o con punto", () => {

@@ -250,6 +250,8 @@ export interface PropuestaSeccionado extends GrillaSeccionado {
     ancho_mm: number;
     alto_mm: number;
     area_mm2: number;
+    /** Qué color de la paleta lleva: distinto del de cada tramo que lo toca (A17). */
+    color: number;
   }[];
   cortes: CorteSeccionado[];
   soldadura_mm: number;
