@@ -12,7 +12,7 @@ from pypdf import PdfReader
 from sqlalchemy.orm import Session
 
 from .ayudas import mensaje_de
-from .test_rutas_ajuste import _trabajo_anidado_con_dos_piezas, cliente  # noqa: F401
+from .test_rutas_ajuste import _esperar_estado, _trabajo_anidado_con_dos_piezas, cliente  # noqa: F401
 
 from app.api.rutas_pdf_anidado import anillos_en_chapa, datos_del_pdf, nombre_de_archivo_pdf
 from app.api.rutas_trabajos import _ruta_del_fondo
@@ -80,6 +80,24 @@ def test_el_anidado_vencido_lo_avisa_en_la_hoja_del_disenio(cliente, tmp_path):
     texto = _texto(cliente.get(f"/trabajos/{trabajo['id']}/pdf-anidado").content)
 
     assert _VENCIDO in texto.replace("\n", " ")
+
+
+def test_si_se_cobra_otro_que_el_elegido_lo_dice(cliente, tmp_path):
+    """El elegido quedó vencido y hay uno más nuevo al día (Enzo, A17,
+    opción a): el PDF decía de ese «el más reciente, sin elegir para el
+    presupuesto», aunque es el que se cobra (revisión de la tanda 7)."""
+    trabajo, grupo, elegido = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    cliente.post(f"/ejecuciones/{elegido}/marcar-definitiva")
+    pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+    cliente.patch(f"/piezas/{pieza['id']}", json={"cantidad": 2})
+    nuevo = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+    _esperar_estado(cliente, nuevo)
+
+    texto = _texto(cliente.get(f"/trabajos/{trabajo['id']}/pdf-anidado").content).replace("\n", " ")
+
+    assert (f"anidado #{nuevo}, el que se usa para el presupuesto: el elegido (#{elegido}) "
+            "es de antes de que cambiaran las piezas") in texto
+    assert _VENCIDO not in texto
 
 
 def test_un_grupo_sin_anidar_va_al_pie(cliente, tmp_path):

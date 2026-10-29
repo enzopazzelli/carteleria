@@ -21,6 +21,7 @@ import { useGrupos } from "../../hooks/useGrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
 import type { LineaCosto } from "../../api/presupuestos";
 import PresupuestoClienteSeccion from "./PresupuestoClienteSeccion";
+import { avisosDelCosteo } from "./costeo";
 import {
   cambiosDeLinea,
   cantidadParaEditar,
@@ -197,7 +198,7 @@ export default function CosteoTab() {
             </tbody>
           </table>
 
-          {costeo?.advertencias_generales.map((a, i) => (
+          {avisosDelCosteo(costeo).map((a, i) => (
             <div key={i} className="mt-2">
               <Banner variante="aviso">{a}</Banner>
             </div>
