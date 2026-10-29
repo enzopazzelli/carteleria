@@ -119,8 +119,10 @@ export default function TarjetaTrabajo({ tarjeta, ahora }: { tarjeta: Tarjeta; a
           <BarraDePasos pasos={tarjeta.pasos} />
           <p className="text-sm font-medium mt-2">{tarjeta.frase}</p>
           <ul className={`text-xs mt-2 ${tarjeta.chapas.length ? "text-ink/70" : "text-ink/40"}`}>
-            {renglonesDeChapas(tarjeta.chapas).map((renglon) => (
-              <li key={renglon} className="truncate">
+            {/* Por su lugar y no por su texto: dos grupos del mismo material
+                con las mismas chapas dicen lo mismo (A17). */}
+            {renglonesDeChapas(tarjeta.chapas).map((renglon, lugar) => (
+              <li key={lugar} className="truncate">
                 {renglon}
               </li>
             ))}

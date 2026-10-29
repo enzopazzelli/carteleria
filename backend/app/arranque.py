@@ -1,4 +1,4 @@
-"""La base se pone al día sola al arrancar (A17, `docs/plan/A17-pulir-lo-suelto/diseno.md §4.1`).
+"""La base se pone al día sola al arrancar (A17, `docs/historico/A17-pulir-lo-suelto/diseno.md §4.1`).
 
 Antes había que correr `alembic upgrade head` a mano: si se olvidaba, el
 servidor no arrancaba y la limpieza de anidados colgados fallaba sin

@@ -72,6 +72,8 @@ class BloqueDelPdf:
     linea: str
     anidado: str
     disenio: DisenioDelPdf
+    #: Las piezas del grupo cambiaron después de este anidado: no se cobra (A17).
+    vencido: bool = False
 
 
 @dataclass(frozen=True)
@@ -190,8 +192,10 @@ def _hoja_de_chapas(bloque_indice: int, bloque: BloqueDelPdf, indices: list[int]
     alto = bloque.chapa_alto_mm / escala
     fila = len(indices) * (ancho + ROTULOS_MM) + (len(indices) - 1) * SEPARACION_MM
     x = MARGEN_MM + (ANCHO_PARA_CHAPAS_MM - fila) / 2
-    # Alineadas abajo, sobre el pie, lo de debajo de la chapa y los números de la grilla.
-    y = MARGEN_MM + PIE_MM + DEBAJO_CHAPA_MM + ROTULOS_MM
+    # Sobre el pie, lo de debajo de la chapa y los números de la grilla, y
+    # centradas en el alto que sobra: una chapa baja no queda pegada abajo
+    # con todo el blanco arriba (Enzo, A17).
+    y = MARGEN_MM + PIE_MM + DEBAJO_CHAPA_MM + ROTULOS_MM + (ALTO_PARA_CHAPAS_MM - alto) / 2
     chapas = [
         ChapaEnHoja(indice, Caja(x + i * (ancho + ROTULOS_MM + SEPARACION_MM) + ROTULOS_MM, y, ancho, alto))
         for i, indice in enumerate(indices)
@@ -212,6 +216,7 @@ def _alto_de_tabla(bloque: BloqueDelPdf, con_sin_anidar: bool) -> float:
     renglones = len(bloque.chapas)
     renglones += any(p.estado == "falta" for p in bloque.disenio.piezas)
     renglones += bool(bloque.disenio.sin_lugar)
+    renglones += bloque.vencido
     renglones += con_sin_anidar
     return renglones * FILA_TABLA_MM + TABLA_FIJO_MM
 

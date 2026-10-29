@@ -6,8 +6,8 @@ import pytest
 from app.pasos import GrupoParaPasos, Pasos, TrabajoParaPasos, pasos_del_trabajo
 
 
-def _grupo(nombre="Calibre 18", *, con_piezas=True, terminado=False, ultimo=None):
-    return GrupoParaPasos(nombre, con_piezas, terminado, ultimo)
+def _grupo(nombre="Calibre 18", *, con_piezas=True, terminado=False, ultimo=None, vencido=False):
+    return GrupoParaPasos(nombre, con_piezas, terminado, ultimo, vencido)
 
 
 def _trabajo(*, piezas=2, sin_grupo=0, grupos=(), presupuesto=None):
@@ -56,6 +56,17 @@ def test_un_anidado_con_error():
 
 def test_un_error_despues_de_uno_terminado_no_cuenta():
     assert pasos_del_trabajo(_trabajo(grupos=[_grupo(terminado=True, ultimo="error")])).anidado == "hecho"
+
+
+def test_un_anidado_vencido_falta_volver_a_anidar():
+    """Las piezas del grupo cambiaron después de anidar (A17): no se cobra."""
+    p = pasos_del_trabajo(_trabajo(grupos=[_grupo(ultimo="lista", vencido=True)]))
+    assert (p.anidado, p.frase, p.destino) == ("pendiente", "Falta volver a anidar Calibre 18", "anidado")
+
+
+def test_un_error_despues_de_uno_vencido_se_ve_el_error():
+    p = pasos_del_trabajo(_trabajo(grupos=[_grupo("Chapa20", ultimo="error", vencido=True)]))
+    assert (p.anidado, p.frase) == ("error", "El anidado de Chapa20 terminó con error")
 
 
 def test_dos_grupos_con_uno_solo_anidado_nombra_el_que_falta():

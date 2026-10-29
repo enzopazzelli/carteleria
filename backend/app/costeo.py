@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from .mensajes import ErrorPrevisto
 from .modelos import EjecucionNesting, Formato, GrupoDeCorte, Material, Pieza, Trabajo
+from .modelos.trabajo import anidado_vigente
 
 _MM_POR_M = Decimal(1000)
 #: La única unidad de venta que hoy se sabe convertir a costo sin
@@ -77,20 +78,36 @@ def _ejecucion_para_costear(grupo: GrupoDeCorte) -> tuple[EjecucionNesting | Non
 
     Prioridad: la marcada `es_definitiva`. Si no hay ninguna marcada, la
     más reciente en estado `lista` — con advertencia, porque puede ser
-    una prueba que el usuario no llegó a confirmar."""
-    definitivas = [e for e in grupo.ejecuciones if e.es_definitiva and e.estado == "lista"]
-    if definitivas:
-        return definitivas[0], []
+    una prueba que el usuario no llegó a confirmar.
 
-    listas = [e for e in grupo.ejecuciones if e.estado == "lista"]
+    Con las piezas cambiadas después del elegido, cuenta la más reciente
+    que esté al día, también con advertencia (Enzo, A17). Si ninguna está
+    al día, queda la de siempre: quien la usa mira `anidado_vigente`."""
+    listas = sorted((e for e in grupo.ejecuciones if e.estado == "lista"), key=lambda e: e.id, reverse=True)
     if not listas:
         return None, []
+    definitiva = next((e for e in listas if e.es_definitiva), None)
+    # El elegido primero: con meses de pruebas, revisar cada anidado del
+    # historial cuesta (revisión de la tanda 7).
+    if definitiva is not None and anidado_vigente(grupo, definitiva):
+        return definitiva, []
+    al_dia = next((e for e in listas if e is not definitiva and anidado_vigente(grupo, e)), None)
+    if al_dia is None:
+        return (definitiva, []) if definitiva is not None else (listas[0], [_sin_elegir(grupo, "el más reciente")])
+    if definitiva is not None:
+        return al_dia, [
+            f"Grupo «{grupo.nombre}»: el anidado elegido (#{definitiva.id}) es de antes de que cambiaran "
+            f"las piezas; se usó el #{al_dia.id}, el más reciente al día. Confirmá cuál vale antes de cotizar en serio."
+        ]
+    cual = "el más reciente" if al_dia is listas[0] else f"el #{al_dia.id}, el más reciente al día"
+    return al_dia, [_sin_elegir(grupo, cual)]
 
-    elegida = max(listas, key=lambda e: e.id)
-    return elegida, [
+
+def _sin_elegir(grupo: GrupoDeCorte, cual: str) -> str:
+    return (
         f"Grupo «{grupo.nombre}»: ningún anidado está elegido para cotizar; "
-        "se usó el más reciente. Confirmá cuál vale antes de cotizar en serio."
-    ]
+        f"se usó {cual}. Confirmá cuál vale antes de cotizar en serio."
+    )
 
 
 def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:
@@ -112,6 +129,16 @@ def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:
     ejecucion, advertencias_ejecucion = (
         _ejecucion_para_costear(grupo) if grupo.formato_id is not None else (None, [])
     )
+    vencido = ejecucion is not None and not anidado_vigente(grupo, ejecucion)
+    if vencido:
+        # El anidado que quedaba no es lo que hoy se corta: no se cobra (A17).
+        con_piezas = any(not pieza.descartada for pieza in grupo.piezas)
+        advertencias_ejecucion = [
+            f"Grupo «{grupo.nombre}»: las piezas cambiaron después del anidado. Anidá de nuevo antes de presupuestar."
+            if con_piezas
+            else f"Grupo «{grupo.nombre}»: se quedó sin piezas, así que no se cobra su anidado viejo."
+        ]
+        ejecucion = None
     advertencias.extend(advertencias_ejecucion)
 
     snapshot = (ejecucion.parametros or {}).get("formato") if ejecucion else None
@@ -126,7 +153,7 @@ def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:
         )
         ejecucion = None
 
-    if grupo.formato_id is not None and ejecucion is None:
+    if grupo.formato_id is not None and ejecucion is None and not vencido:
         advertencias.append(f"Grupo «{grupo.nombre}»: todavía no tiene un anidado terminado.")
 
     area_total_m2 = None

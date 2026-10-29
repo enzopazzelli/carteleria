@@ -46,6 +46,8 @@ PALETA_CHAPAS: tuple[str, ...] = (
 )
 ROJO_FALTA = "#d62728"
 GRIS_OTRO = "#d9dee3"
+#: El mismo de Chapas (`ChapasTab.tsx`): el anidado se ve, pero no se cobra (A17).
+AVISO_DE_VENCIDO = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de presupuestar."
 
 # Las letras del PDF del presupuesto, guardadas al lado para que salga
 # igual en Windows y en el servidor.
@@ -64,6 +66,11 @@ _BORDE_PIEZA = colors.HexColor("#333333")
 
 #: Enzo, 2026-10-25: el número de cada pieza, de unos 2,4 mm.
 _PUNTOS_NUMERO = 7
+#: El de una pieza que a escala mide poco, para que no se salga sobre las
+#: vecinas; más chico no se lee impreso (A17).
+_PUNTOS_NUMERO_MINIMO = 4
+#: Lo que miden de alto las cifras, por cada punto de la letra.
+_ALTO_DE_LAS_CIFRAS = 0.72
 _PUNTOS_GRILLA = 5
 _GRILLA_FINA_MM = 100
 _GRILLA_MARCADA_MM = 500
@@ -224,6 +231,9 @@ def _dibujar_tabla(lienzo: Canvas, trabajo: TrabajoDelPdf, bloque: BloqueDelPdf,
     escribir(f"Material usado: {bloque.linea}")
     renglon -= FILA_TABLA_MM
     escribir(bloque.anidado, color=_GRIS_TEXTO)
+    if bloque.vencido:
+        renglon -= FILA_TABLA_MM
+        escribir(AVISO_DE_VENCIDO, fuente=_NEGRITA, color=colors.HexColor(ROJO_FALTA))
     faltan = [p.nombre for p in bloque.disenio.piezas if p.estado == "falta"]
     if faltan:
         renglon -= FILA_TABLA_MM
@@ -275,6 +285,18 @@ def _flecha_de_veta(lienzo: Canvas, caja: Caja) -> None:
     lienzo.drawRightString((x - 1.2) * mm, (abajo + 0.6) * mm, "veta")
 
 
+def _puntos_para(anillos: Anillos, escala: int, texto: str) -> float:
+    """El tamaño del número de una pieza: el de siempre si entra en la pieza
+    dibujada en el papel; si no, el que entra a lo ancho y a lo alto, sin
+    bajar de `_PUNTOS_NUMERO_MINIMO` (A17)."""
+    if not anillos or not anillos[0]:
+        return _PUNTOS_NUMERO
+    xs, ys = [x for x, _ in anillos[0]], [y for _, y in anillos[0]]
+    ancho, alto = (max(xs) - min(xs)) / escala * mm, (max(ys) - min(ys)) / escala * mm
+    por_ancho = ancho / pdfmetrics.stringWidth(texto, _NEGRITA, 1)
+    return max(_PUNTOS_NUMERO_MINIMO, min(_PUNTOS_NUMERO, por_ancho, alto / _ALTO_DE_LAS_CIFRAS))
+
+
 def _dibujar_chapa(lienzo: Canvas, chapa: ChapaEnHoja, bloque: BloqueDelPdf, escala: int) -> None:
     datos = next(c for c in bloque.chapas if c.indice == chapa.indice)
     caja = chapa.caja
@@ -296,7 +318,7 @@ def _dibujar_chapa(lienzo: Canvas, chapa: ChapaEnHoja, bloque: BloqueDelPdf, esc
     lienzo.rect(caja.x_mm * mm, caja.y_mm * mm, caja.ancho_mm * mm, caja.alto_mm * mm, stroke=1, fill=0)
     for pieza in datos.piezas:
         x, y = a_papel(_punto_adentro(pieza.anillos))
-        _con_borde_blanco(lienzo, pieza.nombre, x, y, _NEGRITA, _PUNTOS_NUMERO)
+        _con_borde_blanco(lienzo, pieza.nombre, x, y, _NEGRITA, _puntos_para(pieza.anillos, escala, pieza.nombre))
 
     centro = caja.x_mm + caja.ancho_mm / 2
     lienzo.setFont(_NEGRITA, 8)

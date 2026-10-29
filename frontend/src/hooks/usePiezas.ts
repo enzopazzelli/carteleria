@@ -12,12 +12,14 @@ import {
 } from "../api/piezasYgrupos";
 
 /** Cargar, descartar y seccionar cambian las piezas y también el diseño (A14),
- * y qué hay que seccionar (A17). */
-function refrescarPiezasYDisenio(queryClient: QueryClient, trabajoId: number) {
+ * qué hay que seccionar, y si un anidado sigue al día y qué se cobra (A17). */
+export function refrescarPiezasYDisenio(queryClient: QueryClient, trabajoId: number) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
     queryClient.invalidateQueries({ queryKey: ["disenio", trabajoId] }),
     queryClient.invalidateQueries({ queryKey: ["a-seccionar", trabajoId] }),
+    queryClient.invalidateQueries({ queryKey: ["ejecuciones"] }),
+    queryClient.invalidateQueries({ queryKey: ["costeo", trabajoId] }),
   ]);
 }
 

@@ -12,7 +12,7 @@ from pypdf import PdfReader
 from sqlalchemy.orm import Session
 
 from .ayudas import mensaje_de
-from .test_rutas_ajuste import _trabajo_anidado_con_dos_piezas, cliente  # noqa: F401
+from .test_rutas_ajuste import _esperar_estado, _trabajo_anidado_con_dos_piezas, cliente  # noqa: F401
 
 from app.api.rutas_pdf_anidado import anillos_en_chapa, datos_del_pdf, nombre_de_archivo_pdf
 from app.api.rutas_trabajos import _ruta_del_fondo
@@ -65,6 +65,39 @@ def test_lo_movido_a_mano_sale_en_su_lugar_nuevo(cliente, tmp_path):
     movida = next(p for c in datos.bloques[0].chapas for p in c.piezas if p.nombre == nombre)
     xs, ys = [x for x, _ in movida.anillos[0]], [y for _, y in movida.anillos[0]]
     assert ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2) == pytest.approx((900, 900))
+
+
+_VENCIDO = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de presupuestar."
+
+
+def test_el_anidado_vencido_lo_avisa_en_la_hoja_del_disenio(cliente, tmp_path):
+    """Sigue en el PDF, para ver qué se anidó, pero no se cobra (A17)."""
+    trabajo, _grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    assert _VENCIDO not in _texto(cliente.get(f"/trabajos/{trabajo['id']}/pdf-anidado").content)
+    pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+    cliente.patch(f"/piezas/{pieza['id']}", json={"cantidad": 2})
+
+    texto = _texto(cliente.get(f"/trabajos/{trabajo['id']}/pdf-anidado").content)
+
+    assert _VENCIDO in texto.replace("\n", " ")
+
+
+def test_si_se_cobra_otro_que_el_elegido_lo_dice(cliente, tmp_path):
+    """El elegido quedó vencido y hay uno más nuevo al día (Enzo, A17,
+    opción a): el PDF decía de ese «el más reciente, sin elegir para el
+    presupuesto», aunque es el que se cobra (revisión de la tanda 7)."""
+    trabajo, grupo, elegido = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    cliente.post(f"/ejecuciones/{elegido}/marcar-definitiva")
+    pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+    cliente.patch(f"/piezas/{pieza['id']}", json={"cantidad": 2})
+    nuevo = cliente.post(f"/grupos/{grupo['id']}/anidar", json={}).json()["id"]
+    _esperar_estado(cliente, nuevo)
+
+    texto = _texto(cliente.get(f"/trabajos/{trabajo['id']}/pdf-anidado").content).replace("\n", " ")
+
+    assert (f"anidado #{nuevo}, el que se usa para el presupuesto: el elegido (#{elegido}) "
+            "es de antes de que cambiaran las piezas") in texto
+    assert _VENCIDO not in texto
 
 
 def test_un_grupo_sin_anidar_va_al_pie(cliente, tmp_path):

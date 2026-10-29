@@ -29,6 +29,9 @@ class GrupoParaPasos:
     terminado: bool
     #: El estado del anidado más reciente; `None` si nunca se anidó.
     ultimo: str | None
+    #: Tiene un anidado terminado, pero sus piezas cambiaron después y no
+    #: se cobra (A17, `costeo.anidado_vigente`).
+    vencido: bool = False
 
 
 @dataclass(frozen=True)
@@ -72,13 +75,16 @@ def _como_quedo(grupo: GrupoParaPasos) -> tuple[str, str]:
 
     Uno que corre va primero aunque haya otro terminado: lo que se ve en
     Chapas puede cambiar cuando termine. Un error viejo no cuenta si
-    después se anidó bien, y uno cancelado es como no haber anidado."""
+    después se anidó bien, y uno cancelado es como no haber anidado. Uno
+    vencido falta como si no se hubiera anidado, pero lo dice."""
     if grupo.ultimo in _EN_CURSO:
         return "anidando", f"Anidando {grupo.nombre}…"
     if grupo.terminado:
         return "hecho", ""
     if grupo.ultimo == EstadoEjecucion.ERROR.value:
         return "error", f"El anidado de {grupo.nombre} terminó con error"
+    if grupo.vencido:
+        return "falta", f"Falta volver a anidar {grupo.nombre}"
     return "falta", f"Falta anidar {grupo.nombre}"
 
 

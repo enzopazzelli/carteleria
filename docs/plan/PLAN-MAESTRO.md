@@ -238,63 +238,27 @@ Se detallan cuando les toque, cada una con su diseño.
 
 | Historias | Motivo |
 |---|---|
-| `CART-701` a `CART-705` | Son el motor. Carril de Vale. El seccionado (A5) lo tomó Enzo el 2026-10-07, y está construido y en `main` desde el 2026-10-09: `historico/A5-seccionado/`. Sus pendientes están al pie de esta tabla. El reparto por chapa (A6), que usa el tiempo que sobra del anidado con Sparrow para vaciar las chapas a medio llenar, lo construyó Enzo sin esperar la respuesta de Vale, y está en `main` desde el 2026-10-10: `historico/A6-reparto-por-chapa/`. Sus pendientes también están al pie de esta tabla |
+| `CART-701` a `CART-705` | Son el motor. Carril de Vale. El seccionado (A5) lo tomó Enzo el 2026-10-07, y está construido y en `main` desde el 2026-10-09: `historico/A5-seccionado/`. Lo que quedó de sus pendientes está en las listas del final de esta sección. El reparto por chapa (A6), que usa el tiempo que sobra del anidado con Sparrow para vaciar las chapas a medio llenar, lo construyó Enzo sin esperar la respuesta de Vale, y está en `main` desde el 2026-10-10: `historico/A6-reparto-por-chapa/`. Lo que quedó de los suyos, también |
 | `CART-205`, `CART-207`, `CART-208`, `CART-210` | Dependen de que haya un resultado de anidado. Se retoman después de E2 |
 | `CART-201` | La carga manual de piezas existe como servicio, sin ruta propia. Si hace falta se decide en el diseño de 2.1 |
 | `CART-501`, `CART-502`, `CART-504` | Dependen de acordar una convención de capas con diseño (`SUP-05`, `B-15`, `D-11`) |
 | `CART-209`, `CART-508` | Plegado. Dependen de `D-03` |
 
-**Pendientes del seccionado.** El seccionado se cerró el 2026-10-09 y su carpeta pasó a [`historico/A5-seccionado/`](../historico/A5-seccionado/). Esto es lo que quedó vivo y se sigue desde acá. El detalle de cada punto está al final de su [`plan.md`](../historico/A5-seccionado/plan.md).
-
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| Validar con el aro real exportado soldado | §7 de su diseño | `SUP-17`: que el diseñador lo mande |
-| La segunda pasada de la búsqueda repite ángulos ya probados: solo afina el corrimiento | Revisión | — |
-| No hay tope para chapas chicas pero válidas, y el selector de chapa del panel lista todo el catálogo | Revisión | **Cerrado (A17, tanda 4):** tope de 50 tramos (`PAR-58`), y el panel elige la chapa en la tabla de A8 |
-| Una pieza tiene un solo seccionado, para una chapa: la comparación de formatos usa los tramos aunque la pieza entraría entera en una chapa más grande | Revisión | **Cerrado (A17, tanda 4):** en cada chapa donde entra entera, la comparación la usa entera y la fila lo avisa |
-| Con veta, los tramos quedan girados respecto del dibujo | Revisión | `P-30` |
-| La comparación de formatos usa los parámetros de corte del material aunque el grupo tenga propios | Arreglo del 2026-10-09 | **Cerrado (A17, tanda 4):** usa los del grupo si los tiene |
-| La fila de la pieza seccionada queda atenuada y sus enlaces parecen deshabilitados | Panel | — |
-| Dos colores no alcanzan para distinguir tramos vecinos | Panel | **Cerrado (A17, tanda 4):** el servidor elige el color de cada tramo, distinto del de sus vecinos, de una paleta de seis |
-| Arrastrar la grilla deja medidas no redondas: falta decidir si se ajusta a milímetros enteros | Panel | **Cerrado (A17, tanda 4):** el corrimiento queda en mm enteros (Enzo, 2026-10-26) |
-| El botón «Seccionar» se decide con una cuenta sin márgenes ni kerf: una pieza casi del tamaño de la chapa no lo muestra | Panel | **Cerrado (A17, tanda 4):** lo decide el servidor, con la regla del anidado |
-| La pieza 1009 del trabajo 4 parece un plano de referencia y no una pieza a cortar | Panel | 2.1, la revisión de la importación |
-
-**Resueltos el 2026-10-14** (rama `fix/depuracion`): «Volver a seccionar» abre con el corte guardado; un ángulo o un corrimiento infinito o que no es un número da un aviso y no un 500, y una pieza descartada a mano no se secciona; no se secciona ni se deshace mientras corre un anidado del grupo, ni se vuelve a cargar el dibujo mientras corre uno del trabajo.
-
-**Pendientes del reparto por chapa.** El reparto por chapa se cerró el 2026-10-10 y su carpeta pasó a [`historico/A6-reparto-por-chapa/`](../historico/A6-reparto-por-chapa/). Esto es lo que quedó vivo y se sigue desde acá. El detalle de cada punto está al final de su [`plan.md`](../historico/A6-reparto-por-chapa/plan.md), en «Desvíos».
-
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| Decidir cómo repartir el tiempo entre las pasadas y la etapa de vaciar chapas: con la casilla marcada suele correr una sola pasada, y si sale mala el resultado puede tener más chapas que con la casilla apagada | Revisión del 2026-10-10; §8 de su diseño | Medir un trabajo grande; hablarlo con Vale |
-| «Complejo» entra en 7 chapas: lo encontraron dos de tres anidados que corrían a la vez (35,8 % de aprovechamiento, contra 31,3 % con 8); de a uno, siempre dio 8. Probar más semillas o repartir distinto el tiempo podría encontrarlo seguido | Medición de varios anidados a la vez, 2026-10-23 | Lo de la fila de arriba |
-| Medir un trabajo con muchas más piezas | Tarea 6 de su plan | Un trabajo con grupos armados: `Muestra Vectores` no los tiene en el respaldo |
-| Las preguntas a Vale: si tiene cambios en curso sobre `sparrow_worker.py` y si ya había probado otro reparto | Tarea 0 de su plan | Vale |
-| El aviso «Se alcanzó el límite de búsqueda» sale en buena parte de las corridas con la etapa prendida: el worker estima corto lo que dura una consulta | Revisión | — |
-| Ningún test corre la etapa por el camino del worker aparte y su archivo de salida | Revisión | — |
-| El texto de ayuda de Anidado dice «Más búsqueda por chapa no da menos planchas» como si fuera una regla | Revisión | **Cerrado (A17, tanda 5):** salió la frase (Enzo) |
-| `motor/PLAN-VALIDACION-CORTE-MANUAL.md` nombra `PAR-09` con su valor anterior (la guía de Sparrow ya dice los valores de hoy, 2026-10-23) | Tarea 5 bis de su plan | — |
-| Con giro libre, si una pieza entra en la chapa se sigue decidiendo con cuartos de vuelta: una que solo entra en diagonal se manda a seccionar | Rama `feat/giro-libre`, 2026-10-14 | Que aparezca un caso |
-| Otras rutas cambian piezas aunque corra un anidado: editar una pieza (grupo, cantidad, descartar), borrar un grupo y borrar un trabajo. Volver a cargar el dibujo y seccionar ya lo rechazan | Revisión de `fix/depuracion`, 2026-10-14 | — |
-| La carpeta temporal de cada corrida de Sparrow sale de la carpeta temporal del sistema, en C:, que en la máquina de Enzo está casi llena. Iría mejor al lado de los datos (`CARTELERIA_DATOS`) | Revisión de `fix/depuracion`, 2026-10-14 | **Cerrado (A17, tandas 1 y 5):** va en `<datos>/tmp`, y se vacía al arrancar |
-
-**Resueltos el 2026-10-14** (rama `fix/depuracion`): si falla la etapa de vaciar chapas, el motivo llega a los avisos del resultado; si falla una pasada posterior o el worker termina con error, vale el último anidado que dejó escrito; el worker da por mejor un resultado recién cuando quedó escrito; y el filtro por área ya no saltea, por redondeo, piezas que llenan la chapa justa. **Y en la rama `feat/giro-libre`:** Sparrow gira las piezas a cualquier ángulo, con la casilla «Girar a cualquier ángulo» en Anidado y en la comparación de chapas, marcada por defecto (Enzo) y sin efecto con veta. **Y la barra de progreso (A7), en `main` desde el 2026-10-14 ([`historico/A7-progreso-del-anidado/`](../historico/A7-progreso-del-anidado/diseno.md)):** barra de progreso al anidar y al comparar chapas, y la comparación en segundo plano, con cancelar y retomar; con eso deja de ser un solo pedido largo que el navegador podía cortar. **Y el 2026-10-23, con el giro de las piezas grandes (A11):** se midió «Complejo» con «Girar a cualquier ángulo» marcado y sin marcar: 8 chapas las dos veces, en 240 s (una corrida de cada una; antes, con la casilla marcada, fallaba).
-
 **Lo que sigue, desde la reunión del 2026-10-22.** En la reunión se vieron dos fallas del anidado y salieron pedidos nuevos. Enzo eligió **primero el motor de anidado y después lo demás**, y **por ahora no trabajar los colores ni el `.cdr`**. El motor principal es Sparrow.
 
 | Orden | Qué | Estado |
 |---|---|---|
-| 1 | **Aprovechar huecos primero (A10):** meter las piezas chicas en los huecos de las grandes antes de acomodar; con la barra, cancelar y el tiempo máximo; en Ajuste lo de adentro se mueve con su pieza; los anidados que quedaron colgados al cerrar el servidor pasan a error | **En `main` desde el 2026-10-22 y cerrado:** [`historico/A10-huecos-primero/`](../historico/A10-huecos-primero/diseno.md). Mediciones en los «Desvíos» de su [`plan.md`](../historico/A10-huecos-primero/plan.md); lo que quedó vivo, en la tabla de abajo |
-| 2 | **Complejo con giro libre (A11):** Sparrow inclinaba los tramos del aro (1193 × 2361) y ya no entraban en la chapa; por eso la comparación terminaba enseguida y el anidado fallaba. Ahora cada pieza que no entra a cualquier ángulo gira solo en los ángulos con los que entra entera, de a 1°, y el resultado la nombra en un aviso | **En `main` desde el 2026-10-23 y cerrado:** [`historico/A11-giro-de-las-piezas-grandes/`](../historico/A11-giro-de-las-piezas-grandes/diseno.md). Complejo con giro libre da 8 chapas (antes fallaba a los 34 s); el parador no cambia. Mediciones en §8 de su diseño; lo que quedó vivo, en la tabla de abajo |
+| 1 | **Aprovechar huecos primero (A10):** meter las piezas chicas en los huecos de las grandes antes de acomodar; con la barra, cancelar y el tiempo máximo; en Ajuste lo de adentro se mueve con su pieza; los anidados que quedaron colgados al cerrar el servidor pasan a error | **En `main` desde el 2026-10-22 y cerrado:** [`historico/A10-huecos-primero/`](../historico/A10-huecos-primero/diseno.md). Mediciones en los «Desvíos» de su [`plan.md`](../historico/A10-huecos-primero/plan.md); lo que quedó vivo lo cerró A17 |
+| 2 | **Complejo con giro libre (A11):** Sparrow inclinaba los tramos del aro (1193 × 2361) y ya no entraban en la chapa; por eso la comparación terminaba enseguida y el anidado fallaba. Ahora cada pieza que no entra a cualquier ángulo gira solo en los ángulos con los que entra entera, de a 1°, y el resultado la nombra en un aviso | **En `main` desde el 2026-10-23 y cerrado:** [`historico/A11-giro-de-las-piezas-grandes/`](../historico/A11-giro-de-las-piezas-grandes/diseno.md). Complejo con giro libre da 8 chapas (antes fallaba a los 34 s); el parador no cambia. Mediciones en §8 de su diseño; lo que quedó vivo lo cerró A17 |
 | 3 | **Varios anidados a la vez:** confirmar con una prueba de tres en simultáneo | **Confirmado el 2026-10-23,** por el mismo camino que la pantalla (servidor propio sobre una copia de la base; guion y resultados en `backend/local/herramientas-simultaneos-2026-10-23/`, fuera de git). Complejo y los dos paradores a la vez: todos bien (Complejo 8 chapas en 218 s; cada parador 1 chapa en 7 u 8 s, contra 5 solos). Tres Complejo a la vez: 7, 8 y 7 chapas, en 240 s cada uno; uno solo, 8 en 218 s. La barra se vio en todos y ninguna consulta al servidor pasó de 1,1 s. Cada anidado se corta en su tiempo máximo: con la máquina compartida no tarda más, busca menos. De paso, el worker reintenta un momento cuando Windows no lo deja reemplazar su archivo de avance porque el servidor lo está leyendo («Acceso denegado», 10 veces en la medición; el resultado no cambiaba) |
-| 4 | **El material usado en Ancho × Alto,** y hacia qué lado de la chapa se apilan las piezas | **En `main` desde el 2026-10-23 y cerrado (A12):** [`historico/A12-material-usado-y-sobrante/`](../historico/A12-material-usado-y-sobrante/diseno.md). En el resumen del anidado, «6 chapas enteras + 1220 × 1650 + 1220 × 900» y una tabla con lo usado y el sobrante de cada chapa; en Anidado se elige si el sobrante queda arriba, como bloque (por defecto), o al costado. Cobrar por lo usado y llevar la cuenta de los retazos quedan para después; lo que quedó vivo, en la tabla de abajo |
-| 5 | **El diseño anidado también en PDF,** además del DXF para la máquina. Con los colores por chapa de A14. Enzo, el 2026-10-24: lo usan para tener registro, para armar el cartel y para que el operario de la máquina tenga el trabajo a mano | **En `main` desde el 2026-10-25 y cerrado (A15):** [`historico/A15-disenio-anidado-en-pdf/`](../historico/A15-disenio-anidado-en-pdf/diseno.md). Un PDF por trabajo, en A4 y en color: por cada material, el diseño pintado por chapa a todo el ancho con el detalle de chapas abajo, y las chapas juntas a 1:20, hasta 4 por hoja, con una grilla cada 10 cm y el número de cada pieza. Se baja desde Chapas y desde el resumen del anidado. Lo que quedó vivo, en la tabla de abajo |
-| 6 | **Ver las chapas resultantes y mover piezas entre ellas** (detalle abajo) | **En `main` desde el 2026-10-24 y cerrado (A14):** [`historico/A14-chapas-en-conjunto/`](../historico/A14-chapas-en-conjunto/diseno.md). La pestaña Chapas reemplaza a Ajuste: todas las chapas juntas, pasar piezas de una a otra o a una chapa nueva, el diseño inicial pintado por chapa e iluminado de los dos lados, y toda pieza nombrada con su forma y su lugar en el diseño. Lo que quedó vivo, en la tabla de abajo |
+| 4 | **El material usado en Ancho × Alto,** y hacia qué lado de la chapa se apilan las piezas | **En `main` desde el 2026-10-23 y cerrado (A12):** [`historico/A12-material-usado-y-sobrante/`](../historico/A12-material-usado-y-sobrante/diseno.md). En el resumen del anidado, «6 chapas enteras + 1220 × 1650 + 1220 × 900» y una tabla con lo usado y el sobrante de cada chapa; en Anidado se elige si el sobrante queda arriba, como bloque (por defecto), o al costado. Cobrar por lo usado y llevar la cuenta de los retazos quedan para después; lo que quedó vivo lo cerró A17 |
+| 5 | **El diseño anidado también en PDF,** además del DXF para la máquina. Con los colores por chapa de A14. Enzo, el 2026-10-24: lo usan para tener registro, para armar el cartel y para que el operario de la máquina tenga el trabajo a mano | **En `main` desde el 2026-10-25 y cerrado (A15):** [`historico/A15-disenio-anidado-en-pdf/`](../historico/A15-disenio-anidado-en-pdf/diseno.md). Un PDF por trabajo, en A4 y en color: por cada material, el diseño pintado por chapa a todo el ancho con el detalle de chapas abajo, y las chapas juntas a 1:20, hasta 4 por hoja, con una grilla cada 10 cm y el número de cada pieza. Se baja desde Chapas y desde el resumen del anidado. Lo que quedó vivo lo cerró A17 |
+| 6 | **Ver las chapas resultantes y mover piezas entre ellas** (detalle abajo) | **En `main` desde el 2026-10-24 y cerrado (A14):** [`historico/A14-chapas-en-conjunto/`](../historico/A14-chapas-en-conjunto/diseno.md). La pestaña Chapas reemplaza a Ajuste: todas las chapas juntas, pasar piezas de una a otra o a una chapa nueva, el diseño inicial pintado por chapa e iluminado de los dos lados, y toda pieza nombrada con su forma y su lugar en el diseño. Lo que quedó vivo lo cerró A17 |
 | 7 | **Una página de inicio, con materiales y presupuestos** (detalle abajo) | **La página de inicio, en `main` desde el 2026-10-26 (A16):** [`historico/A16-pagina-de-inicio/`](../historico/A16-pagina-de-inicio/diseno.md). Una barra fija arriba; el inicio en dos columnas, con las tarjetas de los trabajos, «Nuevo trabajo», los últimos presupuestos y los materiales; la sección Trabajos, con buscador y borrar desde la tarjeta. **Siguen**, de a una y cada una con su diseño: el alta, la edición y la baja de materiales en pantalla, la lista de presupuestos y la pantalla para retocar el presupuesto |
 | 8 | **La aprobación del presupuesto** (1.4, §6) | Planeado; falta diseño |
-| 9 | **Llenar mejor los huecos (A13):** con «Aprovechar huecos», en el parador entraban 20 piezas en 11 figuras del logo y los huecos grandes quedaban bastante vacíos. Ahora cada pieza se busca por casillas, contra la pared, con giros de a 15° y dada vuelta | **En `main` desde el 2026-10-23 y cerrado:** [`historico/A13-llenar-mejor-los-huecos/`](../historico/A13-llenar-mejor-los-huecos/diseno.md). Con el parador entran 30 piezas en lugar de 20 y el sobrante crece de 1220 × 509 a 1220 × 761, sin gastar más chapa; Complejo igual (7 chapas). Lo que quedó vivo, en la tabla de abajo |
+| 9 | **Llenar mejor los huecos (A13):** con «Aprovechar huecos», en el parador entraban 20 piezas en 11 figuras del logo y los huecos grandes quedaban bastante vacíos. Ahora cada pieza se busca por casillas, contra la pared, con giros de a 15° y dada vuelta | **En `main` desde el 2026-10-23 y cerrado:** [`historico/A13-llenar-mejor-los-huecos/`](../historico/A13-llenar-mejor-los-huecos/diseno.md). Con el parador entran 30 piezas en lugar de 20 y el sobrante crece de 1220 × 509 a 1220 × 761, sin gastar más chapa; Complejo igual (7 chapas). Lo que quedó vivo lo cerró A17 |
 | 10 | **Tarjetas en Trabajos:** la lista de trabajos como tarjetas, con información del estado abajo y una miniatura del diseño inicial (Enzo, 2026-10-24) | **Hecho en A16 (2026-10-26):** cada tarjeta lleva la miniatura del diseño pintado por chapa, en qué paso quedó y qué sigue, las chapas y el material, el presupuesto y cuándo se tocó |
-| 11 | **Pulir lo que quedó suelto (A17):** cerrar en un sprint los pendientes chicos de las tablas de abajo, para que queden solo las cosas grandes (Enzo, 2026-10-26) | **Diseño aprobado y plan escrito el 2026-10-26:** [`A17-pulir-lo-suelto/`](A17-pulir-lo-suelto/diseno.md). 41 tareas en 7 tandas, con pausa en cada una. Al cerrar, estas tablas se reemplazan por «Esperando a alguien» y la lista de lo grande |
+| 11 | **Pulir lo que quedó suelto (A17):** cerrar en un sprint los pendientes chicos de las tablas de pendientes, para que queden solo las cosas grandes (Enzo, 2026-10-26) | **Hecho y cerrado el 2026-10-29:** [`historico/A17-pulir-lo-suelto/`](../historico/A17-pulir-lo-suelto/diseno.md). 41 tareas en 7 tandas, cada una revisada y fusionada con el ok de Enzo. Lo que espera a otro y lo grande, en las dos listas de abajo |
 | — | Colores de referencia por pieza; entrada `.cdr` (hay un estudio previo que funcionó: [`historico/SPIKE-CDR.md`](../historico/SPIKE-CDR.md)) | En espera (Enzo, 2026-10-22) |
 
 Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, para que Enzo lo confirme («era eso más lo de hoy. Incluí todo», 2026-10-22).
@@ -307,116 +271,47 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 | Página de inicio con materiales y presupuestos | **La página de inicio, hecha en A16 (2026-10-26),** con un resumen de los presupuestos y los materiales. La API de materiales y formatos ya tiene alta, edición y baja, pero sin pantalla propia | Página de inicio, el alta/edición/baja de materiales en pantalla y la lista de presupuestos generados; ahí entra la pantalla para retocar el presupuesto (§6, pendientes de 1.3) |
 | La aprobación del presupuesto | No existe | 1.4, «Aprobación mínima» (§6) |
 
-**Pendientes de la página de inicio (A16).** Construido el 2026-10-26, fusionado en `main` y subido ese día, antes de la tarea 7: [`historico/A16-pagina-de-inicio/`](../historico/A16-pagina-de-inicio/diseno.md). Una barra fija arriba, el inicio en dos columnas con las tarjetas de los trabajos y la sección Trabajos con buscador y borrar. Lo que quedó vivo:
+**Los pendientes de los sub-proyectos se cerraron con A17** (2026-10-29): [`historico/A17-pulir-lo-suelto/`](../historico/A17-pulir-lo-suelto/diseno.md). Había una tabla por cada uno: el seccionado (A5), el reparto por chapa (A6), los mensajes (A9), los huecos (A10 y A13), el giro de las piezas grandes (A11), el material usado (A12), Chapas (A14), el PDF del diseño anidado (A15), la página de inicio (A16) y la lectura del DXF (2.1a y 2.1b). Lo chico se hizo, o se cerró sin cambios porque ya no pasaba (§5 y §8 de su diseño). Lo que queda está en las dos listas de abajo.
 
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| La tarea 7: el recorrido completo sobre una copia nueva, ver que la miniatura cambia al volver a anidar y cuánto tarda la de Complejo | Plan, tarea 7 | — |
-| Una revisión de toda la rama con ojos nuevos: las seis tareas las revisó solo quien las hizo | Plan | — |
-| Un grupo que se quedó sin piezas, con un anidado viejo, ya no cuenta en la tarjeta ni en la miniatura. Falta ver si el Costeo cobra esa chapa | Tarea 3 | — |
-| La primera vez que se arma el dibujo de un trabajo con piezas de antes de A14, se completan sus lugares en el diseño, y eso cuenta como tocarlo: sube una vez al primer lugar del inicio | Tarea 5 | — |
-| Cada miniatura pesa unos 165 KB, casi todo el fondo del DXF: con 6 en el inicio, cerca de 1 MB. Se puede simplificar el fondo | Tarea 3 | — |
-| Las pantallas de materiales, de presupuestos y de retocar el presupuesto. Sus lugares en la barra siguen apagados | §8 de su diseño | Enzo elige el orden |
+**Esperando a alguien.**
 
-**Pendientes del diseño anidado en PDF (A15).** Construido el 2026-10-25, fusionado en `main` ese día y cerrado: [`historico/A15-disenio-anidado-en-pdf/`](../historico/A15-disenio-anidado-en-pdf/diseno.md). Un PDF por trabajo, en A4 y en color: por cada material, el diseño pintado por chapa y las chapas juntas a 1:20 con una grilla y el número de cada pieza. Lo que quedó vivo:
+| Qué | A quién o qué se espera |
+|---|---|
+| Validar el seccionado con el aro real exportado soldado | Que el diseñador lo mande (`SUP-17`) |
+| Con veta, los tramos quedan girados respecto del dibujo | Taller (`P-30`) |
+| Hacia dónde corre la veta en la chapa: la flecha del PDF la supone a lo largo del lado largo | Taller (`P-04`, `B-04`) |
+| Imprimir una hoja de chapas al 100 % y medir con regla: la barra, 25 mm; una chapa de 1220 × 2440, 61 × 122 mm | Enzo |
+| El retazo más chico que se guarda | El dueño (`PAR-56`) |
+| Si Vale tiene cambios en curso sobre `sparrow_worker.py`, y si ya había probado otro reparto | Vale |
+| Medir un trabajo con muchas más piezas | Un trabajo grande con los grupos armados: `Muestra Vectores` no los tiene |
+| Con Complejo, el paso de huecos tarda 4,5 s en ver que no entra nada; un trabajo con muchos más huecos chicos podría pasarse | Que aparezca un caso |
+| Los ángulos de las piezas grandes se prueban de a 1°: una que solo entra entre dos grados enteros no lo aprovecha | Que aparezca un caso |
+| Si la excepción del rectángulo vale también para la forma de adentro: una pieza irregular que no entra en ninguna chapa no descarta un hueco rectangular que tampoco entra | Que aparezca un caso |
+| Elegir qué grupo de formas se une (hoy la casilla vale para el archivo entero) | Que aparezca un diseño que lo pida |
+| Marcar de a muchas formas con un recuadro: al sacar una placa con tornillos hay que sacar cada tornillo | Que haga falta |
+| Lo que avanzó con su valor por defecto y se confirma con el dueño | El dueño (4.5, arriba) |
+| Las mediciones de la tanda 2 de A17: los dos caminos para Complejo en 7 chapas (también decide cómo repartir el tiempo entre las pasadas y vaciar chapas), el orden de los huecos y repetir con varias corridas las de A11, A12, A13 y 2.1a. El código está en `main`, apagado | Enzo: la máquina libre unos 75 minutos. No se corren sin que lo pida |
 
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| Imprimir una hoja de chapas al 100 % y medir con regla: la barra, 25 mm; una chapa de 1220 × 2440, 61 × 122 mm | §7 de su diseño | Enzo |
-| Hacia dónde corre la veta en la chapa: la flecha la supone a lo largo del lado largo | Tarea 2 | Taller (`P-04`, `B-04`) |
-| Las chapas van alineadas abajo, sobre la barra de escala. En chapas bajas, como las de parador1, queda blanco arriba: se pueden centrar en el alto | Tarea 2 | Enzo |
-| En una chapa con muchas piezas chicas (la 1 de parador1, 41 piezas) los números quedan apretados: se leen, pero justo | Tarea 2 | — |
+**Lo grande, después de A17.** El detalle de cada uno, en §7 de [su diseño](../historico/A17-pulir-lo-suelto/diseno.md).
 
-**Pendientes de las chapas en conjunto (A14).** Construido el 2026-10-24, fusionado en `main` ese día y cerrado: [`historico/A14-chapas-en-conjunto/`](../historico/A14-chapas-en-conjunto/diseno.md). La pestaña Chapas reemplaza a Ajuste: todas las chapas del anidado juntas con el diseño inicial pintado por chapa, pasar piezas de una chapa a otra o a una nueva, y toda pieza nombrada con su forma y su lugar en el diseño. Lo que quedó vivo:
+1. Las pantallas de **materiales**, de **presupuestos** y de **retocar el presupuesto**, de a una y cada una con su diseño (el 7 de la tabla de arriba). Sus lugares en la barra siguen apagados.
+2. **La aprobación del presupuesto** (el 8 de la tabla de arriba; 1.4 en §6).
+3. **Cobrar por lo usado y llevar la cuenta de los retazos** (de A12; cobrar depende de `P-10`).
+4. **Recordar las correcciones de la lectura** al volver a cargar el mismo dibujo.
+5. **Cambiar cómo decide el lector qué es pieza y qué es agujero.** Tres lecturas que salen mal quedaron con su prueba marcada como falla conocida: la franja chica enganchada en otra, la letra con el hueco cerca del borde y el agujero adentro de dos formas que se pisan. Arreglarlas cambiaba la lectura de otros archivos.
+6. **La importación de varios diseños en pantalla** (`/importaciones/dxf/...`): no une ni deja corregir, cada trabajo tendría de fondo el archivo entero, y sus mensajes se revisaron sin miniaturas.
+7. **En espera por decisión de Enzo** (2026-10-22): los colores de referencia por pieza y leer el `.cdr` (la última fila de la tabla de arriba).
+8. **Lo de afuera** (etapa 4): el servidor real, el mail real, WhatsApp, y el logo y los datos fiscales en el PDF.
+9. **Una sola regla de qué anidado cuenta para el presupuesto, y por qué no.** Hoy se decide en cuatro lugares (el costeo, la tarjeta del inicio, el PDF y Chapas), y solo el costeo mira si cambió la chapa del grupo después de anidar.
 
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| En Complejo casi nada entra en otra chapa: aunque están usadas al 34-39 %, lo libre está repartido entre los rayos del aro. Ni la letra más chica de la chapa 1 (447 × 626 mm) entra en otra. La búsqueda está bien: en su propia chapa encuentra el lugar donde ya estaba. Se puede probar con más giros, o reacomodar la chapa de destino cuando no entra | Recorrido del tramo 3 | **Cerrado (A17, tanda 3):** si no entra en lo libre, la chapa de destino se reacomoda con Sparrow, con «Deshacer» |
-| El diseño chiquito de 44 px marca poco en un diseño grande como Complejo: agrandarlo, o recortarlo alrededor de la pieza | Recorrido del tramo 4 | **Cerrado (A17, tanda 3):** va recortado alrededor de la pieza |
-| No se vio en pantalla el «Hay que seccionar» de la comparación con sus formas: en la copia ningún grupo lo da (el aro ya está seccionado) | Recorrido del tramo 4 | **Cerrado (A17, tanda 4):** visto en el recorrido, con el aro sin seccionar en una copia |
-| No se pudo comprobar que el clic en una pieza del diseño lleve el mosaico hasta su chapa: en la pantalla del recorrido todo entra sin desplazarse | Recorrido del tramo 2 | **Cerrado (A17, tanda 3):** comprobado en el recorrido, con una pantalla de 900 × 600 |
-| Un trabajo de la importación de varios diseños tendría de fondo el archivo entero, con todos los diseños | Tarea 1 | — |
-| La chapa grande dibuja las piezas en verde, como Ajuste, y no con el color de su chapa | Recorrido del tramo 2 | **Cerrado (A17, tanda 3):** dibuja con el color de su chapa |
+**Resueltos por el camino**, antes de A17. Estaban al pie de las tablas de pendientes:
 
-**Pendientes de llenar mejor los huecos (A13).** Construido el 2026-10-23, fusionado en `main` ese día y cerrado: [`historico/A13-llenar-mejor-los-huecos/`](../historico/A13-llenar-mejor-los-huecos/diseno.md). Con el parador entran 30 piezas en los huecos en lugar de 20, y el sobrante crece un 50 %. Lo que quedó vivo:
-
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| Todavía queda libre cerca del 70 % de los huecos del parador. Probar otro orden de piezas (no solo de la más grande a la más chica) o varios órdenes podría meter más | §4 de su diseño | Medir si vale el tiempo |
-| Con Complejo, este paso tarda 4,5 s en descubrir que no entra nada, justo debajo de lo pedido: un trabajo con muchos más huecos chicos podría pasarse | §8 de su diseño | Que aparezca un caso |
-| Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 de su diseño | — |
-
-**Pendientes del material usado en ancho × alto (A12).** Construido el 2026-10-23, fusionado en `main` ese día y cerrado: [`historico/A12-material-usado-y-sobrante/`](../historico/A12-material-usado-y-sobrante/diseno.md). Con el parador y el sobrante arriba, sobra un retazo de 1220 × 527 que al costado se perdía; Complejo da 7 chapas de las dos maneras. Lo que quedó vivo:
-
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| Confirmar con el dueño el retazo más chico que se guarda (`PAR-56`, 250 × 250 mm, estimación de Enzo) | §3 de su diseño | El dueño (4.5) |
-| Cobrar por lo usado (cambia el presupuesto) y llevar la cuenta de los retazos (guardar el sobrante como retazo y ver cuáles hay) | §1 de su diseño | Sus propios diseños; cobrar depende de `P-10` |
-| Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 de su diseño | — |
-| En Ajuste, al tocar una pieza aparecen arriba del editor los botones para rotarla y el editor salta unos 42 px hacia abajo: incómodo al empezar a arrastrar. Es de antes | Recorrido del arreglo del espejo, 2026-10-23 | **Cerrado (A17, tanda 3):** la fila para rotar está siempre, y los avisos de las piezas en rojo van al costado del editor |
-| El editor del visor de prueba (`scripts/servidor_visor.py`) dibuja y arrastra con la altura hacia abajo: se ve de cabeza. Su vista fija, que usa el plano, ya sale derecha | Arreglo del espejo, 2026-10-23 | **Cerrado (2026-10-28):** se borró el visor, a pedido de Enzo; lo reemplaza la pestaña Chapas |
-
-**Resuelto el 2026-10-23** (rama `fix/plano-derecho`): **el plano y Ajuste se veían de cabeza.** El DXF guarda la altura hacia arriba y la pantalla la cuenta hacia abajo; el plano (Anidado, «Abrir plano», miniaturas de chapa, la vista fija del visor) y el editor de Ajuste no la daban vuelta, y la «A» se veía como una «∀» (el mismo error que tenían las miniaturas de Piezas, `b69466a`). Ahora la dan vuelta al dibujar, y Ajuste también al soltar una pieza arrastrada. El DXF exportado no cambió: la máquina siempre recibió lo correcto. Con eso, el sobrante arriba junta las piezas abajo de verdad y el bloque queda arriba también en el DXF. Recorrido en Chrome todo BIEN; el plano y el DXF exportado se ven iguales.
-
-**Pendientes del giro de las piezas grandes (A11).** Construido el 2026-10-23, fusionado en `main` ese día y cerrado: [`historico/A11-giro-de-las-piezas-grandes/`](../historico/A11-giro-de-las-piezas-grandes/diseno.md). Cada pieza que no entra en la chapa a cualquier ángulo gira solo en los ángulos con los que entra entera, de a 1°, y el resultado la nombra en un aviso. Con «Complejo» y giro libre: 8 chapas, sin y con huecos (antes fallaba); sin giro libre, 8, como antes. Lo que quedó vivo:
-
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| En la comparación de chapas, los avisos de todas las chapas se juntan por texto: si una pieza es grande para una chapa y no para otra, el aviso muestra las piezas de la primera chapa que lo dio | Tarea 2 de su diseño | **Cerrado (A17, tanda 4):** juntos solo si dicen lo mismo de las mismas piezas, con cada chapa nombrada |
-| Los ángulos se prueban de a 1°: una pieza que solo entra entre dos grados enteros no lo aprovecha | §5.2 de su diseño | — |
-| Una pieza grande adentro del hueco de otra (A10) puede quedar en un ángulo que no está en su lista; está bien, porque va adentro de su contenedora | §5.3 de su diseño | Que aparezca un caso |
-| Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 de su diseño | — |
-
-**Pendientes de aprovechar huecos primero (A10).** Construido el 2026-10-22, fusionado en `main` ese día y cerrado: [`historico/A10-huecos-primero/`](../historico/A10-huecos-primero/diseno.md). Con el parador, lo ocupado de la chapa bajó de 1103 a 930 mm y el paso de huecos tarda segundos (la pasada vieja, 236 s, y no ganaba nada). **El visor viejo sigue, a pedido de Enzo,** con Sparrow y huecos en su selector de motor (rama `feat/visor-sparrow`); de paso volvió a leer el catálogo que arma hoy el extractor, que no leía desde el 2026-09-22. Lo que quedó vivo:
-
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| Con una base sin migrar el servidor no arranca: la limpieza de anidados colgados corre sin protección | Revisión de A10 | — |
-| Dos pruebas para completar: que sin huecos el resultado sea el mismo con y sin la casilla, y el control de la pieza de adentro cuando el bloque pisa algo | Revisión de A10 | — |
-| En Ajuste, lo de adentro aparece en su lugar nuevo recién cuando vuelve la respuesta, no mientras se arrastra | Aclaración 4 de su plan | — |
-
-**Resueltos el 2026-10-23** con llenar mejor los huecos (A13): ya no hay un tope de 17 piezas por hueco (se buscan todos los lugares por casillas), y con giro libre las piezas se prueban también dadas vuelta adentro de un hueco.
-
-**Resuelto el 2026-10-24:** el orden de corte ya no se pregunta al taller. Enzo da por bueno que la máquina corta en el orden del archivo, porque en el taller ya meten piezas adentro de otras en sus propios archivos; si no, el operador elige el orden en la máquina, y eso cubre también el contorno de una pieza contra sus propios huecos. Quedó como supuesto `SUP-18` en el [registro](../REGISTRO.md).
-
-**Pendientes de los mensajes entendibles (A9).** Construido el 2026-10-22, en `main` desde ese día ([PR #26](https://github.com/enzopazzelli/carteleria/pull/26)) y cerrado: [`historico/A9-mensajes-entendibles/`](../historico/A9-mensajes-entendibles/diseno.md). Resolvió dos pendientes de otras tablas: una chapa de la comparación que no llega a tiempo **falla sola en su fila** y las demás se muestran (antes la comparación entera terminaba en error), y **«Margen %» e «IVA %» aceptan coma** («10,5»). Lo que quedó vivo:
-
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| Con el servidor apagado al abrir una pestaña, la pantalla queda en blanco: solo avisan las acciones (anidar, guardar), no las consultas que cargan la pestaña | Recorrido de A9 | **Cerrado (A17, tanda 5):** un aviso debajo de la barra, con «Reintentar» |
-| Un mensaje que nombra muchas piezas escribe todos los nombres: con 32 piezas el texto se hace largo. Mostrar los primeros y «y N más», con las miniaturas al lado | Recorrido de A9 | **Cerrado (A17, tanda 5):** las cinco primeras y «y N más», en el texto y en las miniaturas |
-| En la comparación, dos chapas de la misma medida y distinto espesor se ven iguales: la fila no dice el espesor | Recorrido de A9; es anterior | **Cerrado (A17, tanda 4):** la fila trae el espesor |
-| La miniatura de una chapa en Ajuste puede mostrar el plano de antes del movimiento: la dirección es la misma y el navegador la guarda | Recorrido de A9 | **Cerrado (A17, tanda 3):** la miniatura se vuelve a pedir después de cada cambio |
-| El error y los avisos de un anidado del historial no se ven al volver a la pestaña: solo los del que está en curso, aunque el error queda guardado entero | Revisión de A9 | **Cerrado (A17, tanda 5):** «Ver por qué», y los avisos del anidado a la vista |
-| Que el aviso de un error en la comparación distinga «el servidor se reinició» de «la reemplazó una comparación más nueva» | Revisión de A9 | **Cerrado (A17, tanda 5):** el 404 dice cuál de los dos pasó |
-| El mensaje del motor rectangular cuando no ubica piezas no dice qué hacer ni la medida de la chapa | Revisión de A9; texto del diseño | **Cerrado (A17, tanda 4):** dice la medida de la chapa y qué hacer |
-| En Ajuste, varias piezas en rojo por el margen dan varios avisos iguales: no nombran la pieza | Revisión de A9 | **Cerrado (A17, tanda 3):** un solo aviso que nombra todas las piezas |
-| Las trazas de un error inesperado ya no salen por la consola del servidor, solo en el registro; y la línea de lo que escribió el cálculo no dice de qué anidado es | Revisión de A9 | — |
-| Los mensajes de la importación de varios diseños (`/importaciones/dxf/...`) solo se revisaron con la regla, sin miniaturas; la comparación con el motor rectangular ya no se cae entera si falla un formato (A17, tanda 4) | §4 de su diseño | Que una pantalla los use |
-
-**Pendientes de la lectura con imagen (2.1a).** Se cerró el 2026-10-12 y su carpeta pasó a [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/). Esto es lo que quedó vivo y se sigue desde acá. El detalle está en los «Desvíos» de su [`plan.md`](../historico/2.1a-lectura-con-imagen/plan.md).
-
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| Repetir con varias corridas la comparación con y sin «vaciar chapas» sobre el trabajo bien leído. Una sola corrida de Enzo, con el aro unido y seccionado, dio 8 chapas (las mismas que el armado a mano del diseñador); lo medido el 2026-10-10 incluía 18 m² de huecos | §2 de su diseño; bitácora del 2026-10-12 | — |
-| La importación de varios diseños (`/importaciones/dxf/...`) no une | §3 de su diseño | Carril B, B2 y B4. 2.1b también dejó afuera los archivos con varios diseños |
-| Una franja chica enganchada en otra se lee al revés, y una letra cuyo hueco se acerca a menos de `PAR-50` de su borde queda maciza al unir | Revisión de la rama | **Pasó a lo grande (A17, tanda 6):** arreglarlas cambia la lectura de Complejo; sus pruebas quedan como fallas conocidas |
-| Los huecos de una pieza unida suman filas descartadas a la tabla de Piezas (25 en el aro) | §7 de su diseño | **Cerrado (A17, tanda 6):** las descartadas van plegadas debajo de la tabla, con «Mostrar N descartadas» (Enzo) |
-| Si la excepción del rectángulo vale también para la forma de adentro: hoy una pieza irregular que no entra en ninguna chapa no descarta un hueco rectangular que tampoco entra | Revisión de la rama | Decisión de Enzo |
-| El lector toma como pieza un agujero que está adentro de dos formas a la vez: sin unir, un tornillo en el borde del aro sale como pieza a cortar | Revisión de la rama; es anterior a este sub-proyecto | **Pasó a lo grande (A17, tanda 6):** el arreglo cambiaba la lectura de Muestra Vectores y de strat; se deshizo y su prueba queda como falla conocida |
-| `dibujo.ts` calcula la caja con `Math.min(...)`, que con un archivo mucho más grande que la muestra puede fallar; y la lectura manda los números con todos sus decimales (2,3 MB en la muestra) | Revisión de la rama | **Cerrado (A17, tandas 3 y 6):** la caja sin `Math.min(...)` desde la tanda 3; los números van al centésimo (Muestra Vectores, de 3,94 a 3,29 MB) |
-
-**Resueltos el 2026-10-14** (rama `fix/depuracion`): una carga sin nada para cortar no borra las piezas (el panel ya no lo permitía desde 2.1b; ahora tampoco la API), y un archivo que no se puede leer no pisa el DXF guardado; el aviso de las formas sin unir dice dónde está la casilla; `pytest` solo junta `tests/`; y las miniaturas ya no salen dadas vuelta.
-
-**Pendientes de corregir la lectura a mano (2.1b).** Se cerró el 2026-10-13 y su carpeta pasó a [`historico/2.1b-corregir-la-lectura/`](../historico/2.1b-corregir-la-lectura/). Esto es lo que quedó vivo y se sigue desde acá. Lo menor que señaló la revisión de la rama está en los «Desvíos» de su [`plan.md`](../historico/2.1b-corregir-la-lectura/plan.md).
-
-| Pendiente | De dónde sale | Depende de |
-|---|---|---|
-| El lector decide pieza o agujero por cuántos contornos encierran a la forma: el mismo dibujo se lee distinto solo que junto a otros | §2 y §7 de su diseño | — |
-| Elegir qué grupo de formas se une: la casilla vale para el archivo entero | §3 de su diseño | Que aparezca un diseño que lo pida |
-| Marcar de a muchas formas con un recuadro. Al sacar una placa con tornillos hay que sacar cada tornillo | §3 y §7 de su diseño | Que haga falta |
-| Recordar las correcciones de una carga a la otra | §3 de su diseño | — |
-| Corregir la lectura en la importación de varios diseños (`/importaciones/dxf/...`) | §3 de su diseño | Carril B, B2 y B4 |
+- Del seccionado: **Resueltos el 2026-10-14** (rama `fix/depuracion`): «Volver a seccionar» abre con el corte guardado; un ángulo o un corrimiento infinito o que no es un número da un aviso y no un 500, y una pieza descartada a mano no se secciona; no se secciona ni se deshace mientras corre un anidado del grupo, ni se vuelve a cargar el dibujo mientras corre uno del trabajo.
+- Del reparto por chapa: **Resueltos el 2026-10-14** (rama `fix/depuracion`): si falla la etapa de vaciar chapas, el motivo llega a los avisos del resultado; si falla una pasada posterior o el worker termina con error, vale el último anidado que dejó escrito; el worker da por mejor un resultado recién cuando quedó escrito; y el filtro por área ya no saltea, por redondeo, piezas que llenan la chapa justa. **Y en la rama `feat/giro-libre`:** Sparrow gira las piezas a cualquier ángulo, con la casilla «Girar a cualquier ángulo» en Anidado y en la comparación de chapas, marcada por defecto (Enzo) y sin efecto con veta. **Y la barra de progreso (A7), en `main` desde el 2026-10-14 ([`historico/A7-progreso-del-anidado/`](../historico/A7-progreso-del-anidado/diseno.md)):** barra de progreso al anidar y al comparar chapas, y la comparación en segundo plano, con cancelar y retomar; con eso deja de ser un solo pedido largo que el navegador podía cortar. **Y el 2026-10-23, con el giro de las piezas grandes (A11):** se midió «Complejo» con «Girar a cualquier ángulo» marcado y sin marcar: 8 chapas las dos veces, en 240 s (una corrida de cada una; antes, con la casilla marcada, fallaba).
+- Del material usado (A12): **Resuelto el 2026-10-23** (rama `fix/plano-derecho`): **el plano y Ajuste se veían de cabeza.** El DXF guarda la altura hacia arriba y la pantalla la cuenta hacia abajo; el plano (Anidado, «Abrir plano», miniaturas de chapa, la vista fija del visor) y el editor de Ajuste no la daban vuelta, y la «A» se veía como una «∀» (el mismo error que tenían las miniaturas de Piezas, `b69466a`). Ahora la dan vuelta al dibujar, y Ajuste también al soltar una pieza arrastrada. El DXF exportado no cambió: la máquina siempre recibió lo correcto. Con eso, el sobrante arriba junta las piezas abajo de verdad y el bloque queda arriba también en el DXF. Recorrido en Chrome todo BIEN; el plano y el DXF exportado se ven iguales.
+- De aprovechar huecos primero (A10): **Resueltos el 2026-10-23** con llenar mejor los huecos (A13): ya no hay un tope de 17 piezas por hueco (se buscan todos los lugares por casillas), y con giro libre las piezas se prueban también dadas vuelta adentro de un hueco.
+- De aprovechar huecos primero (A10): **Resuelto el 2026-10-24:** el orden de corte ya no se pregunta al taller. Enzo da por bueno que la máquina corta en el orden del archivo, porque en el taller ya meten piezas adentro de otras en sus propios archivos; si no, el operador elige el orden en la máquina, y eso cubre también el contorno de una pieza contra sus propios huecos. Quedó como supuesto `SUP-18` en el [registro](../REGISTRO.md).
+- De la lectura con imagen (2.1a): **Resueltos el 2026-10-14** (rama `fix/depuracion`): una carga sin nada para cortar no borra las piezas (el panel ya no lo permitía desde 2.1b; ahora tampoco la API), y un archivo que no se puede leer no pisa el DXF guardado; el aviso de las formas sin unir dice dónde está la casilla; `pytest` solo junta `tests/`; y las miniaturas ya no salen dadas vuelta.
 
 ---
 

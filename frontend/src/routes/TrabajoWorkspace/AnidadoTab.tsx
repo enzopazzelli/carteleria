@@ -394,6 +394,11 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
                   </button>
                 )}
                 {ejecucion.es_definitiva && <span className="text-xs text-bronze">definitiva</span>}
+                {ejecucion.vencido && (
+                  <span className="text-xs text-conflict ml-2" title="Las piezas del grupo cambiaron después de este anidado: no se cobra.">
+                    vencido
+                  </span>
+                )}
                 {ESTADOS_TERMINALES.has(ejecucion.estado) && (
                   <button
                     className="text-xs underline ml-3 disabled:opacity-50"

@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from ..costeo import _ejecucion_para_costear
+from ..costeo import _ejecucion_para_costear, anidado_vigente
 from ..modelos.catalogo import Formato, Material
 from ..modelos.presupuesto import LineaCosto, Presupuesto
 from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza, Trabajo
@@ -115,13 +115,17 @@ def tarjeta_de(sesion: Session, trabajo: Trabajo, tocado_en: datetime) -> Tarjet
     for grupo in trabajo.grupos:
         ejecucion, _avisos = _ejecucion_para_costear(grupo)
         ultima = max(grupo.ejecuciones, key=lambda e: e.id, default=None)
+        # Un anidado vencido no se cobra (A17): no cuenta como terminado ni
+        # suma sus chapas. La miniatura lo sigue pintando.
+        vencido = ejecucion is not None and not anidado_vigente(grupo, ejecucion)
         grupos.append(GrupoParaPasos(
             nombre=grupo.nombre,
             con_piezas=_con_piezas(grupo),
-            terminado=ejecucion is not None,
+            terminado=ejecucion is not None and not vencido,
             ultimo=ultima.estado if ultima else None,
+            vencido=vencido,
         ))
-        if ejecucion is not None and _con_piezas(grupo):
+        if ejecucion is not None and not vencido and _con_piezas(grupo):
             chapas.append(f"{_cuantas_chapas(ejecucion.planchas_usadas or 0)} · {_material(sesion, grupo, ejecucion)}")
 
     presupuesto = sesion.scalars(
@@ -164,7 +168,9 @@ def listar_tarjetas(
 
 def disenio_de_miniatura(sesion: Session, trabajo: Trabajo) -> DisenioDelPdf:
     """Pinta el primer grupo con piezas, en el orden de los grupos, que tenga
-    un anidado que cuente; lo de los otros va en gris. Sin ninguno, todo en gris."""
+    un anidado terminado, el que cuenta para el presupuesto; también si está
+    vencido (A17), porque la miniatura muestra lo que se anidó. Lo de los
+    otros va en gris. Sin ninguno, todo en gris."""
     for grupo in trabajo.grupos:
         ejecucion, _avisos = _ejecucion_para_costear(grupo)
         if ejecucion is not None and _con_piezas(grupo):

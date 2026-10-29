@@ -4,6 +4,7 @@ import { useFormato, useMateriales } from "../hooks/useCatalogo";
 import { useEjecucionesDeGrupo, useMaterialUsado } from "../hooks/useNesting";
 import { urlPlano, urlDxf, urlPdfAnidado, type MedidaLeer } from "../api/nesting";
 import type { GrupoDeCorte } from "../api/piezasYgrupos";
+import { ejecucionALaVista, paraElPresupuesto } from "../routes/TrabajoWorkspace/historial";
 
 /** «1220 × 900», como lo escribe el servidor en la línea del material usado. */
 const medida = (m: MedidaLeer) => `${m.ancho_mm} × ${m.alto_mm}`;
@@ -14,8 +15,7 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
   const { data: historial } = useEjecucionesDeGrupo(grupo.id);
   const [plancha, setPlancha] = useState(0);
   const [zoom, setZoom] = useState(1);
-  const ejecucion = ejecucionId ? historial?.find((e) => e.id === ejecucionId) :
-    historial?.find((e) => e.es_definitiva && e.estado === "lista") ?? historial?.find((e) => e.estado === "lista");
+  const ejecucion = ejecucionALaVista(historial, ejecucionId) ?? undefined;
   const material = materiales?.find((m) => m.id === formato?.material_id);
   const snapshot = ejecucion?.parametros?.formato;
   const formatoCambio = !!snapshot && snapshot.id !== undefined && snapshot.id !== grupo.formato_id;
@@ -61,7 +61,7 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
           <td className={c.es_retazo ? "font-mono" : "font-mono text-ink/50"}>{medida(c.sobrante)}{c.es_retazo ? "" : " · no llega a retazo"}</td>
         </tr>)}</tbody>
       </table>}
-      <p className="text-sm mb-3">{ejecucion.motor === "sparrow" ? "Sparrow irregular" : "Rectangular"} · anidado #{ejecucion.id} · {ejecucion.es_definitiva ? "Elegida para el presupuesto" : "Vista previa; aún no elegida para el presupuesto"}</p>
+      <p className="text-sm mb-3">{ejecucion.motor === "sparrow" ? "Sparrow irregular" : "Rectangular"} · anidado #{ejecucion.id} · {paraElPresupuesto(ejecucion, historial ?? [])}</p>
       <div className="flex flex-wrap items-center gap-3 mb-3 text-sm">
         <label>Plancha <select className="border rounded p-1" value={hoja} onChange={(e) => setPlancha(Number(e.target.value))}>
           {Array.from({length:n},(_,i) => <option key={i} value={i}>{i+1} de {n}</option>)}

@@ -1,29 +1,25 @@
-## 👋 Para Vale: el sprint que arranca (A17) — 2026-10-26
+## 👋 Para Vale: lo que A17 cambió en el motor — 2026-10-29
 
-Enzo pidió cerrar en un solo sprint todo lo chico que quedó suelto: cerca de sesenta pendientes repartidos en las tablas del plan maestro. Así, después quedan solo las cosas grandes: las pantallas de materiales y presupuestos, la aprobación del presupuesto y cobrar por lo usado.
-
-- **El diseño:** [`docs/plan/A17-pulir-lo-suelto/diseno.md`](docs/plan/A17-pulir-lo-suelto/diseno.md). Dice qué se arregla y qué decidió Enzo, y lista lo que queda esperando a alguien y lo grande que viene después.
-- **El plan:** [`docs/plan/A17-pulir-lo-suelto/plan.md`](docs/plan/A17-pulir-lo-suelto/plan.md). Son 41 tareas en 7 tandas. Cada tanda va en su propia rama y termina con una pausa para que Enzo la pruebe antes de fusionarla en `main`.
-
-**Lo que toca el motor (tu carril)**, por si tenés cambios en curso:
+El sprint para cerrar lo chico que quedó suelto (A17) terminó el 2026-10-29: [`docs/historico/A17-pulir-lo-suelto/`](docs/historico/A17-pulir-lo-suelto/diseno.md). Cómo quedó cada tanda está en §8 de su diseño. Lo que toca tu carril, todo en `main`:
 - **`sparrow_worker.py`:**
-  - en la tanda 1, la etapa de vaciar chapas mide cuánto tarda de verdad cada consulta y no empieza una que no termina a tiempo;
-  - en la tanda 2, dos caminos para que Complejo dé 7 chapas más seguido: dos búsquedas a la vez dentro del mismo anidado, o el tiempo repartido en varias vueltas cortas. Se miden los dos y queda el que gane.
-- **`sparrow.py`** (tanda 1):
-  - la carpeta temporal pasa al lado de los datos;
+  - la etapa de vaciar chapas mide cuánto tarda de verdad cada consulta y no empieza una que no termina a tiempo (tanda 1);
+  - el tiempo repartido en varias vueltas cortas (`repartir_tiempo`), uno de los dos caminos para que Complejo dé 7 chapas más seguido. Está **apagado** hasta medirlo (tanda 2).
+- **`sparrow.py`:**
+  - la carpeta temporal va al lado de los datos;
   - «entra en la chapa» usa los mismos giros que el anidado: con giro libre, cualquier ángulo;
-  - el registro dice de qué anidado es lo que escribió Sparrow.
-- **`huecos_primero.py`** (tanda 2): se prueban varios órdenes de piezas en cada hueco, y quedan si meten más piezas.
+  - el registro dice de qué anidado es lo que escribió Sparrow (las tres, tanda 1);
+  - el otro camino, dos búsquedas a la vez dentro del mismo anidado (`busquedas_a_la_vez`), también **apagado** (tanda 2).
+- **`huecos_primero.py`** (tanda 2): `meter_en_huecos` puede probar otros órdenes de piezas en cada hueco. Por defecto, el de siempre.
 - **`services/nesting/reacomodar.py`**, nuevo (tanda 3): al pasar una pieza a otra chapa en la pestaña Chapas, si no entra en lo libre, esa chapa se reacomoda con Sparrow, con «Deshacer».
-- **`services/seccionado/grilla.py`** (tanda 1): la segunda pasada prueba los ángulos del medio, en vez de repetir los que ya se habían probado.
+- **`services/seccionado/grilla.py`:** la segunda pasada prueba los ángulos del medio, en vez de repetir los ya probados (tanda 1), y cada tramo lleva un color distinto del de sus vecinos (tanda 4).
 
-**Una pregunta para vos, que quedó anotada:** ¿tenés cambios en curso sobre `sparrow_worker.py`? ¿Ya habías probado otro reparto del tiempo entre las vueltas y el vaciado de chapas? Si alguna respuesta es sí, avisale a Enzo antes de la tanda 2.
+**La pregunta para vos sigue abierta:** ¿tenés cambios en curso sobre `sparrow_worker.py`? ¿Ya habías probado otro reparto del tiempo entre las vueltas y el vaciado de chapas? Si alguna respuesta es sí, avisale a Enzo antes de medir la tanda 2.
 
-**Al arrancar el servidor:** desde la tanda 1, la base se actualiza sola. Antes de hacerlo, guarda un respaldo en `backend/local/respaldo-<fecha>-antes-de-<versión>/`.
+**Al arrancar el servidor**, la base se actualiza sola. Antes, guarda un respaldo en `backend/local/respaldo-<fecha>-antes-de-<versión>/`.
 
 ---
 
-## 🧭 En qué estamos — 2026-10-26
+## 🧭 En qué estamos — 2026-10-29
 
 Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Lo que sigue, desde la reunión del 2026-10-22».
 
@@ -32,6 +28,14 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
 
 **Ya está en `main`:**
+- **Pulir lo que quedó suelto (A17), cerrado el 2026-10-29.** Un sprint de 41 tareas en 7 tandas para cerrar los pendientes chicos de las tablas del plan maestro. Lo que más se nota:
+  - la base se pone al día sola al arrancar;
+  - en Chapas, si una pieza no entra en otra chapa, esa chapa se reacomoda, con «Deshacer»;
+  - cuando una pestaña no pudo cargar, un aviso con «Reintentar»;
+  - en Piezas, las descartadas van plegadas;
+  - un anidado cuyas piezas cambiaron después ya no se cobra, y lo dicen el Costeo, el inicio, Anidado, Chapas y el PDF.
+
+  Ver [`docs/historico/A17-pulir-lo-suelto/`](docs/historico/A17-pulir-lo-suelto/diseno.md).
 - **La página de inicio (A16), desde el 2026-10-26.** Una barra fija arriba en todas las pantallas: Inicio · Trabajos, y Presupuestos y Materiales apagados hasta que tengan su pantalla. El inicio va en dos columnas. A la izquierda, las tarjetas de los 6 trabajos tocados más recientemente: cada una con la miniatura del diseño pintado por chapa, en qué paso quedó y qué sigue («Falta anidar Calibre 22», «Falta el presupuesto»), las chapas y el material, y el presupuesto. Tocarla lleva a ese paso. A la derecha, «Nuevo trabajo», los últimos presupuestos (cada uno abre su Costeo y baja su PDF) y cuántos materiales hay. La sección Trabajos muestra todas las tarjetas con un buscador, y un trabajo se borra desde el «⋯» de su tarjeta, con confirmación; mientras se anida, no se puede borrar. Ver [`docs/historico/A16-pagina-de-inicio/`](docs/historico/A16-pagina-de-inicio/diseno.md).
 - **El diseño anidado en PDF (A15), desde el 2026-10-25.** Un PDF por trabajo, para imprimir en A4 y en color, que se baja desde la pestaña Chapas o desde el resumen del anidado. Por cada material trae una hoja con el diseño entero pintado del color de cada chapa, a todo el ancho, con lo usado y el sobrante de cada chapa abajo; después, las chapas juntas, hasta 4 por hoja, todas a escala 1:20, con una grilla cada 10 cm y el número de cada pieza, para reconocer lo cortado y marcar a mano. Una barra de 50 cm al pie deja comprobar con una regla que la hoja salió en tamaño real. Ver [`docs/historico/A15-disenio-anidado-en-pdf/`](docs/historico/A15-disenio-anidado-en-pdf/diseno.md).
 - **Las chapas en conjunto y el diseño inicial (A14), desde el 2026-10-24.** La pestaña **Chapas** reemplaza a Ajuste: muestra todas las chapas del anidado juntas, con el diseño inicial arriba pintado del color de cada chapa y lo que falta en rojo; pasar el mouse por una pieza o una chapa la ilumina en los dos lados. Una pieza se arrastra a otra chapa o a una chapa nueva y el sistema le busca lugar; con doble clic una chapa se abre grande para retocarla. En Grupos, en Piezas y en los mensajes, cada pieza nombrada lleva su forma y su lugar en el diseño. Ver [`docs/historico/A14-chapas-en-conjunto/`](docs/historico/A14-chapas-en-conjunto/diseno.md).
@@ -49,7 +53,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - Ver [`docs/historico/A10-huecos-primero/`](docs/historico/A10-huecos-primero/diseno.md).
 - Cómo probar Sparrow (semilla, tiempo, simplificación, cancelar): [`docs/GUIA-SPARROW-PRUEBAS.md`](docs/GUIA-SPARROW-PRUEBAS.md).
 
-**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, también llenar mejor los huecos, que se sumó después, ver y mover las chapas (A14), el diseño anidado en PDF (A15) y la página de inicio con las tarjetas (A16). El orden de lo que queda es una propuesta, para que Enzo lo confirme.
+**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, también llenar mejor los huecos, que se sumó después, ver y mover las chapas (A14), el diseño anidado en PDF (A15), la página de inicio con las tarjetas (A16) y lo chico que quedó suelto (A17). El orden de lo que queda es una propuesta, para que Enzo lo confirme.
 
 | # | Qué | Cómo está hoy | Qué se busca | Estado |
 |---|---|---|---|---|
@@ -58,12 +62,12 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 | — | **Colores de referencia por pieza** | Los DXF que llegan no traen color | Elegir un color por pieza (la «O» de Complejo en rojo) y que se vea en el plano, en Chapas y en el PDF, para reconocerla anidada | En espera (Enzo, 2026-10-22) |
 | — | **Entrada `.cdr`** | Solo se lee DXF | Leer el archivo de CorelDRAW directo. Ya hay un estudio que funcionó con LibreOffice, sin CorelDRAW: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | En espera (Enzo, 2026-10-22) |
 
-**Mejoras chicas del motor que quedaron anotadas** (al día con A17, 2026-10-29):
-- Complejo entra en 7 chapas (lo encontraron dos anidados que corrían a la vez), pero de a uno siempre da 8: falta que la búsqueda lo encuentre seguido. Los dos caminos de la tanda 2 de A17 ya están en el código, apagados, hasta medirlos.
+**Lo que espera a alguien** está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Esperando a alguien». Lo principal:
+- **Medir la tanda 2 de A17.** Complejo entra en 7 chapas (lo encontraron dos anidados que corrían a la vez), pero de a uno siempre da 8. Los dos caminos para que la búsqueda lo encuentre más seguido ya están en el código, apagados. Medirlos lleva unos 75 minutos con la máquina libre (Enzo).
+- **Imprimir una hoja de chapas y medirla con regla** (Enzo).
+- **Las preguntas a Vale y al taller.**
 
-**Ya resueltas en A17:** el servidor pone la base al día solo al arrancar, y están las dos comprobaciones que faltaban en las pruebas (tanda 1). En la chapa grande el editor ya no salta, y al pasar una pieza a una chapa donde no entra en lo libre, esa chapa se reacomoda con Sparrow, con «Deshacer» (tanda 3). En la comparación de chapas, los avisos van por chapa y ya no muestran las piezas de la primera que los dio (tanda 4).
-
-El detalle está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Pendientes de aprovechar huecos primero (A10)», «Pendientes del giro de las piezas grandes (A11)», «Pendientes del material usado en ancho × alto (A12)», «Pendientes de las chapas en conjunto (A14)» y, lo de las 7 chapas, «Pendientes del reparto por chapa».
+**Lo grande que viene después**, en «Lo grande, después de A17», en el mismo lugar.
 
 **El orden de corte ya no es pregunta para el taller:** se da por bueno que la máquina corta en el orden del archivo, con lo de adentro de un hueco primero (`SUP-18` en el [registro](docs/REGISTRO.md)).
 
@@ -74,7 +78,7 @@ Plataforma a medida para una empresa de cartelería de gran formato en chapa. Au
 **Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**: lectura del DXF, anidado con Sparrow, costeo y PDF del presupuesto · faltan el login, la aprobación y el envío — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) y, arriba, «En qué estamos»
 **Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md)
 **Equipo:** Enzo (todo lo que no es el motor) · Vale (motor de anidado)
-**Última actualización:** 2026-10-26 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
+**Última actualización:** 2026-10-29 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 

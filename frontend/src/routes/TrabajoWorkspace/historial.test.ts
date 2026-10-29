@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Ejecucion } from "../../api/nesting";
-import { ejecucionALaVista, queMostrarDelHistorial } from "./historial";
+import { ejecucionALaVista, paraElPresupuesto, queMostrarDelHistorial } from "./historial";
 
 function ejecucion(extra: Partial<Ejecucion>): Ejecucion {
   return {
     id: 7, grupo_id: 1, motor: "sparrow", semilla: null, estado: "lista", planchas_usadas: 2, aprovechamiento_pct: "50",
-    milisegundos: 1000, mensajes: null, error: null, es_definitiva: false, creado_en: "2026-10-29T10:00:00", ...extra,
+    milisegundos: 1000, mensajes: null, error: null, es_definitiva: false, vencido: false, creado_en: "2026-10-29T10:00:00",
+    ...extra,
   };
 }
 
@@ -27,6 +28,39 @@ describe("ejecucionALaVista", () => {
     expect(ejecucionALaVista(historial, undefined)?.id).toBe(10);
     expect(ejecucionALaVista(historial.slice(0, 2), undefined)?.id).toBe(11);
     expect(ejecucionALaVista(undefined, undefined)).toBeNull();
+  });
+
+  // Como el presupuesto (Enzo, A17, opción a): la tarjeta «Falta volver a
+  // anidar» lleva acá, y el resumen mostraba el elegido vencido (revisión de la tanda 7).
+  it("con la definitiva vencida, la más reciente al día", () => {
+    const conVencida = [ejecucion({ id: 11 }), ejecucion({ id: 10, es_definitiva: true, vencido: true })];
+    expect(ejecucionALaVista(conVencida, undefined)?.id).toBe(11);
+  });
+});
+
+describe("paraElPresupuesto", () => {
+  const elegida = ejecucion({ id: 10, es_definitiva: true });
+  const vencida = ejecucion({ id: 10, es_definitiva: true, vencido: true });
+  const nueva = ejecucion({ id: 11 });
+
+  it("la elegida al día", () => {
+    expect(paraElPresupuesto(elegida, [elegida])).toBe("Elegida para el presupuesto");
+  });
+
+  it("una vencida no se cobra, aunque sea la elegida", () => {
+    expect(paraElPresupuesto(vencida, [nueva, vencida])).toBe(
+      "Las piezas cambiaron después de este anidado: no se cobra",
+    );
+  });
+
+  it("la que se cobra en lugar de la elegida vencida lo dice", () => {
+    expect(paraElPresupuesto(nueva, [nueva, vencida])).toBe(
+      "Se usa para el presupuesto: el elegido (#10) es de antes de que cambiaran las piezas",
+    );
+  });
+
+  it("una sin elegir, sin vencida elegida, es vista previa", () => {
+    expect(paraElPresupuesto(nueva, [nueva, elegida])).toBe("Vista previa; aún no elegida para el presupuesto");
   });
 });
 

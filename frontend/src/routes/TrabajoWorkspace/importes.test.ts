@@ -10,8 +10,26 @@ import {
   porcentajeParaGuardar,
   mismoImporte,
   mostrarImporte,
+  mostrarMedidas,
+  mostrarMm,
   mostrarPorcentaje,
 } from "./importes";
+
+describe("mostrarMedidas", () => {
+  // La lista de piezas de Grupos mostraba «388.7470000000012×641.1700000000001 mm» (revisión de la tanda 7).
+  it("ancho por alto, en milímetros enteros", () => {
+    expect(mostrarMedidas("388.7470000000012", "641.1700000000001")).toBe("389×641 mm");
+  });
+});
+
+describe("mostrarMm", () => {
+  // La tabla de Piezas mostraba «388.7470000000012 mm» (A17): en mm enteros, como Grupos.
+  it("redondea a milímetros enteros", () => {
+    expect(mostrarMm("388.7470000000012")).toBe("389 mm");
+    expect(mostrarMm("641.1700000000001")).toBe("641 mm");
+    expect(mostrarMm("100")).toBe("100 mm");
+  });
+});
 
 describe("leerImporte", () => {
   it("lee los puntos como miles cuando arman grupos de tres", () => {

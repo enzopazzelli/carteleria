@@ -31,6 +31,8 @@ export interface Ejecucion {
   mensajes: Aviso[] | null;
   error: ErrorDelServidor | null;
   es_definitiva: boolean;
+  /** Las piezas de su grupo cambiaron después de este anidado: no se cobra (A17). */
+  vencido: boolean;
   creado_en: string;
   /** Solo mientras corre (A7). */
   progreso?: Progreso | null;

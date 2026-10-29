@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..costeo import _ejecucion_para_costear
+from ..costeo import _ejecucion_para_costear, anidado_vigente
 from ..modelos.catalogo import Formato
 from ..modelos.presupuesto import Presupuesto
 from ..modelos.trabajo import EjecucionNesting, GrupoDeCorte, Pieza, Trabajo
@@ -137,6 +137,19 @@ def _presupuesto(sesion: Session, trabajo: Trabajo) -> str | None:
     return f"{presupuesto.codigo} · {presupuesto.cliente.nombre}" if presupuesto else None
 
 
+def _que_anidado_es(grupo: GrupoDeCorte, ejecucion: EjecucionNesting) -> str:
+    """Cuál anidado es el del bloque para el presupuesto. Si hay un elegido
+    y el bloque no es ese, es porque el elegido quedó vencido y se cobra
+    este, el más reciente al día (`_ejecucion_para_costear`, Enzo, A17)."""
+    if ejecucion.es_definitiva:
+        return f"anidado #{ejecucion.id}, elegido para el presupuesto"
+    elegido = next((e for e in grupo.ejecuciones if e.es_definitiva and e.estado == "lista"), None)
+    if elegido is not None:
+        return (f"anidado #{ejecucion.id}, el que se usa para el presupuesto: el elegido (#{elegido.id}) "
+                "es de antes de que cambiaran las piezas")
+    return f"anidado #{ejecucion.id}, el más reciente, sin elegir para el presupuesto"
+
+
 def datos_del_pdf(sesion: Session, trabajo: Trabajo, ahora: datetime) -> TrabajoDelPdf:
     """Lo que va en el PDF: un bloque por grupo con anidado terminado (el
     definitivo o el último, como el costeo), en el orden de los grupos."""
@@ -156,9 +169,9 @@ def datos_del_pdf(sesion: Session, trabajo: Trabajo, ahora: datetime) -> Trabajo
             con_veta=(ejecucion.parametros or {}).get("rotaciones_permitidas") == RotacionPermitida.SOLO_0_180.value,
             chapas=_chapas(sesion, ejecucion, nombres),
             linea=material_usado_de(sesion, ejecucion).linea,
-            anidado=(f"anidado #{ejecucion.id}, elegido para el presupuesto" if ejecucion.es_definitiva
-                     else f"anidado #{ejecucion.id}, el más reciente, sin elegir para el presupuesto"),
+            anidado=_que_anidado_es(grupo, ejecucion),
             disenio=_disenio(sesion, trabajo, grupo, ejecucion),
+            vencido=not anidado_vigente(grupo, ejecucion),
         ))
     return TrabajoDelPdf(nombre=trabajo.nombre, archivo=trabajo.archivo_origen, generado=ahora,
                          presupuesto=_presupuesto(sesion, trabajo), bloques=bloques, sin_anidar=sin_anidar)

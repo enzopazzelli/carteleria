@@ -88,6 +88,21 @@ def test_la_tarjeta_trae_el_presupuesto_mas_reciente(cliente, tmp_path):
     assert (tarjeta["frase"], tarjeta["destino"]) == ("Presupuesto en borrador", "costeo")
 
 
+def test_si_las_piezas_cambiaron_despues_de_anidar_falta_volver_a_anidar(cliente, tmp_path):
+    """Las chapas del anidado vencido no van en la tarjeta, porque no se
+    cobran; la miniatura lo sigue pintando (A17)."""
+    trabajo, _grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+    assert cliente.patch(f"/piezas/{pieza['id']}", json={"cantidad": 2}).status_code == 200
+
+    tarjeta = cliente.get("/tarjetas").json()[0]
+
+    assert (tarjeta["pasos"]["anidado"], tarjeta["frase"], tarjeta["destino"]) == (
+        "pendiente", "Falta volver a anidar G1", "anidado")
+    assert tarjeta["chapas"] == []
+    assert PALETA_CHAPAS[0] in cliente.get(f"/trabajos/{trabajo['id']}/miniatura").text
+
+
 def test_un_trabajo_sin_piezas(cliente):
     cliente.post("/trabajos", json={"nombre": "Vacío"})
 

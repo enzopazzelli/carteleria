@@ -78,6 +78,8 @@ class EjecucionLeer(BaseModel):
     #: `error_completo` los junta (A9).
     error: ErrorLeer | None = Field(default=None, validation_alias=AliasChoices("error_completo", "error"))
     es_definitiva: bool
+    #: Las piezas de su grupo cambiaron después de este anidado (A17): no se cobra.
+    vencido: bool = False
     creado_en: datetime
     actualizado_en: datetime
     #: Mientras corre (A7): lo que anotó la corrida en la memoria del
