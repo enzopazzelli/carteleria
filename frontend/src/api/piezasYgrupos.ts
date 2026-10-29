@@ -34,6 +34,18 @@ export interface GrupoDeCorte {
   parametros_usados: ParametrosCorteOverride | null;
 }
 
+/** Una pieza a la que se le ofrece «Seccionar» (A17): no entra entera en
+ * ninguna chapa del catálogo, o no entra en la de su grupo. Lo decide el
+ * servidor, con su forma, márgenes y kerf. */
+export interface ASeccionar {
+  pieza_id: number;
+  motivo: "ninguna" | "grupo";
+}
+
+export function listarASeccionar(trabajoId: number): Promise<ASeccionar[]> {
+  return apiGet<ASeccionar[]>(`/trabajos/${trabajoId}/a-seccionar`);
+}
+
 export function listarPiezas(trabajoId: number): Promise<Pieza[]> {
   return apiGet<Pieza[]>(`/trabajos/${trabajoId}/piezas`);
 }
@@ -142,6 +154,7 @@ export interface OpcionFormato {
   formato_id: number;
   formato_descripcion: string;
   material_nombre: string;
+  espesor: string | null;
   planchas_usadas: number | null;
   aprovechamiento_pct: string | null;
   costo_total: string | null;
@@ -149,6 +162,8 @@ export interface OpcionFormato {
   recomendado: boolean;
   precio_simulado: boolean;
   piezas_a_seccionar: PiezaASeccionar[];
+  /** Piezas seccionadas que en este formato entran enteras: se compararon enteras (A17). */
+  enteras: PiezaASeccionar[];
   /** El formato no se pudo anidar (A9): no llegó a tiempo o falló el cálculo. Sin planchas ni costo. */
   error?: ErrorDelServidor | null;
 }
@@ -250,6 +265,8 @@ export interface PropuestaSeccionado extends GrillaSeccionado {
     ancho_mm: number;
     alto_mm: number;
     area_mm2: number;
+    /** Qué color de la paleta lleva: distinto del de cada tramo que lo toca (A17). */
+    color: number;
   }[];
   cortes: CorteSeccionado[];
   soldadura_mm: number;

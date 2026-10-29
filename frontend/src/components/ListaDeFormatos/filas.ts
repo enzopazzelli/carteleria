@@ -87,6 +87,13 @@ export function medidaDeRetazo(texto: string): string | null {
   return valor > 0 && valor <= MEDIDA_MAXIMA_DE_RETAZO_MM ? limpio : null;
 }
 
+/** Tildar o destildar una fila. Para comparar se tildan varias; con
+ * `unaSola` (el panel de seccionar, A17), tildar otra deja solo esa. */
+export function tildarUna(tildados: number[], id: number, tildar: boolean, unaSola: boolean): number[] {
+  if (!tildar) return tildados.filter((tildado) => tildado !== id);
+  return unaSola ? [id] : [...tildados, id];
+}
+
 /** «Seleccionar todas»: suma o saca solo las filas a la vista, sin tocar lo
  * tildado que el filtro esconde. */
 export function tildarVisibles(tildados: number[], visibles: Fila[], tildar: boolean): number[] {

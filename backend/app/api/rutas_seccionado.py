@@ -6,6 +6,7 @@ formato, y se guardan los tramos.
 """
 from __future__ import annotations
 
+import math
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,6 +14,7 @@ from shapely.geometry import Polygon
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import config
 from ..modelos.catalogo import Formato
 from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza
 from ..services.nesting.geometria_material import poligono_material
@@ -23,6 +25,7 @@ from ..services.seccionado import (
     Grilla,
     Seccionado,
     celda_util,
+    colores_de_tramos,
     esquina_girada,
     mejor_grilla,
     seccionar_con_grilla,
@@ -30,9 +33,18 @@ from ..services.seccionado import (
 )
 from .anidado_en_curso import rechazar_si_hay_anidado_en_curso
 from .dependencias import obtener_sesion
-from .esquemas_seccionado import CorteLeer, PropuestaLeer, SeccionadoAplicar, SeccionadoPedido, TramoPropuesto
+from .esquemas_seccionado import (
+    ASeccionarLeer,
+    CorteLeer,
+    PropuestaLeer,
+    SeccionadoAplicar,
+    SeccionadoPedido,
+    TramoPropuesto,
+)
 from .esquemas_trabajos import PiezaLeer
 from .rutas_nesting import _parametros_de_corte
+from .rutas_trabajos import _trabajo_o_404
+from .traducir_errores import medida
 
 router = APIRouter(tags=["seccionado"])
 
@@ -85,7 +97,7 @@ def _celda(plancha: Plancha, params: ParametrosCorte) -> tuple[float, float]:
     if min(celda) <= 0:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            f"La chapa de {plancha.ancho_mm}×{plancha.alto_mm} no deja superficie útil: el margen, el kerf y la "
+            f"La chapa de {medida(plancha)} no deja superficie útil: el margen, el kerf y la "
             "separación ocupan todo el ancho o el alto. Elegí otra chapa.",
         )
     return celda
@@ -115,15 +127,56 @@ def _validar_que_no_entra(pieza: Pieza, plancha: Plancha, params: ParametrosCort
     contorno = [(float(x), float(y)) for x, y in pieza.contorno_mm]
     if not entra_en_la_chapa(contorno, plancha, params, giro_libre=True):
         return
-    medida = f"{plancha.ancho_mm}×{plancha.alto_mm}"
     if entra_en_la_chapa(contorno, plancha, params, giro_libre=False):
-        mensaje = f"«{pieza.id_origen}» entra entera en {medida}: no hace falta seccionarla."
+        mensaje = f"«{pieza.id_origen}» entra entera en {medida(plancha)}: no hace falta seccionarla."
     else:
         mensaje = (
-            f"«{pieza.id_origen}» entra entera en {medida} si se la gira: "
+            f"«{pieza.id_origen}» entra entera en {medida(plancha)} si se la gira: "
             "anidala con «Girar a cualquier ángulo» marcado. No hace falta seccionarla."
         )
     raise HTTPException(status.HTTP_400_BAD_REQUEST, mensaje)
+
+
+def _rechazar_antes_de_buscar(pieza: Pieza, plancha: Plancha, forma: Polygon, celda: tuple[float, float]) -> None:
+    """Antes de buscar (`mejor_grilla` prueba cientos de grillas), lo que
+    ya se sabe que no entra en el tope (`PAR-58`): el caso de un retazo
+    chico con una pieza de varios metros (A17).
+
+    - **Por área**, una cuenta que vale para cualquier grilla: cada tramo
+      entra en una celda, así que la pieza sale en al menos su área sobre
+      la de la celda. Si eso ya pasa el tope, ninguna grilla lo baja.
+    - **Con una sola grilla**, derecha y sin corrimiento: si da más del
+      doble del tope, se pide otra chapa sin esperar la búsqueda. Alcanza
+      a las formas de poca área que cruzan muchas celdas, como un marco."""
+    tope = config.TOPE_DE_TRAMOS
+    # Se descuenta un poco: un cociente exacto con ruido de punto flotante no
+    # tiene que sumar un tramo.
+    al_menos = math.ceil(forma.area / (celda[0] * celda[1]) - 1e-6)
+    if al_menos > tope:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Con la chapa de {medida(plancha)}, «{pieza.id_origen}» saldría en al menos {al_menos} tramos, "
+            f"y el tope es {tope}: elegí una chapa más grande.",
+        )
+    doble = 2 * tope
+    if len(seccionar_con_grilla(forma, celda, Grilla(0, 0, 0)).tramos) > doble:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Con la chapa de {medida(plancha)}, «{pieza.id_origen}» saldría en más de {doble} tramos: "
+            "elegí una chapa más grande.",
+        )
+
+
+def _dentro_del_tope(pieza: Pieza, plancha: Plancha, resultado: Seccionado) -> None:
+    """Una grilla con más tramos que el tope (`PAR-58`) no se propone ni se
+    aplica: la buscada, la fija (arrastre o ángulo a mano) y la que se aplica."""
+    tramos, tope = len(resultado.tramos), config.TOPE_DE_TRAMOS
+    if tramos > tope:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Con la chapa de {medida(plancha)}, «{pieza.id_origen}» saldría en {tramos} tramos, y el tope es {tope}: "
+            "elegí una chapa más grande.",
+        )
 
 
 def _a_lista(coordenadas) -> list[list[float]]:
@@ -132,7 +185,7 @@ def _a_lista(coordenadas) -> list[list[float]]:
 
 def _propuesta(resultado: Seccionado, celda: tuple[float, float]) -> PropuestaLeer:
     tramos = []
-    for tramo in resultado.tramos:
+    for tramo, color in zip(resultado.tramos, colores_de_tramos(resultado.tramos)):
         _, _, ancho, alto = tramo_orientado(tramo, resultado.grilla).bounds
         tramos.append(
             TramoPropuesto(
@@ -141,6 +194,7 @@ def _propuesta(resultado: Seccionado, celda: tuple[float, float]) -> PropuestaLe
                 ancho_mm=round(ancho, 3),
                 alto_mm=round(alto, 3),
                 area_mm2=round(tramo.area, 3),
+                color=color,
             )
         )
     return PropuestaLeer(
@@ -153,6 +207,60 @@ def _propuesta(resultado: Seccionado, celda: tuple[float, float]) -> PropuestaLe
         cortes=[CorteLeer(puntos=_a_lista(corte.coords), largo_mm=round(corte.length, 3)) for corte in resultado.cortes],
         soldadura_mm=round(resultado.soldadura_mm, 3),
     )
+
+
+def _entra_en(contorno: list[tuple[float, float]], formato: Formato, grupo: GrupoDeCorte | None) -> bool | None:
+    """Si la forma entra entera en esa chapa, con los parámetros que valdrían
+    para su grupo, o `None` si la chapa no tiene parámetros."""
+    try:
+        params = _parametros_de_corte(grupo, formato.material)
+    except ValueError:
+        return None
+    return entra_en_la_chapa(contorno, Plancha(formato.ancho_mm, formato.alto_mm), params, giro_libre=True)
+
+
+def _motivo_para_seccionar(sesion: Session, pieza: Pieza, catalogo: list[Formato]) -> str | None:
+    """«grupo», «ninguna» o `None` (A17). Si entra en la chapa de su grupo,
+    entra en alguna del catálogo y no hace falta mirar las demás."""
+    contorno = [(float(x), float(y)) for x, y in pieza.contorno_mm]
+    if len(contorno) < 3:
+        return None
+    grupo = pieza.grupo
+    chapa_del_grupo = sesion.get(Formato, grupo.formato_id) if grupo is not None and grupo.formato_id else None
+    entra_en_la_del_grupo = _entra_en(contorno, chapa_del_grupo, grupo) if chapa_del_grupo is not None else None
+    if entra_en_la_del_grupo:
+        return None
+    # De la más grande a la más chica: se corta en la primera donde entra.
+    usables = 0
+    for formato in catalogo:
+        entra = _entra_en(contorno, formato, grupo)
+        if entra is None:
+            continue
+        if entra:
+            return "grupo" if entra_en_la_del_grupo is False else None
+        usables += 1
+    return "ninguna" if usables else None
+
+
+@router.get("/trabajos/{trabajo_id}/a-seccionar", response_model=list[ASeccionarLeer])
+def piezas_a_seccionar(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -> list[ASeccionarLeer]:
+    """Las piezas a las que la pantalla les ofrece «Seccionar», con la misma
+    regla que el anidado y que `_validar_que_no_entra`: su forma, giro
+    libre, márgenes y kerf (A17). Antes lo calculaba la pantalla con la
+    caja de la pieza, y una casi del tamaño de la chapa no mostraba el
+    botón. Se miran las que no están descartadas ni son tramos."""
+    _trabajo_o_404(sesion, trabajo_id)
+    piezas = sesion.execute(
+        select(Pieza)
+        .where(Pieza.trabajo_id == trabajo_id, Pieza.descartada.is_(False), Pieza.seccionada_de_id.is_(None))
+        .order_by(Pieza.id)
+    ).scalars()
+    catalogo = sorted(sesion.execute(select(Formato)).scalars(), key=lambda f: f.ancho_mm * f.alto_mm, reverse=True)
+    return [
+        ASeccionarLeer(pieza_id=pieza.id, motivo=motivo)
+        for pieza in piezas
+        if (motivo := _motivo_para_seccionar(sesion, pieza, catalogo)) is not None
+    ]
 
 
 @router.post("/piezas/{pieza_id}/seccionado/propuesta", response_model=PropuestaLeer)
@@ -170,10 +278,12 @@ def proponer_seccionado(
     celda = _celda(plancha, params)
     forma = _forma(pieza)
     if datos.angulo_grados is None:
+        _rechazar_antes_de_buscar(pieza, plancha, forma, celda)
         resultado = mejor_grilla(forma, celda)
     else:
         grilla = Grilla(datos.angulo_grados, datos.desplazamiento_x_mm, datos.desplazamiento_y_mm)
         resultado = seccionar_con_grilla(forma, celda, grilla)
+    _dentro_del_tope(pieza, plancha, resultado)
     return _propuesta(resultado, celda)
 
 
@@ -291,6 +401,7 @@ def aplicar_seccionado(
     celda = _celda(plancha, params)
     grilla = Grilla(datos.angulo_grados, datos.desplazamiento_x_mm, datos.desplazamiento_y_mm)
     resultado = seccionar_con_grilla(_forma(pieza), celda, grilla)
+    _dentro_del_tope(pieza, plancha, resultado)
     _borrar_tramos(sesion, pieza)
     tramos = [_tramo_orm(pieza, tramo, grilla, n) for n, tramo in enumerate(_en_orden(resultado.tramos), start=1)]
     sesion.add_all(tramos)

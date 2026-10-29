@@ -16,7 +16,7 @@ import { cancelarComparacion } from "../../api/piezasYgrupos";
 import Banner from "../../components/Banner";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { debeRetomar, delGrupo, seEsfumo } from "./comparacionEnCurso";
-import { ordenarFilas, unicosPorMensaje } from "./filasComparacion";
+import { agruparAvisos, avisoConSusChapas, avisosDeEnteras, materialConEspesor, ordenarFilas } from "./filasComparacion";
 import type { OpcionFormato } from "../../api/piezasYgrupos";
 import { ApiError } from "../../api/client";
 import ListaDeFormatos from "../../components/ListaDeFormatos/ListaDeFormatos";
@@ -24,6 +24,19 @@ import Mensaje from "../../components/Mensaje/Mensaje";
 import ConDisenioAlCostado from "../../components/Disenio/ConDisenioAlCostado";
 import PiezaNombrada from "../../components/PiezaNombrada";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
+
+/** La medida de la chapa y, si alguna pieza seccionada entra entera en
+ * ella, el aviso de que para usarla hay que deshacer el seccionado (A17). */
+function CeldaFormato({ opcion }: { opcion: OpcionFormato }) {
+  return (
+    <td>
+      {opcion.formato_descripcion}
+      {avisosDeEnteras(opcion).map((aviso) => (
+        <span key={aviso} className="block text-xs text-conflict">{aviso}</span>
+      ))}
+    </td>
+  );
+}
 
 /** Con el diseño fijo al costado: las piezas nombradas se iluminan en él (A14). */
 export default function GruposTab() {
@@ -370,7 +383,7 @@ function GruposDelTrabajo() {
                   </label>
                 </>}
               </fieldset>
-              <p className="text-sm mb-3">Se usan los parámetros de corte de cada material. La comparación no guarda un plano; luego ejecutá el mismo motor en Anidado.</p>
+              <p className="text-sm mb-3">Se usan los parámetros de corte del grupo si los tiene; si no, los de cada material. La comparación no guarda un plano; luego ejecutá el mismo motor en Anidado.</p>
               {motor === "sparrow" && <p className="text-sm mb-3">Calcula siluetas reales. Los formatos se procesan uno por uno{candidatos.length > 0 ? `; puede demorar hasta ${candidatos.length * limite} segundos más la validación de geometría` : ""}.</p>}
               {cargando && <p className="text-sm mb-3">Cargando materiales y formatos…</p>}
               {!cargando && !errorCatalogo && formatos.length === 0 && <p className="text-sm mb-3">No hay formatos en el catálogo.</p>}
@@ -407,8 +420,14 @@ function GruposDelTrabajo() {
 
               {resultado && (
                 <div>
-                {unicosPorMensaje(resultado.flatMap((opcion) => opcion.advertencias ?? [])).map((aviso) => (
-                  <Mensaje key={aviso.mensaje} variante="aviso" que={aviso} trabajoId={id} />
+                {/* Por chapa: el mismo texto con otras piezas es otro aviso (A17). */}
+                {agruparAvisos(resultado).map((grupo) => (
+                  <Mensaje
+                    key={`${grupo.aviso.mensaje}|${grupo.formatos.join(",")}`}
+                    variante="aviso"
+                    que={avisoConSusChapas(grupo)}
+                    trabajoId={id}
+                  />
                 ))}
                 <table className="w-full text-sm mt-2">
                   <thead>
@@ -427,16 +446,16 @@ function GruposDelTrabajo() {
                     {/* Las que no se anidaron o hay que seccionar, al final: no tienen números para comparar. */}
                     {ordenarFilas(resultado).map((opcion) => opcion.error ? (
                       <tr key={opcion.formato_id} className="border-b border-line text-ink/70">
-                        <td>{opcion.material_nombre}</td>
+                        <td>{materialConEspesor(opcion)}</td>
                         <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
-                        <td>{opcion.formato_descripcion}</td>
+                        <CeldaFormato opcion={opcion} />
                         <td colSpan={5}><Mensaje variante="error" que={opcion.error} trabajoId={id} /></td>
                       </tr>
                     ) : opcion.piezas_a_seccionar.length > 0 ? (
                       <tr key={opcion.formato_id} className="border-b border-line text-ink/70">
-                        <td>{opcion.material_nombre}</td>
+                        <td>{materialConEspesor(opcion)}</td>
                         <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
-                        <td>{opcion.formato_descripcion}</td>
+                        <CeldaFormato opcion={opcion} />
                         <td colSpan={5}>
                           {/* El seccionado se hace en Piezas: el enlace lleva esas piezas y esta chapa. */}
                           <Link
@@ -464,9 +483,9 @@ function GruposDelTrabajo() {
                         key={opcion.formato_id}
                         className={`border-b border-line ${opcion.recomendado ? "bg-bronze/10" : ""}`}
                       >
-                        <td>{opcion.material_nombre}</td>
+                        <td>{materialConEspesor(opcion)}</td>
                         <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
-                        <td>{opcion.formato_descripcion}</td>
+                        <CeldaFormato opcion={opcion} />
                         <td className="font-mono">{opcion.planchas_usadas}</td>
                         <td className="font-mono">{Number(opcion.area_total_m2).toFixed(3)} m²{opcion.recomendado && <span className="block text-bronze text-xs">Menor consumo</span>}</td>
                         <td className="font-mono">{Number(opcion.aprovechamiento_pct).toFixed(1)}%</td>

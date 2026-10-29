@@ -52,12 +52,21 @@ export function useTodosLosFormatos() {
 }
 
 /** Un retazo nuevo aparece en la lista de su material. */
+/** Un retazo nuevo o quitado cambia el catálogo, y con él qué hay que
+ * seccionar en cualquier trabajo (A17). */
+function alCambiarLosRetazos(queryClient: ReturnType<typeof useQueryClient>, materialId: number) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["formatos", materialId] }),
+    queryClient.invalidateQueries({ queryKey: ["a-seccionar"] }),
+  ]);
+}
+
 export function useCrearRetazo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ formatoId, anchoMm, altoMm }: { formatoId: number; anchoMm: string; altoMm: string; materialId: number }) =>
       crearRetazo(formatoId, anchoMm, altoMm),
-    onSuccess: (_retazo, { materialId }) => queryClient.invalidateQueries({ queryKey: ["formatos", materialId] }),
+    onSuccess: (_retazo, { materialId }) => alCambiarLosRetazos(queryClient, materialId),
   });
 }
 
@@ -65,6 +74,6 @@ export function useQuitarFormato() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ formatoId }: { formatoId: number; materialId: number }) => quitarFormato(formatoId),
-    onSuccess: (_nada, { materialId }) => queryClient.invalidateQueries({ queryKey: ["formatos", materialId] }),
+    onSuccess: (_nada, { materialId }) => alCambiarLosRetazos(queryClient, materialId),
   });
 }

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
   actualizarParametrosGrupo,
   asignarFormatoAGrupo,
@@ -13,6 +13,15 @@ import {
 } from "../api/piezasYgrupos";
 import { intervaloDeConsulta } from "../routes/TrabajoWorkspace/comparacionEnCurso";
 
+/** Un cambio en los grupos o en qué grupo va cada pieza cambia también qué
+ * hay que seccionar: la chapa y los parámetros con que se mira (A17). */
+function refrescar(queryClient: QueryClient, trabajoId: number, clave: "grupos" | "piezas") {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: [clave, trabajoId] }),
+    queryClient.invalidateQueries({ queryKey: ["a-seccionar", trabajoId] }),
+  ]);
+}
+
 export function useGrupos(trabajoId: number) {
   return useQuery({ queryKey: ["grupos", trabajoId], queryFn: () => listarGrupos(trabajoId) });
 }
@@ -21,7 +30,7 @@ export function useCrearGrupo(trabajoId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (nombre: string) => crearGrupo(trabajoId, nombre),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["grupos", trabajoId] }),
+    onSuccess: () => refrescar(queryClient, trabajoId, "grupos"),
   });
 }
 
@@ -30,7 +39,7 @@ export function useAsignarPiezaAGrupo(trabajoId: number) {
   return useMutation({
     mutationFn: ({ piezaId, grupoId }: { piezaId: number; grupoId: number | null }) =>
       asignarPiezaAGrupo(piezaId, grupoId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
+    onSuccess: () => refrescar(queryClient, trabajoId, "piezas"),
   });
 }
 
@@ -39,7 +48,7 @@ export function useAsignarFormatoAGrupo(trabajoId: number) {
   return useMutation({
     mutationFn: ({ grupoId, formatoId }: { grupoId: number; formatoId: number }) =>
       asignarFormatoAGrupo(grupoId, formatoId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["grupos", trabajoId] }),
+    onSuccess: () => refrescar(queryClient, trabajoId, "grupos"),
   });
 }
 
@@ -48,7 +57,7 @@ export function useActualizarParametrosGrupo(trabajoId: number) {
   return useMutation({
     mutationFn: ({ grupoId, parametros }: { grupoId: number; parametros: ParametrosCorteOverride | null }) =>
       actualizarParametrosGrupo(grupoId, parametros),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["grupos", trabajoId] }),
+    onSuccess: () => refrescar(queryClient, trabajoId, "grupos"),
   });
 }
 
