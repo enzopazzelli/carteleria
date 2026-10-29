@@ -11,7 +11,7 @@ import SeccionarPanel from "../../components/Seccionado/SeccionarPanel";
 import LecturaPanel from "../../components/LecturaDxf/LecturaPanel";
 import { esLaLecturaDe } from "../../components/LecturaDxf/dibujo";
 import { originalesASeccionar } from "../../components/Seccionado/geometria";
-import { separarDescartadas } from "./descartadas";
+import { separarDescartadas, textoDelPliegue } from "./descartadas";
 import { crearTurnos } from "../../components/Seccionado/turnos";
 import type { Correcciones, LecturaDxf, Pieza } from "../../api/piezasYgrupos";
 import { escalaParaCargar } from "./cargaDxf";
@@ -202,7 +202,7 @@ function PiezasDelTrabajo() {
   const chapaPedida = formatos.find((f) => f.id === formatoPedido) ?? null;
   const formatoDelGrupo = (pieza: Pieza) => grupos?.find((g) => g.id === pieza.grupo_id)?.formato_id ?? null;
   // Las descartadas, plegadas debajo de la tabla (A17).
-  const { aLaVista, plegadas } = separarDescartadas(visibles);
+  const { aLaVista, plegadas } = separarDescartadas(visibles, revisar);
   const enLaTabla = verDescartadas ? visibles : aLaVista;
   // Cada tramo, debajo de la pieza de la que salió.
   const ordenadas = [
@@ -415,8 +415,13 @@ function PiezasDelTrabajo() {
         </table>
       )}
       {plegadas.length > 0 && (
-        <button type="button" className="underline text-sm mt-3" onClick={() => setVerDescartadas((ver) => !ver)}>
-          {verDescartadas ? "Ocultar las descartadas" : `Mostrar ${plegadas.length} descartadas`}
+        <button
+          type="button"
+          className="underline text-sm mt-3"
+          aria-expanded={verDescartadas}
+          onClick={() => setVerDescartadas((ver) => !ver)}
+        >
+          {textoDelPliegue(plegadas.length, verDescartadas)}
         </button>
       )}
     </div>

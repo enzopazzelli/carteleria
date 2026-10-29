@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Pieza } from "../../api/piezasYgrupos";
-import { separarDescartadas } from "./descartadas";
+import { separarDescartadas, textoDelPliegue } from "./descartadas";
 
 function pieza(id: number, extra: Partial<Pieza> = {}): Pieza {
   return {
@@ -23,5 +23,29 @@ describe("separarDescartadas", () => {
 
     expect(aLaVista.map((p) => p.id)).toEqual([1, 3, 4]);
     expect(plegadas.map((p) => p.id)).toEqual([2]);
+  });
+
+  // Desde el aviso «estas piezas impiden el cálculo», el filtro deja solo
+  // esas: una ya descartada se escondía en el pliegue (revisión de la tanda 6).
+  it("una descartada que hay que revisar queda a la vista", () => {
+    const aRevisar = pieza(1, { descartada: true });
+    const otra = pieza(2, { descartada: true });
+
+    const { aLaVista, plegadas } = separarDescartadas([aRevisar, otra], new Set([1]));
+
+    expect(aLaVista.map((p) => p.id)).toEqual([1]);
+    expect(plegadas.map((p) => p.id)).toEqual([2]);
+  });
+});
+
+describe("textoDelPliegue", () => {
+  it("con una sola descartada habla en singular", () => {
+    expect(textoDelPliegue(1, false)).toBe("Mostrar 1 descartada");
+    expect(textoDelPliegue(1, true)).toBe("Ocultar la descartada");
+  });
+
+  it("con varias, en plural", () => {
+    expect(textoDelPliegue(34, false)).toBe("Mostrar 34 descartadas");
+    expect(textoDelPliegue(34, true)).toBe("Ocultar las descartadas");
   });
 });
