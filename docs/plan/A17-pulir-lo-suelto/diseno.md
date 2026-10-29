@@ -346,7 +346,13 @@ Rama `feat/a17-3-chapas`.
   - **«Deshacer» volvía atrás un cambio hecho mientras se reacomodaba.** El pase leía el anidado antes de Sparrow; un giro en otra chapa durante esos segundos se perdía al deshacer, y uno en la chapa de destino lo pisaba el pase. Ahora, cuando vuelve Sparrow, se compara con la base: si cambió, «El anidado cambió mientras se reacomodaba la chapa N: volvé a pasar la pieza.» y no se aplica nada. En la pantalla, mientras se pasa una pieza no se abre una chapa.
   - **Al arrastrar, la pieza saltaba para centrarse en el puntero:** agarrada del borde, una letra grande se corría unos 30 cm apenas se la movía. Ahora se corre lo que va el puntero.
   - Y lo chico, también con prueba: si por área ya no entra, el aviso sale sin esperar a Sparrow; un error del cálculo que no es el tiempo da «No entra… ni reacomodándola» y queda en el registro con el anidado y la chapa; «Deshacer» guarda cómo quedó el anidado y solo se aplica si la base sigue igual (un anidado nuevo que reusa el número de uno borrado no lo hereda); un pase que falla no saca el «Deshacer»; el aviso del presupuesto se va si se vuelve a la cantidad de chapas de antes; los avisos en rojo van al costado del editor; cuatro pruebas que faltaban.
-  - **Queda para las mediciones de la tanda 2** (decisión de Enzo): pasar en Complejo tres piezas que no entran en lo libre y anotar cuánto tarda cada una, para confirmar `PAR-57`.
+  - **El recorrido de los arreglos**, en Chrome sin ventana sobre una copia de la base con Complejo anidado ahí (60 s, 8 chapas):
+    - una letra agarrada a 2 px de su borde se corrió 30 × 20 px con el puntero, y al soltarla quedó donde se la veía (0,00 px);
+    - una pieza corrida fuera de la chapa dio su aviso en rojo al costado del editor, que no bajó (604 → 604);
+    - mientras se pasaba una pieza, el doble clic no abrió otra chapa y «Pasando la pieza…» siguió a la vista;
+    - «trabajo-1-16» a la chapa 3: «Se reacomodó…», en 8,0 s; después, a la chapa 2: «No entra… ni reacomodándola», y el «Deshacer» siguió; deshacer dejó todas las colocaciones como antes del reacomodo.
+  - **Las pruebas completas, después de los arreglos:** el servidor, 1013 de 1013; la pantalla, 245 de 245 y sin errores de tipos.
+  - **Queda para las mediciones de la tanda 2** (decisión de Enzo): pasar en Complejo tres piezas que no entran en lo libre y anotar cuánto tarda cada una, para confirmar `PAR-57`. Un adelanto del recorrido: cada pase que Sparrow no logra espera los 30 s enteros (diez intentos, de 30,2 a 33,6 s); el que salió tardó 8,0 s.
   - **Queda anotado:** la miniatura de la chapa baja la imagen dos veces la primera vez; `separacion_extra_mm` de `validacion_manual.py` lo usaba solo el visor borrado.
 - **Las pruebas completas:** el servidor, 1004 de 1004; la pantalla, 238 de 238 y sin errores de tipos.
 
