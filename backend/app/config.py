@@ -67,3 +67,8 @@ RETAZO_MINIMO_MM = int(os.getenv("CARTELERIA_RETAZO_MINIMO_MM", "250"))
 #: `PAR-57` (`docs/REGISTRO.md`): cuánto puede tardar Sparrow en reacomodar
 #: la chapa de destino al pasarle una pieza (A17). La pantalla espera.
 TIEMPO_PARA_REACOMODAR_S = int(os.getenv("CARTELERIA_TIEMPO_REACOMODAR_S", "30"))
+
+#: `PAR-58` (`docs/REGISTRO.md`): en cuántos tramos, como mucho, se puede
+#: seccionar una pieza con una chapa (A17). Es el caso de un retazo de
+#: 300 × 300 con una pieza de 10 m: con más, se pide una chapa más grande.
+TOPE_DE_TRAMOS = int(os.getenv("CARTELERIA_TOPE_TRAMOS", "50"))

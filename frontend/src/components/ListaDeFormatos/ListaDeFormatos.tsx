@@ -9,6 +9,7 @@ import {
   medida,
   medidaDeRetazo,
   precioPorM2,
+  tildarUna,
   tildarVisibles,
 } from "./filas";
 import Mensaje from "../Mensaje/Mensaje";
@@ -20,11 +21,17 @@ interface ListaDeFormatosProps {
   tildados: number[];
   alCambiar: (ids: number[]) => void;
   deshabilitada: boolean;
+  /** Para elegir una sola chapa (el panel de seccionar, A17): tildar otra
+   * destilda la anterior, y no está «Seleccionar todas». */
+  unaSola?: boolean;
 }
 
 /** La lista de formatos para comparar (A8): una tabla con filtros por
- * familia y buscador, y retazos de medida libre. */
-export default function ListaDeFormatos({ formatos, materiales, tildados, alCambiar, deshabilitada }: ListaDeFormatosProps) {
+ * familia y buscador, y retazos de medida libre. Con `unaSola`, para elegir
+ * una chapa (A17). */
+export default function ListaDeFormatos({
+  formatos, materiales, tildados, alCambiar, deshabilitada, unaSola = false,
+}: ListaDeFormatosProps) {
   const [familia, setFamilia] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [retazoDe, setRetazoDe] = useState<number | null>(null);
@@ -53,8 +60,8 @@ export default function ListaDeFormatos({ formatos, materiales, tildados, alCamb
     }
     try {
       const nuevo = await crear.mutateAsync({ formatoId: formato.id, anchoMm, altoMm, materialId: formato.material_id });
-      // Se lo crea para compararlo: queda tildado.
-      alCambiar([...tildados, nuevo.id]);
+      // Se lo crea para usarlo: queda tildado (con `unaSola`, solo él).
+      alCambiar(tildarUna(tildados, nuevo.id, true, unaSola));
       setRetazoDe(null);
       setAncho("");
       setAlto("");
@@ -68,7 +75,7 @@ export default function ListaDeFormatos({ formatos, materiales, tildados, alCamb
     setError(null);
     try {
       await quitar.mutateAsync({ formatoId: formato.id, materialId: formato.material_id });
-      alCambiar(tildados.filter((id) => id !== formato.id));
+      alCambiar(tildarUna(tildados, formato.id, false, unaSola));
     } catch (e) {
       setError(falla(e, "No se pudo quitar el retazo."));
     }
@@ -100,16 +107,18 @@ export default function ListaDeFormatos({ formatos, materiales, tildados, alCamb
         <thead>
           <tr className="text-left border-b border-line">
             <th className="py-1">
-              <input
-                type="checkbox"
-                aria-label="Seleccionar todas las que se ven"
-                disabled={deshabilitada || visibles.length === 0}
-                checked={todasVisiblesTildadas}
-                ref={(nodo) => {
-                  if (nodo) nodo.indeterminate = algunaVisibleTildada && !todasVisiblesTildadas;
-                }}
-                onChange={(e) => alCambiar(tildarVisibles(tildados, visibles, e.target.checked))}
-              />
+              {!unaSola && (
+                <input
+                  type="checkbox"
+                  aria-label="Seleccionar todas las que se ven"
+                  disabled={deshabilitada || visibles.length === 0}
+                  checked={todasVisiblesTildadas}
+                  ref={(nodo) => {
+                    if (nodo) nodo.indeterminate = algunaVisibleTildada && !todasVisiblesTildadas;
+                  }}
+                  onChange={(e) => alCambiar(tildarVisibles(tildados, visibles, e.target.checked))}
+                />
+              )}
             </th>
             <th>Familia</th>
             <th>Material</th>
@@ -125,12 +134,10 @@ export default function ListaDeFormatos({ formatos, materiales, tildados, alCamb
               <td className="py-1">
                 <input
                   type="checkbox"
-                  aria-label={`Comparar ${material?.nombre ?? ""} ${material?.espesor ?? ""} ${medida(formato)}`}
+                  aria-label={`${unaSola ? "Elegir" : "Comparar"} ${material?.nombre ?? ""} ${material?.espesor ?? ""} ${medida(formato)}`}
                   disabled={deshabilitada}
                   checked={tildados.includes(formato.id)}
-                  onChange={(e) =>
-                    alCambiar(e.target.checked ? [...tildados, formato.id] : tildados.filter((id) => id !== formato.id))
-                  }
+                  onChange={(e) => alCambiar(tildarUna(tildados, formato.id, e.target.checked, unaSola))}
                 />
               </td>
               <td>{material?.familia ?? "Otros"}</td>

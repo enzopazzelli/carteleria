@@ -13,6 +13,7 @@ from shapely.geometry import Polygon
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import config
 from ..modelos.catalogo import Formato
 from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza
 from ..services.nesting.geometria_material import poligono_material
@@ -135,6 +136,44 @@ def _validar_que_no_entra(pieza: Pieza, plancha: Plancha, params: ParametrosCort
     raise HTTPException(status.HTTP_400_BAD_REQUEST, mensaje)
 
 
+def _medida(plancha: Plancha) -> str:
+    def en_mm(valor) -> str:
+        return format(Decimal(str(valor)).normalize(), "f").replace(".", ",")
+
+    return f"{en_mm(plancha.ancho_mm)}×{en_mm(plancha.alto_mm)}"
+
+
+def _ni_el_doble_del_tope(pieza: Pieza, plancha: Plancha, forma: Polygon, celda: tuple[float, float]) -> None:
+    """Antes de buscar (`mejor_grilla` prueba cientos de grillas): si una
+    sola grilla, derecha y sin corrimiento, ya da más del doble del tope
+    (`PAR-58`), la chapa no sirve y se pide otra sin esperar la búsqueda.
+    Es el caso de un retazo chico con una pieza de varios metros (A17).
+
+    Antes de esa grilla, una cuenta que vale para todas: cada tramo entra en
+    una celda, así que la pieza sale en al menos su área sobre la de la
+    celda. Con un retazo muy chico, la grilla sola tardaba casi un minuto."""
+    doble = 2 * config.TOPE_DE_TRAMOS
+    al_menos = forma.area / (celda[0] * celda[1])
+    if al_menos > doble or len(seccionar_con_grilla(forma, celda, Grilla(0, 0, 0)).tramos) > doble:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Con la chapa de {_medida(plancha)}, «{pieza.id_origen}» saldría en más de {doble} tramos: "
+            "elegí una chapa más grande.",
+        )
+
+
+def _dentro_del_tope(pieza: Pieza, plancha: Plancha, resultado: Seccionado) -> None:
+    """Una grilla con más tramos que el tope (`PAR-58`) no se propone ni se
+    aplica: la buscada, la fija (arrastre o ángulo a mano) y la que se aplica."""
+    tramos, tope = len(resultado.tramos), config.TOPE_DE_TRAMOS
+    if tramos > tope:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Con la chapa de {_medida(plancha)}, «{pieza.id_origen}» saldría en {tramos} tramos, y el tope es {tope}: "
+            "elegí una chapa más grande.",
+        )
+
+
 def _a_lista(coordenadas) -> list[list[float]]:
     return [[round(x, 3), round(y, 3)] for x, y in coordenadas]
 
@@ -234,10 +273,12 @@ def proponer_seccionado(
     celda = _celda(plancha, params)
     forma = _forma(pieza)
     if datos.angulo_grados is None:
+        _ni_el_doble_del_tope(pieza, plancha, forma, celda)
         resultado = mejor_grilla(forma, celda)
     else:
         grilla = Grilla(datos.angulo_grados, datos.desplazamiento_x_mm, datos.desplazamiento_y_mm)
         resultado = seccionar_con_grilla(forma, celda, grilla)
+    _dentro_del_tope(pieza, plancha, resultado)
     return _propuesta(resultado, celda)
 
 
@@ -355,6 +396,7 @@ def aplicar_seccionado(
     celda = _celda(plancha, params)
     grilla = Grilla(datos.angulo_grados, datos.desplazamiento_x_mm, datos.desplazamiento_y_mm)
     resultado = seccionar_con_grilla(_forma(pieza), celda, grilla)
+    _dentro_del_tope(pieza, plancha, resultado)
     _borrar_tramos(sesion, pieza)
     tramos = [_tramo_orm(pieza, tramo, grilla, n) for n, tramo in enumerate(_en_orden(resultado.tramos), start=1)]
     sesion.add_all(tramos)

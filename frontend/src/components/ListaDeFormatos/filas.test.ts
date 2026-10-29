@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { Formato, Material } from "../../api/catalogo";
-import { familiasDe, filasDeFormatos, filtrarFilas, medida, medidaDeRetazo, precioPorM2, tildarVisibles } from "./filas";
+import { familiasDe, filasDeFormatos, filtrarFilas, medida, medidaDeRetazo, precioPorM2, tildarUna, tildarVisibles } from "./filas";
+
+describe("tildarUna", () => {
+  it("para comparar, suma o saca la tildada sin tocar las demás", () => {
+    expect(tildarUna([10, 11], 12, true, false)).toEqual([10, 11, 12]);
+    expect(tildarUna([10, 11], 10, false, false)).toEqual([11]);
+  });
+
+  it("con una sola (el panel de seccionar, A17), tildar otra deja solo esa", () => {
+    expect(tildarUna([10], 12, true, true)).toEqual([12]);
+    expect(tildarUna([12], 12, false, true)).toEqual([]);
+  });
+});
 
 const materiales: Material[] = [
   { id: 1, nombre: "CHAPA NEGRA", espesor: "cal. 22", familia: "Chapas" },

@@ -6,6 +6,7 @@ import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import { useAplicarSeccionado } from "../../hooks/usePiezas";
 import { desplazamientoEnGrilla, enMmEnteros, grillaGuardada, leerAngulo, lineasDeGrilla } from "./geometria";
 import { crearTurnos } from "./turnos";
+import ListaDeFormatos from "../ListaDeFormatos/ListaDeFormatos";
 import Mensaje from "../Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../Mensaje/contenido";
 
@@ -58,6 +59,8 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
   const punto = (x: number, y: number) => `${(x * escala).toFixed(1)},${((alto - y) * escala).toFixed(1)}`;
   const anillo = (puntos: number[][]) => `M${puntos.map(([x, y]) => punto(x, y)).join(" L")} Z`;
   const original = [pieza.contorno_mm, ...pieza.agujeros_mm].map((a) => anillo(a.map(([x, y]) => [Number(x), Number(y)])));
+
+  const elegida = formatos.find((formato) => formato.id === formatoId) ?? null;
 
   function etiqueta(formato: Formato) {
     const material = materiales.find((m) => m.id === formato.material_id);
@@ -155,28 +158,27 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
 
   return (
     <div className="border border-line rounded p-3 my-2 bg-paper">
+      {/* La tabla con filtros y buscador de Grupos, para una sola chapa (A17):
+          la lista de todo el catálogo era larga de recorrer. */}
+      <p className="text-sm mb-1">Elegí la chapa:</p>
+      <ListaDeFormatos
+        formatos={formatos}
+        materiales={materiales}
+        tildados={formatoId === null ? [] : [formatoId]}
+        alCambiar={(ids) => {
+          turnos.anular();
+          setFormatoId(ids[0] ?? null);
+          setPropuesta(null);
+          setCalculando(false);
+          setBuscando(false);
+        }}
+        deshabilitada={false}
+        unaSola
+      />
       <div className="flex flex-wrap items-center gap-2 mb-2 text-sm">
-        <label>
-          Chapa{" "}
-          <select
-            className="border border-line rounded p-1"
-            value={formatoId ?? ""}
-            onChange={(e) => {
-              turnos.anular();
-              setFormatoId(e.target.value ? Number(e.target.value) : null);
-              setPropuesta(null);
-              setCalculando(false);
-              setBuscando(false);
-            }}
-          >
-            <option value="">Elegí un formato…</option>
-            {formatos.map((formato) => (
-              <option key={formato.id} value={formato.id}>
-                {etiqueta(formato)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <span>
+          Chapa: <strong>{elegida ? etiqueta(elegida) : "ninguna elegida"}</strong>
+        </span>
         <button
           className="bg-cut text-paper rounded px-3 py-1 disabled:opacity-50"
           disabled={formatoId === null || calculando}

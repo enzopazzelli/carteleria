@@ -593,3 +593,80 @@ def test_los_tramos_no_se_miran_para_seccionar(cliente, tmp_path):
     assert _aplicar(cliente, pieza["id"], formato["id"]).status_code == 201
 
     assert cliente.get(f"/trabajos/{trabajo['id']}/a-seccionar").json() == []
+
+
+# --- El tope de tramos (A17, tarea 22, `PAR-58`) -------------------------------
+
+
+def test_una_chapa_que_daria_mas_del_doble_del_tope_se_rechaza_sin_buscar(cliente, tmp_path, monkeypatch):
+    """Un retazo de 200 × 200 (celda de 173 con los parámetros del ayudante)
+    con una pieza de 10 m: una sola grilla ya da unos 170 tramos, más del
+    doble del tope de 50, y no se buscan cientos de grillas."""
+    from app.api import rutas_seccionado
+
+    _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=10000, alto=400)
+    retazo = cliente.post(
+        f"/materiales/{formato['material_id']}/formatos", json={"ancho_mm": "200", "alto_mm": "200"}
+    ).json()
+
+    def no_hace_falta(*argumentos, **opciones):
+        raise AssertionError("con más del doble del tope no se busca")
+
+    monkeypatch.setattr(rutas_seccionado, "mejor_grilla", no_hace_falta)
+
+    respuesta = _proponer(cliente, pieza["id"], formato_id=retazo["id"])
+
+    assert respuesta.status_code == 400, respuesta.text
+    assert mensaje_de(respuesta) == (
+        f"Con la chapa de 200×200, «{pieza['id_origen']}» saldría en más de 100 tramos: elegí una chapa más grande."
+    )
+
+
+@pytest.mark.parametrize("como", ["buscando", "con la grilla fija", "al aplicar"])
+def test_una_chapa_que_daria_mas_tramos_que_el_tope_se_rechaza(cliente, tmp_path, monkeypatch, como):
+    """Una franja de 2500 × 500 en la chapa de 1000 × 1000 sale en 3 tramos;
+    con el tope en 2, se rechaza al buscar, con la grilla fija (arrastre o
+    ángulo a mano) y al aplicar."""
+    from app import config
+
+    monkeypatch.setattr(config, "TOPE_DE_TRAMOS", 2)
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=2500, alto=500)
+    grilla = {"angulo_grados": 0, "desplazamiento_x_mm": 0, "desplazamiento_y_mm": 0}
+
+    if como == "buscando":
+        respuesta = _proponer(cliente, pieza["id"], formato_id=formato["id"])
+    elif como == "con la grilla fija":
+        respuesta = _proponer(cliente, pieza["id"], formato_id=formato["id"], **grilla)
+    else:
+        respuesta = cliente.post(f"/piezas/{pieza['id']}/seccionado", json={"formato_id": formato["id"], **grilla})
+
+    assert respuesta.status_code == 400, respuesta.text
+    assert mensaje_de(respuesta) == (
+        f"Con la chapa de 1000×1000, «{pieza['id_origen']}» saldría en 3 tramos, y el tope es 2: "
+        "elegí una chapa más grande."
+    )
+    assert len(_piezas(cliente, trabajo["id"])) == 1
+
+
+def test_un_retazo_muy_chico_se_rechaza_por_area_sin_calcular_ninguna_grilla(cliente, tmp_path, monkeypatch):
+    """Con un retazo de 50 × 50 y una pieza de 10 m, una sola grilla tarda
+    casi un minuto (unos 7800 pedacitos). Cada tramo entra en una celda: la
+    pieza sale en al menos su área sobre la de la celda, y eso ya pasa del
+    doble del tope."""
+    from app.api import rutas_seccionado
+
+    _trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=10000, alto=400)
+    retazo = cliente.post(
+        f"/materiales/{formato['material_id']}/formatos", json={"ancho_mm": "50", "alto_mm": "50"}
+    ).json()
+
+    def no_hace_falta(*argumentos, **opciones):
+        raise AssertionError("por área ya no entra: no se calcula ninguna grilla")
+
+    monkeypatch.setattr(rutas_seccionado, "seccionar_con_grilla", no_hace_falta)
+    monkeypatch.setattr(rutas_seccionado, "mejor_grilla", no_hace_falta)
+
+    respuesta = _proponer(cliente, pieza["id"], formato_id=retazo["id"])
+
+    assert respuesta.status_code == 400, respuesta.text
+    assert "saldría en más de 100 tramos" in mensaje_de(respuesta)
