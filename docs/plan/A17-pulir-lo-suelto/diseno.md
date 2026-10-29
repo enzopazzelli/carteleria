@@ -400,6 +400,38 @@ Rama `feat/a17-4-seccionar-y-comparar`. Antes de empezar se revisaron las tareas
   - el retazo de 100 × 100 creado desde el panel, que queda como única chapa elegida, y el aviso del tope en 0,1 s.
 - **Visto en el recorrido, es de antes:** al deshacer el seccionado, la pieza original no vuelve al grupo de sus tramos. Para que la comparación la vea, hay que ponerla en el grupo a mano.
 
+### 8.5 Tanda 5 — Mensajes y Anidado (2026-10-29)
+
+Rama `feat/a17-5-mensajes`.
+
+- **Un aviso cuando una pestaña no pudo cargar** (tarea 25). Debajo de la barra de arriba, en todas las pantallas: «No se pudo conectar con el servidor: revisá que esté prendido.», con «Reintentar», que dice «Reintentando…» mientras vuelve a pedir.
+  - Fuera del plan: no cuentan las consultas de una pestaña ya cerrada, ni las de las pantallas que ya muestran su error (Inicio y Trabajos). La comparación en curso de Grupos avisa sola solo cuando se perdió, y la falta de conexión la avisa el de arriba.
+- **Los mensajes con muchas piezas** (tarea 26): las cinco primeras y «y N más», en el texto y en las miniaturas; el botón muestra las demás.
+- **El historial de Anidado** (tarea 27).
+  - Un anidado con error tiene «Ver por qué», y se ve su error sin el resumen, que diría 0 planchas.
+  - Al volver a la pestaña se ven los avisos del anidado que muestra el resumen.
+  - Salió de la ayuda «Más búsqueda por chapa no da menos planchas».
+- **La comparación perdida dice por qué** (tarea 28): «la reemplazó una más nueva (#N)», con la de ahora aunque haya varias seguidas, o «el servidor se reinició».
+- **El arranque** (tarea 28 bis, de lo suelto de la tanda 1).
+  - **El respaldo que falla** da «No se pudo hacer el respaldo de la base antes de actualizarla: … La base no se tocó: liberá espacio y volvé a arrancar.» y queda en el registro. Se escribe con un nombre provisorio y se renombra al terminar, así una carpeta a medias nunca se toma por un respaldo.
+  - **La carpeta temporal** se vacía al arrancar con la base de verdad; lo que no se puede borrar queda y no corta lo demás.
+- **La revisión de la rama** (un revisor aparte): sin nada grave; tres cosas importantes, ya arregladas con su prueba.
+  - Dos pruebas viejas del arranque vaciaban la carpeta temporal de los datos con que se corrían, que sin la variable es la de la base real. Ahora cada prueba tiene la suya (`tests/conftest.py`).
+  - Con el servidor caído a mitad de una comparación no salía ningún aviso.
+  - Al volver a Anidado no se veían los avisos del anidado del resumen.
+  - Y lo chico: el 409 previsto del material usado de un anidado viejo no sale arriba; Grupos no repite el aviso del catálogo; el respaldo con nombre provisorio; la limpieza que sigue; «Reintentando…»; los avisos del historial que empiezan de cero; la ayuda de `leer_un_dxf.py`.
+  - **Queda anotado:**
+    - una página abierta desde antes de un reinicio podría leer «la reemplazó» en vez de «se reinició»;
+    - con el aviso de arriba, las pestañas de un trabajo muestran una barra de desplazamiento.
+- **El recorrido en Chrome sin ventana**, sobre una copia de la base con un anidado de Complejo en error que nombra ocho piezas:
+  - sin servidor, Piezas, Grupos, Anidado, Chapas y Costeo muestran el aviso una vez, con «Reintentar»; Inicio, sus dos avisos propios;
+  - al prender el servidor, «Reintentar» lo saca y vuelven las piezas;
+  - «Ver por qué» muestra el texto con cinco nombres y «y 3 más», cinco miniaturas y el botón, que muestra las ocho;
+  - en el parador, sin tocar ninguna fila, se ve «30 piezas van adentro de huecos de otras…» del anidado del resumen;
+  - con el servidor apagado a mitad de una comparación, Grupos muestra el aviso.
+- **Visto en el recorrido, es de antes:** si el servidor se corta a mitad de un anidado o de una comparación, el programa aparte de Sparrow sigue hasta su tiempo máximo. Ahora el arranque siguiente le vacía la carpeta y lo corta.
+- **Las pruebas completas, después de los arreglos:** el servidor, 1045 de 1045; la pantalla, 255 de 255 y sin errores de tipos.
+
 ## 9. Lo que decidí yo y conviene revisar
 
 - **El orden de las tandas.** Una rama por tanda, que se fusiona con el ok de Enzo en cada pausa.
