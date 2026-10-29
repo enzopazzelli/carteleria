@@ -86,12 +86,6 @@ export default function ChapaGrande({
         </a>
       </div>
 
-      {motivos.length > 0 && (
-        <div className="space-y-2 mb-3">
-          {motivos.map((motivo, i) => <Mensaje key={i} variante="aviso" que={motivo} trabajoId={trabajoId} />)}
-        </div>
-      )}
-
       {/* La fila está siempre: si apareciera al tocar una pieza, bajaría el editor (A17). */}
       <div className="flex items-center gap-2 mb-3 text-sm">
         <span className="text-ink/60">
@@ -109,20 +103,32 @@ export default function ChapaGrande({
         ))}
       </div>
 
-      <PlanoEditor
-        anchoPlanchaMm={anchoMm}
-        altoPlanchaMm={altoMm}
-        piezas={piezas}
-        colocaciones={deLaChapa}
-        onMover={alMover}
-        onRotar={alRotar}
-        colocacionesInvalidas={invalidas}
-        seleccionada={seleccionada}
-        onSeleccionar={setSeleccionada}
-        iluminada={iluminado.pieza}
-        onIluminar={iluminado.setPieza}
-        color={colorDeChapa(indice)}
-      />
+      {/* Los avisos de las piezas en rojo van al costado (o debajo, si no hay
+          lugar): arriba bajaban el editor justo después de soltar una (A17). */}
+      <div className="flex flex-wrap items-start gap-4">
+        {/* Sin achicarse: el arrastre cuenta los mm con la escala fija del editor. */}
+        <div className="shrink-0">
+          <PlanoEditor
+            anchoPlanchaMm={anchoMm}
+            altoPlanchaMm={altoMm}
+            piezas={piezas}
+            colocaciones={deLaChapa}
+            onMover={alMover}
+            onRotar={alRotar}
+            colocacionesInvalidas={invalidas}
+            seleccionada={seleccionada}
+            onSeleccionar={setSeleccionada}
+            iluminada={iluminado.pieza}
+            onIluminar={iluminado.setPieza}
+            color={colorDeChapa(indice)}
+          />
+        </div>
+        {motivos.length > 0 && (
+          <div className="flex-1 min-w-[16rem] space-y-2">
+            {motivos.map((motivo, i) => <Mensaje key={i} variante="aviso" que={motivo} trabajoId={trabajoId} />)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

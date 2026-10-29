@@ -5,7 +5,8 @@ import type { Caja } from "../caja";
  * con sus vecinas. Nunca más grande que `todo`, el cartel entero; cerca de un
  * borde se corre para no salirse. */
 export function encuadreAlrededor(pieza: Caja, todo: Caja, factor = 3): Caja {
-  const lado = Math.max(pieza.ancho, pieza.alto) * factor;
+  // Una pieza sin tamaño daría un encuadre de cero, y el dibujo no mostraría nada.
+  const lado = Math.max(Math.max(pieza.ancho, pieza.alto) * factor, 1);
   const ancho = Math.min(lado, todo.ancho);
   const alto = Math.min(lado, todo.alto);
   const centroX = pieza.minX + pieza.ancho / 2;

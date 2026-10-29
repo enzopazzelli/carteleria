@@ -60,6 +60,17 @@ export function avisoDeReacomodo(indice: number, nombre: string): string {
   return `Se reacomodó la chapa ${indice + 1} para que entre «${nombre}».`;
 }
 
+/** Si hay que avisar que los presupuestos hechos cuentan otra cantidad de
+ * chapas (A17). `antes` es cuántas tenía el anidado cuando un pase cambió
+ * la cantidad, o `null` si ninguno la cambió: el aviso dura mientras el
+ * anidado no vuelva a esa cantidad, por ejemplo con «Deshacer». */
+export function cambioLaCantidadDeChapas(
+  antes: { ejecucionId: number; chapas: number | null } | null,
+  anidado: { id: number; planchas_usadas: number | null },
+): boolean {
+  return antes !== null && antes.ejecucionId === anidado.id && anidado.planchas_usadas !== antes.chapas;
+}
+
 /** Si el punto cae adentro del anillo (la regla del rayo). */
 function adentroDe([x, y]: [number, number], anillo: [number, number][]): boolean {
   let adentro = false;

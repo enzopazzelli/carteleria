@@ -4,6 +4,15 @@ import { encuadreAlrededor } from "./encuadre";
 const CARTEL = { minX: 0, minY: 0, ancho: 4600, alto: 4600 };
 
 describe("encuadreAlrededor", () => {
+  it("con una pieza sin tamaño no queda un encuadre de cero, que no dibuja nada", () => {
+    const punto = { minX: 1000, minY: 1000, ancho: 0, alto: 0 };
+
+    const encuadre = encuadreAlrededor(punto, CARTEL);
+
+    expect(encuadre.ancho).toBeGreaterThan(0);
+    expect(encuadre.alto).toBeGreaterThan(0);
+  });
+
   it("es un cuadrado de tres veces el lado más largo, centrado en la pieza (A17)", () => {
     const pieza = { minX: 450, minY: 475, ancho: 100, alto: 50 };
 

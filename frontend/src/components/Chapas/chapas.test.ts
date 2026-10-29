@@ -2,8 +2,31 @@ import { describe, expect, it } from "vitest";
 import type { Colocacion, Ejecucion } from "../../api/nesting";
 import type { Pieza } from "../../api/piezasYgrupos";
 import {
-  anidadoParaMostrar, anillosColocados, aprovechamientoDeChapa, areaDePieza, avisoDeReacomodo, lasDeAdentro,
+  anidadoParaMostrar, anillosColocados, aprovechamientoDeChapa, areaDePieza, avisoDeReacomodo, cambioLaCantidadDeChapas,
+  lasDeAdentro,
 } from "./chapas";
+
+describe("cambioLaCantidadDeChapas", () => {
+  // Cuántas chapas tenía el anidado cuando un pase cambió la cantidad, con
+  // presupuestos ya hechos: el aviso dura mientras no vuelva a esa cantidad.
+  const antes = { ejecucionId: 7, chapas: 3 };
+
+  it("sin un pase que haya cambiado la cantidad, no avisa", () => {
+    expect(cambioLaCantidadDeChapas(null, { id: 7, planchas_usadas: 2 })).toBe(false);
+  });
+
+  it("avisa mientras la cantidad sea otra", () => {
+    expect(cambioLaCantidadDeChapas(antes, { id: 7, planchas_usadas: 2 })).toBe(true);
+  });
+
+  it("deja de avisar si «Deshacer» vuelve a la cantidad de antes", () => {
+    expect(cambioLaCantidadDeChapas(antes, { id: 7, planchas_usadas: 3 })).toBe(false);
+  });
+
+  it("no avisa por otro anidado", () => {
+    expect(cambioLaCantidadDeChapas(antes, { id: 8, planchas_usadas: 2 })).toBe(false);
+  });
+});
 
 function ejecucion(id: number, estado: Ejecucion["estado"], esDefinitiva = false): Ejecucion {
   return {

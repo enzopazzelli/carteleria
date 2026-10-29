@@ -6,7 +6,7 @@ import type { GrupoDeCorte } from "../../api/piezasYgrupos";
 import Banner from "../../components/Banner";
 import ChapaGrande from "../../components/Chapas/ChapaGrande";
 import Mosaico from "../../components/Chapas/Mosaico";
-import { anidadoParaMostrar, avisoDeReacomodo } from "../../components/Chapas/chapas";
+import { anidadoParaMostrar, avisoDeReacomodo, cambioLaCantidadDeChapas } from "../../components/Chapas/chapas";
 import DisenioInicial from "../../components/Disenio/DisenioInicial";
 import { IluminadoProvider } from "../../components/Disenio/Iluminado";
 import { estadosPorPieza } from "../../components/Disenio/pintado";
@@ -87,7 +87,9 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
   const { data: presupuestos } = usePresupuestosDelTrabajo(trabajoId);
   /** Por qué no se pudo pasar la última pieza (no hay lugar, anidado en curso...). */
   const [problema, setProblema] = useState<ApiError | null>(null);
-  const [avisoPresupuesto, setAvisoPresupuesto] = useState(false);
+  /** Cuántas chapas tenía el anidado cuando un pase cambió la cantidad, si
+   * ya había presupuestos: el aviso dura mientras no vuelva a esa (A17). */
+  const [chapasAntes, setChapasAntes] = useState<{ ejecucionId: number; chapas: number | null } | null>(null);
   /** La chapa que se reacomodó para que entre una pieza, mientras «Deshacer» vale (A17). */
   const [reacomodo, setReacomodo] = useState<{ chapa: number; nombre: string } | null>(null);
   const deshacer = useDeshacerReacomodo(anidado?.id ?? -1);
@@ -120,15 +122,20 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
    * la pieza queda donde estaba y el mensaje dice por qué. */
   async function alPasar(colocacionId: number, destino: number) {
     setProblema(null);
-    setReacomodo(null);
     const antes = anidado!.planchas_usadas;
     try {
       const movida = await mover.mutateAsync({ colocacionId, planchaDestino: destino });
-      if (movida.planchas_usadas !== antes && (presupuestos?.length ?? 0) > 0) setAvisoPresupuesto(true);
+      if (movida.planchas_usadas !== antes && (presupuestos?.length ?? 0) > 0 && chapasAntes?.ejecucionId !== anidado!.id) {
+        setChapasAntes({ ejecucionId: anidado!.id, chapas: antes });
+      }
+      // Un pase que sí se hizo es un cambio: el «Deshacer» de antes ya no vale.
+      // Uno que falló no cambió nada, y el servidor todavía lo puede deshacer.
       if (movida.reacomodada !== null && movida.puede_deshacer) {
         const pasada = colocaciones.find((c) => c.id === colocacionId);
         const nombre = piezas!.find((p) => p.id === pasada?.pieza_id)?.id_origen ?? "la pieza";
         setReacomodo({ chapa: movida.reacomodada, nombre });
+      } else {
+        setReacomodo(null);
       }
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
@@ -163,7 +170,7 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
           </div>
         </Banner>
       )}
-      {avisoPresupuesto && <Mensaje variante="aviso" que={AVISO_PRESUPUESTO} />}
+      {cambioLaCantidadDeChapas(chapasAntes, anidado) && <Mensaje variante="aviso" que={AVISO_PRESUPUESTO} />}
       {faltan.length > 0 && (
         <Mensaje
           variante="aviso"
