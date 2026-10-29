@@ -22,11 +22,12 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from shapely.geometry import Polygon
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import config
 from ..modelos.catalogo import Formato
-from ..modelos.trabajo import Colocacion, EstadoEjecucion, GrupoDeCorte, Pieza
+from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.exportacion_dxf import exportar_plancha_a_dxf, nombre_de_archivo
 from ..services.nesting.huecos_primero import lugar_libre
@@ -298,7 +299,7 @@ def pasar_a_otra_chapa(
     angulos = angulos_permitidos(params.rotaciones_permitidas, bool((ejecucion.opciones or {}).get("giro_libre", False)))
     exterior = Polygon(_poligono_centrado(geometrias[colocacion.id]).exterior)
     lugar = lugar_libre(libre_de_chapa(plancha, params, ocupadas), exterior, angulos)
-    reacomodo = None
+    reacomodo = foto = None
     if lugar is None and destino < total and ejecucion.motor == "sparrow":
         # No entra en lo libre de una chapa que ya existe: se la vuelve a
         # acomodar entera, ya con la pieza (A17).
@@ -313,6 +314,13 @@ def pasar_a_otra_chapa(
                     "chapas": [],
                 },
             )
+        # La sesión no cambió nada todavía: la foto es el anidado de antes de Sparrow.
+        foto = _foto_de(ejecucion)
+        if not _sigue_igual(sesion, ejecucion.id, foto):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                f"El anidado cambió mientras se reacomodaba la chapa {destino + 1}: volvé a pasar la pieza.",
+            )
     elif lugar is None:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
@@ -325,7 +333,6 @@ def pasar_a_otra_chapa(
 
     # Un cambio en el anidado: lo de deshacer de antes ya no vale.
     _olvidar_para_deshacer(ejecucion.id)
-    foto = _foto_de(ejecucion) if reacomodo is not None else None
     if reacomodo is not None:
         pasadas = {colocacion.id, *(c.id for c in de_adentro)}
         for otra in ejecucion.colocaciones:
@@ -440,6 +447,22 @@ def _foto_de(ejecucion) -> _Foto:
         planchas_usadas=ejecucion.planchas_usadas,
         aprovechamiento_pct=ejecucion.aprovechamiento_pct,
     )
+
+
+def _sigue_igual(sesion: Session, ejecucion_id: int, foto: _Foto) -> bool:
+    """Si nadie cambió el anidado desde `foto`. Se lee columna por columna:
+    los objetos que la sesión ya cargó conservan lo de antes aunque otro
+    pedido haya escrito mientras tanto. Un anidado borrado no sigue igual."""
+    filas = sesion.execute(
+        select(
+            Colocacion.pieza_id, Colocacion.instancia, Colocacion.plancha_indice, Colocacion.centro_x_mm,
+            Colocacion.centro_y_mm, Colocacion.angulo_grados, Colocacion.movida_a_mano,
+        ).where(Colocacion.ejecucion_id == ejecucion_id)
+    ).all()
+    planchas = sesion.execute(
+        select(EjecucionNesting.planchas_usadas).where(EjecucionNesting.id == ejecucion_id)
+    ).scalar_one_or_none()
+    return planchas == foto.planchas_usadas and sorted(tuple(f) for f in filas) == sorted(foto.colocaciones)
 
 
 def _olvidar_para_deshacer(ejecucion_id: int) -> None:

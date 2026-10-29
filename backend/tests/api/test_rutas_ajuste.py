@@ -739,6 +739,40 @@ def test_deshacer_despues_de_otro_cambio_da_409(cliente, tmp_path):
     assert mensaje_de(respuesta) == "Ya hubo otro cambio en este anidado, o se reinició el servidor: no se puede deshacer."
 
 
+@pytest.mark.parametrize("donde", ["en la chapa de destino", "en otra chapa"])
+def test_un_cambio_mientras_se_reacomoda_no_se_pisa(cliente, tmp_path, monkeypatch, donde):
+    """Mientras Sparrow reacomoda (hasta `PAR-57`), otro pedido mueve una
+    pieza del mismo anidado. El pase no se aplica: si no, pisaba ese cambio
+    en la chapa de destino, o «Deshacer» lo volvía atrás en otra."""
+    from app.api import rutas_ajuste
+
+    ejecucion_id, _, (una, _, pasada, sola) = _anidado_a_mano(
+        cliente, tmp_path, [(400, None)] * 4,
+        [(0, 0, 0, *_EN_EL_MEDIO[0]), (1, 0, 0, *_EN_EL_MEDIO[1]), (2, 0, 1, 500, 500), (3, 0, 2, 500, 500)],
+    )
+    movida = una if donde == "en la chapa de destino" else sola
+    reacomodar = rutas_ajuste.reacomodar_chapa
+    tras_el_cambio = {}
+
+    def con_un_cambio_en_el_medio(*argumentos, **opciones):
+        posiciones = reacomodar(*argumentos, **opciones)
+        x, y = _centro(next(c for c in _colocaciones(cliente, ejecucion_id) if c["id"] == movida))
+        cambio = cliente.patch(f"/colocaciones/{movida}", json={"centro_x_mm": str(x + 1), "centro_y_mm": str(y)})
+        assert cambio.status_code == 200, cambio.text
+        tras_el_cambio.update(_foto(_colocaciones(cliente, ejecucion_id)))
+        return posiciones
+
+    monkeypatch.setattr(rutas_ajuste, "reacomodar_chapa", con_un_cambio_en_el_medio)
+
+    respuesta = _pasar(cliente, pasada, 0)
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert mensaje_de(respuesta) == "El anidado cambió mientras se reacomodaba la chapa 1: volvé a pasar la pieza."
+    assert _foto(_colocaciones(cliente, ejecucion_id)) == tras_el_cambio
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}").json()["planchas_usadas"] == 3
+    assert cliente.post(f"/ejecuciones/{ejecucion_id}/deshacer-reacomodo").status_code == 409
+
+
 def test_una_pieza_con_dos_copias_no_se_pierde(cliente, tmp_path):
     ejecucion_id, cargadas, (_, _, pasada) = _anidado_a_mano(
         cliente, tmp_path, [(400, None)] * 2,
