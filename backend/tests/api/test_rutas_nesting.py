@@ -1104,7 +1104,8 @@ def test_el_arranque_corta_las_colgadas_solo_con_la_base_de_verdad(monkeypatch):
 
 def _arranque_sin_base(monkeypatch, *, al_dia, cortar):
     """La app de verdad, con la actualización y la limpieza cambiadas: no
-    se toca ninguna base."""
+    se toca ninguna base. La carpeta temporal que vacía es la de la prueba
+    (`conftest.py`)."""
     import importlib
 
     from app.api import rutas_nesting

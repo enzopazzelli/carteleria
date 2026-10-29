@@ -197,6 +197,33 @@ def test_si_el_respaldo_falla_no_deja_carpeta_y_lo_dice(tmp_path, monkeypatch):
     assert version_de_la_base(url) == _ANTES
 
 
+def test_las_pruebas_no_usan_la_carpeta_temporal_de_los_datos():
+    """El arranque de la app vacía la carpeta temporal. Una prueba que arranca
+    sin `dependency_overrides` vaciaba la de los datos, donde puede estar
+    anidando el servidor de verdad (revisión de la tanda 5): cada prueba
+    tiene la suya (`conftest.py`)."""
+    from app import config
+
+    assert config.DIRECTORIO_TEMPORAL != config.DIRECTORIO_DATOS / "tmp"
+
+
+def test_un_respaldo_a_medias_nunca_se_toma_por_uno_bueno(tmp_path, monkeypatch):
+    """Si la carpeta a medias no se puede borrar (en Windows, el antivirus
+    puede tener tomado el archivo), tiene un nombre que no es el de un
+    respaldo: un fallo después no la nombra como la base sana (revisión de
+    la tanda 5)."""
+    from types import SimpleNamespace
+
+    base, url = _base_en(_ANTES, tmp_path, monkeypatch)
+    monkeypatch.setattr(arranque, "sqlite3", SimpleNamespace(connect=lambda ruta: _SinLugar(sqlite3.connect(ruta))))
+    monkeypatch.setattr(arranque.shutil, "rmtree", lambda *args, **kwargs: None)
+
+    with pytest.raises(ActualizacionFallida):
+        poner_la_base_al_dia(url, base.parent, _HOY)
+
+    assert arranque._respaldos_anteriores(base.parent, version_del_codigo()) == []
+
+
 def test_la_carpeta_temporal_se_vacia_y_queda(tmp_path):
     """Lo que dejó un anidado o una lectura del DXF cortados a mitad (A17)."""
     from app.arranque import vaciar_la_carpeta_temporal
@@ -210,6 +237,29 @@ def test_la_carpeta_temporal_se_vacia_y_queda(tmp_path):
 
     assert carpeta.is_dir() and list(carpeta.iterdir()) == []
     vaciar_la_carpeta_temporal(tmp_path / "no-existe")  # sin la carpeta, no falla
+
+
+def test_un_archivo_que_no_se_puede_borrar_no_corta_la_limpieza(tmp_path, monkeypatch):
+    """En Windows, un archivo abierto no se borra: queda, y lo demás se borra
+    igual (revisión de la tanda 5)."""
+    from app.arranque import vaciar_la_carpeta_temporal
+
+    carpeta = tmp_path / "tmp"
+    carpeta.mkdir()
+    for nombre in ("a-tomado.txt", "b.txt", "c.txt"):
+        (carpeta / nombre).write_text("")
+    borrar = Path.unlink
+
+    def unlink(ruta, *argumentos, **opciones):
+        if ruta.name == "a-tomado.txt":
+            raise PermissionError("el archivo está abierto")
+        return borrar(ruta, *argumentos, **opciones)
+
+    monkeypatch.setattr(Path, "unlink", unlink)
+
+    vaciar_la_carpeta_temporal(carpeta)
+
+    assert sorted(p.name for p in carpeta.iterdir()) == ["a-tomado.txt"]
 
 
 def test_el_registro_sigue_escribiendo_despues_de_actualizar(tmp_path, monkeypatch):

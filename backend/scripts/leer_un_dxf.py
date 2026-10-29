@@ -8,8 +8,11 @@ Sirve para repetir la tabla del §2 de
     CARTELERIA_DATOS=<copia de los datos> python scripts/leer_un_dxf.py <archivo.dxf> <escala> [trabajo]
 
 Usa el catálogo de la base de `CARTELERIA_DATOS`: correrlo contra una
-copia, no contra `backend/local/`. Al arrancar la app, como el servidor,
-pone al día esa base si está atrasada, con su respaldo (A17). `trabajo` es el número de un trabajo
+copia, no contra `backend/local/`, que es la que usa sin la variable. Al
+arrancar la app, como el servidor, pone al día esa base si está atrasada,
+con su respaldo, vacía su carpeta temporal y corta los anidados que
+figuren en curso (A17): con el servidor anidando contra esos datos, los
+cortaría. `trabajo` es el número de un trabajo
 que exista en esa base (1 si no se pasa); solo se usa para armar los
 nombres de las piezas.
 """
