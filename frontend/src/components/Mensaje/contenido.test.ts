@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../api/client";
-import { contenidoDe, falla, juntarAvisos, piezasNombradas, textoParaCopiar } from "./contenido";
+import { contenidoDe, falla, juntarAvisos, piezasNombradas, primerasYResto, textoParaCopiar } from "./contenido";
+
+describe("primerasYResto", () => {
+  // Un mensaje con muchas piezas muestra las primeras y «y N más» (A17).
+  it("separa las primeras de cuántas quedan", () => {
+    expect(primerasYResto([1, 2, 3, 4, 5, 6, 7], 5)).toEqual({ primeras: [1, 2, 3, 4, 5], resto: 2 });
+    expect(primerasYResto([1, 2, 3], 5)).toEqual({ primeras: [1, 2, 3], resto: 0 });
+  });
+});
 
 describe("contenidoDe", () => {
   it("un texto de la pantalla no trae detalle ni piezas", () => {

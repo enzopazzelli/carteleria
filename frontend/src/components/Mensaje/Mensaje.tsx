@@ -3,7 +3,7 @@ import Banner from "../Banner";
 import PiezaNombrada from "../PiezaNombrada";
 import ChapaMiniatura from "./ChapaMiniatura";
 import { usePiezas } from "../../hooks/usePiezas";
-import { contenidoDe, piezasNombradas, textoParaCopiar, type QueMostrar } from "./contenido";
+import { contenidoDe, PIEZAS_A_LA_VISTA, piezasNombradas, primerasYResto, textoParaCopiar, type QueMostrar } from "./contenido";
 
 interface MensajeProps {
   variante: "error" | "aviso";
@@ -34,17 +34,28 @@ export default function Mensaje({ variante, que, trabajoId }: MensajeProps) {
   );
 }
 
+/** Las primeras piezas que nombra el mensaje y «y N más», que muestra las
+ * demás (A17): con 32 piezas el aviso ocupaba media pantalla. */
 function PiezasDelMensaje({ trabajoId, ids }: { trabajoId: number; ids: number[] }) {
   const { data: piezas } = usePiezas(trabajoId);
+  const [todas, setTodas] = useState(false);
   const nombradas = piezasNombradas(ids, piezas ?? []);
   if (nombradas.length === 0) return null;
+  const { primeras, resto } = primerasYResto(nombradas, todas ? nombradas.length : PIEZAS_A_LA_VISTA);
   return (
-    <ul className="flex flex-wrap gap-3 mt-2 text-ink">
-      {nombradas.map((pieza) => (
+    <ul className="flex flex-wrap items-center gap-3 mt-2 text-ink">
+      {primeras.map((pieza) => (
         <li key={pieza.id}>
           <PiezaNombrada pieza={pieza} trabajoId={trabajoId} />
         </li>
       ))}
+      {resto > 0 && (
+        <li>
+          <button type="button" className="underline text-sm" onClick={() => setTodas(true)}>
+            y {resto} más
+          </button>
+        </li>
+      )}
     </ul>
   );
 }

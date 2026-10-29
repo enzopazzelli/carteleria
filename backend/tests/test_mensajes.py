@@ -51,6 +51,14 @@ def test_la_lista_de_nombres_sigue_el_orden_y_no_repite():
     assert lista_de_nombres([9], nombres) == "«sin nombre»"
 
 
+def test_con_muchas_piezas_nombra_las_primeras_cinco_y_cuenta_las_demas():
+    """Con 32 piezas el texto se hacía largo (A17): las 5 primeras y «y N más»."""
+    nombres = {str(i): f"p{i}" for i in range(1, 33)}
+
+    assert lista_de_nombres([str(i) for i in range(1, 33)], nombres) == "«p1», «p2», «p3», «p4», «p5» y 27 más"
+    assert lista_de_nombres([str(i) for i in range(1, 6)], nombres) == "«p1», «p2», «p3», «p4», «p5»"
+
+
 def test_un_error_previsto_lleva_su_texto_sin_traza():
     falla = error_para_guardar(ErrorPrevisto("El grupo no tiene piezas."))
 
