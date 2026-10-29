@@ -28,21 +28,32 @@ describe("agruparAvisos", () => {
   // otra mostraba las piezas de la primera chapa que dio el aviso (A17).
   const grandes = (...piezas: number[]) => ({ mensaje: "Estas piezas solo entran en algunos ángulos:", piezas, chapas: [] });
   const fila = (id: number, medida: string, ...advertencias: ReturnType<typeof grandes>[]) =>
-    opcion(id, { formato_descripcion: `${medida} mm`, advertencias });
+    opcion(id, { formato_descripcion: `${medida} mm`, material_nombre: "CHAPA NEGRA", espesor: "cal. 22", advertencias });
 
   it("el mismo texto con piezas distintas en dos chapas da dos avisos", () => {
     const filas = [fila(1, "1220×2440", grandes(7)), fila(2, "1500×3000", grandes(8))];
 
     expect(agruparAvisos(filas)).toEqual([
-      { aviso: grandes(7), formatos: ["1220×2440"] },
-      { aviso: grandes(8), formatos: ["1500×3000"] },
+      { aviso: grandes(7), formatos: ["CHAPA NEGRA cal. 22 (1220×2440)"] },
+      { aviso: grandes(8), formatos: ["CHAPA NEGRA cal. 22 (1500×3000)"] },
     ]);
   });
 
   it("con las mismas piezas, un aviso con las dos chapas", () => {
     const filas = [fila(1, "1220×2440", grandes(8, 7)), fila(2, "1500×3000", grandes(7, 8))];
 
-    expect(agruparAvisos(filas)).toEqual([{ aviso: grandes(8, 7), formatos: ["1220×2440", "1500×3000"] }]);
+    expect(agruparAvisos(filas)).toEqual([
+      { aviso: grandes(8, 7), formatos: ["CHAPA NEGRA cal. 22 (1220×2440)", "CHAPA NEGRA cal. 22 (1500×3000)"] },
+    ]);
+  });
+
+  it("dos chapas de la misma medida y distinto espesor no se confunden (revisión de A17)", () => {
+    const filas = [
+      fila(1, "1220×2440", grandes(7)),
+      opcion(2, { formato_descripcion: "1220×2440 mm", material_nombre: "CHAPA NEGRA", espesor: "cal. 20", advertencias: [grandes(7)] }),
+    ];
+
+    expect(agruparAvisos(filas)[0].formatos).toEqual(["CHAPA NEGRA cal. 22 (1220×2440)", "CHAPA NEGRA cal. 20 (1220×2440)"]);
   });
 });
 

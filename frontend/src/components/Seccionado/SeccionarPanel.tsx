@@ -166,6 +166,9 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
         materiales={materiales}
         tildados={formatoId === null ? [] : [formatoId]}
         alCambiar={(ids) => {
+          // Quitar un retazo que no es el elegido no cambia la chapa: la
+          // propuesta y lo ajustado quedan.
+          if ((ids[0] ?? null) === formatoId) return;
           turnos.anular();
           setFormatoId(ids[0] ?? null);
           setPropuesta(null);

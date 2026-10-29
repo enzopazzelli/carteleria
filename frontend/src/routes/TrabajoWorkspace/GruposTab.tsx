@@ -25,7 +25,6 @@ import ConDisenioAlCostado from "../../components/Disenio/ConDisenioAlCostado";
 import PiezaNombrada from "../../components/PiezaNombrada";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
-/** Con el diseño fijo al costado: las piezas nombradas se iluminan en él (A14). */
 /** La medida de la chapa y, si alguna pieza seccionada entra entera en
  * ella, el aviso de que para usarla hay que deshacer el seccionado (A17). */
 function CeldaFormato({ opcion }: { opcion: OpcionFormato }) {
@@ -39,6 +38,7 @@ function CeldaFormato({ opcion }: { opcion: OpcionFormato }) {
   );
 }
 
+/** Con el diseño fijo al costado: las piezas nombradas se iluminan en él (A14). */
 export default function GruposTab() {
   const { trabajoId } = useParams();
   return (
