@@ -304,16 +304,23 @@ def pasar_a_otra_chapa(
         # No entra en lo libre de una chapa que ya existe: se la vuelve a
         # acomodar entera, ya con la pieza (A17).
         en_destino = [c for c in activas if c.plancha_indice == destino]
-        reacomodo = _reacomodar(ejecucion, colocacion, de_adentro, en_destino, geometrias, plancha, params)
+        no_entra = HTTPException(
+            status.HTTP_409_CONFLICT,
+            {
+                "mensaje": f"No entra en la chapa {destino + 1} ni reacomodándola: probá con otra chapa o con una nueva.",
+                "piezas": [pieza.id],
+                "chapas": [],
+            },
+        )
+        # Si el metal de todas ya ocupa más que la chapa, no hace falta
+        # esperar a Sparrow para saberlo.
+        metal = sum(_area_de(geometrias[c.id]) for c in [*en_destino, colocacion, *de_adentro])
+        if metal > libre_de_chapa(plancha, params, []).area:
+            raise no_entra
+        nombre = f"el reacomodo de la chapa {destino + 1} del anidado #{ejecucion.id}"
+        reacomodo = _reacomodar(ejecucion, colocacion, de_adentro, en_destino, geometrias, plancha, params, nombre)
         if reacomodo is None:
-            raise HTTPException(
-                status.HTTP_409_CONFLICT,
-                {
-                    "mensaje": f"No entra en la chapa {destino + 1} ni reacomodándola: probá con otra chapa o con una nueva.",
-                    "piezas": [pieza.id],
-                    "chapas": [],
-                },
-            )
+            raise no_entra
         # La sesión no cambió nada todavía: la foto es el anidado de antes de Sparrow.
         foto = _foto_de(ejecucion)
         if not _sigue_igual(sesion, ejecucion.id, foto):
@@ -367,8 +374,9 @@ def pasar_a_otra_chapa(
     sesion.commit()
     if foto is None:
         return _movida(ejecucion, chapa_quitada=chapa_quitada)
+    despues = _foto_de(ejecucion)
     with _candado:
-        _para_deshacer[ejecucion.id] = foto
+        _para_deshacer[ejecucion.id] = (foto, despues)
     reacomodada = destino - 1 if chapa_quitada is not None and chapa_quitada < destino else destino
     return _movida(ejecucion, chapa_quitada=chapa_quitada, reacomodada=reacomodada, puede_deshacer=True)
 
@@ -382,9 +390,14 @@ def _movida(ejecucion, **extra) -> MovidaDeChapaLeer:
     )
 
 
+def _area_de(geometria: GeometriaPieza) -> float:
+    """El metal de la pieza: su contorno sin sus huecos."""
+    return Polygon(geometria.contorno_local_mm, geometria.agujeros_local_mm).area
+
+
 def _reacomodar(
     ejecucion, colocacion: Colocacion, de_adentro: list[Colocacion], en_destino: list[Colocacion],
-    geometrias: dict[int, GeometriaPieza], plancha: Plancha, params: ParametrosCorte,
+    geometrias: dict[int, GeometriaPieza], plancha: Plancha, params: ParametrosCorte, nombre: str,
 ) -> dict[int, tuple[Decimal, Decimal, Decimal]] | None:
     """Dónde queda cada colocación de la chapa de destino y la que se pasa,
     con lo de adentro de sus huecos, si entran todas en la chapa; o `None`.
@@ -404,7 +417,7 @@ def _reacomodar(
         for c in bloques
     }
     opciones = OpcionesSparrow(**(ejecucion.opciones or {}))
-    posiciones = reacomodar_chapa(piezas, para_sparrow, plancha, params, opciones, config.TIEMPO_PARA_REACOMODAR_S)
+    posiciones = reacomodar_chapa(piezas, para_sparrow, plancha, params, opciones, config.TIEMPO_PARA_REACOMODAR_S, nombre)
     if posiciones is None:
         return None
     por_id = {c.id: c for c in bloques}
@@ -432,9 +445,10 @@ class _Foto:
 
 
 #: Lo que hace falta para deshacer el último reacomodo de cada anidado, en la
-#: memoria del servidor, como las comparaciones: vale hasta el próximo cambio
-#: en ese anidado, y si el servidor se reinicia, se pierde.
-_para_deshacer: dict[int, _Foto] = {}
+#: memoria del servidor, como las comparaciones: el anidado de antes y el de
+#: después del reacomodo. Vale mientras la base siga como quedó después, y si
+#: el servidor se reinicia, se pierde.
+_para_deshacer: dict[int, tuple[_Foto, _Foto]] = {}
 _candado = threading.Lock()
 
 
@@ -477,12 +491,15 @@ def deshacer_reacomodo(ejecucion_id: int, sesion: Session = Depends(obtener_sesi
     de vuelta. Cada colocación vuelve a su fila, así no cambia su `id`."""
     ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
     with _candado:
-        foto = _para_deshacer.pop(ejecucion_id, None)
-    if foto is None:
+        guardado = _para_deshacer.pop(ejecucion_id, None)
+    # Además de olvidarlo en cada cambio, se mira la base: también cubre un
+    # anidado borrado cuyo número volvió a usar uno nuevo.
+    if guardado is None or not _sigue_igual(sesion, ejecucion_id, guardado[1]):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
             "Ya hubo otro cambio en este anidado, o se reinició el servidor: no se puede deshacer.",
         )
+    foto = guardado[0]
     por_clave = {(c.pieza_id, c.instancia): c for c in ejecucion.colocaciones}
     for pieza_id, instancia, chapa, centro_x, centro_y, angulo, movida_a_mano in foto.colocaciones:
         colocacion = por_clave.get((pieza_id, instancia))

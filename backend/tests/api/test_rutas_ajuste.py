@@ -697,16 +697,30 @@ def test_reacomoda_la_chapa_si_no_entra_en_lo_libre(cliente, tmp_path):
     assert cliente.get(f"/ejecuciones/{ejecucion_id}").json()["planchas_usadas"] == 1
 
 
-def test_no_entra_ni_reacomodando(cliente, tmp_path):
-    esquinas = [(235, 235), (695, 235), (235, 695), (695, 695)]
+def test_no_entra_ni_reacomodando(cliente, tmp_path, monkeypatch):
+    """Cinco de 430 suman menos que lo útil de la chapa (980 × 980), así que
+    se le pregunta a Sparrow; pero cinco cuadrados así no entran en ella."""
+    from app.api import rutas_ajuste
+
+    esquinas = [(225, 225), (765, 225), (225, 765), (765, 765)]
     ejecucion_id, cargadas, ids = _anidado_a_mano(
-        cliente, tmp_path, [(450, None)] * 5,
+        cliente, tmp_path, [(430, None)] * 5,
         [*((i, 0, 0, x, y) for i, (x, y) in enumerate(esquinas)), (4, 0, 1, 500, 500)],
     )
     antes = _colocaciones(cliente, ejecucion_id)
+    reacomodar, consultas = rutas_ajuste.reacomodar_chapa, []
+
+    def contando(*argumentos, **opciones):
+        consultas.append(1)
+        return reacomodar(*argumentos, **opciones)
+
+    monkeypatch.setattr(rutas_ajuste, "reacomodar_chapa", contando)
+    # No entran nunca: con menos tiempo da lo mismo, y la prueba no tarda medio minuto.
+    monkeypatch.setattr(rutas_ajuste.config, "TIEMPO_PARA_REACOMODAR_S", 5)
 
     respuesta = _pasar(cliente, ids[4], 0)
 
+    assert len(consultas) == 1
     assert respuesta.status_code == 409
     assert mensaje_de(respuesta) == "No entra en la chapa 1 ni reacomodándola: probá con otra chapa o con una nueva."
     assert respuesta.json()["detail"]["piezas"] == [cargadas[4]["id"]]
@@ -811,3 +825,142 @@ def test_anidado_rectangular_no_reacomoda(cliente, tmp_path):
 
     assert respuesta.status_code == 409
     assert "No hay lugar" in mensaje_de(respuesta)
+
+
+_NO_ENTRA_EN_LA_1 = "No entra en la chapa 1 ni reacomodándola: probá con otra chapa o con una nueva."
+
+
+def _deshacer(cliente, ejecucion_id):
+    return cliente.post(f"/ejecuciones/{ejecucion_id}/deshacer-reacomodo")
+
+
+def test_si_sparrow_falla_al_reacomodar_no_entra_y_queda_en_el_registro(cliente, tmp_path, monkeypatch, caplog):
+    """Un error del cálculo que no es el tiempo daba un 500 sin decir de qué
+    era: queda en el registro con su nombre, y la pieza no se pasa."""
+    from app.services.nesting import reacomodar
+    from app.services.nesting.sparrow import ResultadoQueNoPasaElControl
+
+    ejecucion_id, _, (_, _, pasada) = _tres_de_400(cliente, tmp_path)
+    antes = _colocaciones(cliente, ejecucion_id)
+    nombres = []
+
+    def falla(*argumentos, nombre="el cálculo", **opciones):
+        nombres.append(nombre)
+        raise ResultadoQueNoPasaElControl("dos piezas se pisan")
+
+    monkeypatch.setattr(reacomodar, "anidar_sparrow", falla)
+
+    with caplog.at_level("WARNING", logger="carteleria"):
+        respuesta = _pasar(cliente, pasada, 0)
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert mensaje_de(respuesta) == _NO_ENTRA_EN_LA_1
+    assert _colocaciones(cliente, ejecucion_id) == antes
+    assert nombres == [f"el reacomodo de la chapa 1 del anidado #{ejecucion_id}"]
+    assert f"No se pudo hacer el reacomodo de la chapa 1 del anidado #{ejecucion_id}: dos piezas se pisan" in caplog.text
+
+
+def test_si_por_area_no_entra_contesta_sin_llamar_a_sparrow(cliente, tmp_path, monkeypatch):
+    """Cuatro de 450 y una más suman más que lo útil de la chapa: no hace
+    falta esperar a Sparrow (hasta `PAR-57`) para saber que no entran."""
+    from app.api import rutas_ajuste
+
+    esquinas = [(235, 235), (695, 235), (235, 695), (695, 695)]
+    ejecucion_id, _, ids = _anidado_a_mano(
+        cliente, tmp_path, [(450, None)] * 5,
+        [*((i, 0, 0, x, y) for i, (x, y) in enumerate(esquinas)), (4, 0, 1, 500, 500)],
+    )
+
+    def no_hace_falta(*argumentos, **opciones):
+        raise AssertionError("por área ya no entra: Sparrow no tiene que buscar")
+
+    monkeypatch.setattr(rutas_ajuste, "reacomodar_chapa", no_hace_falta)
+
+    respuesta = _pasar(cliente, ids[4], 0)
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert mensaje_de(respuesta) == _NO_ENTRA_EN_LA_1
+
+
+def test_deshacer_no_vale_para_otro_anidado_con_el_mismo_numero(cliente, tmp_path):
+    """SQLite vuelve a usar el número del último anidado borrado: el nuevo
+    no hereda el «Deshacer» del borrado."""
+    ejecucion_id, _, (_, _, pasada) = _tres_de_400(cliente, tmp_path)
+    assert _pasar(cliente, pasada, 0).json()["puede_deshacer"]
+    with Session(cliente.motor) as sesion:
+        vieja = sesion.get(EjecucionNesting, ejecucion_id)
+        datos = dict(grupo_id=vieja.grupo_id, motor=vieja.motor, parametros=vieja.parametros, opciones=vieja.opciones)
+    assert cliente.delete(f"/ejecuciones/{ejecucion_id}").status_code == 204
+    with Session(cliente.motor) as sesion:
+        nueva = EjecucionNesting(**datos, estado=EstadoEjecucion.LISTA.value, planchas_usadas=0)
+        sesion.add(nueva)
+        sesion.commit()
+        assert nueva.id == ejecucion_id
+
+    respuesta = _deshacer(cliente, ejecucion_id)
+
+    assert respuesta.status_code == 409, respuesta.text
+    assert _colocaciones(cliente, ejecucion_id) == []
+
+
+def test_deshacer_con_la_chapa_quitada_antes_del_destino(cliente, tmp_path):
+    """La que se pasa está sola en la chapa 0: al pasarla se quita esa chapa
+    y la de destino pasa de 1 a 0 (riesgo 4 del plan)."""
+    ejecucion_id, _, (pasada, _, _) = _anidado_a_mano(
+        cliente, tmp_path, [(400, None)] * 3,
+        [(0, 0, 0, 500, 500), (1, 0, 1, *_EN_EL_MEDIO[0]), (2, 0, 1, *_EN_EL_MEDIO[1])],
+    )
+    antes = _foto(_colocaciones(cliente, ejecucion_id))
+
+    cuerpo = _pasar(cliente, pasada, 1).json()
+
+    assert (cuerpo["chapa_quitada"], cuerpo["reacomodada"], cuerpo["planchas_usadas"]) == (0, 0, 1)
+    assert {c["plancha_indice"] for c in cuerpo["colocaciones"]} == {0}
+    respuesta = _deshacer(cliente, ejecucion_id)
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.json()["planchas_usadas"] == 2
+    assert _foto(respuesta.json()["colocaciones"]) == antes
+
+
+def test_al_reacomodar_lo_de_adentro_de_la_chapa_de_destino_sigue_adentro(cliente, tmp_path):
+    """En la chapa de destino hay un marco con un cuadrado de 80 en su hueco:
+    después de reacomodarla, el cuadrado sigue en el hueco."""
+    _, _, (marco, adentro, _, pasada) = _anidado_a_mano(
+        cliente, tmp_path, [(400, 120), (80, None), (400, None), (400, None)],
+        [(0, 0, 0, *_EN_EL_MEDIO[0]), (1, 0, 0, *_EN_EL_MEDIO[0]), (2, 0, 0, *_EN_EL_MEDIO[1]), (3, 0, 1, 500, 500)],
+    )
+
+    cuerpo = _pasar(cliente, pasada, 0).json()
+
+    despues = {c["id"]: c for c in cuerpo["colocaciones"]}
+    assert cuerpo["reacomodada"] == 0
+    assert _cuadrado(despues[marco], 120).contains(_cuadrado(despues[adentro], 80))
+
+
+def test_un_pase_que_falla_no_pierde_el_deshacer(cliente, tmp_path):
+    ejecucion_id, _, (una, _, pasada) = _tres_de_400(cliente, tmp_path)
+    assert _pasar(cliente, pasada, 0).json()["puede_deshacer"]
+
+    assert _pasar(cliente, una, 0).status_code == 400  # ya está en esa chapa
+
+    assert _deshacer(cliente, ejecucion_id).status_code == 200
+
+
+def test_deshacer_vuelve_a_poner_la_descartada_de_la_chapa_quitada(cliente, tmp_path):
+    """En la chapa de origen queda solo una descartada: la chapa se quita con
+    su lugar, y deshacer la vuelve a poner donde estaba (en una fila nueva)."""
+    ejecucion_id, cargadas, (_, _, pasada, _) = _anidado_a_mano(
+        cliente, tmp_path, [(400, None)] * 4,
+        [(0, 0, 0, *_EN_EL_MEDIO[0]), (1, 0, 0, *_EN_EL_MEDIO[1]), (2, 0, 1, *_EN_EL_MEDIO[0]), (3, 0, 1, *_EN_EL_MEDIO[1])],
+    )
+    assert cliente.patch(f"/piezas/{cargadas[3]['id']}", json={"descartada": True}).status_code == 200
+    antes = _foto(_colocaciones(cliente, ejecucion_id))
+
+    cuerpo = _pasar(cliente, pasada, 0).json()
+
+    assert cuerpo["chapa_quitada"] == 1
+    assert cargadas[3]["id"] not in {c["pieza_id"] for c in cuerpo["colocaciones"]}
+    respuesta = _deshacer(cliente, ejecucion_id)
+    assert respuesta.status_code == 200, respuesta.text
+    sin_id = lambda foto: {clave: valores[1:] for clave, valores in foto.items()}  # noqa: E731
+    assert sin_id(_foto(respuesta.json()["colocaciones"])) == sin_id(antes)

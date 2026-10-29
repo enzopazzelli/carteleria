@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from ...registro import registro
 from .models import ParametrosCorte, Pieza, Plancha, PosicionPieza
 from .sparrow import OpcionesSparrow, TiempoAgotado, anidar_sparrow
 from .validacion_manual import GeometriaPieza
@@ -20,15 +21,23 @@ def reacomodar_chapa(
     params: ParametrosCorte,
     opciones: OpcionesSparrow,
     tiempo_s: int,
+    nombre: str = "el reacomodo",
 ) -> list[PosicionPieza] | None:
     """Las posiciones de `piezas` en una sola chapa, con los giros y
     parámetros del anidado, o `None` si Sparrow no las junta en una dentro
-    de `tiempo_s` (`PAR-57`). Una sola búsqueda: hay alguien esperando."""
+    de `tiempo_s` (`PAR-57`). Una sola búsqueda: hay alguien esperando.
+    `nombre` dice en el registro de qué reacomodo se trata."""
     try:
         resultado = anidar_sparrow(
-            piezas, geometrias, plancha, params, replace(opciones, tiempo_maximo_s=tiempo_s, busquedas_a_la_vez=1)
+            piezas, geometrias, plancha, params, replace(opciones, tiempo_maximo_s=tiempo_s, busquedas_a_la_vez=1),
+            nombre=nombre,
         )
     except TiempoAgotado:
+        return None
+    except ValueError as error:
+        # Las fallas del cálculo (control, interrupción) son `ValueError`: para
+        # quien espera, la pieza no entra; el detalle queda en el registro.
+        registro().warning("No se pudo hacer %s: %s", nombre, error, exc_info=True)
         return None
     if resultado.planchas_usadas > 1:
         return None
