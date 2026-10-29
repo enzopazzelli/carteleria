@@ -18,6 +18,11 @@ from .models import PiezaImportada
 #: dibujo hasta `PAR-53` sin que las curvas se vean facetadas.
 DETALLE_DEL_DIBUJO = Decimal(1) / Decimal(20000)
 
+#: Para mirar alcanza el centésimo de mm: con todos sus decimales, la
+#: lectura de la muestra pesaba megas de más (A17). No es un parámetro de
+#: negocio: lo que se guarda sigue entero.
+_DECIMALES_DEL_DIBUJO = 2
+
 Anillo = list[tuple[Decimal, Decimal]]
 
 
@@ -36,7 +41,6 @@ def anillo_para_dibujar(anillo: Anillo, tolerancia_mm: float) -> list[list[float
     apartarse más de `tolerancia_mm`. Nunca lo pierde: una forma más
     chica que la tolerancia sigue siendo un anillo cerrado."""
     puntos = [(float(x), float(y)) for x, y in anillo]
-    if tolerancia_mm <= 0 or len(puntos) < 5:
-        return [[x, y] for x, y in puntos]
-    simplificado = LinearRing(puntos).simplify(tolerancia_mm, preserve_topology=True)
-    return [[x, y] for x, y in simplificado.coords]
+    if tolerancia_mm > 0 and len(puntos) >= 5:
+        puntos = list(LinearRing(puntos).simplify(tolerancia_mm, preserve_topology=True).coords)
+    return [[round(x, _DECIMALES_DEL_DIBUJO), round(y, _DECIMALES_DEL_DIBUJO)] for x, y in puntos]

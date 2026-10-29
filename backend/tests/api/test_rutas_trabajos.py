@@ -579,6 +579,31 @@ def _ver_lectura(cliente, trabajo_id, contenido, *, escala_a_mm="1", correccione
     )
 
 
+def test_la_lectura_manda_los_numeros_con_dos_decimales(cliente, tmp_path):
+    """Para dibujar alcanza el centésimo de mm: con todos sus decimales, la
+    lectura de la muestra pesaba megas de más (A17, tarea 33)."""
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(
+        tmp_path,
+        "decimales.dxf",
+        lambda msp: msp.add_lwpolyline(
+            [(0.123456, 0.654321), (100.987654, 0.111111), (100.5, 50.333333), (0.777777, 50.999999)], close=True
+        ),
+    )
+
+    respuesta = _ver_lectura(cliente, trabajo["id"], contenido)
+
+    assert respuesta.status_code == 200, respuesta.text
+    numeros = [
+        valor
+        for forma in respuesta.json()["sin_unir"]["formas"]
+        for anillo in [forma["contorno_mm"], *forma["agujeros_mm"]]
+        for punto in anillo
+        for valor in punto
+    ]
+    assert numeros and all(round(valor, 2) == valor for valor in numeros)
+
+
 @pytest.mark.parametrize("ver_o_cargar", [_ver_lectura, _subir])
 def test_leer_el_dxf_usa_la_carpeta_de_los_datos(cliente, tmp_path, monkeypatch, ver_o_cargar):
     """La del sistema está en C:, que suele estar lleno (A17, diseño §4.1)."""

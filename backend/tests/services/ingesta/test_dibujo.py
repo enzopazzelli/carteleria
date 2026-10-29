@@ -46,9 +46,11 @@ def test_una_forma_mas_chica_que_la_tolerancia_no_se_pierde():
 
 
 def test_sin_tolerancia_el_anillo_viaja_entero():
+    """Sin tolerancia no se saca ningún vértice; los números van al
+    centésimo de mm, como todo lo que se dibuja (A17)."""
     circulo = _circulo(10, vertices=12)
 
-    assert anillo_para_dibujar(circulo, 0.0) == [[float(x), float(y)] for x, y in circulo]
+    assert anillo_para_dibujar(circulo, 0.0) == [[round(float(x), 2), round(float(y), 2)] for x, y in circulo]
 
 
 def test_la_tolerancia_sale_del_lado_mayor_del_dibujo():
