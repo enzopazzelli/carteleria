@@ -13,6 +13,7 @@ lo que le da de comer sus líneas de material — no lo reemplaza.
 """
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 from decimal import Decimal
 
@@ -72,21 +73,39 @@ class ResumenMateriales:
     advertencias_generales: list[str] = field(default_factory=list)
 
 
+def anidado_vigente(grupo: GrupoDeCorte, ejecucion: EjecucionNesting) -> bool:
+    """Lo que se anidó es lo que hoy se corta del grupo: cada pieza que se
+    corta, con una colocación por copia (A17). Sacar, sumar, descartar o
+    seccionar una pieza, o cambiar su cantidad, lo vence. Un grupo que se
+    quedó sin piezas que se corten no tiene anidado vigente."""
+    a_cortar = {pieza.id: pieza.cantidad for pieza in grupo.piezas if not pieza.descartada}
+    return bool(a_cortar) and Counter(c.pieza_id for c in ejecucion.colocaciones) == a_cortar
+
+
 def _ejecucion_para_costear(grupo: GrupoDeCorte) -> tuple[EjecucionNesting | None, list[str]]:
     """Cuál ejecución de un grupo cuenta para el costeo.
 
     Prioridad: la marcada `es_definitiva`. Si no hay ninguna marcada, la
     más reciente en estado `lista` — con advertencia, porque puede ser
-    una prueba que el usuario no llegó a confirmar."""
-    definitivas = [e for e in grupo.ejecuciones if e.es_definitiva and e.estado == "lista"]
-    if definitivas:
-        return definitivas[0], []
+    una prueba que el usuario no llegó a confirmar.
 
+    Con las piezas cambiadas después del elegido, cuenta la más reciente
+    que esté al día, también con advertencia (Enzo, A17). Si ninguna está
+    al día, queda la de siempre: quien la usa mira `anidado_vigente`."""
     listas = [e for e in grupo.ejecuciones if e.estado == "lista"]
     if not listas:
         return None, []
+    definitivas = [e for e in listas if e.es_definitiva]
+    al_dia = [e for e in listas if anidado_vigente(grupo, e)]
+    if definitivas and (definitivas[0] in al_dia or not al_dia):
+        return definitivas[0], []
 
-    elegida = max(listas, key=lambda e: e.id)
+    elegida = max(al_dia or listas, key=lambda e: e.id)
+    if definitivas:
+        return elegida, [
+            f"Grupo «{grupo.nombre}»: el anidado elegido (#{definitivas[0].id}) es de antes de que cambiaran "
+            f"las piezas; se usó el #{elegida.id}, el más reciente al día. Confirmá cuál vale antes de cotizar en serio."
+        ]
     return elegida, [
         f"Grupo «{grupo.nombre}»: ningún anidado está elegido para cotizar; "
         "se usó el más reciente. Confirmá cuál vale antes de cotizar en serio."
@@ -112,6 +131,16 @@ def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:
     ejecucion, advertencias_ejecucion = (
         _ejecucion_para_costear(grupo) if grupo.formato_id is not None else (None, [])
     )
+    vencido = ejecucion is not None and not anidado_vigente(grupo, ejecucion)
+    if vencido:
+        # El anidado que quedaba no es lo que hoy se corta: no se cobra (A17).
+        con_piezas = any(not pieza.descartada for pieza in grupo.piezas)
+        advertencias_ejecucion = [
+            f"Grupo «{grupo.nombre}»: las piezas cambiaron después del anidado. Anidá de nuevo antes de presupuestar."
+            if con_piezas
+            else f"Grupo «{grupo.nombre}»: se quedó sin piezas, así que no se cobra su anidado viejo."
+        ]
+        ejecucion = None
     advertencias.extend(advertencias_ejecucion)
 
     snapshot = (ejecucion.parametros or {}).get("formato") if ejecucion else None
@@ -126,7 +155,7 @@ def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:
         )
         ejecucion = None
 
-    if grupo.formato_id is not None and ejecucion is None:
+    if grupo.formato_id is not None and ejecucion is None and not vencido:
         advertencias.append(f"Grupo «{grupo.nombre}»: todavía no tiene un anidado terminado.")
 
     area_total_m2 = None

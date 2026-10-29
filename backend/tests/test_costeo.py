@@ -9,11 +9,13 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.costeo import resumen_materiales
 from app.modelos import (
     Base,
+    Colocacion,
     EjecucionNesting,
     Formato,
     GrupoDeCorte,
@@ -65,22 +67,54 @@ def _material_con_formato(
     return material, formato
 
 
-def _trabajo_con_grupo(sesion, formato, *, planchas=3, definitiva=True, estado="lista"):
+_CONTORNO = [["0", "0"], ["100", "0"], ["100", "50"], ["0", "50"]]
+
+
+def _pieza(sesion, trabajo, grupo, nombre, *, cantidad=1, **campos) -> Pieza:
+    pieza = Pieza(
+        trabajo_id=trabajo.id,
+        grupo_id=grupo.id if grupo is not None else None,
+        id_origen=nombre,
+        ancho_mm=Decimal("100"),
+        alto_mm=Decimal("50"),
+        contorno_mm=_CONTORNO,
+        cantidad=cantidad,
+        **campos,
+    )
+    sesion.add(pieza)
+    sesion.flush()
+    return pieza
+
+
+def _anidar(sesion, grupo, *, planchas=3, definitiva=True, estado="lista", motor="rectpack") -> EjecucionNesting:
+    """Un anidado de lo que hoy se corta del grupo: una colocación por cada
+    copia de cada pieza, como guarda una corrida terminada."""
+    ejecucion = EjecucionNesting(
+        grupo_id=grupo.id, motor=motor, estado=estado, planchas_usadas=planchas, es_definitiva=definitiva
+    )
+    sesion.add(ejecucion)
+    sesion.flush()
+    if estado == "lista":
+        for pieza in sesion.scalars(select(Pieza).where(Pieza.grupo_id == grupo.id, Pieza.descartada.is_(False))):
+            for instancia in range(pieza.cantidad):
+                sesion.add(Colocacion(
+                    ejecucion_id=ejecucion.id, pieza_id=pieza.id, instancia=instancia, plancha_indice=0,
+                    centro_x_mm=Decimal("100"), centro_y_mm=Decimal("100"), angulo_grados=Decimal("0"),
+                ))
+    sesion.flush()
+    return ejecucion
+
+
+def _trabajo_con_grupo(sesion, formato, *, planchas=3, definitiva=True, estado="lista", piezas=1):
     trabajo = Trabajo(nombre="Prueba", escala_a_mm=Decimal("10"))
     sesion.add(trabajo)
     sesion.flush()
     grupo = GrupoDeCorte(trabajo_id=trabajo.id, nombre="Grupo 1", formato_id=formato.id, orden=0)
     sesion.add(grupo)
     sesion.flush()
-    sesion.add(
-        EjecucionNesting(
-            grupo_id=grupo.id,
-            motor="rectpack",
-            estado=estado,
-            planchas_usadas=planchas,
-            es_definitiva=definitiva,
-        )
-    )
+    for numero in range(1, piezas + 1):
+        _pieza(sesion, trabajo, grupo, f"pieza-{numero}")
+    _anidar(sesion, grupo, planchas=planchas, definitiva=definitiva, estado=estado)
     sesion.commit()
     return trabajo, grupo
 
@@ -200,8 +234,10 @@ def test_dos_grupos_de_distinto_material_dan_dos_lineas_separadas(sesion):
     g2 = GrupoDeCorte(trabajo_id=trabajo.id, nombre="Acrílico frente", formato_id=acrilico.id, orden=1)
     sesion.add_all([g1, g2])
     sesion.flush()
-    sesion.add(EjecucionNesting(grupo_id=g1.id, motor="rectpack", estado="lista", planchas_usadas=2, es_definitiva=True))
-    sesion.add(EjecucionNesting(grupo_id=g2.id, motor="deepnest", estado="lista", planchas_usadas=1, es_definitiva=True))
+    _pieza(sesion, trabajo, g1, "chapa-1")
+    _pieza(sesion, trabajo, g2, "acrilico-1")
+    _anidar(sesion, g1, planchas=2)
+    _anidar(sesion, g2, planchas=1, motor="deepnest")
     sesion.commit()
 
     resumen = resumen_materiales(sesion, trabajo.id)
@@ -215,9 +251,7 @@ def test_sin_ejecucion_definitiva_usa_la_mas_reciente_lista_y_avisa(sesion):
     _, formato = _material_con_formato(sesion)
     trabajo, grupo = _trabajo_con_grupo(sesion, formato, planchas=5, definitiva=False)
     # Una segunda ejecución, más reciente, tampoco marcada definitiva.
-    sesion.add(
-        EjecucionNesting(grupo_id=grupo.id, motor="deepnest", estado="lista", planchas_usadas=4, es_definitiva=False)
-    )
+    _anidar(sesion, grupo, planchas=4, definitiva=False, motor="deepnest")
     sesion.commit()
 
     resumen = resumen_materiales(sesion, trabajo.id)
@@ -301,3 +335,162 @@ def test_moverse_de_grupo_es_solo_actualizar_grupo_id(sesion):
     releida = sesion.get(Pieza, pieza_id)
     assert releida.grupo_id == g2_id
     assert releida.trabajo_id == trabajo_id, "sigue perteneciendo al mismo trabajo"
+
+
+# --- El anidado vencido (A17, tarea 35) ---------------------------------------
+# Si lo que se corta del grupo no es lo que se anidó, el anidado no se cobra.
+
+_CAMBIARON = "Grupo «Grupo 1»: las piezas cambiaron después del anidado. Anidá de nuevo antes de presupuestar."
+
+
+def _de(sesion, nombre: str) -> Pieza:
+    return sesion.scalars(select(Pieza).where(Pieza.id_origen == nombre)).one()
+
+
+def _sin_costo_por(linea, aviso: str) -> None:
+    assert linea.costo_estimado is None
+    assert linea.ejecucion_id is None
+    assert aviso in linea.advertencias
+    assert not any("todavía no tiene un anidado terminado" in a for a in linea.advertencias)
+
+
+def test_sacar_una_pieza_despues_de_anidar_vence_el_anidado(sesion):
+    _, formato = _material_con_formato(sesion)
+    trabajo, _ = _trabajo_con_grupo(sesion, formato, piezas=2)
+    _de(sesion, "pieza-2").grupo_id = None
+    sesion.commit()
+
+    _sin_costo_por(resumen_materiales(sesion, trabajo.id).lineas[0], _CAMBIARON)
+
+
+def test_sumar_una_pieza_despues_de_anidar_vence_el_anidado(sesion):
+    _, formato = _material_con_formato(sesion)
+    trabajo, grupo = _trabajo_con_grupo(sesion, formato)
+    _pieza(sesion, trabajo, grupo, "pieza-nueva")
+    sesion.commit()
+
+    _sin_costo_por(resumen_materiales(sesion, trabajo.id).lineas[0], _CAMBIARON)
+
+
+def test_cambiar_una_cantidad_despues_de_anidar_vence_el_anidado(sesion):
+    _, formato = _material_con_formato(sesion)
+    trabajo, _ = _trabajo_con_grupo(sesion, formato)
+    _de(sesion, "pieza-1").cantidad = 2
+    sesion.commit()
+
+    _sin_costo_por(resumen_materiales(sesion, trabajo.id).lineas[0], _CAMBIARON)
+
+
+def test_descartar_una_pieza_despues_de_anidar_vence_el_anidado(sesion):
+    _, formato = _material_con_formato(sesion)
+    trabajo, _ = _trabajo_con_grupo(sesion, formato, piezas=2)
+    _de(sesion, "pieza-2").descartada = True
+    sesion.commit()
+
+    _sin_costo_por(resumen_materiales(sesion, trabajo.id).lineas[0], _CAMBIARON)
+
+
+def test_seccionar_una_pieza_despues_de_anidar_vence_el_anidado(sesion):
+    """Seccionar descarta la original y suma sus tramos al grupo."""
+    _, formato = _material_con_formato(sesion)
+    trabajo, grupo = _trabajo_con_grupo(sesion, formato)
+    original = _de(sesion, "pieza-1")
+    original.descartada = True
+    _pieza(sesion, trabajo, grupo, "pieza-1 tramo 1", seccionada_de_id=original.id)
+    _pieza(sesion, trabajo, grupo, "pieza-1 tramo 2", seccionada_de_id=original.id)
+    sesion.commit()
+
+    _sin_costo_por(resumen_materiales(sesion, trabajo.id).lineas[0], _CAMBIARON)
+
+
+def test_un_grupo_que_se_quedo_sin_piezas_no_cobra_su_anidado_viejo(sesion):
+    _, formato = _material_con_formato(sesion)
+    trabajo, _ = _trabajo_con_grupo(sesion, formato)
+    _de(sesion, "pieza-1").grupo_id = None
+    sesion.commit()
+
+    _sin_costo_por(
+        resumen_materiales(sesion, trabajo.id).lineas[0],
+        "Grupo «Grupo 1»: se quedó sin piezas, así que no se cobra su anidado viejo.",
+    )
+
+
+def test_una_pieza_con_cantidad_2_anidada_sigue_vigente(sesion):
+    _, formato = _material_con_formato(sesion)
+    trabajo = Trabajo(nombre="Prueba", escala_a_mm=Decimal("10"))
+    sesion.add(trabajo)
+    sesion.flush()
+    grupo = GrupoDeCorte(trabajo_id=trabajo.id, nombre="Grupo 1", formato_id=formato.id, orden=0)
+    sesion.add(grupo)
+    sesion.flush()
+    _pieza(sesion, trabajo, grupo, "doble", cantidad=2)
+    _anidar(sesion, grupo)
+    sesion.commit()
+
+    linea = resumen_materiales(sesion, trabajo.id).lineas[0]
+
+    assert linea.costo_estimado is not None
+    assert linea.advertencias == []
+
+
+def test_una_pieza_descartada_antes_de_anidar_no_lo_vence(sesion):
+    _, formato = _material_con_formato(sesion)
+    trabajo = Trabajo(nombre="Prueba", escala_a_mm=Decimal("10"))
+    sesion.add(trabajo)
+    sesion.flush()
+    grupo = GrupoDeCorte(trabajo_id=trabajo.id, nombre="Grupo 1", formato_id=formato.id, orden=0)
+    sesion.add(grupo)
+    sesion.flush()
+    _pieza(sesion, trabajo, grupo, "se-corta")
+    _pieza(sesion, trabajo, grupo, "hueco", descartada=True)
+    _anidar(sesion, grupo)
+    sesion.commit()
+
+    linea = resumen_materiales(sesion, trabajo.id).lineas[0]
+
+    assert linea.costo_estimado is not None
+    assert linea.advertencias == []
+
+
+def test_con_el_elegido_vencido_cuenta_el_mas_reciente_al_dia(sesion):
+    """Se sumó una pieza y se volvió a anidar, pero el elegido sigue siendo
+    el de antes (Enzo, 2026-10-29: opción a)."""
+    _, formato = _material_con_formato(sesion)
+    trabajo, grupo = _trabajo_con_grupo(sesion, formato, planchas=3)
+    elegido = grupo.ejecuciones[0]
+    _pieza(sesion, trabajo, grupo, "pieza-nueva")
+    al_dia = _anidar(sesion, grupo, planchas=4, definitiva=False)
+    sesion.commit()
+
+    linea = resumen_materiales(sesion, trabajo.id).lineas[0]
+
+    assert linea.ejecucion_id == al_dia.id
+    assert linea.planchas_usadas == 4
+    assert linea.advertencias == [
+        f"Grupo «Grupo 1»: el anidado elegido (#{elegido.id}) es de antes de que cambiaran las piezas; "
+        f"se usó el #{al_dia.id}, el más reciente al día. Confirmá cuál vale antes de cotizar en serio."
+    ]
+
+
+def test_el_anidado_dice_si_esta_vencido(sesion):
+    from app.api.esquemas_nesting import EjecucionLeer
+
+    _, formato = _material_con_formato(sesion)
+    trabajo, grupo = _trabajo_con_grupo(sesion, formato, piezas=2)
+    ejecucion = grupo.ejecuciones[0]
+    assert EjecucionLeer.model_validate(ejecucion).vencido is False
+
+    _de(sesion, "pieza-2").grupo_id = None
+    sesion.commit()
+
+    assert EjecucionLeer.model_validate(ejecucion).vencido is True
+
+
+def test_un_anidado_sin_terminar_no_esta_vencido(sesion):
+    """Todavía no tiene colocaciones: vencido es solo un anidado terminado."""
+    from app.api.esquemas_nesting import EjecucionLeer
+
+    _, formato = _material_con_formato(sesion)
+    _, grupo = _trabajo_con_grupo(sesion, formato, estado="corriendo", definitiva=False)
+
+    assert EjecucionLeer.model_validate(grupo.ejecuciones[0]).vencido is False

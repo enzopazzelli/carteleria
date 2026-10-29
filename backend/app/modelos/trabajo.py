@@ -222,6 +222,14 @@ class EjecucionNesting(Base):
             return None
         return {**(self.error_datos or {}), "mensaje": self.error}
 
+    @property
+    def vencido(self) -> bool:
+        """Terminado, pero lo que se corta de su grupo cambió después: no se
+        cobra (A17, `costeo.anidado_vigente`). Uno sin terminar no lo está."""
+        from ..costeo import anidado_vigente  # costeo importa los modelos
+
+        return self.estado == EstadoEjecucion.LISTA.value and not anidado_vigente(self.grupo, self)
+
 
 class Colocacion(Base):
     """Dónde quedó una instancia de pieza.
