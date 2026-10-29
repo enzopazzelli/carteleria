@@ -407,6 +407,24 @@ def _bbox_contiene(exterior: tuple, interior: tuple) -> bool:
     )
 
 
+def _sin_contornos_iguales(contornos: list[_ContornoValido]) -> tuple[list[_ContornoValido], int]:
+    """Los contornos sin los que son la misma forma que uno anterior, y
+    cuántos se sacaron. Con otros vértices (uno de más en medio de un
+    lado) la firma de los duplicados es otra, pero cada copia quedaría
+    adentro de la otra y la lectura no terminaría de subir de una a otra
+    (A17). Dos formas iguales tienen la misma caja: solo se comparan las
+    de la misma caja."""
+    por_caja: dict[tuple, list[Polygon]] = {}
+    quedan: list[_ContornoValido] = []
+    for contorno in contornos:
+        de_su_caja = por_caja.setdefault(contorno.poligono.bounds, [])
+        if any(contorno.poligono.equals(otro) for otro in de_su_caja):
+            continue
+        de_su_caja.append(contorno.poligono)
+        quedan.append(contorno)
+    return quedan, len(contornos) - len(quedan)
+
+
 def _clasificar_piezas_y_agujeros(
     contornos: list[_ContornoValido],
     tamano_maximo_agujero_mm: Decimal | None,
@@ -654,6 +672,8 @@ def parsear_dxf(
                 continue
             poligono, puntos = reparado, [(_en_mm(px), _en_mm(py)) for px, py in reparado.exterior.coords]
         contornos_validos.append(_ContornoValido(poligono, puntos, trazo.capa, trazo.indice, trazo.color))
+    contornos_validos, iguales = _sin_contornos_iguales(contornos_validos)
+    duplicados_descartados += iguales
 
     def _indices(ids: Collection[str]) -> set[int]:
         return {contorno.indice for contorno in contornos_validos if _id(ruta, contorno) in ids}

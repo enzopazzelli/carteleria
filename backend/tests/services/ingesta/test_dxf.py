@@ -244,6 +244,24 @@ def test_un_contorno_dibujado_como_polilinea_y_como_lineas_sueltas_cuenta_una_ve
     assert resultado.lineas_duplicadas_descartadas == 1
 
 
+def test_un_contorno_repetido_con_un_vertice_de_mas_cuenta_una_vez(tmp_path):
+    """Con un vértice de más en medio de un lado la firma es otra, pero es la
+    misma forma: cada copia quedaba adentro de la otra (revisión de la tanda
+    6 de A17)."""
+    def agregar(msp):
+        msp.add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], close=True)
+        msp.add_lwpolyline([(0, 0), (50, 0), (100, 0), (100, 100), (0, 100)], close=True)
+
+    ruta = _guardar_dxf(tmp_path, "cuadrado-con-un-vertice-de-mas.dxf", agregar)
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert len(resultado.piezas) == 1
+    assert resultado.piezas[0].area_real_mm2 == Decimal("10000")
+    assert resultado.piezas[0].agujeros_mm == []
+    assert resultado.lineas_duplicadas_descartadas == 1
+
+
 def test_calcula_area_real_distinta_del_bounding_box_en_pieza_no_rectangular(tmp_path):
     # Triángulo rectángulo de cateto 100: bounding box 100x100 (10000 mm2),
     # área real la mitad (5000 mm2). El motor rectangular sigue anidando
