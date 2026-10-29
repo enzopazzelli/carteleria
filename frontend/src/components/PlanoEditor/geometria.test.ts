@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { mmAPx, pxAMm, rotarPunto, yDesdePantalla, yEnPantalla } from "./geometria";
+import { corrimientoEnMm, mmAPx, pxAMm, rotarPunto, yDesdePantalla, yEnPantalla } from "./geometria";
+
+describe("corrimientoEnMm", () => {
+  // Es lo que se le suma al centro de la pieza al arrastrarla (A17): no
+  // depende de dónde se la agarró, así que no salta al empezar.
+  it("sin mover el puntero, la pieza no se corre", () => {
+    expect(corrimientoEnMm({ x: 412, y: 97 }, { x: 412, y: 97 }, 0.3)).toEqual({ x: 0, y: 0 });
+  });
+
+  it("se corre lo mismo que el puntero, con la altura dada vuelta", () => {
+    const corrimiento = corrimientoEnMm({ x: 100, y: 100 }, { x: 130, y: 70 }, 0.3);
+    expect(corrimiento.x).toBeCloseTo(100, 6);
+    expect(corrimiento.y).toBeCloseTo(100, 6);
+  });
+});
 
 describe("mmAPx / pxAMm", () => {
   it("convierte mm a píxeles según la escala", () => {

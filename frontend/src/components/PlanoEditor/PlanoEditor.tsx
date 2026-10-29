@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Pieza } from "../../api/piezasYgrupos";
 import type { Colocacion } from "../../api/nesting";
 import { lasDeAdentro } from "../Chapas/chapas";
-import { mmAPx, pxAMm, rotarPunto, yDesdePantalla, yEnPantalla } from "./geometria";
+import { corrimientoEnMm, mmAPx, rotarPunto, yEnPantalla } from "./geometria";
 
 const ESCALA_PX_POR_MM = 0.3;
 // Grados por "click" de rueda. Continuo a propósito (no saltos de 15°):
@@ -138,37 +138,30 @@ export default function PlanoEditor({
     return comandos.join(" ") + " Z";
   }
 
-  /** Dónde está el puntero, en mm de la chapa. */
-  function punteroEnMm(evento: React.PointerEvent<SVGSVGElement>): { x: number; y: number } {
-    const rect = evento.currentTarget.getBoundingClientRect();
-    return {
-      x: pxAMm(evento.clientX - rect.left, ESCALA_PX_POR_MM),
-      y: yDesdePantalla(evento.clientY - rect.top, altoPlanchaMm, ESCALA_PX_POR_MM),
-    };
-  }
-
-  /** Mientras se arrastra, la pieza va centrada en el puntero, que es donde
-   * la deja el servidor al soltar, y las de sus huecos se corren lo mismo (A17). */
+  /** Mientras se arrastra, la pieza se corre lo mismo que el puntero desde
+   * donde se la agarró, sin saltar a centrarse en él, y las de sus huecos se
+   * corren lo mismo (A17). */
   function alMoverEnSvg(evento: React.PointerEvent<SVGSVGElement>) {
     evento.preventDefault();
     if (arrastrando === null || inicioArrastrePx === null || corrimiento === null) return;
     const distanciaPx = Math.hypot(evento.clientX - inicioArrastrePx.x, evento.clientY - inicioArrastrePx.y);
     if (distanciaPx <= UMBRAL_ARRASTRE_PX) return;
-    const puntero = punteroEnMm(evento);
-    const origen = corrimiento.origenes.get(arrastrando)!;
-    setCorrimiento({ ...corrimiento, dx: puntero.x - origen.x, dy: puntero.y - origen.y });
+    const { x, y } = corrimientoEnMm(inicioArrastrePx, { x: evento.clientX, y: evento.clientY }, ESCALA_PX_POR_MM);
+    setCorrimiento({ ...corrimiento, dx: x, dy: y });
   }
 
   function alSoltarEnSvg(evento: React.PointerEvent<SVGSVGElement>) {
     let esperando: void | Promise<unknown> = undefined;
-    if (arrastrando !== null && inicioArrastrePx !== null) {
+    if (arrastrando !== null && inicioArrastrePx !== null && corrimiento !== null) {
       const distanciaPx = Math.hypot(
         evento.clientX - inicioArrastrePx.x,
         evento.clientY - inicioArrastrePx.y
       );
       if (distanciaPx > UMBRAL_ARRASTRE_PX) {
-        const puntero = punteroEnMm(evento);
-        esperando = onMover(arrastrando, puntero.x, puntero.y);
+        // El centro de salida más lo que se corrió: queda donde se la soltó.
+        const origen = corrimiento.origenes.get(arrastrando)!;
+        const { x, y } = corrimientoEnMm(inicioArrastrePx, { x: evento.clientX, y: evento.clientY }, ESCALA_PX_POR_MM);
+        esperando = onMover(arrastrando, origen.x + x, origen.y + y);
       }
     }
     // Lo corrido se sigue viendo hasta que contesta el servidor: si no, volvería

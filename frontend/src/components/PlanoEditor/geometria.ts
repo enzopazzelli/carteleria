@@ -23,6 +23,17 @@ export function yDesdePantalla(yPx: number, altoPlanchaMm: number, escalaPxPorMm
   return altoPlanchaMm - yPx / escalaPxPorMm;
 }
 
+/** Cuánto se corrió el puntero desde `desdePx` hasta `hastaPx` (en la
+ * pantalla), en mm de la chapa. Es lo que se corre la pieza arrastrada,
+ * agarrada de donde sea (A17). */
+export function corrimientoEnMm(desdePx: Punto, hastaPx: Punto, escalaPxPorMm: number): Punto {
+  return {
+    x: pxAMm(hastaPx.x - desdePx.x, escalaPxPorMm),
+    // La altura de la pantalla va al revés que la de la chapa.
+    y: pxAMm(desdePx.y - hastaPx.y, escalaPxPorMm),
+  };
+}
+
 /** Rota `punto` alrededor de `centro` por `anguloGrados`, sentido
  * antihorario (convención matemática estándar; el SVG invierte Y en
  * pantalla, pero esta función trabaja en el espacio mm, no en píxeles
