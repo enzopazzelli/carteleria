@@ -274,6 +274,23 @@ def test_contorno_chico_adentro_de_otro_es_agujero_no_pieza_aparte(tmp_path):
     assert pieza.area_real_mm2 == Decimal("10000") - Decimal("100")  # 100x100 menos el agujero de 10x10
 
 
+def test_un_agujero_adentro_de_dos_formas_que_se_pisan_es_agujero(tmp_path):
+    """Sin unir las formas, un tornillo en el borde del aro de Complejo salía
+    como pieza: lo rodean dos formas que se pisan, y se contaban como dos
+    niveles (A17). Dos que se pisan sin contenerse cuentan como uno."""
+    def agregar(msp):
+        msp.add_lwpolyline([(0, 0), (100, 0), (100, 60), (0, 60)], close=True)  # una forma
+        msp.add_lwpolyline([(40, 0), (160, 0), (160, 60), (40, 60)], close=True)  # otra, que la pisa
+        msp.add_lwpolyline([(65, 25), (75, 25), (75, 35), (65, 35)], close=True)  # el tornillo, adentro de las dos
+
+    ruta = _guardar_dxf(tmp_path, "tornillo.dxf", agregar)
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert len(resultado.piezas) == 2
+    assert sorted(len(pieza.agujeros_mm) for pieza in resultado.piezas) == [0, 1]
+
+
 def test_una_pieza_dentro_del_agujero_de_otra_es_una_isla_propia(tmp_path):
     def agregar(msp):
         msp.add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], close=True)  # exterior con agujero

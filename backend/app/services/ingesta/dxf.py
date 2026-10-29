@@ -407,16 +407,34 @@ def _bbox_contiene(exterior: tuple, interior: tuple) -> bool:
     )
 
 
+def _nivel_de_anidamiento(contenedores: list[list[int]], areas: list[float]) -> list[int]:
+    """El nivel de cada contorno: el largo de la cadena más larga de sus
+    contenedores en la que cada uno contiene al siguiente (A17). Dos
+    contenedores que se pisan sin contenerse cuentan como uno: un tornillo
+    adentro de dos formas que se pisan es el agujero de una, no una isla.
+    Con los contenedores en fila, uno adentro del otro, da lo mismo que
+    contarlos.
+
+    Se recorre de la más grande a la más chica, porque un contenedor tiene
+    más área que lo que contiene; dos iguales (dibujadas dos veces) van en
+    el orden en que vinieron."""
+    nivel = [0] * len(contenedores)
+    for i in sorted(range(len(contenedores)), key=lambda k: (-areas[k], k)):
+        de_afuera = [nivel[j] for j in contenedores[i] if (-areas[j], j) < (-areas[i], i)]
+        nivel[i] = 1 + max(de_afuera) if de_afuera else 0
+    return nivel
+
+
 def _clasificar_piezas_y_agujeros(
     contornos: list[_ContornoValido],
     tamano_maximo_agujero_mm: Decimal | None,
     marcados: Collection[int] = (),
     no_van: Collection[int] = (),
 ) -> list[tuple[_ContornoValido, list[_ContornoValido]]]:
-    """Agrupa los contornos por nivel de anidamiento: un contorno
-    contenido por una cantidad PAR de otros (0, 2, 4...) es una pieza
-    en sí misma; uno contenido por una cantidad IMPAR es agujero de la
-    pieza más chica que lo encierra (su "padre inmediato") — no de
+    """Agrupa los contornos por nivel de anidamiento
+    (`_nivel_de_anidamiento`): un contorno de nivel PAR (0, 2, 4...) es
+    una pieza en sí misma; uno de nivel IMPAR es agujero de la pieza más
+    chica que lo encierra (su "padre inmediato") — no de
     cualquier otra que también lo contenga por fuera. Soporta agujero
     dentro de agujero (una pieza "isla" adentro de un hueco): esos
     quedan en nivel par, como piezas propias.
@@ -464,7 +482,7 @@ def _clasificar_piezas_y_agujeros(
             if contornos[j].poligono.contains(contornos[i].poligono):
                 contenedores[i].append(j)
 
-    nivel = [len(contenedores[i]) for i in range(n)]
+    nivel = _nivel_de_anidamiento(contenedores, [c.poligono.area for c in contornos])
     padre_inmediato: list[int | None] = [
         min(contenedores[i], key=lambda j: contornos[j].poligono.area) if contenedores[i] else None
         for i in range(n)
