@@ -42,6 +42,9 @@ class _Comparacion:
 _candado = threading.Lock()
 _por_id: dict[int, _Comparacion] = {}
 _ultima_de_grupo: dict[int, int] = {}
+#: De una comparación borrada a la que la reemplazó (A17): así el aviso
+#: distingue «la reemplazó otra» de «el servidor se reinició».
+_reemplazadas: dict[int, int] = {}
 _numeros = itertools.count(1)
 
 
@@ -60,9 +63,18 @@ def _leer(comparacion: _Comparacion) -> ComparacionLeer:
 def _comparacion_o_404(comparacion_id: int) -> _Comparacion:
     with _candado:
         comparacion = _por_id.get(comparacion_id)
-    if comparacion is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa comparación ya no está (el servidor se reinició): volvé a comparar.")
-    return comparacion
+        # La que la reemplazó también pudo reemplazarse: se nombra la de ahora.
+        nueva = _reemplazadas.get(comparacion_id)
+        while nueva in _reemplazadas:
+            nueva = _reemplazadas[nueva]
+    if comparacion is not None:
+        return comparacion
+    if nueva is not None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            f"Esa comparación la reemplazó una más nueva (#{nueva}): mirá esa, o volvé a comparar.",
+        )
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa comparación ya no está: el servidor se reinició. Volvé a comparar.")
 
 
 def _correr(comparacion: _Comparacion, preparada: _ComparacionPreparada) -> None:
@@ -109,6 +121,7 @@ def iniciar_comparacion(
         comparacion = _Comparacion(id=next(_numeros), grupo_id=grupo_id)
         if anterior is not None:
             del _por_id[anterior.id]  # se guarda solo la última de cada grupo
+            _reemplazadas[anterior.id] = comparacion.id
         _por_id[comparacion.id] = comparacion
         _ultima_de_grupo[grupo_id] = comparacion.id
     cola_de_trabajos().encolar(lambda: _correr(comparacion, preparada))

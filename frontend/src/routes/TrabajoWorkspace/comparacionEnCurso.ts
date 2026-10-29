@@ -23,7 +23,8 @@ export function intervaloDeConsulta(comparacion: Comparacion | undefined, error:
   return comparacion?.estado === "corriendo" && !seEsfumo(error) ? 1000 : false;
 }
 
-/** El servidor ya no conoce la comparación: se reinició y la perdió. */
+/** El servidor ya no conoce la comparación: se reinició y la perdió, o la
+ * reemplazó una más nueva del mismo grupo. Su 404 dice cuál (A17). */
 export function seEsfumo(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404;
 }
