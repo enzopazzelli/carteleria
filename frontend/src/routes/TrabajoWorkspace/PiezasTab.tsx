@@ -11,6 +11,7 @@ import SeccionarPanel from "../../components/Seccionado/SeccionarPanel";
 import LecturaPanel from "../../components/LecturaDxf/LecturaPanel";
 import { esLaLecturaDe } from "../../components/LecturaDxf/dibujo";
 import { originalesASeccionar } from "../../components/Seccionado/geometria";
+import { separarDescartadas, textoDelPliegue } from "./descartadas";
 import { crearTurnos } from "../../components/Seccionado/turnos";
 import type { Correcciones, LecturaDxf, Pieza } from "../../api/piezasYgrupos";
 import { escalaParaCargar } from "./cargaDxf";
@@ -54,6 +55,7 @@ function PiezasDelTrabajo() {
   const motivoDelServidor = new Map((noEntran ?? []).map((fila) => [fila.pieza_id, fila.motivo]));
   // La pieza cuyo panel de seccionar está abierto.
   const [seccionando, setSeccionando] = useState<number | null>(null);
+  const [verDescartadas, setVerDescartadas] = useState(false);
   const [escalaAMm, setEscalaAMm] = useState("1");
   const [error, setError] = useState<QueMostrar | null>(null);
   // Lo que el importador avisó del último archivo: entidades que no son
@@ -199,12 +201,15 @@ function PiezasDelTrabajo() {
     `${Math.round(Number(formato.ancho_mm))}×${Math.round(Number(formato.alto_mm))}`;
   const chapaPedida = formatos.find((f) => f.id === formatoPedido) ?? null;
   const formatoDelGrupo = (pieza: Pieza) => grupos?.find((g) => g.id === pieza.grupo_id)?.formato_id ?? null;
+  // Las descartadas, plegadas debajo de la tabla (A17).
+  const { aLaVista, plegadas } = separarDescartadas(visibles, revisar);
+  const enLaTabla = verDescartadas ? visibles : aLaVista;
   // Cada tramo, debajo de la pieza de la que salió.
   const ordenadas = [
-    ...visibles
+    ...enLaTabla
       .filter((p) => p.seccionada_de_id === null)
-      .flatMap((p) => [p, ...visibles.filter((t) => t.seccionada_de_id === p.id)]),
-    ...visibles.filter((t) => t.seccionada_de_id !== null && !visibles.some((p) => p.id === t.seccionada_de_id)),
+      .flatMap((p) => [p, ...enLaTabla.filter((t) => t.seccionada_de_id === p.id)]),
+    ...enLaTabla.filter((t) => t.seccionada_de_id !== null && !enLaTabla.some((p) => p.id === t.seccionada_de_id)),
   ];
 
   function acciones(pieza: Pieza) {
@@ -408,6 +413,16 @@ function PiezasDelTrabajo() {
             ))}
           </tbody>
         </table>
+      )}
+      {plegadas.length > 0 && (
+        <button
+          type="button"
+          className="underline text-sm mt-3"
+          aria-expanded={verDescartadas}
+          onClick={() => setVerDescartadas((ver) => !ver)}
+        >
+          {textoDelPliegue(plegadas.length, verDescartadas)}
+        </button>
       )}
     </div>
   );

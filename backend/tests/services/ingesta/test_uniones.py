@@ -302,3 +302,55 @@ def test_muchas_piezas_adentro_del_hueco_no_vuelven_lenta_la_union():
     assert len(uniones) == 1
     assert sum(1 for p in resultado if p.id.startswith("letra-")) == 2000
     assert segundos < 15, f"tardó {segundos:.1f} s"
+
+
+# --- Dos lecturas que salen mal y pasan a lo grande (A17, tarea 32) ------------
+#
+# El plan pide arreglarlas solo si la lectura de Complejo no cambia. No se
+# pudo: quedan marcadas, con el motivo, para el cambio del lector (§7 del
+# diseño de A17). `strict`: si un día pasan, la marca avisa.
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Arreglarlo (tomar el agujero que leyó el lector como limpio aunque se acerque al borde) cambia la "
+    "lectura unida de Complejo: 29 diferencias, y el aro unido desaparece. Pasa a lo grande, con el cambio del lector.",
+)
+def test_la_letra_con_el_hueco_cerca_del_borde_conserva_su_hueco():
+    """Una letra cuyo hueco se acerca a menos de `PAR-50` (0,3 mm) de su
+    borde: el lector ya lo lee como su agujero, pero la unión lo tomaba por
+    otra forma que la pisa, las sumaba y la letra quedaba maciza
+    (revisión de 2.1a)."""
+    afuera = _octogono("o-afuera", 0, 0, 200)
+    adentro = _octogono("o-adentro", 0.3, 40.3, 119.4, contenida_en_id=afuera.id)
+    letra = replace(afuera, agujeros_mm=[adentro.contorno_mm])
+    esperada = _contorno(afuera).difference(_contorno(adentro)).area
+
+    piezas, _uniones = _unir([letra, adentro])
+
+    [de_la_letra] = [p for p in piezas if p.id.startswith("o-afuera")]
+    assert _forma(de_la_letra).area == pytest.approx(esperada)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Es un límite de la regla de afuera hacia adentro (una forma limpia adentro del borde de afuera de otra "
+    "es su borde de adentro): arreglarlo cambia la regla. Pasa a lo grande, con el cambio del lector.",
+)
+def test_la_franja_chica_enganchada_en_otra_se_lee_como_franja():
+    """Una franja chica con su borde de afuera limpio adentro del de afuera
+    de la grande, pero cruzando su borde de adentro: se leía al revés, como
+    un borde de adentro de la grande, y su cuerpo quedaba como hueco
+    (revisión de 2.1a)."""
+    from shapely.geometry import Point
+
+    grande = _franja("g", 0, 0, 1200)
+    chica = _franja("c", 50, 500, 300, ancho=60)
+
+    piezas, _uniones = _unir([*grande, *chica])
+
+    [unida] = [p for p in piezas if p.id.endswith("/unida")]
+    forma = _forma(unida)
+    assert forma.contains(Point(75, 650))  # el cuerpo de la chica sobre el de la grande
+    assert forma.contains(Point(320, 650))  # el cuerpo de la chica sobre el hueco de la grande
+    assert not forma.contains(Point(200, 650))  # el hueco de la chica

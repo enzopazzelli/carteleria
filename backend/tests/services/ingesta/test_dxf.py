@@ -224,6 +224,44 @@ def test_descarta_lineas_duplicadas(tmp_path):
     assert resultado.lineas_duplicadas_descartadas == 1
 
 
+def test_un_contorno_dibujado_como_polilinea_y_como_lineas_sueltas_cuenta_una_vez(tmp_path):
+    """Las líneas sueltas recién forman el cuadrado al encadenarse, y los
+    duplicados se buscaban antes: salían dos piezas, cada una adentro de la
+    otra, y la lectura no terminaba (revisión de la tanda 6 de A17)."""
+    def agregar(msp):
+        puntos = [(0, 0), (100, 0), (100, 100), (0, 100)]
+        msp.add_lwpolyline(puntos, close=True)
+        for desde, hasta in zip(puntos, puntos[1:] + puntos[:1]):
+            msp.add_line(desde, hasta)
+
+    ruta = _guardar_dxf(tmp_path, "cuadrado-dos-veces.dxf", agregar)
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert len(resultado.piezas) == 1
+    assert resultado.piezas[0].area_real_mm2 == Decimal("10000")
+    assert resultado.piezas[0].agujeros_mm == []
+    assert resultado.lineas_duplicadas_descartadas == 1
+
+
+def test_un_contorno_repetido_con_un_vertice_de_mas_cuenta_una_vez(tmp_path):
+    """Con un vértice de más en medio de un lado la firma es otra, pero es la
+    misma forma: cada copia quedaba adentro de la otra (revisión de la tanda
+    6 de A17)."""
+    def agregar(msp):
+        msp.add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], close=True)
+        msp.add_lwpolyline([(0, 0), (50, 0), (100, 0), (100, 100), (0, 100)], close=True)
+
+    ruta = _guardar_dxf(tmp_path, "cuadrado-con-un-vertice-de-mas.dxf", agregar)
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert len(resultado.piezas) == 1
+    assert resultado.piezas[0].area_real_mm2 == Decimal("10000")
+    assert resultado.piezas[0].agujeros_mm == []
+    assert resultado.lineas_duplicadas_descartadas == 1
+
+
 def test_calcula_area_real_distinta_del_bounding_box_en_pieza_no_rectangular(tmp_path):
     # Triángulo rectángulo de cateto 100: bounding box 100x100 (10000 mm2),
     # área real la mitad (5000 mm2). El motor rectangular sigue anidando
@@ -272,6 +310,30 @@ def test_contorno_chico_adentro_de_otro_es_agujero_no_pieza_aparte(tmp_path):
     pieza = resultado.piezas[0]
     assert len(pieza.agujeros_mm) == 1
     assert pieza.area_real_mm2 == Decimal("10000") - Decimal("100")  # 100x100 menos el agujero de 10x10
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Arreglarlo (contar la cadena más larga de formas que se contienen, no cuántas lo rodean) cambia la "
+    "lectura de otros archivos: Muestra Vectores pasa de 1786 a 1938 piezas a cortar y strat suma 12 contornos "
+    "diminutos. Pasa a lo grande, con el cambio del lector.",
+)
+def test_un_agujero_adentro_de_dos_formas_que_se_pisan_es_agujero(tmp_path):
+    """Sin unir las formas, un tornillo en el borde del aro de Complejo sale
+    como pieza: lo rodean dos formas que se pisan, y se cuentan como dos
+    niveles (A17). Dos que se pisan sin contenerse tendrían que contar como
+    uno."""
+    def agregar(msp):
+        msp.add_lwpolyline([(0, 0), (100, 0), (100, 60), (0, 60)], close=True)  # una forma
+        msp.add_lwpolyline([(40, 0), (160, 0), (160, 60), (40, 60)], close=True)  # otra, que la pisa
+        msp.add_lwpolyline([(65, 25), (75, 25), (75, 35), (65, 35)], close=True)  # el tornillo, adentro de las dos
+
+    ruta = _guardar_dxf(tmp_path, "tornillo.dxf", agregar)
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert len(resultado.piezas) == 2
+    assert sorted(len(pieza.agujeros_mm) for pieza in resultado.piezas) == [0, 1]
 
 
 def test_una_pieza_dentro_del_agujero_de_otra_es_una_isla_propia(tmp_path):

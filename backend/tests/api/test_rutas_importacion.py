@@ -15,6 +15,8 @@ from app.api.dependencias import obtener_sesion
 from app.modelos import Base
 from app.modelos.base import crear_motor
 
+from .ayudas import segundos_que_tarda_otro_pedido
+
 _ROJO = 1
 
 
@@ -120,6 +122,18 @@ def test_analizar_no_crea_nada_en_la_base(cliente, chapa, tmp_path):
     _analizar(cliente, _dxf_bytes(tmp_path, _muestra_chica))
 
     assert cliente.get("/trabajos").json() == []
+
+
+def test_analizar_no_traba_los_demas_pedidos(cliente, chapa, tmp_path, monkeypatch):
+    from app.api import rutas_importacion
+
+    contenido = _dxf_bytes(tmp_path, _muestra_chica)
+
+    tarda = segundos_que_tarda_otro_pedido(
+        cliente, lambda: _analizar(cliente, contenido), rutas_importacion, "parsear_dxf", monkeypatch
+    )
+
+    assert tarda < 2
 
 
 def test_analizar_sugiere_la_escala_cuando_las_hojas_no_coinciden(cliente, chapa, tmp_path):
