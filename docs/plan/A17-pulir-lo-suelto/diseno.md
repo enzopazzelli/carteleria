@@ -213,7 +213,13 @@ Además de las pruebas completas y del recorrido de cada tanda (§3), hay que mi
   - seccionar una;
   - dejar el grupo vacío.
 - **Sin falsos vencidos:** en una copia de la base real, ningún anidado vigente pasa a vencido solo por el cambio de regla.
-- **La lectura (tanda 6):** Complejo se lee igual que antes, pieza por pieza, contra una lectura guardada antes de tocar el lector.
+- **La lectura (tanda 6):** todos los DXF de prueba se leen igual que antes, pieza por pieza, contra una lectura guardada antes de tocar el lector.
+  - Los archivos: Complejo, Muestra Vectores, muestra 2, Corporeas, Parador, strat, carrusel, esqueletos y repisas.
+  - Se comparan las dos lecturas: sin unir y unida.
+  - Por cada forma: si se corta, entra descartada o no va, y por qué; su área; el área de cada hueco; adentro de qué pieza está.
+  - Se comparan también los avisos.
+
+  Al principio se comparaba solo Complejo, y la revisión encontró un arreglo que lo dejaba igual pero cambiaba otros archivos (§7.5).
 - **Las mediciones (tanda 2):** se anotan en §8 con la fecha, la copia usada y cada corrida, no solo el promedio.
 
 ### 4.9 El cierre
