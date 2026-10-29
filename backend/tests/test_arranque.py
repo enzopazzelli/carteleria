@@ -163,6 +163,55 @@ def test_si_vuelve_a_fallar_el_mensaje_nombra_el_primer_respaldo(tmp_path, monke
     assert f"Ya había fallado otro intento: la base de antes del primero está en {primero}." in str(error.value)
 
 
+class _SinLugar:
+    """Una conexión de SQLite cuyo respaldo no entra en el disco."""
+
+    def __init__(self, real):
+        self.real = real
+
+    def backup(self, destino):
+        raise sqlite3.OperationalError("database or disk is full")
+
+    def close(self):
+        self.real.close()
+
+
+def test_si_el_respaldo_falla_no_deja_carpeta_y_lo_dice(tmp_path, monkeypatch):
+    """Con el disco lleno el respaldo falla: salía una traza cruda y quedaba
+    una carpeta a medias, que un fallo después nombraba como la base sana
+    (A17, tarea 28 bis). La base no se toca."""
+    from types import SimpleNamespace
+
+    base, url = _base_en(_ANTES, tmp_path, monkeypatch)
+    monkeypatch.setattr(arranque, "sqlite3", SimpleNamespace(connect=lambda ruta: _SinLugar(sqlite3.connect(ruta))))
+
+    with pytest.raises(ActualizacionFallida) as error:
+        poner_la_base_al_dia(url, base.parent, _HOY)
+
+    assert str(error.value) == (
+        "No se pudo hacer el respaldo de la base antes de actualizarla: database or disk is full. "
+        "La base no se tocó: liberá espacio y volvé a arrancar."
+    )
+    assert error.value.respaldo is None
+    assert list(base.parent.glob("respaldo-*")) == []
+    assert version_de_la_base(url) == _ANTES
+
+
+def test_la_carpeta_temporal_se_vacia_y_queda(tmp_path):
+    """Lo que dejó un anidado o una lectura del DXF cortados a mitad (A17)."""
+    from app.arranque import vaciar_la_carpeta_temporal
+
+    carpeta = tmp_path / "tmp"
+    (carpeta / "carteleria-sparrow-abc").mkdir(parents=True)
+    (carpeta / "carteleria-sparrow-abc" / "entrada.json").write_text("{}")
+    (carpeta / "suelto.dxf").write_text("")
+
+    vaciar_la_carpeta_temporal(carpeta)
+
+    assert carpeta.is_dir() and list(carpeta.iterdir()) == []
+    vaciar_la_carpeta_temporal(tmp_path / "no-existe")  # sin la carpeta, no falla
+
+
 def test_el_registro_sigue_escribiendo_despues_de_actualizar(tmp_path, monkeypatch):
     ruta = configurar_registro(tmp_path / "registro", 10_000, 2)
     base, url = _base_en(_ANTES, tmp_path, monkeypatch)

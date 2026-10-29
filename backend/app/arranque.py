@@ -16,6 +16,7 @@ decir por qué. Ahora se compara la versión de la base con la del código:
 from __future__ import annotations
 
 import re
+import shutil
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -84,17 +85,43 @@ def _respaldar(base: Path, carpeta_datos: Path, hoy: date, version: str) -> Path
     while carpeta.exists():
         carpeta = carpeta_datos / f"{nombre}-{numero}"
         numero += 1
-    carpeta.mkdir(parents=True)
-    # El respaldo de SQLite, no una copia del archivo: con WAL, lo último
-    # escrito puede estar todavía en `carteleria.db-wal`.
-    origen = sqlite3.connect(base)
-    destino = sqlite3.connect(carpeta / base.name)
     try:
-        origen.backup(destino)
-    finally:
-        destino.close()
-        origen.close()
+        carpeta.mkdir(parents=True)
+        # El respaldo de SQLite, no una copia del archivo: con WAL, lo último
+        # escrito puede estar todavía en `carteleria.db-wal`.
+        origen = sqlite3.connect(base)
+        try:
+            destino = sqlite3.connect(carpeta / base.name)
+            try:
+                origen.backup(destino)
+            finally:
+                destino.close()
+        finally:
+            origen.close()
+    except Exception as error:
+        # Con el disco lleno o sin permiso (A17): sin la carpeta a medias, que
+        # `_respaldos_anteriores` tomaría después por la base sana. Se borra
+        # recién con las conexiones cerradas: en Windows, un archivo abierto
+        # no se borra.
+        shutil.rmtree(carpeta, ignore_errors=True)
+        raise ActualizacionFallida(
+            f"No se pudo hacer el respaldo de la base antes de actualizarla: {error}. "
+            "La base no se tocó: liberá espacio y volvé a arrancar."
+        ) from error
     return carpeta
+
+
+def vaciar_la_carpeta_temporal(carpeta: Path) -> None:
+    """Borra lo que dejaron un anidado o una lectura del DXF cortados a
+    mitad, por ejemplo al cerrar el servidor (A17). Al arrancar nadie lo
+    está usando. La carpeta queda; lo que no se puede borrar, también."""
+    if not carpeta.is_dir():
+        return
+    for adentro in carpeta.iterdir():
+        if adentro.is_dir():
+            shutil.rmtree(adentro, ignore_errors=True)
+        else:
+            adentro.unlink(missing_ok=True)
 
 
 def _respaldos_anteriores(carpeta_datos: Path, version: str) -> list[Path]:

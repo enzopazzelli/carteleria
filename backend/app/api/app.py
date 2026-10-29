@@ -21,7 +21,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .. import config
-from ..arranque import ActualizacionFallida, BaseMasNueva, poner_la_base_al_dia
+from ..arranque import ActualizacionFallida, BaseMasNueva, poner_la_base_al_dia, vaciar_la_carpeta_temporal
 from ..modelos.base import inicializar
 from ..registro import configurar_registro, registro
 from . import rutas_nesting
@@ -59,6 +59,12 @@ async def _ciclo_de_vida(app: FastAPI) -> AsyncIterator[None]:
             raise
         if respaldo is not None:
             registro().warning("La base estaba atrasada y se actualizó. El respaldo quedó en %s", respaldo)
+        # Lo que dejaron en la carpeta temporal los que se cortaron (A17). Si
+        # falla, queda en el registro y el servidor arranca igual.
+        try:
+            vaciar_la_carpeta_temporal(config.DIRECTORIO_TEMPORAL)
+        except OSError:
+            registro().exception("No se pudo vaciar la carpeta temporal al arrancar")
         # Los anidados que corrían cuando se cerró no siguen (A10). Si
         # falla, queda en el registro y el servidor arranca igual.
         try:
