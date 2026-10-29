@@ -583,7 +583,7 @@ def test_recalcula_el_aprovechamiento(cliente, tmp_path):
 
 # --- Reacomodar la chapa de destino (A17) -----------------------------------
 #
-# `docs/plan/A17-pulir-lo-suelto/diseno.md §4.3.1`. El anidado se arma a
+# `docs/historico/A17-pulir-lo-suelto/diseno.md §4.3.1`. El anidado se arma a
 # mano: cuadrados en chapas de 1000 × 1000, margen 10, separación 10 y kerf 0
 # (lugar útil de 980 × 980). Dos cuadrados de 400 en la columna del medio
 # dejan a los costados franjas de 280: otro de 400 no entra en lo libre, pero

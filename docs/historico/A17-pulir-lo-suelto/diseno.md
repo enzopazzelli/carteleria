@@ -1,8 +1,8 @@
 # A17 · Pulir lo que quedó suelto — diseño
 
-> **Estado:** escrito el 2026-10-26, después de tres rondas de preguntas a Enzo (§2). **Aprobado por Enzo el 2026-10-26.** El plan está en [`plan.md`](plan.md): 41 tareas en 7 tandas, con pausa al final de cada tanda. Todavía no se empezó a construir.
+> **Estado:** escrito el 2026-10-26, después de tres rondas de preguntas a Enzo (§2). **Aprobado por Enzo el 2026-10-26.** El plan está en [`plan.md`](plan.md): 41 tareas en 7 tandas, con pausa al final de cada tanda. **Cerrado el 2026-10-29:** las siete tandas en `main`; cómo quedó cada una, en §8. Las mediciones de la tanda 2 quedan esperando a Enzo (§6).
 >
-> **De dónde sale.** El 2026-10-26, después de cerrar la página de inicio (A16), Enzo pidió: «Trabajemos con las mejoras del motor y pulir eso, para que las cosas grandes por hacer queden solas. Las cosas que quedaron sueltas también». Junta en un solo sprint los pendientes chicos que quedaron en las tablas de [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md): los del seccionado (A5), el reparto por chapa (A6), los mensajes (A9), los huecos (A10 y A13), el giro de las piezas grandes (A11), el material usado (A12), Chapas (A14), el PDF del diseño anidado (A15), la página de inicio (A16) y la lectura del DXF (2.1a y 2.1b).
+> **De dónde sale.** El 2026-10-26, después de cerrar la página de inicio (A16), Enzo pidió: «Trabajemos con las mejoras del motor y pulir eso, para que las cosas grandes por hacer queden solas. Las cosas que quedaron sueltas también». Junta en un solo sprint los pendientes chicos que quedaron en las tablas de [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md): los del seccionado (A5), el reparto por chapa (A6), los mensajes (A9), los huecos (A10 y A13), el giro de las piezas grandes (A11), el material usado (A12), Chapas (A14), el PDF del diseño anidado (A15), la página de inicio (A16) y la lectura del DXF (2.1a y 2.1b).
 >
 > **Sobre los valores.** Suma dos parámetros al [`REGISTRO.md`](../../REGISTRO.md): `PAR-57`, el tiempo máximo para reacomodar una chapa (§4.3), y `PAR-58`, el tope de tramos al seccionar (§4.4). Si en la tanda 2 gana el camino de las búsquedas a la vez, suma `PAR-59`, cuántas búsquedas corren a la vez. Se dan de alta en el registro en la tanda que los usa.
 
@@ -260,6 +260,7 @@ Esta lista reemplaza, en el plan maestro, las filas de las tablas de pendientes 
 | Elegir qué grupo de formas se une (hoy la casilla vale para el archivo entero) | Que aparezca un diseño que lo pida |
 | Marcar de a muchas formas con un recuadro | Que haga falta |
 | Lo que avanzó con su valor por defecto y se confirma con el dueño (4.5 del plan maestro) | El dueño |
+| Las mediciones de la tanda 2 (§4.2 y §8.2): los dos caminos para Complejo en 7 chapas, el orden de los huecos y repetir con varias corridas las de A11, A12, A13 y 2.1a. El código está, apagado | Enzo: la máquina libre unos 75 minutos. No se corren sin que lo pida |
 
 ## 7. Lo grande, después del sprint
 
@@ -320,7 +321,7 @@ Rama `fix/a17-1-arranque-y-motor`, 9 commits. Ninguna tarea se cerró sin cambio
     - con el motor rectangular, la franja de la separación: con Sparrow, que es el de por defecto, no pasa;
     - la pasada fina del seccionado sin ±5° y ±10° finos: si en otra forma da peor, se suman.
 
-### 8.2 Tanda 2 — Complejo en 7 chapas y las mediciones (en curso)
+### 8.2 Tanda 2 — Complejo en 7 chapas y las mediciones (el código en `main`; las mediciones, esperando a Enzo)
 
 Rama `feat/a17-2-complejo`.
 

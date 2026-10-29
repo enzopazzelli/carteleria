@@ -1,4 +1,4 @@
-"""Reacomodar la chapa de destino (A17, `docs/plan/A17-pulir-lo-suelto/diseno.md §4.3.1`).
+"""Reacomodar la chapa de destino (A17, `docs/historico/A17-pulir-lo-suelto/diseno.md §4.3.1`).
 
 Al pasar una pieza a una chapa donde no entra en lo libre, esa chapa se
 vuelve a acomodar entera con Sparrow, ya con la pieza nueva. Las demás

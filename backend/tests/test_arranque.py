@@ -1,4 +1,4 @@
-"""La base se pone al día al arrancar (A17, `docs/plan/A17-pulir-lo-suelto/diseno.md §4.1`)."""
+"""La base se pone al día al arrancar (A17, `docs/historico/A17-pulir-lo-suelto/diseno.md §4.1`)."""
 from __future__ import annotations
 
 import sqlite3

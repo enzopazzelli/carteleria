@@ -58,6 +58,71 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-10-29 — Pulir lo que quedó suelto (A17), cerrado
+
+**Quién:** Enzo · **Carril:** A y B · **Sprint:** —
+
+### Qué se hizo
+
+Un sprint para cerrar los pendientes chicos de las tablas del plan maestro, del 2026-10-26 al 2026-10-29: 41 tareas en 7 tandas. Cada tanda fue en su rama, pasó las pruebas completas y una revisión aparte, tuvo su recorrido en Chrome sin ventana sobre una copia de la base, y se fusionó en `main` con el ok de Enzo ([`historico/A17-pulir-lo-suelto/`](historico/A17-pulir-lo-suelto/diseno.md), cómo quedó cada una en §8). Pruebas del servidor: 988 al cerrar la tanda 1 y 1076 al cerrar el sprint, más 3 fallas conocidas. De la pantalla: 226 y 272.
+
+- **Tanda 1, el arranque y el motor:**
+  - la base se pone al día sola al arrancar, con respaldo;
+  - la carpeta temporal va al lado de los datos;
+  - el aviso de tiempo agotado sale solo cuando se agotó;
+  - el seccionado prueba ángulos nuevos en la segunda pasada;
+  - nada cambia piezas con un anidado corriendo.
+- **Tanda 2, Complejo en 7 chapas:** el código de los dos caminos y de los otros órdenes de los huecos está en `main`, apagado. Las mediciones quedan esperando a Enzo.
+- **Tanda 3, Chapas:**
+  - si una pieza no entra en lo libre de otra chapa, esa chapa se reacomoda con Sparrow, con «Deshacer»;
+  - la chapa grande va con el color de su chapa;
+  - el editor ya no salta;
+  - el diseño chiquito va recortado alrededor de la pieza;
+  - se borró el visor viejo.
+- **Tanda 4, seccionar y comparar:**
+  - la grilla a milímetros enteros;
+  - un color por tramo que no se repite entre vecinos;
+  - un tope de 50 tramos;
+  - la comparación con los parámetros del grupo y con la pieza entera donde entra;
+  - los avisos por chapa.
+- **Tanda 5, mensajes y Anidado:**
+  - un aviso cuando una pestaña no pudo cargar, con «Reintentar»;
+  - los mensajes con muchas piezas muestran cinco y «y N más»;
+  - el error y los avisos de los anidados del historial;
+  - un respaldo que falla lo dice.
+- **Tanda 6, lectura del DXF y Piezas:**
+  - las descartadas, plegadas;
+  - tres lecturas que salen mal pasaron a lo grande. Un arreglo cambiaba la lectura de otros archivos y se deshizo; desde entonces se compara la lectura de nueve DXF de prueba, no solo de Complejo;
+  - un archivo con una forma dibujada dos veces ya no cuelga la app.
+- **Tanda 7, presupuesto, inicio y PDF:**
+  - el anidado vencido (las piezas cambiaron después de anidar) no se cobra, y lo dicen el Costeo, la tarjeta del inicio, Anidado, Chapas y el PDF;
+  - en el PDF, las chapas bajas van centradas;
+  - las medidas de Piezas y de Grupos, en milímetros enteros.
+
+### Qué se decidió
+
+Con Enzo, por preguntas con opciones:
+- entra todo lo chico, y lo que espera a otro va a una lista aparte;
+- con el elegido vencido, cuenta el más reciente al día, con aviso;
+- la miniatura del inicio queda como está;
+- los números del PDF, con la regla del plan;
+- las mediciones de la tanda 2, cuando tenga la máquina libre.
+
+Lo que decidió Claude, en §9 de su diseño.
+
+### Cambios en el registro
+
+- **`PAR-57`** (30 s, el tiempo para reacomodar una chapa) y **`PAR-58`** (50 tramos, el tope del seccionado): dados de alta como provisorios en las tandas 3 y 4.
+- **`PAR-59`** (cuántas búsquedas a la vez) no se da de alta hasta medir la tanda 2.
+
+### Pendiente
+
+En el plan maestro §7 las tablas de pendientes se reemplazaron por dos listas, «Esperando a alguien» y «Lo grande, después de A17».
+- **Lo próximo grande:** las pantallas de materiales y presupuestos, la aprobación del presupuesto, y cobrar por lo usado.
+- **Lo que espera a Enzo:** las mediciones de la tanda 2 (unos 75 minutos con la máquina libre), e imprimir y medir una hoja de chapas.
+
+---
+
 ## 2026-10-24 (2) — Las chapas en conjunto y el diseño inicial (A14)
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —
