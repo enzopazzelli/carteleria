@@ -261,8 +261,8 @@ Esta lista reemplaza, en el plan maestro, las filas de las tablas de pendientes 
 2. **La aprobación del presupuesto.**
 3. **Cobrar por lo usado y llevar la cuenta de los retazos** (de A12).
 4. **Recordar las correcciones de la lectura** al volver a cargar el mismo dibujo (Enzo, §2).
-5. **Cambiar cómo decide el lector qué es pieza y qué es agujero** (Enzo, §2). Si las dos lecturas de §4.6.3 no se pueden arreglar sin cambiar Complejo, van acá.
-6. **La importación de varios diseños en pantalla.** Hoy existe solo por la API (`/importaciones/dxf/...`): no une ni deja corregir, cada trabajo tendría de fondo el archivo entero, sus mensajes se revisaron sin miniaturas, y su comparación con el motor rectangular se cae entera si falla un formato.
+5. **Cambiar cómo decide el lector qué es pieza y qué es agujero** (Enzo, §2). Las dos lecturas de §4.6.3 vinieron acá (tanda 6, 2026-10-29): la letra con el hueco cerca del borde se pudo arreglar, pero cambiaba la lectura unida de Complejo (29 diferencias), y la franja enganchada es un límite de la regla de afuera hacia adentro. Sus pruebas están en `test_uniones.py`, marcadas como fallas conocidas con el motivo.
+6. **La importación de varios diseños en pantalla.** Hoy existe solo por la API (`/importaciones/dxf/...`): no une ni deja corregir, cada trabajo tendría de fondo el archivo entero, y sus mensajes se revisaron sin miniaturas. (Su comparación es la de Grupos, que desde la tanda 4 ya no se cae entera si falla un formato.)
 7. **En espera por decisión de Enzo** (2026-10-22): los colores de referencia por pieza y leer el `.cdr`.
 8. **Lo de afuera** (etapa 4): el servidor real, el mail real, WhatsApp, y el logo y los datos fiscales en el PDF.
 
