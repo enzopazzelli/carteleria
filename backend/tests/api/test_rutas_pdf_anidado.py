@@ -67,6 +67,21 @@ def test_lo_movido_a_mano_sale_en_su_lugar_nuevo(cliente, tmp_path):
     assert ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2) == pytest.approx((900, 900))
 
 
+_VENCIDO = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de presupuestar."
+
+
+def test_el_anidado_vencido_lo_avisa_en_la_hoja_del_disenio(cliente, tmp_path):
+    """Sigue en el PDF, para ver qué se anidó, pero no se cobra (A17)."""
+    trabajo, _grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    assert _VENCIDO not in _texto(cliente.get(f"/trabajos/{trabajo['id']}/pdf-anidado").content)
+    pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
+    cliente.patch(f"/piezas/{pieza['id']}", json={"cantidad": 2})
+
+    texto = _texto(cliente.get(f"/trabajos/{trabajo['id']}/pdf-anidado").content)
+
+    assert _VENCIDO in texto.replace("\n", " ")
+
+
 def test_un_grupo_sin_anidar_va_al_pie(cliente, tmp_path):
     trabajo, _grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
     cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "G2"})

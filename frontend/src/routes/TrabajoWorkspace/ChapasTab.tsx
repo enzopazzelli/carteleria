@@ -6,7 +6,7 @@ import type { GrupoDeCorte } from "../../api/piezasYgrupos";
 import Banner from "../../components/Banner";
 import ChapaGrande from "../../components/Chapas/ChapaGrande";
 import Mosaico from "../../components/Chapas/Mosaico";
-import { anidadoParaMostrar, avisoDeReacomodo, cambioLaCantidadDeChapas } from "../../components/Chapas/chapas";
+import { AVISO_DE_VENCIDO, anidadoParaMostrar, avisoDeReacomodo, cambioLaCantidadDeChapas } from "../../components/Chapas/chapas";
 import DisenioInicial from "../../components/Disenio/DisenioInicial";
 import { IluminadoProvider } from "../../components/Disenio/Iluminado";
 import { estadosPorPieza } from "../../components/Disenio/pintado";
@@ -158,6 +158,7 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
 
   return (
     <div className="space-y-4">
+      {anidado.vencido && <Mensaje variante="aviso" que={AVISO_DE_VENCIDO} />}
       <DisenioInicial trabajoId={trabajoId} modo="por_chapa" estados={estados} alClicPieza={irASuChapa} />
       {problema && <Mensaje variante="error" que={problema} trabajoId={trabajoId} />}
       {reacomodo && (

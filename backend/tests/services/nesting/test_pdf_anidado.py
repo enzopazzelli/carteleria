@@ -16,7 +16,7 @@ from app.services.nesting.hojas_pdf import (
     TrabajoDelPdf,
     armar_hojas,
 )
-from app.services.nesting.pdf_anidado import GRIS_OTRO, PALETA_CHAPAS, ROJO_FALTA, dibujar_pdf
+from app.services.nesting.pdf_anidado import AVISO_DE_VENCIDO, GRIS_OTRO, PALETA_CHAPAS, ROJO_FALTA, dibujar_pdf
 
 RAIZ = Path(__file__).parents[4]
 
@@ -109,3 +109,8 @@ def test_la_paleta_es_la_de_la_pantalla():
     arreglo = re.search(r"PALETA_CHAPAS[^=]*=\s*\[(.*?)\]", fuente, re.S).group(1)
     assert list(PALETA_CHAPAS) == re.findall(r'"(#[0-9a-f]{6})"', arreglo)
     assert ROJO_FALTA in fuente and GRIS_OTRO in fuente
+
+
+def test_el_aviso_del_anidado_vencido_es_el_de_chapas():
+    fuente = (RAIZ / "frontend/src/components/Chapas/chapas.ts").read_text(encoding="utf-8")
+    assert f'AVISO_DE_VENCIDO =\n  "{AVISO_DE_VENCIDO}"' in fuente

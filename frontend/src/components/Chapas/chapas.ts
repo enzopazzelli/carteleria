@@ -2,10 +2,21 @@ import type { Colocacion, Ejecucion } from "../../api/nesting";
 import type { Pieza } from "../../api/piezasYgrupos";
 import { rotarPunto } from "../PlanoEditor/geometria";
 
-/** El anidado que se muestra de un grupo: el definitivo si está listo, si
- * no el primero listo del historial (la misma regla que tenía Ajuste). */
+/** Arriba del diseño, con un anidado vencido. El mismo del PDF
+ * (`pdf_anidado.AVISO_DE_VENCIDO`): una prueba los compara. */
+export const AVISO_DE_VENCIDO =
+  "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de presupuestar.";
+
+/** El anidado que se muestra de un grupo, con la regla del presupuesto
+ * (`costeo._ejecucion_para_costear`): el definitivo si está listo y al
+ * día; si no, el más reciente al día (el historial viene del más nuevo al
+ * más viejo). Si ninguno está al día, el definitivo o el más reciente,
+ * con su aviso (A17). */
 export function anidadoParaMostrar(historial: Ejecucion[] | undefined): Ejecucion | undefined {
-  return historial?.find((e) => e.es_definitiva && e.estado === "lista") ?? historial?.find((e) => e.estado === "lista");
+  const listas = historial?.filter((e) => e.estado === "lista") ?? [];
+  const definitivo = listas.find((e) => e.es_definitiva);
+  if (definitivo && !definitivo.vencido) return definitivo;
+  return listas.find((e) => !e.vencido) ?? definitivo ?? listas[0];
 }
 
 function areaDeAnillo(anillo: (string | number)[][]): number {

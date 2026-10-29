@@ -72,6 +72,8 @@ class BloqueDelPdf:
     linea: str
     anidado: str
     disenio: DisenioDelPdf
+    #: Las piezas del grupo cambiaron después de este anidado: no se cobra (A17).
+    vencido: bool = False
 
 
 @dataclass(frozen=True)
@@ -212,6 +214,7 @@ def _alto_de_tabla(bloque: BloqueDelPdf, con_sin_anidar: bool) -> float:
     renglones = len(bloque.chapas)
     renglones += any(p.estado == "falta" for p in bloque.disenio.piezas)
     renglones += bool(bloque.disenio.sin_lugar)
+    renglones += bloque.vencido
     renglones += con_sin_anidar
     return renglones * FILA_TABLA_MM + TABLA_FIJO_MM
 

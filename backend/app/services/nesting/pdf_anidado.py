@@ -46,6 +46,8 @@ PALETA_CHAPAS: tuple[str, ...] = (
 )
 ROJO_FALTA = "#d62728"
 GRIS_OTRO = "#d9dee3"
+#: El mismo de Chapas (`ChapasTab.tsx`): el anidado se ve, pero no se cobra (A17).
+AVISO_DE_VENCIDO = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de presupuestar."
 
 # Las letras del PDF del presupuesto, guardadas al lado para que salga
 # igual en Windows y en el servidor.
@@ -224,6 +226,9 @@ def _dibujar_tabla(lienzo: Canvas, trabajo: TrabajoDelPdf, bloque: BloqueDelPdf,
     escribir(f"Material usado: {bloque.linea}")
     renglon -= FILA_TABLA_MM
     escribir(bloque.anidado, color=_GRIS_TEXTO)
+    if bloque.vencido:
+        renglon -= FILA_TABLA_MM
+        escribir(AVISO_DE_VENCIDO, fuente=_NEGRITA, color=colors.HexColor(ROJO_FALTA))
     faltan = [p.nombre for p in bloque.disenio.piezas if p.estado == "falta"]
     if faltan:
         renglon -= FILA_TABLA_MM

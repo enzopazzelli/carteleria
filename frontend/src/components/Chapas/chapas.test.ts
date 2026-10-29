@@ -28,10 +28,10 @@ describe("cambioLaCantidadDeChapas", () => {
   });
 });
 
-function ejecucion(id: number, estado: Ejecucion["estado"], esDefinitiva = false): Ejecucion {
+function ejecucion(id: number, estado: Ejecucion["estado"], esDefinitiva = false, vencido = false): Ejecucion {
   return {
     id, grupo_id: 1, motor: "sparrow", semilla: null, estado, planchas_usadas: 1, aprovechamiento_pct: null,
-    milisegundos: null, mensajes: null, error: null, es_definitiva: esDefinitiva, creado_en: "2026-10-24",
+    milisegundos: null, mensajes: null, error: null, es_definitiva: esDefinitiva, vencido, creado_en: "2026-10-24",
   };
 }
 
@@ -61,6 +61,17 @@ describe("anidadoParaMostrar", () => {
   it("no da nada si ninguna está lista", () => {
     expect(anidadoParaMostrar([ejecucion(1, "error"), ejecucion(2, "corriendo", true)])).toBeUndefined();
     expect(anidadoParaMostrar(undefined)).toBeUndefined();
+  });
+
+  // Como el presupuesto (`costeo._ejecucion_para_costear`, Enzo, A17).
+  it("con el definitivo vencido, muestra el más reciente al día", () => {
+    const historial = [ejecucion(9, "lista", false, true), ejecucion(8, "lista"), ejecucion(5, "lista", true, true)];
+    expect(anidadoParaMostrar(historial)?.id).toBe(8);
+  });
+
+  it("si ninguno está al día, muestra el de siempre", () => {
+    expect(anidadoParaMostrar([ejecucion(8, "lista", false, true), ejecucion(5, "lista", true, true)])?.id).toBe(5);
+    expect(anidadoParaMostrar([ejecucion(8, "lista", false, true), ejecucion(5, "lista", false, true)])?.id).toBe(8);
   });
 });
 

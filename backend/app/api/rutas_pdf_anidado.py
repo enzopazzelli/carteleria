@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..costeo import _ejecucion_para_costear
+from ..costeo import _ejecucion_para_costear, anidado_vigente
 from ..modelos.catalogo import Formato
 from ..modelos.presupuesto import Presupuesto
 from ..modelos.trabajo import EjecucionNesting, GrupoDeCorte, Pieza, Trabajo
@@ -159,6 +159,7 @@ def datos_del_pdf(sesion: Session, trabajo: Trabajo, ahora: datetime) -> Trabajo
             anidado=(f"anidado #{ejecucion.id}, elegido para el presupuesto" if ejecucion.es_definitiva
                      else f"anidado #{ejecucion.id}, el más reciente, sin elegir para el presupuesto"),
             disenio=_disenio(sesion, trabajo, grupo, ejecucion),
+            vencido=not anidado_vigente(grupo, ejecucion),
         ))
     return TrabajoDelPdf(nombre=trabajo.nombre, archivo=trabajo.archivo_origen, generado=ahora,
                          presupuesto=_presupuesto(sesion, trabajo), bloques=bloques, sin_anidar=sin_anidar)
