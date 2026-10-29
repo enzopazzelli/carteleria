@@ -299,3 +299,24 @@ def test_un_tramo_que_ocupa_dos_celdas_tampoco_repite_color_con_sus_vecinos():
     colores = colores_de_tramos(resultado.tramos)
 
     assert all(colores[i] != colores[j] for i, j in _vecinos(resultado.tramos))
+
+
+_GIRADAS = {
+    "rectángulo a 30°": (box(0, 0, 4000, 2500), Grilla(30, 137, 291)),
+    "disco a 45°": (Point(2000, 2000).buffer(2000), Grilla(45, 0, 0)),
+    "ele a 60°": (box(0, 0, 4000, 1000).union(box(0, 0, 1000, 4000)), Grilla(60, 137, 291)),
+}
+
+
+@pytest.mark.parametrize("caso", sorted(_GIRADAS))
+def test_con_la_grilla_girada_tambien_alcanzan_cuatro_colores(caso):
+    """Con la grilla girada, recorrer los tramos de abajo hacia arriba usaba
+    cinco o seis colores, y la paleta de la pantalla tiene seis (revisión de
+    A17). Pintando primero el que tiene más colores alrededor, cuatro."""
+    forma, grilla = _GIRADAS[caso]
+    resultado = seccionar_con_grilla(forma, (1000, 1000), grilla)
+
+    colores = colores_de_tramos(resultado.tramos)
+
+    assert all(colores[i] != colores[j] for i, j in _vecinos(resultado.tramos))
+    assert len(set(colores)) <= 4

@@ -121,22 +121,33 @@ def _cortes_entre(tramos: list[Polygon]) -> list[LineString]:
 
 
 def colores_de_tramos(tramos: list[Polygon]) -> list[int]:
-    """El color de cada tramo, para dibujarlos (A17): el primero que no
-    tiene ninguno de sus vecinos ya pintados. Son vecinos los que se tocan
-    por un lado o por una esquina. Se recorren de abajo hacia arriba y de
-    izquierda a derecha; en una cuadrícula alcanzan cuatro colores.
+    """El color de cada tramo, para dibujarlos (A17): uno distinto del de
+    cada tramo que lo toca, por un lado o por una esquina. Se pinta primero
+    el que ya tiene más colores distintos alrededor (si empatan, el de más
+    vecinos), con el primer color libre. Con la grilla derecha o girada
+    alcanzaron cuatro en 140 grillas de prueba (revisión de A17); recorrerlos
+    de abajo hacia arriba, como al principio, llegaba a seis con la grilla
+    girada, y la paleta de la pantalla tiene seis.
 
     No sale de la celda de la grilla: un tramo con un pedacito pegado
     (`_pegar_pedacitos`) ocupa parte de dos celdas."""
     cajas = [tramo.bounds for tramo in tramos]
-    orden = sorted(range(len(tramos)), key=lambda i: (round(tramos[i].centroid.y, 3), round(tramos[i].centroid.x, 3)))
-    colores: dict[int, int] = {}
-    for i in orden:
-        usados = {
-            color for j, color in colores.items()
-            if _cajas_se_tocan(cajas[i], cajas[j]) and tramos[i].distance(tramos[j]) <= _TOLERANCIA_MM
+    vecinos = [
+        {
+            j for j in range(len(tramos))
+            if j != i and _cajas_se_tocan(cajas[i], cajas[j]) and tramos[i].distance(tramos[j]) <= _TOLERANCIA_MM
         }
-        colores[i] = next(color for color in range(len(tramos) + 1) if color not in usados)
+        for i in range(len(tramos))
+    ]
+    colores: dict[int, int] = {}
+
+    def alrededor(i: int) -> set[int]:
+        return {colores[j] for j in vecinos[i] if j in colores}
+
+    while len(colores) < len(tramos):
+        # El índice desempata al final: el mismo corte da siempre los mismos colores.
+        i = max((i for i in range(len(tramos)) if i not in colores), key=lambda i: (len(alrededor(i)), len(vecinos[i]), -i))
+        colores[i] = next(color for color in range(len(tramos) + 1) if color not in alrededor(i))
     return [colores[i] for i in range(len(tramos))]
 
 
