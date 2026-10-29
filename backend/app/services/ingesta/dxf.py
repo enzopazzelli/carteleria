@@ -632,8 +632,17 @@ def parsear_dxf(
     ]
     contornos_que_se_cruzan: list[ContornoQueSeCruza] = []
     contornos_validos: list[_ContornoValido] = []
+    # Las líneas sueltas recién forman su contorno al encadenarse: uno
+    # dibujado como polilínea y otra vez con líneas sueltas encima no lo
+    # ve la firma de arriba, que mira cada entidad (A17).
+    firmas_cerradas: set[tuple] = set()
     for trazo in sorted([*cerrados, *encadenados], key=lambda t: t.indice):
         puntos = _con_cierre_explicito(trazo.puntos)
+        firma = _firma_normalizada(puntos)
+        if firma in firmas_cerradas:
+            duplicados_descartados += 1
+            continue
+        firmas_cerradas.add(firma)
         poligono = Polygon(puntos)
         if not poligono.is_valid or poligono.area == 0:
             x, y = _donde_se_cruza(poligono)

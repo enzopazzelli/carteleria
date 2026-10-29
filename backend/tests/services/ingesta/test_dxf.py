@@ -224,6 +224,26 @@ def test_descarta_lineas_duplicadas(tmp_path):
     assert resultado.lineas_duplicadas_descartadas == 1
 
 
+def test_un_contorno_dibujado_como_polilinea_y_como_lineas_sueltas_cuenta_una_vez(tmp_path):
+    """Las líneas sueltas recién forman el cuadrado al encadenarse, y los
+    duplicados se buscaban antes: salían dos piezas, cada una adentro de la
+    otra, y la lectura no terminaba (revisión de la tanda 6 de A17)."""
+    def agregar(msp):
+        puntos = [(0, 0), (100, 0), (100, 100), (0, 100)]
+        msp.add_lwpolyline(puntos, close=True)
+        for desde, hasta in zip(puntos, puntos[1:] + puntos[:1]):
+            msp.add_line(desde, hasta)
+
+    ruta = _guardar_dxf(tmp_path, "cuadrado-dos-veces.dxf", agregar)
+
+    resultado = parsear_dxf(ruta, _ESCALA_IDENTIDAD)
+
+    assert len(resultado.piezas) == 1
+    assert resultado.piezas[0].area_real_mm2 == Decimal("10000")
+    assert resultado.piezas[0].agujeros_mm == []
+    assert resultado.lineas_duplicadas_descartadas == 1
+
+
 def test_calcula_area_real_distinta_del_bounding_box_en_pieza_no_rectangular(tmp_path):
     # Triángulo rectángulo de cateto 100: bounding box 100x100 (10000 mm2),
     # área real la mitad (5000 mm2). El motor rectangular sigue anidando
