@@ -121,8 +121,8 @@ class ColocacionActualizar(BaseModel):
 class ColocacionAjusteLeer(ColocacionLeer):
     """La colocación resultante, más si la posición pedida es válida.
 
-    Se aplica SIEMPRE, sea válida o no — es la misma decisión que ya
-    tomó el visor interactivo (`GUIA-PRUEBAS-LOCALES.md`): bloquear
+    Se aplica SIEMPRE, sea válida o no — es la decisión que venía del
+    visor interactivo, borrado en A17: bloquear
     frustra el ajuste fino cerca de una posición válida y es
     incompatible con el corte de línea compartida. El cliente decide
     cómo mostrar el conflicto (ej. resaltarlo), no esta API."""
@@ -149,6 +149,11 @@ class MovidaDeChapaLeer(BaseModel):
     aprovechamiento_pct: Decimal | None
     #: La chapa que quedó vacía y se quitó (las que seguían bajaron un número).
     chapa_quitada: int | None = None
+    #: La chapa que se reacomodó para que entre la pieza (A17), con su número
+    #: final: si se quitó una de antes, ya bajó uno.
+    reacomodada: int | None = None
+    #: Si «Deshacer» puede dejar todo como antes del reacomodo.
+    puede_deshacer: bool = False
 
 
 # --- Costeo (envuelve `app/costeo.py`, no lo reemplaza) -------------------

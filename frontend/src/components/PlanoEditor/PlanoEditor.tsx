@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Pieza } from "../../api/piezasYgrupos";
 import type { Colocacion } from "../../api/nesting";
-import { mmAPx, pxAMm, rotarPunto, yDesdePantalla, yEnPantalla } from "./geometria";
+import { lasDeAdentro } from "../Chapas/chapas";
+import { corrimientoEnMm, mmAPx, rotarPunto, yEnPantalla } from "./geometria";
 
 const ESCALA_PX_POR_MM = 0.3;
 // Grados por "click" de rueda. Continuo a propósito (no saltos de 15°):
@@ -24,7 +25,8 @@ interface PlanoEditorProps {
   altoPlanchaMm: number;
   piezas: Pieza[];
   colocaciones: Colocacion[];
-  onMover: (colocacionId: number, centroXMm: number, centroYMm: number) => void;
+  /** Si devuelve una promesa, lo que se arrastró se sigue viendo corrido hasta que termina. */
+  onMover: (colocacionId: number, centroXMm: number, centroYMm: number) => void | Promise<unknown>;
   onRotar: (colocacionId: number, anguloGrados: number) => void;
   colocacionesInvalidas: Set<number>;
   // Controlado desde afuera: `ChapaGrande` necesita saber qué pieza está
@@ -36,6 +38,18 @@ interface PlanoEditorProps {
   iluminada?: number | null;
   /** Avisa qué pieza (`pieza_id`) está bajo el mouse acá, o `null` al salir (A14). */
   onIluminar?: (piezaId: number | null) => void;
+  /** El color de la chapa, el mismo del mosaico y del diseño (A17). */
+  color: string;
+}
+
+/** Mientras se arrastra: de dónde salió cada pieza que se mueve (la
+ * arrastrada y las de sus huecos) y cuánto se corrieron. Se guardan los
+ * centros de salida porque la arrastrada cambia de lugar en la lista apenas
+ * se suelta, antes de que conteste el servidor. */
+interface Corrimiento {
+  origenes: Map<number, { x: number; y: number }>;
+  dx: number;
+  dy: number;
 }
 
 export default function PlanoEditor({
@@ -50,8 +64,10 @@ export default function PlanoEditor({
   onSeleccionar,
   iluminada = null,
   onIluminar,
+  color,
 }: PlanoEditorProps) {
   const [arrastrando, setArrastrando] = useState<number | null>(null);
+  const [corrimiento, setCorrimiento] = useState<Corrimiento | null>(null);
   // Posición (en coordenadas de pantalla) del pointerdown que armó el
   // arrastre — se compara contra el pointerup para distinguir un click
   // (seleccionar) de un arrastre real.
@@ -122,22 +138,36 @@ export default function PlanoEditor({
     return comandos.join(" ") + " Z";
   }
 
+  /** Mientras se arrastra, la pieza se corre lo mismo que el puntero desde
+   * donde se la agarró, sin saltar a centrarse en él, y las de sus huecos se
+   * corren lo mismo (A17). */
+  function alMoverEnSvg(evento: React.PointerEvent<SVGSVGElement>) {
+    evento.preventDefault();
+    if (arrastrando === null || inicioArrastrePx === null || corrimiento === null) return;
+    const distanciaPx = Math.hypot(evento.clientX - inicioArrastrePx.x, evento.clientY - inicioArrastrePx.y);
+    if (distanciaPx <= UMBRAL_ARRASTRE_PX) return;
+    const { x, y } = corrimientoEnMm(inicioArrastrePx, { x: evento.clientX, y: evento.clientY }, ESCALA_PX_POR_MM);
+    setCorrimiento({ ...corrimiento, dx: x, dy: y });
+  }
+
   function alSoltarEnSvg(evento: React.PointerEvent<SVGSVGElement>) {
-    if (arrastrando !== null && inicioArrastrePx !== null) {
+    let esperando: void | Promise<unknown> = undefined;
+    if (arrastrando !== null && inicioArrastrePx !== null && corrimiento !== null) {
       const distanciaPx = Math.hypot(
         evento.clientX - inicioArrastrePx.x,
         evento.clientY - inicioArrastrePx.y
       );
       if (distanciaPx > UMBRAL_ARRASTRE_PX) {
-        const svg = evento.currentTarget;
-        const rect = svg.getBoundingClientRect();
-        const xPx = evento.clientX - rect.left;
-        const yPx = evento.clientY - rect.top;
-        const centroXMm = pxAMm(xPx, ESCALA_PX_POR_MM);
-        const centroYMm = yDesdePantalla(yPx, altoPlanchaMm, ESCALA_PX_POR_MM);
-        onMover(arrastrando, centroXMm, centroYMm);
+        // El centro de salida más lo que se corrió: queda donde se la soltó.
+        const origen = corrimiento.origenes.get(arrastrando)!;
+        const { x, y } = corrimientoEnMm(inicioArrastrePx, { x: evento.clientX, y: evento.clientY }, ESCALA_PX_POR_MM);
+        esperando = onMover(arrastrando, origen.x + x, origen.y + y);
       }
     }
+    // Lo corrido se sigue viendo hasta que contesta el servidor: si no, volvería
+    // un momento a su lugar viejo antes de aparecer en el nuevo.
+    if (esperando instanceof Promise) esperando.finally(() => setCorrimiento(null)).catch(() => {});
+    else setCorrimiento(null);
     // El elemento capturado (seteado en el onPointerDown de la pieza) sigue
     // siendo evento.target aunque el puntero haya salido del <svg> — soltar
     // la captura acá, no importa dónde termine el puntero en pantalla.
@@ -155,7 +185,7 @@ export default function PlanoEditor({
       height={mmAPx(altoPlanchaMm, ESCALA_PX_POR_MM)}
       className="border border-line bg-paper"
       onPointerUp={alSoltarEnSvg}
-      onPointerMove={(e) => e.preventDefault()}
+      onPointerMove={alMoverEnSvg}
       onPointerDown={(evento) => {
         // Solo si el click cayó en el fondo (no en una pieza, que ya
         // maneja su propio onPointerDown y llama a onSeleccionar antes
@@ -179,7 +209,10 @@ export default function PlanoEditor({
       {colocaciones.map((colocacion) => {
         const pieza = piezaPorId.get(colocacion.pieza_id);
         if (!pieza) return null;
-        const centro = { x: Number(colocacion.centro_x_mm), y: Number(colocacion.centro_y_mm) };
+        const origen = corrimiento?.origenes.get(colocacion.id);
+        const centro = origen
+          ? { x: origen.x + corrimiento!.dx, y: origen.y + corrimiento!.dy }
+          : { x: Number(colocacion.centro_x_mm), y: Number(colocacion.centro_y_mm) };
         // Mientras se gira la rueda manda el ángulo local (todavía sin
         // confirmar por el servidor); si no, el que vino de la API.
         const angulo =
@@ -200,8 +233,8 @@ export default function PlanoEditor({
             key={colocacion.id}
             d={trazado}
             fillRule="evenodd"
-            fill={invalida ? "#C4432A33" : estaIluminada ? "#e8833a" : "#2E807433"}
-            stroke={invalida ? "#C4432A" : "#2E8074"}
+            fill={invalida ? "#C4432A33" : estaIluminada ? "#e8833a" : `${color}33`}
+            stroke={invalida ? "#C4432A" : color}
             strokeWidth={estaSeleccionada ? 4 : 2}
             style={{ cursor: "grab" }}
             onMouseEnter={() => onIluminar?.(colocacion.pieza_id)}
@@ -210,6 +243,10 @@ export default function PlanoEditor({
               onSeleccionar(colocacion.id);
               setArrastrando(colocacion.id);
               setInicioArrastrePx({ x: evento.clientX, y: evento.clientY });
+              const adentro = new Set(lasDeAdentro(colocacion, colocaciones, piezaPorId));
+              const queSeMueven = [colocacion, ...colocaciones.filter((c) => adentro.has(c.id))];
+              const origenes = new Map(queSeMueven.map((c) => [c.id, { x: Number(c.centro_x_mm), y: Number(c.centro_y_mm) }]));
+              setCorrimiento({ origenes, dx: 0, dy: 0 });
               // Mantiene los eventos de este puntero dirigidos a esta pieza
               // aunque el arrastre termine afuera del <svg> — sin esto,
               // soltar fuera del área dibujada dejaba `arrastrando` trabado.

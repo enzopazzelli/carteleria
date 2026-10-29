@@ -3,6 +3,7 @@ import {
   ajustarColocacion,
   anidar,
   borrarEjecucion,
+  deshacerReacomodo,
   listarColocaciones,
   listarEjecucionesDeGrupo,
   marcarDefinitiva,
@@ -113,6 +114,19 @@ export function useAjustarColocacion(ejecucionId: number) {
       );
       return { anteriores };
     },
+    // Lo que el servidor movió con ella, lo de sus huecos, queda en su lugar
+    // nuevo apenas contesta, sin esperar a que vuelva la lista entera (A17).
+    onSuccess: (resultado) => {
+      const movidas = new Map([resultado, ...resultado.tambien_movidas].map((m) => [m.id, m]));
+      queryClient.setQueryData<Colocacion[]>(clave, (actuales) =>
+        actuales?.map((c) => {
+          const movida = movidas.get(c.id);
+          if (!movida) return c;
+          const { centro_x_mm, centro_y_mm, angulo_grados, movida_a_mano } = movida;
+          return { ...c, centro_x_mm, centro_y_mm, angulo_grados, movida_a_mano };
+        })
+      );
+    },
     onError: (_error, _variables, contexto) => {
       if (contexto?.anteriores) queryClient.setQueryData(clave, contexto.anteriores);
     },
@@ -131,12 +145,23 @@ export function useMoverAOtraChapa(ejecucionId: number) {
   return useMutation({
     mutationFn: ({ colocacionId, planchaDestino }: { colocacionId: number; planchaDestino: number }) =>
       moverAOtraChapa(colocacionId, planchaDestino),
-    onSuccess: (movida) => {
-      queryClient.setQueryData(["colocaciones", ejecucionId], movida.colocaciones);
-      queryClient.invalidateQueries({ queryKey: ["ejecuciones"] });
-      queryClient.invalidateQueries({ queryKey: ["ejecucion", ejecucionId] });
-      queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
-      queryClient.invalidateQueries({ queryKey: ["costeo"] });
-    },
+    onSuccess: (movida) => alCambiarLasChapas(queryClient, ejecucionId, movida.colocaciones),
   });
+}
+
+/** «Deshacer» del reacomodo (A17): pone las colocaciones como al pasar una pieza. */
+export function useDeshacerReacomodo(ejecucionId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => deshacerReacomodo(ejecucionId),
+    onSuccess: (movida) => alCambiarLasChapas(queryClient, ejecucionId, movida.colocaciones),
+  });
+}
+
+function alCambiarLasChapas(queryClient: ReturnType<typeof useQueryClient>, ejecucionId: number, colocaciones: Colocacion[]) {
+  queryClient.setQueryData(["colocaciones", ejecucionId], colocaciones);
+  queryClient.invalidateQueries({ queryKey: ["ejecuciones"] });
+  queryClient.invalidateQueries({ queryKey: ["ejecucion", ejecucionId] });
+  queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
+  queryClient.invalidateQueries({ queryKey: ["costeo"] });
 }

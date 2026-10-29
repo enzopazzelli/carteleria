@@ -53,3 +53,50 @@ export function anillosColocados(pieza: Pieza, colocacion: Colocacion): [number,
     }),
   );
 }
+
+/** El aviso de que una chapa se reacomodó para que entre una pieza (A17).
+ * `indice` es el de la chapa, desde 0; el aviso la cuenta desde 1. */
+export function avisoDeReacomodo(indice: number, nombre: string): string {
+  return `Se reacomodó la chapa ${indice + 1} para que entre «${nombre}».`;
+}
+
+/** Si hay que avisar que los presupuestos hechos cuentan otra cantidad de
+ * chapas (A17). `antes` es cuántas tenía el anidado cuando un pase cambió
+ * la cantidad, o `null` si ninguno la cambió: el aviso dura mientras el
+ * anidado no vuelva a esa cantidad, por ejemplo con «Deshacer». */
+export function cambioLaCantidadDeChapas(
+  antes: { ejecucionId: number; chapas: number | null } | null,
+  anidado: { id: number; planchas_usadas: number | null },
+): boolean {
+  return antes !== null && antes.ejecucionId === anidado.id && anidado.planchas_usadas !== antes.chapas;
+}
+
+/** Si el punto cae adentro del anillo (la regla del rayo). */
+function adentroDe([x, y]: [number, number], anillo: [number, number][]): boolean {
+  let adentro = false;
+  for (let i = 0, j = anillo.length - 1; i < anillo.length; j = i++) {
+    const [xi, yi] = anillo[i];
+    const [xj, yj] = anillo[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) adentro = !adentro;
+  }
+  return adentro;
+}
+
+/** Las colocaciones que van enteras adentro de algún hueco de `arrastrada`:
+ * todos los vértices de su contorno caen en el mismo hueco. Son las que el
+ * servidor mueve con ella al soltar; la pantalla las mueve mientras se
+ * arrastra (A17). */
+export function lasDeAdentro(arrastrada: Colocacion, otras: Colocacion[], piezaPorId: Map<number, Pieza>): number[] {
+  const pieza = piezaPorId.get(arrastrada.pieza_id);
+  if (!pieza) return [];
+  const [, ...huecos] = anillosColocados(pieza, arrastrada);
+  if (huecos.length === 0) return [];
+  return otras
+    .filter((otra) => {
+      const suya = piezaPorId.get(otra.pieza_id);
+      if (otra.id === arrastrada.id || !suya) return false;
+      const [exterior] = anillosColocados(suya, otra);
+      return huecos.some((hueco) => exterior.every((punto) => adentroDe(punto, hueco)));
+    })
+    .map((otra) => otra.id);
+}

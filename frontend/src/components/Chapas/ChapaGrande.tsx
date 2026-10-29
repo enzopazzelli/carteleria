@@ -5,7 +5,9 @@ import { urlDxf, urlPlano } from "../../api/nesting";
 import type { Pieza } from "../../api/piezasYgrupos";
 import { useAjustarColocacion } from "../../hooks/useNesting";
 import { useIluminado } from "../Disenio/Iluminado";
+import { colorDeChapa } from "../Disenio/pintado";
 import Mensaje from "../Mensaje/Mensaje";
+import { juntarAvisos } from "../Mensaje/contenido";
 import PlanoEditor from "../PlanoEditor/PlanoEditor";
 
 /** Una chapa grande para retocar a mano: lo que antes era Ajuste (A14,
@@ -20,9 +22,13 @@ interface ChapaGrandeProps {
   anchoMm: number;
   altoMm: number;
   alVolver: () => void;
+  /** Avisa que se movió o giró una pieza: un cambio en el anidado (A17). */
+  alCambiar?: () => void;
 }
 
-export default function ChapaGrande({ trabajoId, ejecucion, piezas, colocaciones, indice, anchoMm, altoMm, alVolver }: ChapaGrandeProps) {
+export default function ChapaGrande({
+  trabajoId, ejecucion, piezas, colocaciones, indice, anchoMm, altoMm, alVolver, alCambiar,
+}: ChapaGrandeProps) {
   const ajustar = useAjustarColocacion(ejecucion.id);
   const iluminado = useIluminado();
   const [seleccionada, setSeleccionada] = useState<number | null>(null);
@@ -30,7 +36,8 @@ export default function ChapaGrande({ trabajoId, ejecucion, piezas, colocaciones
   // poder decidir "es inválida" por el booleano `valida` que ya manda el
   // backend con ese propósito, no por si el string de motivo vino vacío.
   const [resultados, setResultados] = useState<Map<number, { valida: boolean; motivo: Aviso | null }>>(new Map());
-  const motivos = [...resultados.values()].flatMap((r) => (!r.valida && r.motivo ? [r.motivo] : []));
+  // Varias piezas fuera del margen: un solo aviso que las nombra (A17).
+  const motivos = juntarAvisos([...resultados.values()].flatMap((r) => (!r.valida && r.motivo ? [r.motivo] : [])));
   const invalidas = new Set([...resultados].filter(([, r]) => !r.valida).map(([colocacionId]) => colocacionId));
   const deLaChapa = colocaciones.filter((c) => c.plancha_indice === indice);
   const colocacionSeleccionada = deLaChapa.find((c) => c.id === seleccionada) ?? null;
@@ -47,10 +54,12 @@ export default function ChapaGrande({ trabajoId, ejecucion, piezas, colocaciones
   }
 
   async function alMover(colocacionId: number, centroXMm: number, centroYMm: number) {
+    alCambiar?.();
     anotar(await ajustar.mutateAsync({ colocacionId, datos: { centro_x_mm: centroXMm, centro_y_mm: centroYMm } }));
   }
 
   async function alRotar(colocacionId: number, anguloGrados: number) {
+    alCambiar?.();
     anotar(await ajustar.mutateAsync({ colocacionId, datos: { angulo_grados: anguloGrados } }));
   }
 
@@ -77,36 +86,49 @@ export default function ChapaGrande({ trabajoId, ejecucion, piezas, colocaciones
         </a>
       </div>
 
-      {motivos.length > 0 && (
-        <div className="space-y-2 mb-3">
-          {motivos.map((motivo, i) => <Mensaje key={i} variante="aviso" que={motivo} trabajoId={trabajoId} />)}
-        </div>
-      )}
+      {/* La fila está siempre: si apareciera al tocar una pieza, bajaría el editor (A17). */}
+      <div className="flex items-center gap-2 mb-3 text-sm">
+        <span className="text-ink/60">
+          {colocacionSeleccionada ? "Rueda del mouse para rotar (Shift = más fino), o:" : "Tocá una pieza para girarla."}
+        </span>
+        {[-90, -15, 15, 90].map((delta) => (
+          <button
+            key={delta}
+            className="border border-line rounded px-2 py-1 hover:bg-line/40 disabled:opacity-40 disabled:hover:bg-transparent"
+            disabled={!colocacionSeleccionada}
+            onClick={() => alRotarSeleccionada(delta)}
+          >
+            {delta > 0 ? `+${delta}°` : `${delta}°`}
+          </button>
+        ))}
+      </div>
 
-      {colocacionSeleccionada && (
-        <div className="flex items-center gap-2 mb-3 text-sm">
-          <span className="text-ink/60">Rueda del mouse para rotar (Shift = más fino), o:</span>
-          {[-90, -15, 15, 90].map((delta) => (
-            <button key={delta} className="border border-line rounded px-2 py-1 hover:bg-line/40" onClick={() => alRotarSeleccionada(delta)}>
-              {delta > 0 ? `+${delta}°` : `${delta}°`}
-            </button>
-          ))}
+      {/* Los avisos de las piezas en rojo van al costado (o debajo, si no hay
+          lugar): arriba bajaban el editor justo después de soltar una (A17). */}
+      <div className="flex flex-wrap items-start gap-4">
+        {/* Sin achicarse: el arrastre cuenta los mm con la escala fija del editor. */}
+        <div className="shrink-0">
+          <PlanoEditor
+            anchoPlanchaMm={anchoMm}
+            altoPlanchaMm={altoMm}
+            piezas={piezas}
+            colocaciones={deLaChapa}
+            onMover={alMover}
+            onRotar={alRotar}
+            colocacionesInvalidas={invalidas}
+            seleccionada={seleccionada}
+            onSeleccionar={setSeleccionada}
+            iluminada={iluminado.pieza}
+            onIluminar={iluminado.setPieza}
+            color={colorDeChapa(indice)}
+          />
         </div>
-      )}
-
-      <PlanoEditor
-        anchoPlanchaMm={anchoMm}
-        altoPlanchaMm={altoMm}
-        piezas={piezas}
-        colocaciones={deLaChapa}
-        onMover={alMover}
-        onRotar={alRotar}
-        colocacionesInvalidas={invalidas}
-        seleccionada={seleccionada}
-        onSeleccionar={setSeleccionada}
-        iluminada={iluminado.pieza}
-        onIluminar={iluminado.setPieza}
-      />
+        {motivos.length > 0 && (
+          <div className="flex-1 min-w-[16rem] space-y-2">
+            {motivos.map((motivo, i) => <Mensaje key={i} variante="aviso" que={motivo} trabajoId={trabajoId} />)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

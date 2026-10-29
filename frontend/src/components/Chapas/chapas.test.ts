@@ -1,7 +1,32 @@
 import { describe, expect, it } from "vitest";
 import type { Colocacion, Ejecucion } from "../../api/nesting";
 import type { Pieza } from "../../api/piezasYgrupos";
-import { anidadoParaMostrar, anillosColocados, aprovechamientoDeChapa, areaDePieza } from "./chapas";
+import {
+  anidadoParaMostrar, anillosColocados, aprovechamientoDeChapa, areaDePieza, avisoDeReacomodo, cambioLaCantidadDeChapas,
+  lasDeAdentro,
+} from "./chapas";
+
+describe("cambioLaCantidadDeChapas", () => {
+  // Cuántas chapas tenía el anidado cuando un pase cambió la cantidad, con
+  // presupuestos ya hechos: el aviso dura mientras no vuelva a esa cantidad.
+  const antes = { ejecucionId: 7, chapas: 3 };
+
+  it("sin un pase que haya cambiado la cantidad, no avisa", () => {
+    expect(cambioLaCantidadDeChapas(null, { id: 7, planchas_usadas: 2 })).toBe(false);
+  });
+
+  it("avisa mientras la cantidad sea otra", () => {
+    expect(cambioLaCantidadDeChapas(antes, { id: 7, planchas_usadas: 2 })).toBe(true);
+  });
+
+  it("deja de avisar si «Deshacer» vuelve a la cantidad de antes", () => {
+    expect(cambioLaCantidadDeChapas(antes, { id: 7, planchas_usadas: 3 })).toBe(false);
+  });
+
+  it("no avisa por otro anidado", () => {
+    expect(cambioLaCantidadDeChapas(antes, { id: 8, planchas_usadas: 2 })).toBe(false);
+  });
+});
 
 function ejecucion(id: number, estado: Ejecucion["estado"], esDefinitiva = false): Ejecucion {
   return {
@@ -61,5 +86,30 @@ describe("anillosColocados", () => {
     const ys = exterior.map(([, y]) => y);
     expect(Math.min(...xs)).toBeCloseTo(450);
     expect(Math.max(...ys)).toBeCloseTo(350);
+  });
+});
+
+describe("avisoDeReacomodo", () => {
+  it("nombra la chapa contando desde 1 y la pieza que entró (A17)", () => {
+    expect(avisoDeReacomodo(2, "B-3")).toBe("Se reacomodó la chapa 3 para que entre «B-3».");
+  });
+});
+
+describe("lasDeAdentro", () => {
+  // Un marco de 300 con un hueco de 200, centrado en (500, 500): el hueco va de 400 a 600.
+  const marco = cuadrado(1, 300, 200);
+  const chico = cuadrado(2, 50);
+  const piezas = new Map([[1, marco], [2, chico]]);
+
+  it("devuelve la que está entera adentro del hueco de la arrastrada (A17)", () => {
+    const arrastrada = colocacion(10, 1, 0, 500, 500);
+    expect(lasDeAdentro(arrastrada, [arrastrada, colocacion(11, 2, 0, 500, 500)], piezas)).toEqual([11]);
+  });
+
+  it("no devuelve una que está afuera ni una que pisa el borde del hueco", () => {
+    const arrastrada = colocacion(10, 1, 0, 500, 500);
+    const afuera = colocacion(12, 2, 0, 800, 800);
+    const enElBorde = colocacion(13, 2, 0, 600, 500);
+    expect(lasDeAdentro(arrastrada, [afuera, enElBorde], piezas)).toEqual([]);
   });
 });

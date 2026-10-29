@@ -1,6 +1,6 @@
 """Validación de una posición manual de pieza — extiende `CART-208` para
-permitir mover y rotar libremente, a mano, una pieza ya anidada en el
-visor interactivo, y confirmar que la posición elegida sigue
+permitir mover y rotar libremente, a mano, una pieza ya anidada (hoy,
+en la pestaña Chapas), y confirmar que la posición elegida sigue
 respetando kerf, margen y separación (`ADR-09`/`CART-203`), en vez de
 solo "se ve bien" en pantalla.
 
@@ -78,7 +78,7 @@ class GeometriaPieza:
 
 @dataclass(frozen=True)
 class PosicionManual:
-    """Una pieza colocada a mano en el visor interactivo: centro de su
+    """Una pieza colocada a mano (pestaña Chapas): centro de su
     bounding box + ángulo libre. Distinta de `PosicionPieza` (motor
     automático: siempre 0°/90°, ancla en la esquina) — acá el ancla es
     el centro, para que rotar no mueva la pieza de lugar."""
@@ -130,7 +130,7 @@ def posicion_manual_desde_pieza(posicion: PosicionPieza) -> PosicionManual:
     """Convierte la salida del motor automático (ancla en la esquina,
     0°/90° — `ADR-01`) al formato de edición manual (ancla en el
     centro, ángulo libre) — mismo lugar físico, representación
-    distinta. Compartido entre el visor interactivo y cualquier ajuste
+    distinta. Compartido entre el ajuste a mano y cualquier ajuste
     automático posterior (p. ej. `anidado_huecos.py`) que necesite
     razonar sobre un resultado ya anidado en términos de polígonos.
 
@@ -219,8 +219,9 @@ def validar_posicion_manual(
 
     `separacion_extra_mm` (opcional): separación mínima puntual para
     PARES específicos de piezas — `{frozenset({id_a, id_b}): mm, ...}`
-    — a pedido explícito del usuario del visor interactivo, que quiere
-    poder seleccionar un grupo de piezas y pedir más separación SOLO
+    — lo pedía el visor interactivo, que se borró en A17, y hoy no lo usa
+    ninguna ruta. El usuario quería poder seleccionar un grupo de piezas
+    y pedir más separación SOLO
     entre ellas (p. ej. para dejar lugar a una herramienta de corte más
     grande en una zona puntual), sin subir la separación global de
     `PAR-03` para toda la tanda. Es un PISO para ese par puntual —

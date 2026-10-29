@@ -52,6 +52,13 @@ describe("cajaDelDibujo", () => {
   it("una forma sin alto tampoco deja la caja en cero", () => {
     expect(cajaDelDibujo([forma([[0, 5], [10, 5], [0, 5]])]).alto).toBe(1);
   });
+
+  it("con un dibujo de 300 000 puntos no se rompe (A17)", () => {
+    // `Math.min(...lista)` pasa cada punto como argumento: con un DXF
+    // grande, el navegador se queda sin lugar para tantos.
+    const grande = forma(Array.from({ length: 300_000 }, (_, i) => [i % 1000, i % 700]));
+    expect(cajaDelDibujo([grande])).toEqual({ minX: 0, minY: 0, ancho: 999, alto: 699 });
+  });
 });
 
 describe("trazo", () => {

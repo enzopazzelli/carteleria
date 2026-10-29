@@ -331,12 +331,12 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 
 | Pendiente | De dónde sale | Depende de |
 |---|---|---|
-| En Complejo casi nada entra en otra chapa: aunque están usadas al 34-39 %, lo libre está repartido entre los rayos del aro. Ni la letra más chica de la chapa 1 (447 × 626 mm) entra en otra. La búsqueda está bien: en su propia chapa encuentra el lugar donde ya estaba. Se puede probar con más giros, o reacomodar la chapa de destino cuando no entra | Recorrido del tramo 3 | Decisión de Enzo |
-| El diseño chiquito de 44 px marca poco en un diseño grande como Complejo: agrandarlo, o recortarlo alrededor de la pieza | Recorrido del tramo 4 | — |
+| En Complejo casi nada entra en otra chapa: aunque están usadas al 34-39 %, lo libre está repartido entre los rayos del aro. Ni la letra más chica de la chapa 1 (447 × 626 mm) entra en otra. La búsqueda está bien: en su propia chapa encuentra el lugar donde ya estaba. Se puede probar con más giros, o reacomodar la chapa de destino cuando no entra | Recorrido del tramo 3 | **Cerrado (A17, tanda 3):** si no entra en lo libre, la chapa de destino se reacomoda con Sparrow, con «Deshacer» |
+| El diseño chiquito de 44 px marca poco en un diseño grande como Complejo: agrandarlo, o recortarlo alrededor de la pieza | Recorrido del tramo 4 | **Cerrado (A17, tanda 3):** va recortado alrededor de la pieza |
 | No se vio en pantalla el «Hay que seccionar» de la comparación con sus formas: en la copia ningún grupo lo da (el aro ya está seccionado) | Recorrido del tramo 4 | Que aparezca un caso |
-| No se pudo comprobar que el clic en una pieza del diseño lleve el mosaico hasta su chapa: en la pantalla del recorrido todo entra sin desplazarse | Recorrido del tramo 2 | — |
+| No se pudo comprobar que el clic en una pieza del diseño lleve el mosaico hasta su chapa: en la pantalla del recorrido todo entra sin desplazarse | Recorrido del tramo 2 | **Cerrado (A17, tanda 3):** comprobado en el recorrido, con una pantalla de 900 × 600 |
 | Un trabajo de la importación de varios diseños tendría de fondo el archivo entero, con todos los diseños | Tarea 1 | — |
-| La chapa grande dibuja las piezas en verde, como Ajuste, y no con el color de su chapa | Recorrido del tramo 2 | — |
+| La chapa grande dibuja las piezas en verde, como Ajuste, y no con el color de su chapa | Recorrido del tramo 2 | **Cerrado (A17, tanda 3):** dibuja con el color de su chapa |
 
 **Pendientes de llenar mejor los huecos (A13).** Construido el 2026-10-23, fusionado en `main` ese día y cerrado: [`historico/A13-llenar-mejor-los-huecos/`](../historico/A13-llenar-mejor-los-huecos/diseno.md). Con el parador entran 30 piezas en los huecos en lugar de 20, y el sobrante crece un 50 %. Lo que quedó vivo:
 
@@ -353,8 +353,8 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 | Confirmar con el dueño el retazo más chico que se guarda (`PAR-56`, 250 × 250 mm, estimación de Enzo) | §3 de su diseño | El dueño (4.5) |
 | Cobrar por lo usado (cambia el presupuesto) y llevar la cuenta de los retazos (guardar el sobrante como retazo y ver cuáles hay) | §1 de su diseño | Sus propios diseños; cobrar depende de `P-10` |
 | Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 de su diseño | — |
-| En Ajuste, al tocar una pieza aparecen arriba del editor los botones para rotarla y el editor salta unos 42 px hacia abajo: incómodo al empezar a arrastrar. Es de antes | Recorrido del arreglo del espejo, 2026-10-23 | — |
-| El editor del visor de prueba (`scripts/servidor_visor.py`) dibuja y arrastra con la altura hacia abajo: se ve de cabeza. Su vista fija, que usa el plano, ya sale derecha | Arreglo del espejo, 2026-10-23 | Que se use el visor |
+| En Ajuste, al tocar una pieza aparecen arriba del editor los botones para rotarla y el editor salta unos 42 px hacia abajo: incómodo al empezar a arrastrar. Es de antes | Recorrido del arreglo del espejo, 2026-10-23 | **Cerrado (A17, tanda 3):** la fila para rotar está siempre, y los avisos de las piezas en rojo van al costado del editor |
+| El editor del visor de prueba (`scripts/servidor_visor.py`) dibuja y arrastra con la altura hacia abajo: se ve de cabeza. Su vista fija, que usa el plano, ya sale derecha | Arreglo del espejo, 2026-10-23 | **Cerrado (2026-10-28):** se borró el visor, a pedido de Enzo; lo reemplaza la pestaña Chapas |
 
 **Resuelto el 2026-10-23** (rama `fix/plano-derecho`): **el plano y Ajuste se veían de cabeza.** El DXF guarda la altura hacia arriba y la pantalla la cuenta hacia abajo; el plano (Anidado, «Abrir plano», miniaturas de chapa, la vista fija del visor) y el editor de Ajuste no la daban vuelta, y la «A» se veía como una «∀» (el mismo error que tenían las miniaturas de Piezas, `b69466a`). Ahora la dan vuelta al dibujar, y Ajuste también al soltar una pieza arrastrada. El DXF exportado no cambió: la máquina siempre recibió lo correcto. Con eso, el sobrante arriba junta las piezas abajo de verdad y el bloque queda arriba también en el DXF. Recorrido en Chrome todo BIEN; el plano y el DXF exportado se ven iguales.
 
@@ -386,11 +386,11 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 | Con el servidor apagado al abrir una pestaña, la pantalla queda en blanco: solo avisan las acciones (anidar, guardar), no las consultas que cargan la pestaña | Recorrido de A9 | — |
 | Un mensaje que nombra muchas piezas escribe todos los nombres: con 32 piezas el texto se hace largo. Mostrar los primeros y «y N más», con las miniaturas al lado | Recorrido de A9 | — |
 | En la comparación, dos chapas de la misma medida y distinto espesor se ven iguales: la fila no dice el espesor | Recorrido de A9; es anterior | — |
-| La miniatura de una chapa en Ajuste puede mostrar el plano de antes del movimiento: la dirección es la misma y el navegador la guarda | Recorrido de A9 | — |
+| La miniatura de una chapa en Ajuste puede mostrar el plano de antes del movimiento: la dirección es la misma y el navegador la guarda | Recorrido de A9 | **Cerrado (A17, tanda 3):** la miniatura se vuelve a pedir después de cada cambio |
 | El error y los avisos de un anidado del historial no se ven al volver a la pestaña: solo los del que está en curso, aunque el error queda guardado entero | Revisión de A9 | — |
 | Que el aviso de un error en la comparación distinga «el servidor se reinició» de «la reemplazó una comparación más nueva» | Revisión de A9 | — |
 | El mensaje del motor rectangular cuando no ubica piezas no dice qué hacer ni la medida de la chapa | Revisión de A9; texto del diseño | — |
-| En Ajuste, varias piezas en rojo por el margen dan varios avisos iguales: no nombran la pieza | Revisión de A9 | — |
+| En Ajuste, varias piezas en rojo por el margen dan varios avisos iguales: no nombran la pieza | Revisión de A9 | **Cerrado (A17, tanda 3):** un solo aviso que nombra todas las piezas |
 | Las trazas de un error inesperado ya no salen por la consola del servidor, solo en el registro; y la línea de lo que escribió el cálculo no dice de qué anidado es | Revisión de A9 | — |
 | Los mensajes de la importación de varios diseños (`/importaciones/dxf/...`) solo se revisaron con la regla, sin miniaturas; la comparación con el motor rectangular de prueba sigue cayéndose entera si falla un formato | §4 de su diseño | Que una pantalla los use |
 

@@ -4,6 +4,8 @@ import type { Pieza } from "../../api/piezasYgrupos";
 import { useDisenio } from "../../hooks/useDisenio";
 import { usePiezas } from "../../hooks/usePiezas";
 import PiezaMiniPreview from "../PiezaMiniPreview";
+import { cajaDe } from "../caja";
+import { encuadreAlrededor } from "./encuadre";
 import { useIluminado } from "./Iluminado";
 import {
   GRIS_OTRO,
@@ -68,15 +70,19 @@ export default function DisenioInicial({ trabajoId, modo, estados, piezaMarcada,
   }
   if (plegado && !mini) return titulo;
 
-  const xs = puntos.map(([x]) => x);
-  const ys = puntos.map(([, y]) => y);
-  const minX = Math.min(...xs);
-  const minY = Math.min(...ys);
-  const ancho = Math.max(Math.max(...xs) - minX, 1);
-  const alto = Math.max(Math.max(...ys) - minY, 1);
-  const trazo = Math.max(ancho, alto) / (mini ? 120 : 500);
+  const todo = cajaDe(puntos)!;  // hay puntos: se miró arriba
+  const { minX, minY } = todo;
+  const ancho = Math.max(todo.ancho, 1);
+  const alto = Math.max(todo.alto, 1);
+  // El chiquito muestra solo la zona alrededor de la pieza marcada, con sus
+  // vecinas: en un cartel grande, entero, la pieza sería un punto (A17).
+  const marcada = mini ? ubicadas.find((u) => u.pieza.id === piezaMarcada) : undefined;
+  const cajaMarcada = marcada ? cajaDe(marcada.anillos[0]) : null;
+  const encuadre = cajaMarcada ? encuadreAlrededor(cajaMarcada, { minX, minY, ancho, alto }) : { minX, minY, ancho, alto };
+  const trazo = Math.max(encuadre.ancho, encuadre.alto) / (mini ? 120 : 500);
   // En el DXF la altura crece hacia arriba; en la pantalla, hacia abajo.
   const aPantalla = (x: number, y: number) => `${(x - minX).toFixed(2)},${(alto - (y - minY)).toFixed(2)}`;
+  const vista = `${encuadre.minX - minX} ${alto - (encuadre.minY + encuadre.alto - minY)} ${encuadre.ancho} ${encuadre.alto}`;
 
   const estadoDe = (piezaId: number): EstadoEnDisenio | undefined => estados?.get(piezaId);
   const iluminada = (piezaId: number) => {
@@ -99,7 +105,7 @@ export default function DisenioInicial({ trabajoId, modo, estados, piezaMarcada,
 
   const dibujo = (
     <svg
-      viewBox={`0 0 ${ancho} ${alto}`}
+      viewBox={vista}
       width={mini ? TAMANO_MINI_PX : "100%"}
       height={mini ? TAMANO_MINI_PX : undefined}
       className={mini ? "border border-line rounded bg-paper shrink-0" : "max-h-80 bg-paper"}
@@ -194,9 +200,8 @@ function anillosDe(pieza: Pieza, posicion: PiezaEnDisenio): Anillo[] {
 }
 
 function centroDeCaja(anillo: Anillo): [number, number] {
-  const xs = anillo.map(([x]) => x);
-  const ys = anillo.map(([, y]) => y);
-  return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2];
+  const caja = cajaDe(anillo)!;
+  return [caja.minX + caja.ancho / 2, caja.minY + caja.alto / 2];
 }
 
 function chapasDe(estados: Map<number, EstadoEnDisenio> | undefined): number[] {

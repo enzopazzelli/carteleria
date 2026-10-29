@@ -320,6 +320,41 @@ Rama `feat/a17-2-complejo`.
 - **Lo que depende de la medición:** cuál camino queda (y se saca el otro), la repetición de las mediciones de la tarea 12 y la medición del parador de la tarea 13.
 - **Llenar los huecos en otro orden** (tarea 13, el código): `meter_en_huecos` acepta varios órdenes (por área, por el lado más largo, la más angosta primero). Llena cada hueco una vez por orden y se queda con el plan que mete más área; si empatan, con el primero. **Por defecto sigue solo por área:** el anidado no cambia.
   - **Pendiente, con la medición de la tarea 11:** el parador, 3 corridas con el orden de siempre y 3 con los tres órdenes por defecto (`ordenes` de `meter_en_huecos`), contra 30 piezas adentro y un sobrante de 1220 × 761. Si mete más sin pasar la mitad del tiempo máximo, quedan los tres por defecto; si no, se vuelve atrás y se anota acá.
+- **Fusionada en `main` sin cerrar** (`0fbb8b1`, a pedido de Enzo): todo lo nuevo, apagado. Siguen pendientes las mediciones de las tareas 11, 12 y 13.
+
+### 8.3 Tanda 3 — Chapas (2026-10-28)
+
+Rama `feat/a17-3-chapas`.
+
+- **Reacomodar la chapa de destino** (tareas 14 y 15). Si la pieza no entra en lo libre de una chapa que ya existe, la chapa se acomoda de nuevo con Sparrow, hasta `PAR-57` (30 s), con «Deshacer».
+  - A Sparrow va cada colocación por separado, no una pieza con su cantidad: cada posición vuelve a su colocación y ninguna copia se pierde ni se duplica.
+  - Una pieza con algo en sus huecos va como un bloque, con los huecos tapados; lo de adentro la sigue. El costo: un hueco vacío de esa pieza no se aprovecha al reacomodar.
+  - «Deshacer» devuelve cada colocación a su lugar, con el mismo número.
+- **La chapa grande** (tarea 16): con el color de su chapa; la fila de girar está siempre (sin pieza, apagada y con «Tocá una pieza para girarla.»); al arrastrar, la pieza se corre lo mismo que el puntero desde donde se la agarró (así quedó después de la revisión) y lo de sus huecos la acompaña.
+- **Un aviso para varias piezas en rojo, y la miniatura al día** (tarea 17). El servidor ya nombraba la pieza en el aviso del margen: esa parte se cerró sin cambios en el código, con una prueba que lo vigila.
+- **El diseño chiquito, recortado** alrededor de la pieza (tarea 18): un cuadrado de tres veces su lado más largo, que se corre en los bordes del cartel. La caja del dibujo se calcula de a un punto.
+  - **Fuera del plan, con el ok de Enzo:** el mismo arreglo en el dibujo de la lectura del DXF, que con 300 000 puntos se rompía («Maximum call stack size exceeded»).
+- **El visor de prueba se borró** (tarea 19), a pedido de Enzo: «Hace mucho no uso el visor de anidado.cmd, si consideras que podemos borrarlo hagámoslo». Lo reemplaza la pestaña Chapas. Para medir Deepnest sigue `comparar_motores.py`.
+- **El recorrido en Chrome sin ventana**, sobre una copia de la base con Complejo anidado ahí (8 chapas):
+  - la chapa grande, con el azul de la chapa 1; el editor no salta al elegir una pieza;
+  - en el Parador, una pieza arrastrada lleva sus 6 piezas de adentro, y al soltar no saltan;
+  - una letra de la chapa 8 a la chapa 2: «No entra en la chapa 2 ni reacomodándola», en 28,8 s; a la chapa 3: «Se reacomodó la chapa 3 para que entre «trabajo-1-23».», en 5,6 s; «Deshacer» dejó todas las colocaciones como antes;
+  - el diseño chiquito en los avisos de Anidado; con los tramos del aro, que son casi del tamaño del cartel, se ve casi todo;
+  - con una pantalla de 900 × 600, el clic en una pieza del diseño baja hasta su chapa (punto 8 de §4.3).
+- **Visto en el recorrido, para la tanda 5:** Anidado muestra los avisos solo del anidado recién lanzado, no los del historial (tarea 27).
+- **La revisión de la rama** (un revisor aparte, 2026-10-29): sin nada grave; dos cosas importantes, ya arregladas con su prueba:
+  - **«Deshacer» volvía atrás un cambio hecho mientras se reacomodaba.** El pase leía el anidado antes de Sparrow; un giro en otra chapa durante esos segundos se perdía al deshacer, y uno en la chapa de destino lo pisaba el pase. Ahora, cuando vuelve Sparrow, se compara con la base: si cambió, «El anidado cambió mientras se reacomodaba la chapa N: volvé a pasar la pieza.» y no se aplica nada. En la pantalla, mientras se pasa una pieza no se abre una chapa.
+  - **Al arrastrar, la pieza saltaba para centrarse en el puntero:** agarrada del borde, una letra grande se corría unos 30 cm apenas se la movía. Ahora se corre lo que va el puntero.
+  - Y lo chico, también con prueba: si por área ya no entra, el aviso sale sin esperar a Sparrow; un error del cálculo que no es el tiempo da «No entra… ni reacomodándola» y queda en el registro con el anidado y la chapa; «Deshacer» guarda cómo quedó el anidado y solo se aplica si la base sigue igual (un anidado nuevo que reusa el número de uno borrado no lo hereda); un pase que falla no saca el «Deshacer»; el aviso del presupuesto se va si se vuelve a la cantidad de chapas de antes; los avisos en rojo van al costado del editor; cuatro pruebas que faltaban.
+  - **El recorrido de los arreglos**, en Chrome sin ventana sobre una copia de la base con Complejo anidado ahí (60 s, 8 chapas):
+    - una letra agarrada a 2 px de su borde se corrió 30 × 20 px con el puntero, y al soltarla quedó donde se la veía (0,00 px);
+    - una pieza corrida fuera de la chapa dio su aviso en rojo al costado del editor, que no bajó (604 → 604);
+    - mientras se pasaba una pieza, el doble clic no abrió otra chapa y «Pasando la pieza…» siguió a la vista;
+    - «trabajo-1-16» a la chapa 3: «Se reacomodó…», en 8,0 s; después, a la chapa 2: «No entra… ni reacomodándola», y el «Deshacer» siguió; deshacer dejó todas las colocaciones como antes del reacomodo.
+  - **Las pruebas completas, después de los arreglos:** el servidor, 1013 de 1013; la pantalla, 245 de 245 y sin errores de tipos.
+  - **Queda para las mediciones de la tanda 2** (decisión de Enzo): pasar en Complejo tres piezas que no entran en lo libre y anotar cuánto tarda cada una, para confirmar `PAR-57`. Un adelanto del recorrido: cada pase que Sparrow no logra espera los 30 s enteros (diez intentos, de 30,2 a 33,6 s); el que salió tardó 8,0 s.
+  - **Queda anotado:** la miniatura de la chapa baja la imagen dos veces la primera vez; `separacion_extra_mm` de `validacion_manual.py` lo usaba solo el visor borrado.
+- **Las pruebas completas:** el servidor, 1004 de 1004; la pantalla, 238 de 238 y sin errores de tipos.
 
 ## 9. Lo que decidí yo y conviene revisar
 

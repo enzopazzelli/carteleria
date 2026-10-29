@@ -89,6 +89,12 @@ export default function Mosaico({
     arrastre?.moviendo && arrastre.sobre === indice && indice !== arrastre.origen ? "ring-4 ring-offset-2 ring-ink/50" : "";
 
   return (
+    <>
+    {pasando && (
+      <p className="text-sm text-ink/60 mb-2">
+        Pasando la pieza… Si no entra en lo libre, se reacomoda la chapa, y puede tardar hasta medio minuto.
+      </p>
+    )}
     <div
       className={`grid gap-3 select-none ${arrastre?.moviendo ? "cursor-grabbing" : ""}`}
       style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}
@@ -101,8 +107,13 @@ export default function Mosaico({
           <figure key={indice} className="text-center" data-chapa={indice}>
             <svg
               viewBox={`0 0 ${anchoMm} ${altoMm}`}
-              className={`w-full bg-paper cursor-zoom-in ${destacada(indice)}`}
-              onDoubleClick={() => alDobleClic(indice)}
+              className={`w-full bg-paper ${pasando ? "cursor-wait" : "cursor-zoom-in"} ${destacada(indice)}`}
+              // Mientras se pasa una pieza no se abre una chapa: un cambio ahí
+              // hace que el servidor rechace el pase, y el aviso de «Pasando…»
+              // quedaría tapado.
+              onDoubleClick={() => {
+                if (!pasando) alDobleClic(indice);
+              }}
             >
               {/* El fondo de la chapa: bajo el mouse ilumina todas sus piezas en el diseño. */}
               <rect
@@ -164,5 +175,6 @@ export default function Mosaico({
         </figure>
       )}
     </div>
+    </>
   );
 }

@@ -1,9 +1,9 @@
 """Trabajos, grupos de corte, piezas, ejecuciones de nesting y colocaciones.
 
 La regla que sostiene todo el slice: **nada cuelga de un estado global,
-todo cuelga de un `Trabajo`.** Es lo que hoy hace mal `servidor_visor.py`
-—un único `_estado` compartido por todos— y lo que permite diferir la
-autenticación sin que se cuele lógica de un solo usuario.
+todo cuelga de un `Trabajo`.** Es lo que hacía mal el viejo visor de prueba
+(`servidor_visor.py`, ya borrado), con un único `_estado` compartido por todos,
+y lo que permite diferir la autenticación sin que se cuele lógica de un solo usuario.
 
 **Un trabajo puede cortarse en varios materiales.** `GrupoDeCorte` es la
 generalización de lo que el visor local llamaba "Tanda 1 / Tanda 2": en

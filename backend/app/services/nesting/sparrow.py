@@ -189,9 +189,9 @@ def preparar_entrada(piezas, geometrias, plancha, params, opciones):
     return {'items':items,'width':width,'height':height,'borde':borde,'gap':gap,'rotations':para_buscar,'options':vars(opciones),'normalizadas':normalizadas,'piezas_grandes':grandes,'area_minima_hueco_mm2':AREA_MINIMA_HUECO_MM2}
 
 def _piezas_del_aviso(ids):
-    """Las piezas que la pantalla dibuja al lado de un aviso. El visor de
-    `scripts/` nombra sus piezas con texto («aro»): esas no se dibujan, y
-    el aviso sale igual."""
+    """Las piezas que la pantalla dibuja al lado de un aviso. Los guiones de
+    `scripts/` (`_datos_reales.py`) nombran sus piezas con texto («aro»):
+    esas no se dibujan, y el aviso sale igual."""
     return tuple(int(i) for i in ids if str(i).isdigit())
 
 def convertir_y_validar(entrada, placed):

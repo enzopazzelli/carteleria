@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../api/client";
-import { contenidoDe, falla, piezasNombradas, textoParaCopiar } from "./contenido";
+import { contenidoDe, falla, juntarAvisos, piezasNombradas, textoParaCopiar } from "./contenido";
 
 describe("contenidoDe", () => {
   it("un texto de la pantalla no trae detalle ni piezas", () => {
@@ -48,5 +48,23 @@ describe("falla", () => {
 
   it("cualquier otra cosa da el texto de la pantalla", () => {
     expect(falla(new TypeError("x"), "No se pudo cancelar.")).toBe("No se pudo cancelar.");
+  });
+});
+
+describe("juntarAvisos", () => {
+  const chapa = { ejecucion_id: 1, plancha: 0 };
+
+  it("junta los avisos de igual texto y une sus piezas y chapas (A17)", () => {
+    const juntos = juntarAvisos([
+      { mensaje: "Se sale del margen.", piezas: [1], chapas: [chapa] },
+      { mensaje: "Se sale del margen.", piezas: [2], chapas: [chapa] },
+    ]);
+    expect(juntos).toEqual([{ mensaje: "Se sale del margen.", piezas: [1, 2], chapas: [chapa] }]);
+  });
+
+  it("deja aparte los de otro texto, en el orden en que llegaron", () => {
+    const pisa = { mensaje: "«A» se pisa con «B».", piezas: [1, 3], chapas: [chapa] };
+    const margen = { mensaje: "Se sale del margen.", piezas: [2], chapas: [chapa] };
+    expect(juntarAvisos([pisa, margen])).toEqual([pisa, margen]);
   });
 });
