@@ -12,6 +12,7 @@ import LecturaPanel from "../../components/LecturaDxf/LecturaPanel";
 import { esLaLecturaDe } from "../../components/LecturaDxf/dibujo";
 import { originalesASeccionar } from "../../components/Seccionado/geometria";
 import { separarDescartadas, textoDelPliegue } from "./descartadas";
+import { mostrarMm } from "./importes";
 import { crearTurnos } from "../../components/Seccionado/turnos";
 import type { Correcciones, LecturaDxf, Pieza } from "../../api/piezasYgrupos";
 import { escalaParaCargar } from "./cargaDxf";
@@ -387,8 +388,8 @@ function PiezasDelTrabajo() {
                     {pieza.id_origen}
                     {revisar.has(pieza.id) && <span className="block text-conflict">ID {pieza.id}: revisar geometría</span>}
                   </td>
-                  <td className="font-mono">{pieza.ancho_mm} mm</td>
-                  <td className="font-mono">{pieza.alto_mm} mm</td>
+                  <td className="font-mono">{mostrarMm(pieza.ancho_mm)}</td>
+                  <td className="font-mono">{mostrarMm(pieza.alto_mm)}</td>
                   <td className="font-mono">{pieza.cantidad}</td>
                   <td className="text-xs">{acciones(pieza)}</td>
                 </tr>

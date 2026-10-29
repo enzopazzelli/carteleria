@@ -76,6 +76,12 @@ export function mostrarPorcentaje(valor: string | null | undefined): string {
   return numero === null ? "—" : `${numero.toFixed(2).replace(".", ",")} %`;
 }
 
+/** «388.7470000000012» → «389 mm»: en milímetros enteros, como las medidas
+ * de las piezas en Grupos (A17). */
+export function mostrarMm(valor: string): string {
+  return `${Math.round(Number(valor))} mm`;
+}
+
 /** Los días de validez: un entero mayor que cero, o `null`. */
 export function leerDias(texto: string): number | null {
   const limpio = texto.trim();
