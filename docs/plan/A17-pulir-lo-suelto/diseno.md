@@ -440,6 +440,31 @@ Rama `feat/a17-5-mensajes`.
 - **Visto en el recorrido, es de antes:** si el servidor se corta a mitad de un anidado o de una comparación, el programa aparte de Sparrow sigue hasta su tiempo máximo. Ahora el arranque siguiente le vacía la carpeta y lo corta.
 - **Las pruebas completas, después de los arreglos:** el servidor, 1045 de 1045; la pantalla, 255 de 255 y sin errores de tipos.
 
+### 8.6 Tanda 6 — Lectura del DXF y Piezas (2026-10-29)
+
+Rama `feat/a17-6-lectura`.
+
+- **Las descartadas, plegadas** (tarea 30): debajo de la tabla de Piezas, «Mostrar 34 descartadas» las abre en su lugar y «Ocultar las descartadas» las vuelve a plegar. La pieza seccionada queda a la vista, encabezando sus tramos.
+- **El agujero adentro de dos formas que se pisan** (tarea 31) pasó a lo grande (§7.5). Se arregló y Complejo se leía igual, pero la revisión encontró que cambiaba otros archivos, y se deshizo.
+- **Las dos lecturas que salen mal** (tarea 32) también pasaron a lo grande: arreglar la letra cambiaba la lectura unida de Complejo (29 diferencias), y la franja es un límite de la regla.
+- **La lectura pesa menos** (tarea 33): los números para dibujar van al centésimo de mm. Muestra Vectores baja de 3,94 a 3,29 MB y Complejo de 0,31 a 0,23 MB. Lo que se guarda no cambia. La otra mitad, la caja de `dibujo.ts`, ya estaba arreglada desde la tanda 3.
+- **La revisión de la rama** (un revisor aparte):
+  - **Grave:** el arreglo de la tarea 31 cambiaba la lectura de otros archivos. `Muestra Vectores` pasaba de 1786 a 1938 piezas a cortar, casi todas letras del cuadro de la cotización; `strat` sumaba 12 contornos de menos de 21 mm²; `Corporeas` cambiaba en dos formas. El control comparaba solo Complejo. Se deshizo, y el control ahora mira los nueve archivos de prueba (§4.8).
+  - **Importante, y venía de antes: un archivo podía colgar toda la app.** Un cuadrado dibujado como polilínea y otra vez con cuatro líneas sueltas salía dos veces, cada copia adentro de la otra. La lectura no terminaba, y como la ruta no soltaba el servidor, se trababa todo. Quedó arreglado en cuatro partes:
+    - la forma repetida con líneas sueltas cuenta como una sola;
+    - también si la copia tiene otros vértices, como uno de más en medio de un lado;
+    - el análisis corta si la cadena de «adentro de» vuelve sobre sí misma;
+    - las tres rutas que leen un DXF corren aparte: mientras se lee la muestra (8 s), otro pedido contesta en medio segundo.
+  - **Lo chico:** «Mostrar 1 descartada» en singular. Las piezas a revisar, que llegan desde el aviso «estas piezas impiden el cálculo», no se pliegan aunque estén descartadas. El botón dice si está abierto (`aria-expanded`). Los comentarios que la revisión vio viejos volvieron a ser ciertos al deshacer la tarea 31.
+  - **Queda anotado:** las fallas conocidas no dicen qué falla esperan; algunas pruebas de las uniones arman las formas a mano y no con un DXF; la explicación del redondeo en `dibujo.py`.
+- **El recorrido en Chrome sin ventana**, sobre una copia de la base real:
+  - Piezas de Complejo: 34 plegadas, de 32 a 66 filas al abrirlas, y el botón con `aria-expanded` al día;
+  - con el filtro de revisar, una descartada y una común: se ven las dos, sin nada plegado;
+  - `Muestra Vectores.dxf` a escala 100: 1786 piezas a cortar y 368 descartadas, como antes de la tanda;
+  - el cuadrado dibujado dos veces, adentro de una placa: se lee en 1,7 s, la placa a cortar y el cuadrado como recorte de su hueco.
+- **Visto en el recorrido, es de antes:** en la tabla de Piezas el ancho y el alto salen con decimales de sobra («388.7470000000012 mm»).
+- **Las pruebas completas, después de los arreglos:** el servidor, 1053 bien y 3 fallas conocidas; la pantalla, 259 de 259 y sin errores de tipos.
+
 ## 9. Lo que decidí yo y conviene revisar
 
 - **El orden de las tandas.** Una rama por tanda, que se fusiona con el ok de Enzo en cada pausa.
@@ -451,6 +476,8 @@ Rama `feat/a17-5-mensajes`.
   - mientras se espera, la pantalla no sabe todavía si va a tener que reacomodar, así que dice «Pasando la pieza…» y avisa que puede tardar hasta medio minuto.
 - **El anidado vencido** se sigue viendo en Chapas y en el PDF, con el aviso. Solo deja de contar para el presupuesto y para la tarjeta.
 - **La comparación con la pieza entera** avisa que hay que deshacer el seccionado; no lo deshace sola.
+- **Dos formas iguales con otros vértices** (tanda 6): se saca la copia. Se pensó que la primera fuera la de afuera, pero entonces la segunda era su hueco y la pieza quedaba con área 0.
+- **Las pruebas del control de la lectura** leen `muestra 2` y `Corporeas` a escala 100, como los otros exportes de Corel: no estaban cargados en ningún trabajo.
 - **Los valores:**
   - el tope de 50 tramos (`PAR-58`);
   - los 5 nombres antes de «y N más»;
