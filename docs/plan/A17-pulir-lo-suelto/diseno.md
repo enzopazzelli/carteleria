@@ -262,6 +262,8 @@ Esta lista reemplaza, en el plan maestro, las filas de las tablas de pendientes 
 3. **Cobrar por lo usado y llevar la cuenta de los retazos** (de A12).
 4. **Recordar las correcciones de la lectura** al volver a cargar el mismo dibujo (Enzo, §2).
 5. **Cambiar cómo decide el lector qué es pieza y qué es agujero** (Enzo, §2). Las dos lecturas de §4.6.3 vinieron acá (tanda 6, 2026-10-29): la letra con el hueco cerca del borde se pudo arreglar, pero cambiaba la lectura unida de Complejo (29 diferencias), y la franja enganchada es un límite de la regla de afuera hacia adentro. Sus pruebas están en `test_uniones.py`, marcadas como fallas conocidas con el motivo.
+
+   El agujero adentro de dos formas que se pisan (§4.6.2) también vino acá. Se arregló contando la cadena más larga de formas que se contienen en vez de cuántas lo rodean: Complejo se leía igual, pero la revisión encontró que cambiaba otros archivos. `Muestra Vectores` pasaba de 1786 a 1938 piezas a cortar, casi todas letras del cuadro de la cotización. `strat` sumaba 12 contornos de menos de 21 mm², aunque arreglaba sus 6 tornillos. Se deshizo; su prueba está en `test_dxf.py`, marcada como falla conocida.
 6. **La importación de varios diseños en pantalla.** Hoy existe solo por la API (`/importaciones/dxf/...`): no une ni deja corregir, cada trabajo tendría de fondo el archivo entero, y sus mensajes se revisaron sin miniaturas. (Su comparación es la de Grupos, que desde la tanda 4 ya no se cae entera si falla un formato.)
 7. **En espera por decisión de Enzo** (2026-10-22): los colores de referencia por pieza y leer el `.cdr`.
 8. **Lo de afuera** (etapa 4): el servidor real, el mail real, WhatsApp, y el logo y los datos fiscales en el PDF.
