@@ -1104,7 +1104,8 @@ def test_el_arranque_corta_las_colgadas_solo_con_la_base_de_verdad(monkeypatch):
 
 def _arranque_sin_base(monkeypatch, *, al_dia, cortar):
     """La app de verdad, con la actualización y la limpieza cambiadas: no
-    se toca ninguna base."""
+    se toca ninguna base. La carpeta temporal que vacía es la de la prueba
+    (`conftest.py`)."""
     import importlib
 
     from app.api import rutas_nesting
@@ -1139,6 +1140,22 @@ def test_si_cortar_colgadas_falla_el_servidor_arranca(monkeypatch, caplog):
     with TestClient(modulo.app) as cliente:
         assert cliente.get("/no-existe").status_code == 404
     assert "No se pudieron cortar los anidados colgados al arrancar" in caplog.text
+
+
+def test_al_arrancar_se_vacia_la_carpeta_temporal(monkeypatch, tmp_path):
+    """Si el servidor se cortó a mitad de un anidado, sus archivos quedaban
+    en la carpeta temporal para siempre (A17, tarea 28 bis)."""
+    from app import config
+
+    carpeta = tmp_path / "tmp"
+    (carpeta / "carteleria-sparrow-abc").mkdir(parents=True)
+    monkeypatch.setattr(config, "DIRECTORIO_TEMPORAL", carpeta)
+    modulo = _arranque_sin_base(monkeypatch, al_dia=lambda *args: None, cortar=lambda: 0)
+
+    with TestClient(modulo.app):
+        pass
+
+    assert list(carpeta.iterdir()) == []
 
 
 def test_si_la_base_no_se_puede_actualizar_el_servidor_no_arranca(monkeypatch, caplog):

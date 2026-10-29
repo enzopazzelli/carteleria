@@ -16,6 +16,7 @@ decir por qué. Ahora se compara la versión de la base con la del código:
 from __future__ import annotations
 
 import re
+import shutil
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -84,17 +85,52 @@ def _respaldar(base: Path, carpeta_datos: Path, hoy: date, version: str) -> Path
     while carpeta.exists():
         carpeta = carpeta_datos / f"{nombre}-{numero}"
         numero += 1
-    carpeta.mkdir(parents=True)
-    # El respaldo de SQLite, no una copia del archivo: con WAL, lo último
-    # escrito puede estar todavía en `carteleria.db-wal`.
-    origen = sqlite3.connect(base)
-    destino = sqlite3.connect(carpeta / base.name)
+    # Se escribe con un nombre provisorio y se renombra al terminar: una
+    # carpeta a medias nunca tiene el nombre de un respaldo, que
+    # `_respaldos_anteriores` tomaría después por la base sana (A17).
+    parcial = carpeta.with_name(f"{carpeta.name}-parcial")
     try:
-        origen.backup(destino)
-    finally:
-        destino.close()
-        origen.close()
+        shutil.rmtree(parcial, ignore_errors=True)  # lo que dejó otro intento
+        parcial.mkdir(parents=True)
+        # El respaldo de SQLite, no una copia del archivo: con WAL, lo último
+        # escrito puede estar todavía en `carteleria.db-wal`.
+        origen = sqlite3.connect(base)
+        try:
+            destino = sqlite3.connect(parcial / base.name)
+            try:
+                origen.backup(destino)
+            finally:
+                destino.close()
+        finally:
+            origen.close()
+        parcial.rename(carpeta)
+    except Exception as error:
+        # Con el disco lleno o sin permiso. Se borra recién con las conexiones
+        # cerradas: en Windows, un archivo abierto no se borra; si igual
+        # queda, queda con su nombre provisorio.
+        shutil.rmtree(parcial, ignore_errors=True)
+        raise ActualizacionFallida(
+            f"No se pudo hacer el respaldo de la base antes de actualizarla: {error}. "
+            "La base no se tocó: liberá espacio y volvé a arrancar."
+        ) from error
     return carpeta
+
+
+def vaciar_la_carpeta_temporal(carpeta: Path) -> None:
+    """Borra lo que dejaron un anidado o una lectura del DXF cortados a
+    mitad, por ejemplo al cerrar el servidor (A17). Al arrancar nadie lo
+    está usando. La carpeta queda; lo que no se puede borrar (en Windows,
+    un archivo abierto), también, y lo demás se borra igual."""
+    if not carpeta.is_dir():
+        return
+    for adentro in carpeta.iterdir():
+        try:
+            if adentro.is_dir():
+                shutil.rmtree(adentro, ignore_errors=True)
+            else:
+                adentro.unlink(missing_ok=True)
+        except OSError:
+            continue
 
 
 def _respaldos_anteriores(carpeta_datos: Path, version: str) -> list[Path]:

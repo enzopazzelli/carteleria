@@ -89,10 +89,18 @@ def aviso_desde(valor: str | dict | Aviso) -> Aviso:
     )
 
 
+#: Cuántos nombres escribe un mensaje antes de «y N más» (A17): con 32 piezas
+#: el texto se hacía largo. La pantalla muestra las mismas miniaturas.
+_NOMBRES_A_LA_VISTA = 5
+
+
 def lista_de_nombres(ids, nombres: dict[str, str]) -> str:
-    """«aro», «B-3»: los nombres del dibujo, en el orden de `ids` y sin repetir."""
-    vistos = dict.fromkeys(str(i) for i in ids)
-    return ", ".join(f"«{nombres.get(i, 'sin nombre')}»" for i in vistos)
+    """«aro», «B-3»: los nombres del dibujo, en el orden de `ids` y sin repetir.
+    Con más de cinco, los primeros cinco y «y N más»."""
+    vistos = list(dict.fromkeys(str(i) for i in ids))
+    escritos = ", ".join(f"«{nombres.get(i, 'sin nombre')}»" for i in vistos[:_NOMBRES_A_LA_VISTA])
+    resto = len(vistos) - _NOMBRES_A_LA_VISTA
+    return f"{escritos} y {resto} más" if resto > 0 else escritos
 
 
 def error_para_guardar(error: BaseException) -> ErrorParaElUsuario:

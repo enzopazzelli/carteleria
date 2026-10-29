@@ -19,6 +19,7 @@ def _sin_comparaciones_de_otras_pruebas(monkeypatch):
 
     monkeypatch.setattr(rutas_comparaciones, "_por_id", {})
     monkeypatch.setattr(rutas_comparaciones, "_ultima_de_grupo", {})
+    monkeypatch.setattr(rutas_comparaciones, "_reemplazadas", {})
 
 
 def _esperar_comparacion(cliente, comparacion_id, *, timeout=30.0) -> dict:
@@ -245,6 +246,33 @@ def test_una_falla_que_nadie_previo_deja_la_comparacion_en_error_con_su_traza(cl
 def test_una_comparacion_que_no_existe_da_404(cliente):
     assert cliente.get("/comparaciones/999").status_code == 404
     assert cliente.post("/comparaciones/999/cancelar").status_code == 404
+
+
+def test_una_comparacion_desconocida_dice_que_el_servidor_se_reinicio(cliente):
+    """Un número que el servidor no conoce: se reinició y la perdió (A17)."""
+    respuesta = cliente.get("/comparaciones/999")
+
+    assert mensaje_de(respuesta) == "Esa comparación ya no está: el servidor se reinició. Volvé a comparar."
+
+
+def test_una_comparacion_reemplazada_dice_cual_la_reemplazo(cliente, tmp_path):
+    """Se guarda solo la última de cada grupo: la anterior se borra al
+    arrancar otra, y el aviso lo distingue de un reinicio (A17)."""
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    pedido = {"motor": "rectpack", "formato_ids": _dos_formatos(cliente)}
+    primera = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json=pedido).json()
+    assert _esperar_comparacion(cliente, primera["id"])["estado"] == "lista"
+    segunda = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json=pedido).json()
+    _esperar_comparacion(cliente, segunda["id"])
+    tercera = cliente.post(f"/grupos/{grupo['id']}/comparaciones", json=pedido).json()
+
+    respuesta = cliente.get(f"/comparaciones/{primera['id']}")
+
+    assert respuesta.status_code == 404
+    # La segunda también se borró: el aviso nombra la que está ahora.
+    assert mensaje_de(respuesta) == (
+        f"Esa comparación la reemplazó una más nueva (#{tercera['id']}): mirá esa, o volvé a comparar."
+    )
 
 
 def test_una_comparacion_terminada_no_trae_progreso_aunque_la_memoria_no_lo_haya_olvidado(

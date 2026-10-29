@@ -15,6 +15,7 @@ import EstadoBadge from "../../components/EstadoBadge";
 import { cancelarEjecucion, type Ejecucion } from "../../api/nesting";
 import type { GrupoDeCorte, ParametrosCorteOverride } from "../../api/piezasYgrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
+import { ejecucionALaVista, queMostrarDelHistorial } from "./historial";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { giroLibreSeAplica } from "./giroLibre";
 import Mensaje from "../../components/Mensaje/Mensaje";
@@ -178,6 +179,8 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const [usarHuecos, setUsarHuecos] = useState(true);
   const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
   const [verEjecucion, setVerEjecucion] = useState<number | undefined>();
+  const vista = ejecucionALaVista(historial, verEjecucion);
+  const delHistorial = vista && vista.id !== enCurso?.id ? queMostrarDelHistorial(vista) : null;
   const [semilla, setSemilla] = useState(42);
   const [busqueda, setBusqueda] = useState(2);
   const [limite, setLimite] = useState(240);
@@ -339,7 +342,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
               Al costado, como tira (como hasta ahora)
             </label>
           </fieldset>
-          <p>Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que quedaron a medio llenar. Conserva el anidado validado con menos planchas. Más búsqueda por chapa no da menos planchas. No se garantiza el óptimo global.</p>
+          <p>Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que quedaron a medio llenar. Conserva el anidado validado con menos planchas. No se garantiza el óptimo global.</p>
           <p className="text-xs text-ink/70">Con «Aprovechar huecos», primero mete las piezas chicas en los huecos de las grandes, y después acomoda el resto.</p>
         </>}
       </div>
@@ -377,6 +380,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
               <td>{ejecucion.motor}{ejecucion.semilla !== null && <span className="text-xs ml-1">(semilla {ejecucion.semilla})</span>}</td><td>{ejecucion.milisegundos !== null ? `${(ejecucion.milisegundos / 1000).toFixed(1)} s` : "—"}</td>
               <td>
                 {ejecucion.estado === "lista" && <button className="text-xs underline mr-3" onClick={() => setVerEjecucion(ejecucion.id)}>Ver anidado</button>}
+                {ejecucion.estado === "error" && <button className="text-xs underline mr-3" onClick={() => setVerEjecucion(ejecucion.id)}>Ver por qué</button>}
                 <EstadoBadge estado={ejecucion.estado} />
               </td>
               <td className="font-mono">{ejecucion.planchas_usadas ?? "—"}</td>
@@ -404,7 +408,20 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
           ))}
         </tbody>
       </table>
-      <div className="mt-5"><ResumenAnidado grupo={grupo} ejecucionId={verEjecucion} /></div>
+      <div className="mt-5">
+        {/* El error y los avisos del anidado que se está viendo (A17). Los del
+            recién lanzado ya están arriba, con su estado. */}
+        {vista && delHistorial && (delHistorial.error || delHistorial.avisos.length > 0) && (
+          <div className="space-y-2 mb-3">
+            <p className="text-sm">Anidado #{vista.id}:</p>
+            {delHistorial.error && <Mensaje key={vista.id} variante="error" que={delHistorial.error} trabajoId={trabajoId} />}
+            {/* Con el número: al pasar a otro anidado, cada aviso empieza de cero. */}
+            {delHistorial.avisos.map((aviso, i) => <Mensaje key={`${vista.id}-${i}`} variante="aviso" que={aviso} trabajoId={trabajoId} />)}
+          </div>
+        )}
+        {/* Uno que terminó en error no tiene plano: el resumen diría 0 planchas. */}
+        {vista?.estado !== "error" && <ResumenAnidado grupo={grupo} ejecucionId={vista?.id} />}
+      </div>
     </div>
   );
 }

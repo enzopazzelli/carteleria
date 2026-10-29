@@ -10,6 +10,8 @@ export function useTarjetas(limite?: number) {
     queryKey: ["tarjetas", limite ?? "todas"],
     queryFn: () => listarTarjetas(limite),
     refetchOnWindowFocus: true,
+    // Inicio y Trabajos muestran su error: el aviso de arriba no lo repite (A17).
+    meta: { avisaSola: true },
   });
 }
 
@@ -18,6 +20,7 @@ export function useResumenDelInicio() {
     queryKey: ["resumen-del-inicio"],
     queryFn: obtenerResumenDelInicio,
     refetchOnWindowFocus: true,
+    meta: { avisaSola: true },
   });
 }
 

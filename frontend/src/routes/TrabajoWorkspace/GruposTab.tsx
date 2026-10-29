@@ -13,7 +13,6 @@ import {
 } from "../../hooks/useGrupos";
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import { cancelarComparacion } from "../../api/piezasYgrupos";
-import Banner from "../../components/Banner";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { debeRetomar, delGrupo, seEsfumo } from "./comparacionEnCurso";
 import { agruparAvisos, avisoConSusChapas, avisosDeEnteras, materialConEspesor, ordenarFilas } from "./filasComparacion";
@@ -53,7 +52,7 @@ function GruposDelTrabajo() {
   const id = Number(trabajoId);
   const { data: piezas } = usePiezas(id);
   const { data: grupos } = useGrupos(id);
-  const { formatos, materiales, cargando, error: errorCatalogo, reintentar } = useTodosLosFormatos();
+  const { formatos, materiales, cargando, error: errorCatalogo } = useTodosLosFormatos();
   const crearGrupo = useCrearGrupo(id);
   const asignarPieza = useAsignarPiezaAGrupo(id);
   const asignarFormato = useAsignarFormatoAGrupo(id);
@@ -95,14 +94,15 @@ function GruposDelTrabajo() {
     if (ultima && debeRetomar(ultima, grupoComparando, buscandoUltima, comparacionId)) setComparacionId(ultima.id);
   }, [ultima, grupoComparando, buscandoUltima, comparacionId]);
 
-  // Si el servidor se reinició, la comparación se perdió: se la suelta para
-  // que vuelva «Comparar», y se olvida como la última del grupo para no
-  // retomarla otra vez.
+  // Si el servidor ya no la conoce (se reinició, o la reemplazó una más
+  // nueva), la comparación se perdió: se la suelta para que vuelva
+  // «Comparar», y se olvida como la última del grupo para no retomarla otra
+  // vez. El aviso es el del servidor, que dice cuál de las dos pasó (A17).
   useEffect(() => {
     if (!seEsfumo(consultaComparacion.error)) return;
     queryClient.setQueryData(["ultima-comparacion", grupoComparando], null);
     setComparacionId(null);
-    setError("La comparación se perdió porque se reinició el servidor. Volvé a compararla.");
+    setError(falla(consultaComparacion.error, "La comparación se perdió. Volvé a compararla."));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [consultaComparacion.error]);
 
@@ -218,11 +218,7 @@ function GruposDelTrabajo() {
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-4">Grupos de corte</h1>
-      {errorCatalogo && <div role="alert" className="mb-4">
-        <Banner variante="error">No se pudo cargar el catálogo. Comprobá que el servidor esté activo.</Banner>
-        <button className="underline text-sm" onClick={() => void reintentar()}>Reintentar cargar materiales</button>
-      </div>}
-
+      {/* Si el catálogo no carga, lo dice el aviso de arriba, con «Reintentar» (A17). */}
       {error && (
         <div className="mb-4">
           <Mensaje variante="error" que={error} trabajoId={id} />

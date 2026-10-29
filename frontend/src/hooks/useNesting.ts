@@ -76,6 +76,9 @@ export function useMaterialUsado(ejecucionId: number | null) {
     queryFn: () => obtenerMaterialUsado(ejecucionId as number),
     enabled: ejecucionId !== null,
     retry: false,
+    // Un anidado viejo, sin sus parámetros, da 409 a propósito: el resumen
+    // muestra los m² de siempre, y el aviso de arriba no lo marca (A17).
+    meta: { avisaSola: true },
   });
 }
 
