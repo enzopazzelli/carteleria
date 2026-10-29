@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OpcionFormato } from "../../api/piezasYgrupos";
-import { avisosDeEnteras, materialConEspesor, ordenarFilas, unicosPorMensaje } from "./filasComparacion";
+import { agruparAvisos, avisoConSusChapas, avisosDeEnteras, materialConEspesor, ordenarFilas } from "./filasComparacion";
 
 function opcion(formato_id: number, extra: Partial<OpcionFormato> = {}): OpcionFormato {
   return {
@@ -23,10 +23,37 @@ describe("ordenarFilas", () => {
   });
 });
 
-describe("unicosPorMensaje", () => {
-  it("no repite el mismo texto", () => {
-    const a = { mensaje: "a", piezas: [], chapas: [] };
-    expect(unicosPorMensaje([a, { ...a }, { mensaje: "b", piezas: [], chapas: [] }]).map((x) => x.mensaje)).toEqual(["a", "b"]);
+describe("agruparAvisos", () => {
+  // Antes se juntaban por texto, y una pieza grande para una chapa y no para
+  // otra mostraba las piezas de la primera chapa que dio el aviso (A17).
+  const grandes = (...piezas: number[]) => ({ mensaje: "Estas piezas solo entran en algunos ángulos:", piezas, chapas: [] });
+  const fila = (id: number, medida: string, ...advertencias: ReturnType<typeof grandes>[]) =>
+    opcion(id, { formato_descripcion: `${medida} mm`, advertencias });
+
+  it("el mismo texto con piezas distintas en dos chapas da dos avisos", () => {
+    const filas = [fila(1, "1220×2440", grandes(7)), fila(2, "1500×3000", grandes(8))];
+
+    expect(agruparAvisos(filas)).toEqual([
+      { aviso: grandes(7), formatos: ["1220×2440"] },
+      { aviso: grandes(8), formatos: ["1500×3000"] },
+    ]);
+  });
+
+  it("con las mismas piezas, un aviso con las dos chapas", () => {
+    const filas = [fila(1, "1220×2440", grandes(8, 7)), fila(2, "1500×3000", grandes(7, 8))];
+
+    expect(agruparAvisos(filas)).toEqual([{ aviso: grandes(8, 7), formatos: ["1220×2440", "1500×3000"] }]);
+  });
+});
+
+describe("avisoConSusChapas", () => {
+  const aviso = { mensaje: "Estas piezas solo entran en algunos ángulos: «aro».", piezas: [7], chapas: [] };
+
+  it("dice en qué chapas pasa", () => {
+    expect(avisoConSusChapas({ aviso, formatos: ["1220×2440", "1500×3000"] }).mensaje).toBe(
+      "En 1220×2440 y 1500×3000: Estas piezas solo entran en algunos ángulos: «aro».",
+    );
+    expect(avisoConSusChapas({ aviso, formatos: ["A", "B", "C"] }).mensaje).toBe(`En A, B y C: ${aviso.mensaje}`);
   });
 });
 

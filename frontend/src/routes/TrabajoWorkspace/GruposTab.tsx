@@ -16,7 +16,7 @@ import { cancelarComparacion } from "../../api/piezasYgrupos";
 import Banner from "../../components/Banner";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { debeRetomar, delGrupo, seEsfumo } from "./comparacionEnCurso";
-import { avisosDeEnteras, materialConEspesor, ordenarFilas, unicosPorMensaje } from "./filasComparacion";
+import { agruparAvisos, avisoConSusChapas, avisosDeEnteras, materialConEspesor, ordenarFilas } from "./filasComparacion";
 import type { OpcionFormato } from "../../api/piezasYgrupos";
 import { ApiError } from "../../api/client";
 import ListaDeFormatos from "../../components/ListaDeFormatos/ListaDeFormatos";
@@ -420,8 +420,14 @@ function GruposDelTrabajo() {
 
               {resultado && (
                 <div>
-                {unicosPorMensaje(resultado.flatMap((opcion) => opcion.advertencias ?? [])).map((aviso) => (
-                  <Mensaje key={aviso.mensaje} variante="aviso" que={aviso} trabajoId={id} />
+                {/* Por chapa: el mismo texto con otras piezas es otro aviso (A17). */}
+                {agruparAvisos(resultado).map((grupo) => (
+                  <Mensaje
+                    key={`${grupo.aviso.mensaje}|${grupo.formatos.join(",")}`}
+                    variante="aviso"
+                    que={avisoConSusChapas(grupo)}
+                    trabajoId={id}
+                  />
                 ))}
                 <table className="w-full text-sm mt-2">
                   <thead>

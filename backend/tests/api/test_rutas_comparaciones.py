@@ -432,3 +432,28 @@ def test_la_fila_trae_el_espesor(cliente, tmp_path):
     filas = _comparar(cliente, grupo["id"], [chica["id"], grande["id"]])
 
     assert {fila["espesor"] for fila in filas.values()} == {"cal. 22"}
+
+
+def test_con_el_motor_rectangular_una_chapa_que_falla_queda_en_su_fila(cliente, tmp_path, monkeypatch):
+    """Cada chapa se anida aparte (A17, tareas 23 y 24): la que falla dice
+    su medida y qué hacer, y las demás se muestran."""
+    from app.api import rutas_nesting
+    from app.services.nesting.engine import PiezasSinUbicar
+
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    grande, chica = _dos_formatos(cliente)
+    real = rutas_nesting.comparar_formatos
+
+    def falla_la_chica(piezas, opciones, **opciones_del_motor):
+        if opciones[0].plancha.ancho_mm == 500:
+            raise PiezasSinUbicar([f"{pieza.id}#0" for pieza in piezas])
+        return real(piezas, opciones, **opciones_del_motor)
+
+    monkeypatch.setattr(rutas_nesting, "comparar_formatos", falla_la_chica)
+
+    filas = _comparar(cliente, grupo["id"], [grande, chica])
+
+    assert filas[grande]["planchas_usadas"] == 1
+    assert filas[chica]["planchas_usadas"] is None
+    assert filas[chica]["error"]["mensaje"].startswith("No se pudieron ubicar estas piezas en la chapa de 500 × 500: ")
+    assert filas[chica]["error"]["mensaje"].endswith("Probá con una chapa más grande, o seccionalas en Piezas.")

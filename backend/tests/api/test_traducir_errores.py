@@ -77,11 +77,23 @@ def test_un_calculo_interrumpido_deja_el_registro_en_el_detalle():
     assert error.detalle == "Traceback… PanicException"
 
 
-def test_el_motor_rectangular_nombra_las_piezas():
+def test_el_motor_rectangular_nombra_las_piezas_y_dice_que_hacer():
     error = para_el_usuario(PiezasSinUbicar(["3"]), NOMBRES)
 
-    assert error.mensaje == "No se pudieron ubicar estas piezas en la chapa: «aro»."
+    assert error.mensaje == (
+        "No se pudieron ubicar estas piezas en la chapa: «aro». Probá con una chapa más grande, o seccionalas en Piezas."
+    )
     assert error.piezas == (3,)
+
+
+def test_el_motor_rectangular_dice_la_medida_de_la_chapa():
+    """En la comparación cada chapa se anida aparte (A17): el mensaje dice cuál."""
+    error = para_el_usuario(PiezasSinUbicar(["3", "4"]), NOMBRES, plancha=CHAPA)
+
+    assert error.mensaje == (
+        "No se pudieron ubicar estas piezas en la chapa de 1000 × 2000: «aro», «B-3». "
+        "Probá con una chapa más grande, o seccionalas en Piezas."
+    )
 
 
 def test_lo_que_ya_es_para_el_usuario_queda_y_lo_demas_va_como_siempre():

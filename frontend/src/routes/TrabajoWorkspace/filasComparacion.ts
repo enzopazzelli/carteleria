@@ -25,12 +25,26 @@ export function avisosDeEnteras(opcion: OpcionFormato): string[] {
   );
 }
 
-/** Los avisos de todas las chapas, sin repetir el mismo texto. */
-export function unicosPorMensaje(avisos: Aviso[]): Aviso[] {
-  const vistos = new Set<string>();
-  return avisos.filter((aviso) => {
-    if (vistos.has(aviso.mensaje)) return false;
-    vistos.add(aviso.mensaje);
-    return true;
-  });
+/** Los avisos de todas las chapas, juntos cuando dicen lo mismo de las
+ * mismas piezas, con las chapas donde pasa (A17). Antes se juntaban solo
+ * por el texto, y una pieza grande para una chapa y no para otra mostraba
+ * las piezas de la primera chapa que dio el aviso. */
+export function agruparAvisos(filas: OpcionFormato[]): { aviso: Aviso; formatos: string[] }[] {
+  const grupos = new Map<string, { aviso: Aviso; formatos: string[] }>();
+  for (const fila of filas) {
+    const formato = fila.formato_descripcion.replace(/ mm$/, "");
+    for (const aviso of fila.advertencias ?? []) {
+      const clave = JSON.stringify([aviso.mensaje, [...aviso.piezas].sort((a, b) => a - b)]);
+      const grupo = grupos.get(clave) ?? { aviso, formatos: [] };
+      if (!grupo.formatos.includes(formato)) grupo.formatos.push(formato);
+      grupos.set(clave, grupo);
+    }
+  }
+  return [...grupos.values()];
+}
+
+/** El aviso con las chapas donde pasa delante: «En 1220×2440 y 1500×3000: …». */
+export function avisoConSusChapas({ aviso, formatos }: { aviso: Aviso; formatos: string[] }): Aviso {
+  const chapas = formatos.length > 1 ? `${formatos.slice(0, -1).join(", ")} y ${formatos[formatos.length - 1]}` : formatos[0];
+  return { ...aviso, mensaje: `En ${chapas}: ${aviso.mensaje}` };
 }

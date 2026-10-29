@@ -83,8 +83,11 @@ def para_el_usuario(error: BaseException, nombres: dict[str, str], *, plancha=No
     if isinstance(error, CalculoInterrumpido):
         return ErrorParaElUsuario(f"El cálculo se interrumpió por un error interno. {_PROBA_DE_NUEVO}", detalle=error.registro)
     if isinstance(error, PiezasSinUbicar):
+        # Con la medida, si se sabe: en la comparación cada chapa se anida aparte (A17).
+        chapa = f"la chapa de {medida(plancha)}" if plancha is not None else "la chapa"
         return ErrorParaElUsuario(
-            f"No se pudieron ubicar estas piezas en la chapa: {lista_de_nombres(error.ids, nombres)}.",
+            f"No se pudieron ubicar estas piezas en {chapa}: {lista_de_nombres(error.ids, nombres)}. "
+            "Probá con una chapa más grande, o seccionalas en Piezas.",
             detalle=tecnico, piezas=error.ids,
         )
     return error_para_guardar(error)
