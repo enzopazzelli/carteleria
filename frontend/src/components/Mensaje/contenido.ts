@@ -36,8 +36,6 @@ export function textoParaCopiar(contenido: Contenido): string {
   return contenido.detalle ? `${contenido.mensaje}\n\n${contenido.detalle}` : contenido.mensaje;
 }
 
-/** Para los `catch`: el error del servidor entero (con su detalle y lo que
- * nombra), o el texto de la pantalla si no vino del servidor. */
 /** Cuántas piezas muestra un mensaje antes de «y N más», como el texto que
  * arma el servidor (A17). */
 export const PIEZAS_A_LA_VISTA = 5;
@@ -47,6 +45,8 @@ export function primerasYResto<T>(lista: T[], cuantas: number): { primeras: T[];
   return { primeras: lista.slice(0, cuantas), resto: Math.max(lista.length - cuantas, 0) };
 }
 
+/** Para los `catch`: el error del servidor entero (con su detalle y lo que
+ * nombra), o el texto de la pantalla si no vino del servidor. */
 export function falla(e: unknown, siNoEsDelServidor: string): string | ApiError {
   return e instanceof ApiError ? e : siNoEsDelServidor;
 }

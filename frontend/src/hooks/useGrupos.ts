@@ -74,8 +74,9 @@ export function useComparacion(comparacionId: number | null) {
     queryKey: ["comparacion", comparacionId],
     queryFn: () => obtenerComparacion(comparacionId as number),
     enabled: comparacionId !== null,
-    // Grupos dice qué pasó con una comparación que ya no está (A17).
-    meta: { avisaSola: true },
+    // Grupos dice qué pasó con una comparación que ya no está (A17); sin
+    // conexión avisa el de arriba.
+    meta: { avisaSola: "404" },
     refetchInterval: (query) => intervaloDeConsulta(query.state.data as Comparacion | undefined, query.state.error),
   });
 }

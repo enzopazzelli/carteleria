@@ -15,7 +15,7 @@ import EstadoBadge from "../../components/EstadoBadge";
 import { cancelarEjecucion, type Ejecucion } from "../../api/nesting";
 import type { GrupoDeCorte, ParametrosCorteOverride } from "../../api/piezasYgrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
-import { queMostrarDelHistorial } from "./historial";
+import { ejecucionALaVista, queMostrarDelHistorial } from "./historial";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { giroLibreSeAplica } from "./giroLibre";
 import Mensaje from "../../components/Mensaje/Mensaje";
@@ -179,7 +179,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const [usarHuecos, setUsarHuecos] = useState(true);
   const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
   const [verEjecucion, setVerEjecucion] = useState<number | undefined>();
-  const vista = historial?.find((e) => e.id === verEjecucion) ?? null;
+  const vista = ejecucionALaVista(historial, verEjecucion);
   const delHistorial = vista && vista.id !== enCurso?.id ? queMostrarDelHistorial(vista) : null;
   const [semilla, setSemilla] = useState(42);
   const [busqueda, setBusqueda] = useState(2);
@@ -414,12 +414,13 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
         {vista && delHistorial && (delHistorial.error || delHistorial.avisos.length > 0) && (
           <div className="space-y-2 mb-3">
             <p className="text-sm">Anidado #{vista.id}:</p>
-            {delHistorial.error && <Mensaje variante="error" que={delHistorial.error} trabajoId={trabajoId} />}
-            {delHistorial.avisos.map((aviso, i) => <Mensaje key={i} variante="aviso" que={aviso} trabajoId={trabajoId} />)}
+            {delHistorial.error && <Mensaje key={vista.id} variante="error" que={delHistorial.error} trabajoId={trabajoId} />}
+            {/* Con el número: al pasar a otro anidado, cada aviso empieza de cero. */}
+            {delHistorial.avisos.map((aviso, i) => <Mensaje key={`${vista.id}-${i}`} variante="aviso" que={aviso} trabajoId={trabajoId} />)}
           </div>
         )}
         {/* Uno que terminó en error no tiene plano: el resumen diría 0 planchas. */}
-        {vista?.estado !== "error" && <ResumenAnidado grupo={grupo} ejecucionId={verEjecucion} />}
+        {vista?.estado !== "error" && <ResumenAnidado grupo={grupo} ejecucionId={vista?.id} />}
       </div>
     </div>
   );

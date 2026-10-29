@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Ejecucion } from "../../api/nesting";
-import { queMostrarDelHistorial } from "./historial";
+import { ejecucionALaVista, queMostrarDelHistorial } from "./historial";
 
 function ejecucion(extra: Partial<Ejecucion>): Ejecucion {
   return {
@@ -8,6 +8,27 @@ function ejecucion(extra: Partial<Ejecucion>): Ejecucion {
     milisegundos: 1000, mensajes: null, error: null, es_definitiva: false, creado_en: "2026-10-29T10:00:00", ...extra,
   };
 }
+
+describe("ejecucionALaVista", () => {
+  // La misma que muestra el resumen: si no se eligió una, la definitiva, o
+  // la primera terminada. Sus avisos se ven al volver a la pestaña
+  // (revisión de la tanda 5).
+  const historial = [
+    ejecucion({ id: 12, estado: "error", error: { mensaje: "x", detalle: null, piezas: [], chapas: [] } }),
+    ejecucion({ id: 11 }),
+    ejecucion({ id: 10, es_definitiva: true }),
+  ];
+
+  it("la elegida, si se eligió una", () => {
+    expect(ejecucionALaVista(historial, 12)?.id).toBe(12);
+  });
+
+  it("si no, la definitiva terminada, y si no hay, la primera terminada", () => {
+    expect(ejecucionALaVista(historial, undefined)?.id).toBe(10);
+    expect(ejecucionALaVista(historial.slice(0, 2), undefined)?.id).toBe(11);
+    expect(ejecucionALaVista(undefined, undefined)).toBeNull();
+  });
+});
 
 describe("queMostrarDelHistorial", () => {
   // Antes se veían solo los del anidado recién lanzado, aunque el error queda guardado (A17).
