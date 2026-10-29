@@ -99,7 +99,7 @@ def _disenio_analizado(indice: int, disenio: DisenioDetectado, formatos: list[Pl
 
 
 @router.post("/importaciones/dxf/analizar", response_model=AnalisisDXFLeer)
-async def analizar_dxf(
+def analizar_dxf(
     archivo: UploadFile = File(...),
     escala_a_mm: Decimal = Form(...),
     sesion: Session = Depends(obtener_sesion),
@@ -116,7 +116,7 @@ async def analizar_dxf(
     directorio = _directorio_importaciones() / token
     directorio.mkdir()
     ruta = directorio / nombre
-    ruta.write_bytes(await archivo.read())
+    ruta.write_bytes(archivo.file.read())
 
     try:
         resultado = parsear_dxf(ruta, escala_a_mm)

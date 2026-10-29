@@ -413,7 +413,7 @@ def _para_dibujar(lectura: _Lectura) -> LecturaLeer:
 
 
 @router.post("/trabajos/{trabajo_id}/dxf/lectura", response_model=LecturaDXFLeer)
-async def leer_dxf(
+def leer_dxf(
     trabajo_id: int,
     archivo: UploadFile = File(...),
     escala_a_mm: Decimal = Form(...),
@@ -432,7 +432,10 @@ async def leer_dxf(
 
     `correcciones` es lo que quien carga marcó sobre el dibujo
     (`_correcciones`). La pantalla vuelve a pedir la lectura después de
-    cada clic, con la lista entera, y manda esa misma lista al cargar."""
+    cada clic, con la lista entera, y manda esa misma lista al cargar.
+
+    Sin `async`, como las demás: FastAPI la corre aparte, y un DXF que
+    tarda en leerse no traba los otros pedidos (A17)."""
     _trabajo_o_404(sesion, trabajo_id)
     marcadas = _correcciones(correcciones)
     sufijo = Path(archivo.filename or "trabajo.dxf").suffix or ".dxf"
@@ -440,7 +443,7 @@ async def leer_dxf(
         # Con el nombre que le da la carga: de ahí salen los `id` de las
         # piezas, y tienen que ser los mismos que van a quedar guardados.
         ruta = Path(carpeta) / f"trabajo-{trabajo_id}{sufijo}"
-        ruta.write_bytes(await archivo.read())
+        ruta.write_bytes(archivo.file.read())
         lecturas = _leer(ruta, escala_a_mm, tamano_maximo_agujero_mm, _formatos_del_catalogo(sesion), marcadas)
     return LecturaDXFLeer(
         contornos_no_cerrados=len(lecturas.resultado.contornos_no_cerrados),
@@ -452,7 +455,7 @@ async def leer_dxf(
 
 
 @router.post("/trabajos/{trabajo_id}/dxf", response_model=ImportacionDXFLeer)
-async def subir_dxf(
+def subir_dxf(
     trabajo_id: int,
     archivo: UploadFile = File(...),
     escala_a_mm: Decimal = Form(...),
@@ -487,7 +490,7 @@ async def subir_dxf(
     # Cargar reemplaza todas las piezas del trabajo.
     rechazar_si_hay_anidado_en_curso(sesion, GrupoDeCorte.trabajo_id == trabajo_id, "volver a cargar el dibujo")
 
-    contenido = await archivo.read()
+    contenido = archivo.file.read()
     sufijo = Path(archivo.filename or "trabajo.dxf").suffix or ".dxf"
     nombre = f"trabajo-{trabajo_id}{sufijo}"
     with tempfile.TemporaryDirectory(dir=config.carpeta_temporal()) as carpeta:

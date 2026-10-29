@@ -10,7 +10,7 @@ from pathlib import Path
 import ezdxf
 import pytest
 
-from .ayudas import mensaje_de
+from .ayudas import mensaje_de, segundos_que_tarda_otro_pedido
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -577,6 +577,25 @@ def _ver_lectura(cliente, trabajo_id, contenido, *, escala_a_mm="1", correccione
         files={"archivo": ("pieza.dxf", contenido, "application/dxf")},
         data=datos,
     )
+
+
+@pytest.mark.parametrize("ruta", ["dxf/lectura", "dxf"])
+def test_leer_el_dibujo_no_traba_los_demas_pedidos(cliente, tmp_path, monkeypatch, ruta):
+    from app.api import rutas_trabajos
+
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(
+        tmp_path, "cuadrado.dxf", lambda msp: msp.add_lwpolyline([(0, 0), (100, 0), (100, 100), (0, 100)], close=True)
+    )
+
+    def pedir():
+        return cliente.post(
+            f"/trabajos/{trabajo['id']}/{ruta}",
+            files={"archivo": ("pieza.dxf", contenido, "application/dxf")},
+            data={"escala_a_mm": "1"},
+        )
+
+    assert segundos_que_tarda_otro_pedido(cliente, pedir, rutas_trabajos, "_leer", monkeypatch) < 2
 
 
 def test_la_lectura_manda_los_numeros_con_dos_decimales(cliente, tmp_path):
