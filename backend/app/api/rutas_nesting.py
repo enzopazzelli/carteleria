@@ -35,7 +35,13 @@ from ..registro import registro
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.comparador import OpcionFormato, comparar_formatos, formato_recomendado
 from ..services.nesting.engine import MotorNestingRectangular
-from ..services.nesting.sparrow import anidar_sparrow, piezas_que_no_entran, preparar_entrada, OpcionesSparrow
+from ..services.nesting.sparrow import (
+    OpcionesSparrow,
+    anidar_sparrow,
+    entra_en_la_chapa,
+    piezas_que_no_entran,
+    preparar_entrada,
+)
 from ..services.nesting.models import (
     ParametrosCorte,
     Plancha,
@@ -512,17 +518,49 @@ class _ComparacionPreparada:
 
     motor: str
     criterio: str
-    piezas: list[PiezaDominio]
     geometrias: dict[str, GeometriaPieza]
     opciones_sparrow: OpcionesSparrow | None
     #: Uno por formato pedido, en el orden en que se pidieron: los datos
-    #: de su fila de la tabla, la opción a anidar, y las piezas que no
-    #: entran (a seccionar; vacía si entran todas).
+    #: de su fila de la tabla, la opción a anidar, las piezas que van a esa
+    #: chapa (con la original entera donde entra, A17) y las que no entran
+    #: (a seccionar; vacía si entran todas).
     comunes: list[dict]
     opciones: list[OpcionFormato]
+    piezas_por_opcion: list[list[PiezaDominio]]
     a_seccionar: list[list[PiezaASeccionarLeer]]
     #: De `str(Pieza.id)` al nombre del dibujo, para decir los errores (A9).
     nombres: dict[str, str]
+
+
+def _a_dominio(pieza: Pieza) -> PiezaDominio:
+    return PiezaDominio(id=str(pieza.id), ancho_mm=pieza.ancho_mm, alto_mm=pieza.alto_mm, cantidad=pieza.cantidad)
+
+
+def _originales_con_todos_sus_tramos(sesion: Session, piezas: list[Pieza]) -> dict[int, tuple[Pieza, list[Pieza]]]:
+    """Las piezas seccionadas cuyos tramos están todos entre `piezas` (A17):
+    en una chapa donde la original entra entera, se compara con ella en
+    lugar de sus tramos. Si un tramo se pasó a otro grupo o se descartó, la
+    original contaría dos veces o de más, y se compara con los tramos."""
+    tramos_aca: dict[int, list[Pieza]] = {}
+    for pieza in piezas:
+        if pieza.seccionada_de_id is not None:
+            tramos_aca.setdefault(pieza.seccionada_de_id, []).append(pieza)
+    originales = {}
+    for original_id, tramos in tramos_aca.items():
+        original = sesion.get(Pieza, original_id)
+        if original is None or original.seccionado is None or not original.contorno_mm:
+            continue
+        todos = set(sesion.execute(select(Pieza.id).where(Pieza.seccionada_de_id == original_id)).scalars())
+        if todos == {tramo.id for tramo in tramos}:
+            originales[original_id] = (original, tramos)
+    return originales
+
+
+def _entra_entera(original: Pieza, opcion: OpcionFormato, motor: str, giro_libre: bool) -> bool:
+    """Con la regla de cada motor, como `piezas_que_no_entran`."""
+    if motor == "sparrow":
+        return entra_en_la_chapa(geometria_desde_pieza(original).contorno_local_mm, opcion.plancha, opcion.params, giro_libre)
+    return not MotorNestingRectangular(opcion.plancha, opcion.params).piezas_que_no_entran([_a_dominio(original)])
 
 
 def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionFormatosCrear) -> _ComparacionPreparada:
@@ -535,9 +573,7 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
     if not datos.formato_ids:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Hace falta indicar al menos un formato para comparar.")
     _rechazar_huecos_sin_sparrow(datos)
-    piezas_dominio = [
-        PiezaDominio(id=str(p.id), ancho_mm=p.ancho_mm, alto_mm=p.alto_mm, cantidad=p.cantidad) for p in piezas
-    ]
+    piezas_dominio = [_a_dominio(p) for p in piezas]
 
     opciones: list[OpcionFormato] = []
     formatos: list[Formato] = []
@@ -545,12 +581,11 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
         formato = sesion.get(Formato, formato_id)
         if formato is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Esa chapa ya no existe: volvé a cargar la página.")
-        material = formato.material
-        if material.parametros is None:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                f"«{material.nombre}» todavía no tiene cargados el kerf, el margen y la separación: cargalos antes de anidar.",
-            )
+        # Los del grupo si los tiene, como al anidar (A17); si no, los del material.
+        try:
+            params = _parametros_de_corte(grupo, formato.material)
+        except ValueError as error:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
         # Dos causas distintas de "no se puede calcular un precio por
         # plancha" (ver costeo.py::_linea_de_grupo, misma distinción):
         # sin precio cargado, o vendido por una unidad que no es m².
@@ -569,12 +604,6 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
                 "su costo no se calcula solo, cargalo a mano en Costeo.",
             )
         precio_por_plancha = (formato.ancho_mm / Decimal(1000)) * (formato.alto_mm / Decimal(1000)) * formato.costo_unidad_venta
-        params = ParametrosCorte(
-            kerf_mm=material.parametros.kerf_mm,
-            margen_borde_mm=material.parametros.margen_borde_mm,
-            separacion_piezas_mm=material.parametros.separacion_piezas_mm,
-            rotaciones_permitidas=RotacionPermitida(material.parametros.rotaciones_permitidas),
-        )
         opciones.append(
             OpcionFormato(
                 plancha=Plancha(ancho_mm=formato.ancho_mm, alto_mm=formato.alto_mm),
@@ -597,31 +626,56 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
         opciones_sparrow = OpcionesSparrow(
             **datos.model_dump(exclude={"motor", "formato_ids", "criterio", "sobrante"}), sobrante="arriba"
         )
-        # Con los giros del anidado (A17): con giro libre, una pieza que
-        # solo entra en diagonal no se manda a seccionar.
+    # Con los giros del anidado (A17): con giro libre, una pieza que solo
+    # entra en diagonal no se manda a seccionar.
+    giro_libre = opciones_sparrow.giro_libre if opciones_sparrow is not None else False
+
+    # Una pieza seccionada que en una chapa entra entera se compara entera
+    # ahí (A17): si no, una chapa más grande parecía peor de lo que es.
+    originales = _originales_con_todos_sus_tramos(sesion, piezas)
+    if datos.motor == "sparrow":
+        geometrias |= {str(original.id): geometria_desde_pieza(original) for original, _ in originales.values()}
+    piezas_por_opcion: list[list[PiezaDominio]] = []
+    enteras_por_opcion: list[list[Pieza]] = []
+    for opcion in opciones:
+        enteras = [original for original, _ in originales.values() if _entra_entera(original, opcion, datos.motor, giro_libre)]
+        en_su_lugar = {tramo.id for original in enteras for tramo in originales[original.id][1]}
+        piezas_por_opcion.append(
+            [p for p in piezas_dominio if int(p.id) not in en_su_lugar] + [_a_dominio(original) for original in enteras]
+        )
+        enteras_por_opcion.append(enteras)
+
+    if datos.motor == "sparrow":
         no_entran = [
-            piezas_que_no_entran(piezas_dominio, geometrias, o.plancha, o.params, giro_libre=opciones_sparrow.giro_libre)
-            for o in opciones
+            piezas_que_no_entran(piezas_de_la_opcion, geometrias, o.plancha, o.params, giro_libre=giro_libre)
+            for o, piezas_de_la_opcion in zip(opciones, piezas_por_opcion)
         ]
     else:
-        no_entran = [MotorNestingRectangular(o.plancha, o.params).piezas_que_no_entran(piezas_dominio) for o in opciones]
+        no_entran = [
+            MotorNestingRectangular(o.plancha, o.params).piezas_que_no_entran(piezas_de_la_opcion)
+            for o, piezas_de_la_opcion in zip(opciones, piezas_por_opcion)
+        ]
 
-    nombres = nombres_de_piezas(piezas)
+    con_originales = [*piezas, *(original for original, _ in originales.values())]
+    nombres = nombres_de_piezas(con_originales)
     if datos.motor == "sparrow":
         # Validar todos antes de iniciar búsquedas costosas.
-        for opcion, formato, ids in zip(opciones, formatos, no_entran):
+        for opcion, formato, piezas_de_la_opcion, ids in zip(opciones, formatos, piezas_por_opcion, no_entran):
             if ids:
                 continue
             try:
-                preparar_entrada(piezas_dominio, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
+                preparar_entrada(piezas_de_la_opcion, geometrias, opcion.plancha, opcion.params, opciones_sparrow)
             except ValueError as error:
                 raise para_el_usuario(error, nombres, plancha=opcion.plancha, material=formato.material.nombre) from error
 
-    por_id = {str(p.id): p for p in piezas}
+    por_id = {str(p.id): p for p in con_originales}
+
+    def para_la_fila(pieza: Pieza) -> PiezaASeccionarLeer:
+        return PiezaASeccionarLeer(id=pieza.id, id_origen=pieza.id_origen, ancho_mm=pieza.ancho_mm, alto_mm=pieza.alto_mm)
+
     return _ComparacionPreparada(
         motor=datos.motor,
         criterio=datos.criterio,
-        piezas=piezas_dominio,
         geometrias=geometrias,
         opciones_sparrow=opciones_sparrow,
         comunes=[
@@ -630,22 +684,16 @@ def _preparar_comparacion(sesion: Session, grupo_id: int, datos: ComparacionForm
                 formato_id=formato.id,
                 formato_descripcion=f"{formato.ancho_mm}×{formato.alto_mm} mm",
                 material_nombre=formato.material.nombre,
+                espesor=formato.material.espesor,
                 moneda=formato.moneda,
                 precio_simulado=formato.precio_simulado,
+                enteras=[para_la_fila(original) for original in enteras],
             )
-            for formato in formatos
+            for formato, enteras in zip(formatos, enteras_por_opcion)
         ],
         opciones=opciones,
-        a_seccionar=[
-            [
-                PiezaASeccionarLeer(
-                    id=por_id[i].id, id_origen=por_id[i].id_origen,
-                    ancho_mm=por_id[i].ancho_mm, alto_mm=por_id[i].alto_mm,
-                )
-                for i in ids
-            ]
-            for ids in no_entran
-        ],
+        piezas_por_opcion=piezas_por_opcion,
+        a_seccionar=[[para_la_fila(por_id[i]) for i in ids] for ids in no_entran],
         nombres=nombres,
     )
 
@@ -657,21 +705,29 @@ def _correr_comparacion(
 ) -> list[OpcionFormatoLeer]:
     """Anida cada formato y arma la tabla. No usa la base: corre igual en
     el pedido y en la cola (A7). Un formato que falla queda en su fila con
-    el motivo, y los demás se muestran (A9)."""
+    el motivo, y los demás se muestran (A9); con los dos motores (A17)."""
     a_anidar = [
-        (indice, opcion, comunes)
-        for indice, (opcion, comunes, a_seccionar) in enumerate(
-            zip(preparada.opciones, preparada.comunes, preparada.a_seccionar)
+        (indice, opcion, comunes, piezas)
+        for indice, (opcion, comunes, piezas, a_seccionar) in enumerate(
+            zip(preparada.opciones, preparada.comunes, preparada.piezas_por_opcion, preparada.a_seccionar)
         )
         if not a_seccionar
     ]
     resultados: dict[int, object] = {}
     fallas: dict[int, ErrorLeer] = {}
+
+    def anotar_la_falla(indice: int, opcion: OpcionFormato, comunes: dict, error: Exception) -> None:
+        falla = para_el_usuario(error, preparada.nombres, plancha=opcion.plancha, material=comunes["material_nombre"])
+        registro().warning(
+            "La comparación no pudo anidar %s: %s\n%s", comunes["formato_descripcion"], falla.mensaje, falla.detalle or ""
+        )
+        fallas[indice] = ErrorLeer(**falla.como_dict())
+
     if preparada.motor == "sparrow":
         from ..services.nesting.comparador import ResultadoComparacionFormato
         inicio = time.monotonic()
         maximo = len(a_anidar) * preparada.opciones_sparrow.tiempo_maximo_s
-        for numero, (indice, opcion, comunes) in enumerate(a_anidar, start=1):
+        for numero, (indice, opcion, comunes, piezas) in enumerate(a_anidar, start=1):
             if cancelada():
                 raise ErrorPrevisto("Comparación cancelada.")
 
@@ -685,28 +741,27 @@ def _correr_comparacion(
 
             try:
                 resultado = anidar_sparrow(
-                    preparada.piezas, preparada.geometrias, opcion.plancha, opcion.params, preparada.opciones_sparrow,
+                    piezas, preparada.geometrias, opcion.plancha, opcion.params, preparada.opciones_sparrow,
                     cancelada=cancelada, al_avanzar=avanzar,
                     nombre=f"la comparación ({comunes['formato_descripcion']})",
                 )
             except Exception as error:  # noqa: BLE001 - la falla de un formato queda en su fila
                 if cancelada():
                     raise ErrorPrevisto("Comparación cancelada.") from error
-                falla = para_el_usuario(error, preparada.nombres, plancha=opcion.plancha, material=comunes["material_nombre"])
-                registro().warning(
-                    "La comparación no pudo anidar %s: %s\n%s", comunes["formato_descripcion"], falla.mensaje, falla.detalle or ""
-                )
-                fallas[indice] = ErrorLeer(**falla.como_dict())
+                anotar_la_falla(indice, opcion, comunes, error)
                 continue
             resultados[indice] = ResultadoComparacionFormato(
                 opcion, resultado, calcular_aprovechamiento(resultado, opcion.plancha, preparada.geometrias),
                 resultado.planchas_usadas * opcion.precio_por_plancha,
             )
     else:
-        en_orden = comparar_formatos(
-            preparada.piezas, [opcion for _, opcion, _ in a_anidar], tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA
-        )
-        resultados = {indice: resultado for (indice, _, _), resultado in zip(a_anidar, en_orden)}
+        # Chapa por chapa, como con Sparrow: cada una tiene sus piezas (la
+        # original entera donde entra) y la que falla queda en su fila (A17).
+        for indice, opcion, comunes, piezas in a_anidar:
+            try:
+                [resultados[indice]] = comparar_formatos(piezas, [opcion], tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA)
+            except Exception as error:  # noqa: BLE001 - la falla de un formato queda en su fila
+                anotar_la_falla(indice, opcion, comunes, error)
     recomendado = formato_recomendado(list(resultados.values()), preparada.criterio) if resultados else None
 
     filas = []

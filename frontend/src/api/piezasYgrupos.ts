@@ -154,6 +154,7 @@ export interface OpcionFormato {
   formato_id: number;
   formato_descripcion: string;
   material_nombre: string;
+  espesor: string | null;
   planchas_usadas: number | null;
   aprovechamiento_pct: string | null;
   costo_total: string | null;
@@ -161,6 +162,8 @@ export interface OpcionFormato {
   recomendado: boolean;
   precio_simulado: boolean;
   piezas_a_seccionar: PiezaASeccionar[];
+  /** Piezas seccionadas que en este formato entran enteras: se compararon enteras (A17). */
+  enteras: PiezaASeccionar[];
   /** El formato no se pudo anidar (A9): no llegó a tiempo o falló el cálculo. Sin planchas ni costo. */
   error?: ErrorDelServidor | null;
 }

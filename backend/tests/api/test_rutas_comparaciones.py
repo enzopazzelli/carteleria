@@ -328,3 +328,107 @@ def test_la_comparacion_rectangular_con_huecos_se_rechaza(cliente, tmp_path):
     assert mensaje_de(respuesta) == (
         '"Aprovechar huecos" no funciona con el motor rectangular: destildá esa opción o elegí el otro motor.'
     )
+
+
+# --- La comparación con los parámetros del grupo, la pieza entera y el espesor (A17, tarea 23) ---
+
+_SPARROW_CORTO = {"segundos_por_busqueda": 1, "tiempo_maximo_s": 5, "simplificacion_mm": 0}
+
+
+def _comparar(cliente, grupo_id, formato_ids, motor="rectpack") -> dict[int, dict]:
+    pedido = {"motor": motor, "formato_ids": formato_ids} | (_SPARROW_CORTO if motor == "sparrow" else {})
+    respuesta = cliente.post(f"/grupos/{grupo_id}/comparar-formatos", json=pedido)
+    assert respuesta.status_code == 200, respuesta.text
+    return {fila["formato_id"]: fila for fila in respuesta.json()}
+
+
+def test_la_comparacion_usa_los_parametros_del_grupo(cliente, tmp_path):
+    """Con el margen del grupo en 300, a una chapa de 1000 le quedan 400 de
+    lugar: la pieza de 500 hay que seccionarla. Con los del material
+    (margen 10) entraría."""
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path, ancho=500, alto=500)
+    _material, formato = _material_con_formato_y_parametros(cliente)
+    cambio = cliente.patch(f"/grupos/{grupo['id']}", json={"parametros_usados": {
+        "kerf_mm": "0", "margen_borde_mm": "300", "separacion_piezas_mm": "0", "rotaciones_permitidas": "LIBRE_0_90",
+    }})
+    assert cambio.status_code == 200, cambio.text
+
+    fila = _comparar(cliente, grupo["id"], [formato["id"]])[formato["id"]]
+
+    assert len(fila["piezas_a_seccionar"]) == 1
+
+
+def _original_seccionada(cliente, tmp_path):
+    """Una pieza de 2000 × 1000 seccionada para la chapa de 1220 × 1100, en
+    dos tramos que quedan en su grupo; y la de 2440 × 1220 del mismo
+    material, donde entra entera."""
+    material = cliente.post("/materiales", json={"nombre": "Chapa negra", "espesor": "cal. 22"}).json()
+    cliente.put(f"/materiales/{material['id']}/parametros-corte", json={
+        "kerf_mm": "2", "margen_borde_mm": "10", "separacion_piezas_mm": "5", "rotaciones_permitidas": "LIBRE_0_90",
+    })
+    chica, grande = (
+        cliente.post(f"/materiales/{material['id']}/formatos", json={
+            "ancho_mm": ancho, "alto_mm": alto, "unidad_venta": "M2", "costo_unidad_venta": "1000",
+        }).json()
+        for ancho, alto in (("1220", "1100"), ("2440", "1220"))
+    )
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path, ancho=2000, alto=1000)
+    [original] = cliente.get(f"/trabajos/{grupo['trabajo_id']}/piezas").json()
+    aplicado = cliente.post(f"/piezas/{original['id']}/seccionado", json={
+        "formato_id": chica["id"], "angulo_grados": 0, "desplazamiento_x_mm": 0, "desplazamiento_y_mm": 0,
+    })
+    assert aplicado.status_code == 201, aplicado.text
+    tramos = aplicado.json()
+    assert len(tramos) == 2
+    return grupo, original, chica, grande, tramos
+
+
+def _anotar_lo_que_se_anida(monkeypatch, motor) -> list[list[int]]:
+    """Las piezas que recibe el motor en cada chapa, en orden."""
+    from app.api import rutas_nesting
+
+    anidadas = []
+    nombre = "comparar_formatos" if motor == "rectpack" else "anidar_sparrow"
+    real = getattr(rutas_nesting, nombre)
+
+    def anotando(piezas, *argumentos, **opciones):
+        anidadas.append(sorted(int(p.id) for p in piezas))
+        return real(piezas, *argumentos, **opciones)
+
+    monkeypatch.setattr(rutas_nesting, nombre, anotando)
+    return anidadas
+
+
+@pytest.mark.parametrize("motor", ["rectpack", "sparrow"])
+def test_la_pieza_entera_cuando_entra(cliente, tmp_path, monkeypatch, motor):
+    grupo, original, chica, grande, tramos = _original_seccionada(cliente, tmp_path)
+    anidadas = _anotar_lo_que_se_anida(monkeypatch, motor)
+
+    filas = _comparar(cliente, grupo["id"], [chica["id"], grande["id"]], motor)
+
+    assert filas[chica["id"]]["enteras"] == []
+    assert [pieza["id"] for pieza in filas[grande["id"]]["enteras"]] == [original["id"]]
+    assert filas[grande["id"]]["planchas_usadas"] == 1
+    assert anidadas == [sorted(tramo["id"] for tramo in tramos), [original["id"]]]
+
+
+def test_la_pieza_no_va_entera_si_un_tramo_esta_en_otro_grupo(cliente, tmp_path, monkeypatch):
+    """Si un tramo se pasó a otro grupo, contarla entera acá la contaría dos
+    veces: se compara con el tramo que quedó."""
+    grupo, _original, chica, grande, tramos = _original_seccionada(cliente, tmp_path)
+    otro = cliente.post(f"/trabajos/{grupo['trabajo_id']}/grupos", json={"nombre": "Otro"}).json()
+    cliente.patch(f"/piezas/{tramos[0]['id']}", json={"grupo_id": otro["id"]})
+    anidadas = _anotar_lo_que_se_anida(monkeypatch, "rectpack")
+
+    filas = _comparar(cliente, grupo["id"], [chica["id"], grande["id"]])
+
+    assert all(fila["enteras"] == [] for fila in filas.values())
+    assert anidadas == [[tramos[1]["id"]], [tramos[1]["id"]]]
+
+
+def test_la_fila_trae_el_espesor(cliente, tmp_path):
+    grupo, _original, chica, grande, _tramos = _original_seccionada(cliente, tmp_path)
+
+    filas = _comparar(cliente, grupo["id"], [chica["id"], grande["id"]])
+
+    assert {fila["espesor"] for fila in filas.values()} == {"cal. 22"}

@@ -238,6 +238,8 @@ class OpcionFormatoLeer(BaseModel):
     formato_id: int
     formato_descripcion: str
     material_nombre: str
+    #: Dos chapas de la misma medida y distinto espesor se veían iguales (A17).
+    espesor: str | None = None
     planchas_usadas: int | None
     aprovechamiento_pct: Decimal | None
     costo_total: Decimal | None
@@ -251,6 +253,10 @@ class OpcionFormatoLeer(BaseModel):
     #: se secciona en tramos que se sueldan después (A5, desde la pestaña
     #: Piezas). Hasta que se seccionen, el formato queda sin anidar.
     piezas_a_seccionar: list[PiezaASeccionarLeer] = Field(default_factory=list)
+    #: Piezas seccionadas que en este formato entran enteras (A17): la
+    #: comparación las anidó enteras, no en tramos. Para usarlo, hay que
+    #: deshacer su seccionado en Piezas.
+    enteras: list[PiezaASeccionarLeer] = Field(default_factory=list)
     #: El formato no se pudo anidar (A9): no llegó a tiempo o falló el
     #: cálculo. Como con `piezas_a_seccionar`, sin planchas ni costo.
     error: ErrorLeer | None = None
