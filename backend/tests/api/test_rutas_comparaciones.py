@@ -457,3 +457,38 @@ def test_con_el_motor_rectangular_una_chapa_que_falla_queda_en_su_fila(cliente, 
     assert filas[chica]["planchas_usadas"] is None
     assert filas[chica]["error"]["mensaje"].startswith("No se pudieron ubicar estas piezas en la chapa de 500 × 500: ")
     assert filas[chica]["error"]["mensaje"].endswith("Probá con una chapa más grande, o seccionalas en Piezas.")
+
+
+def test_la_comparacion_rectangular_se_corta_si_se_cancela(cliente, tmp_path):
+    """Ahora va chapa por chapa (A17): antes de cada una mira si se canceló,
+    como con Sparrow (revisión de la tanda 4)."""
+    from sqlalchemy.orm import Session
+
+    from app.api.esquemas_nesting import ComparacionFormatosCrear
+    from app.api.rutas_nesting import _correr_comparacion, _preparar_comparacion
+    from app.mensajes import ErrorPrevisto
+
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    pedido = ComparacionFormatosCrear(motor="rectpack", formato_ids=_dos_formatos(cliente))
+    with Session(cliente.motor) as sesion:
+        preparada = _preparar_comparacion(sesion, grupo["id"], pedido)
+
+    with pytest.raises(ErrorPrevisto, match="cancelada"):
+        _correr_comparacion(preparada, cancelada=lambda: True)
+
+
+def test_un_grupo_con_parametros_propios_compara_un_material_sin_parametros(cliente, tmp_path):
+    """Antes era un 400 («todavía no tiene cargados el kerf…»): con los del
+    grupo alcanza, como al anidar (A17, tarea 23)."""
+    grupo = _grupo_con_piezas_sin_formato(cliente, tmp_path)
+    material = cliente.post("/materiales", json={"nombre": "Sin parámetros"}).json()
+    formato = cliente.post(f"/materiales/{material['id']}/formatos", json={
+        "ancho_mm": "1000", "alto_mm": "1000", "unidad_venta": "M2", "costo_unidad_venta": "10",
+    }).json()
+    cliente.patch(f"/grupos/{grupo['id']}", json={"parametros_usados": {
+        "kerf_mm": "2", "margen_borde_mm": "10", "separacion_piezas_mm": "5", "rotaciones_permitidas": "LIBRE_0_90",
+    }})
+
+    fila = _comparar(cliente, grupo["id"], [formato["id"]])[formato["id"]]
+
+    assert fila["planchas_usadas"] == 1

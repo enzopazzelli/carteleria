@@ -758,6 +758,8 @@ def _correr_comparacion(
         # Chapa por chapa, como con Sparrow: cada una tiene sus piezas (la
         # original entera donde entra) y la que falla queda en su fila (A17).
         for indice, opcion, comunes, piezas in a_anidar:
+            if cancelada():
+                raise ErrorPrevisto("Comparación cancelada.")
             try:
                 [resultados[indice]] = comparar_formatos(piezas, [opcion], tope_planchas_advertencia=_TOPE_PLANCHAS_ADVERTENCIA)
             except Exception as error:  # noqa: BLE001 - la falla de un formato queda en su fila
