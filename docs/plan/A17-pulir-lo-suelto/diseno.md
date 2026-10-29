@@ -465,6 +465,37 @@ Rama `feat/a17-6-lectura`.
 - **Visto en el recorrido, es de antes:** en la tabla de Piezas el ancho y el alto salen con decimales de sobra («388.7470000000012 mm»).
 - **Las pruebas completas, después de los arreglos:** el servidor, 1053 bien y 3 fallas conocidas; la pantalla, 259 de 259 y sin errores de tipos.
 
+### 8.7 Tanda 7 — Presupuesto, inicio y PDF (2026-10-29)
+
+Rama `feat/a17-7-presupuesto-inicio-pdf`.
+
+- **La revisión de la página de inicio** (tarea 34). La hizo Claude, por pedido de Enzo; no un revisor aparte.
+  - **Un error:** en la tarjeta, dos grupos del mismo material con las mismas chapas daban dos renglones iguales, y React los confundía («Encountered two children with the same key»). Ahora cada renglón se distingue por su lugar. Visto en el recorrido: con la tarjeta de antes, un aviso en la consola; con la de ahora, ninguno.
+  - **Descartado después de mirarlo:** borrar un grupo sí actualiza la fecha del trabajo; el presupuesto de un trabajo borrado queda «sin trabajo»; «Falta el presupuesto» lleva a Chapas a propósito.
+  - **Queda anotado:**
+    - el cuadro de «Borrar trabajo» no retiene el foco;
+    - el menú «⋯» no se recorre con flechas;
+    - el aviso de borrado nombra solo el presupuesto más reciente;
+    - cada tarjeta hace sus propias consultas.
+- **El anidado vencido no se cobra** (tareas 35 a 37). Un anidado está vencido si lo que hoy se corta del grupo no es lo que se anidó: cada pieza que se corta, con una colocación por copia (`costeo.anidado_vigente`).
+  - **El presupuesto** deja el grupo sin costo: «Grupo «X»: las piezas cambiaron después del anidado. Anidá de nuevo antes de presupuestar.», o «se quedó sin piezas, así que no se cobra su anidado viejo.».
+  - **Si el elegido está vencido y hay uno más nuevo al día,** cuenta ese, con aviso (Enzo, opción a). Lo mismo hacen la tarjeta, el PDF y Chapas.
+  - **La tarjeta** dice «Falta volver a anidar «grupo»», lleva a Anidado y no cuenta esas chapas. La miniatura lo sigue pintando.
+  - **Chapas y el PDF** lo muestran con «Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de presupuestar.».
+  - **Sin falsos vencidos:** en las copias de la base real y de las de la tanda 2 y la reunión hay 8 anidados terminados. 7 están al día; el único vencido es el del grupo «Rosa» de Parador12, que se quedó sin piezas y hasta ahora seguía cobrando sus chapas.
+- **La miniatura** (tarea 38) queda como está, por decisión de Enzo. Simplificar solo el fondo, como decía el plan, la dejaba en unos 117 KB: en Complejo las piezas pesan más que el fondo (100 KB contra 78). Para bajar de 50 KB había que simplificar también las piezas.
+- **El PDF** (tarea 39).
+  - **Las chapas bajas, centradas en el alto:** en parador1 pasan de 0 mm de blanco abajo y 46 arriba a 23 y 23.
+  - **El número de una pieza chica** se achica para entrar en su caja dibujada, entre 4 y 7 puntos (Enzo, opción a).
+  - **Medido en parador1:** los números ya no se pisaban entre sí. Contra la forma exacta, 38 de 41 caen encima del borde de su pieza (son letras finas, y se leen por el borde blanco). Poner el número en el punto más alejado de los bordes y achicarlo hasta que entre dejaba 16, pero con 36 números más chicos: se descartó.
+- **Las medidas de Piezas** (pedido de Enzo en esta tanda): el ancho y el alto en milímetros enteros, como en Grupos.
+- **El recorrido de la página de inicio** (tarea 40), en Chrome sin ventana sobre una copia de la base real con sus propios archivos:
+  - la miniatura de Complejo tarda unos 40 ms en armarse en el servidor y unos 65 ms en el navegador;
+  - al recargar tarda lo mismo: el navegador no la guarda, porque la respuesta no dice que se puede;
+  - al anidar el parador, su miniatura cambia de dirección y se vuelve a cargar;
+  - con una cantidad cambiada: «Falta volver a anidar parador», «Sin chapas», el aviso en Chapas, y el costeo sin costo y con su aviso; con la cantidad de antes, vuelve a estar al día;
+  - las 104 medidas de Piezas del parador, en milímetros enteros.
+
 ## 9. Lo que decidí yo y conviene revisar
 
 - **El orden de las tandas.** Una rama por tanda, que se fusiona con el ok de Enzo en cada pausa.
@@ -478,6 +509,12 @@ Rama `feat/a17-6-lectura`.
 - **La comparación con la pieza entera** avisa que hay que deshacer el seccionado; no lo deshace sola.
 - **Dos formas iguales con otros vértices** (tanda 6): se saca la copia. Se pensó que la primera fuera la de afuera, pero entonces la segunda era su hueco y la pieza quedaba con área 0.
 - **Las pruebas del control de la lectura** leen `muestra 2` y `Corporeas` a escala 100, como los otros exportes de Corel: no estaban cargados en ningún trabajo.
+- **El anidado vencido** (tanda 7):
+  - un grupo sin piezas que se corten no tiene anidado al día;
+  - en la barra de la tarjeta, un grupo vencido cuenta como si faltara anidarlo;
+  - un error más nuevo que el vencido muestra el error;
+  - Chapas elige qué anidado mostrar con la regla del presupuesto.
+- **Las medidas de Piezas** van en milímetros enteros, como en Grupos.
 - **Los valores:**
   - el tope de 50 tramos (`PAR-58`);
   - los 5 nombres antes de «y N más»;
