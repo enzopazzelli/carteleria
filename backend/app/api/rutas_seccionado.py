@@ -6,6 +6,7 @@ formato, y se guardan los tramos.
 """
 from __future__ import annotations
 
+import math
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -43,6 +44,7 @@ from .esquemas_seccionado import (
 from .esquemas_trabajos import PiezaLeer
 from .rutas_nesting import _parametros_de_corte
 from .rutas_trabajos import _trabajo_o_404
+from .traducir_errores import medida
 
 router = APIRouter(tags=["seccionado"])
 
@@ -95,7 +97,7 @@ def _celda(plancha: Plancha, params: ParametrosCorte) -> tuple[float, float]:
     if min(celda) <= 0:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            f"La chapa de {plancha.ancho_mm}×{plancha.alto_mm} no deja superficie útil: el margen, el kerf y la "
+            f"La chapa de {medida(plancha)} no deja superficie útil: el margen, el kerf y la "
             "separación ocupan todo el ancho o el alto. Elegí otra chapa.",
         )
     return celda
@@ -125,39 +127,42 @@ def _validar_que_no_entra(pieza: Pieza, plancha: Plancha, params: ParametrosCort
     contorno = [(float(x), float(y)) for x, y in pieza.contorno_mm]
     if not entra_en_la_chapa(contorno, plancha, params, giro_libre=True):
         return
-    medida = f"{plancha.ancho_mm}×{plancha.alto_mm}"
     if entra_en_la_chapa(contorno, plancha, params, giro_libre=False):
-        mensaje = f"«{pieza.id_origen}» entra entera en {medida}: no hace falta seccionarla."
+        mensaje = f"«{pieza.id_origen}» entra entera en {medida(plancha)}: no hace falta seccionarla."
     else:
         mensaje = (
-            f"«{pieza.id_origen}» entra entera en {medida} si se la gira: "
+            f"«{pieza.id_origen}» entra entera en {medida(plancha)} si se la gira: "
             "anidala con «Girar a cualquier ángulo» marcado. No hace falta seccionarla."
         )
     raise HTTPException(status.HTTP_400_BAD_REQUEST, mensaje)
 
 
-def _medida(plancha: Plancha) -> str:
-    def en_mm(valor) -> str:
-        return format(Decimal(str(valor)).normalize(), "f").replace(".", ",")
+def _rechazar_antes_de_buscar(pieza: Pieza, plancha: Plancha, forma: Polygon, celda: tuple[float, float]) -> None:
+    """Antes de buscar (`mejor_grilla` prueba cientos de grillas), lo que
+    ya se sabe que no entra en el tope (`PAR-58`): el caso de un retazo
+    chico con una pieza de varios metros (A17).
 
-    return f"{en_mm(plancha.ancho_mm)}×{en_mm(plancha.alto_mm)}"
-
-
-def _ni_el_doble_del_tope(pieza: Pieza, plancha: Plancha, forma: Polygon, celda: tuple[float, float]) -> None:
-    """Antes de buscar (`mejor_grilla` prueba cientos de grillas): si una
-    sola grilla, derecha y sin corrimiento, ya da más del doble del tope
-    (`PAR-58`), la chapa no sirve y se pide otra sin esperar la búsqueda.
-    Es el caso de un retazo chico con una pieza de varios metros (A17).
-
-    Antes de esa grilla, una cuenta que vale para todas: cada tramo entra en
-    una celda, así que la pieza sale en al menos su área sobre la de la
-    celda. Con un retazo muy chico, la grilla sola tardaba casi un minuto."""
-    doble = 2 * config.TOPE_DE_TRAMOS
-    al_menos = forma.area / (celda[0] * celda[1])
-    if al_menos > doble or len(seccionar_con_grilla(forma, celda, Grilla(0, 0, 0)).tramos) > doble:
+    - **Por área**, una cuenta que vale para cualquier grilla: cada tramo
+      entra en una celda, así que la pieza sale en al menos su área sobre
+      la de la celda. Si eso ya pasa el tope, ninguna grilla lo baja.
+    - **Con una sola grilla**, derecha y sin corrimiento: si da más del
+      doble del tope, se pide otra chapa sin esperar la búsqueda. Alcanza
+      a las formas de poca área que cruzan muchas celdas, como un marco."""
+    tope = config.TOPE_DE_TRAMOS
+    # Se descuenta un poco: un cociente exacto con ruido de punto flotante no
+    # tiene que sumar un tramo.
+    al_menos = math.ceil(forma.area / (celda[0] * celda[1]) - 1e-6)
+    if al_menos > tope:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            f"Con la chapa de {_medida(plancha)}, «{pieza.id_origen}» saldría en más de {doble} tramos: "
+            f"Con la chapa de {medida(plancha)}, «{pieza.id_origen}» saldría en al menos {al_menos} tramos, "
+            f"y el tope es {tope}: elegí una chapa más grande.",
+        )
+    doble = 2 * tope
+    if len(seccionar_con_grilla(forma, celda, Grilla(0, 0, 0)).tramos) > doble:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Con la chapa de {medida(plancha)}, «{pieza.id_origen}» saldría en más de {doble} tramos: "
             "elegí una chapa más grande.",
         )
 
@@ -169,7 +174,7 @@ def _dentro_del_tope(pieza: Pieza, plancha: Plancha, resultado: Seccionado) -> N
     if tramos > tope:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            f"Con la chapa de {_medida(plancha)}, «{pieza.id_origen}» saldría en {tramos} tramos, y el tope es {tope}: "
+            f"Con la chapa de {medida(plancha)}, «{pieza.id_origen}» saldría en {tramos} tramos, y el tope es {tope}: "
             "elegí una chapa más grande.",
         )
 
@@ -273,7 +278,7 @@ def proponer_seccionado(
     celda = _celda(plancha, params)
     forma = _forma(pieza)
     if datos.angulo_grados is None:
-        _ni_el_doble_del_tope(pieza, plancha, forma, celda)
+        _rechazar_antes_de_buscar(pieza, plancha, forma, celda)
         resultado = mejor_grilla(forma, celda)
     else:
         grilla = Grilla(datos.angulo_grados, datos.desplazamiento_x_mm, datos.desplazamiento_y_mm)
