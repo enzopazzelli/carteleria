@@ -300,13 +300,16 @@ Rama `fix/a17-1-arranque-y-motor`, 9 commits. Ninguna tarea se cerró sin cambio
 - **La revisión de la rama** (un revisor aparte) encontró dos cosas, ya arregladas con su prueba:
   - el aviso previo al anidar usaba las opciones por defecto: sin giro libre, una pieza que solo entra inclinada arrancaba un anidado condenado a terminar en error, en vez del aviso al pedir;
   - si la actualización de la base vuelve a fallar, el respaldo nuevo puede ser de una base a medio actualizar: el mensaje nombra también el primero.
-- **Quedan para decidir:**
-  - si el respaldo mismo falla, sale una traza cruda;
-  - un guion de prueba, `leer_un_dxf.py`, ahora también actualiza la base que lee;
-  - un comentario viejo en el worker;
-  - una prueba que compara posiciones exactas de Sparrow y podría fallar a veces;
-  - con el motor rectangular, la franja de la separación;
-  - la carpeta `tmp` no se limpia si el servidor muere a mitad de un anidado.
+- **Lo que quedaba para decidir, decidido por Enzo el 2026-10-29:**
+  - **se arregla en la tanda 5 (tarea 28 bis):**
+    - si el respaldo mismo falla, sale una traza cruda;
+    - la carpeta `tmp` no se limpia si el servidor muere a mitad de un anidado;
+    - un guion de prueba, `leer_un_dxf.py`, ahora también actualiza la base que lee: se anota en su ayuda;
+  - **se corrige al cerrar la tanda 2,** cuando se saque el camino que pierda: un comentario viejo en el worker;
+  - **queda anotado:**
+    - una prueba que compara posiciones exactas de Sparrow y podría fallar a veces: si falla una vez, se afloja;
+    - con el motor rectangular, la franja de la separación: con Sparrow, que es el de por defecto, no pasa;
+    - la pasada fina del seccionado sin ±5° y ±10° finos: si en otra forma da peor, se suman.
 
 ### 8.2 Tanda 2 — Complejo en 7 chapas y las mediciones (en curso)
 

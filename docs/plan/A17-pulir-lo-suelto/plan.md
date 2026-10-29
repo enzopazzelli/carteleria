@@ -566,28 +566,37 @@ export function encuadreAlrededor(pieza: Caja, todo: Caja, factor = 3): Caja;   
 
 Rama `feat/a17-4-seccionar-y-comparar`.
 
+> **Cambios al revisar la tanda contra el código (2026-10-29).** Enzo aprobó tres, que ya están en las tareas 20, 22 y 23. Lo demás son arreglos menores, anotados en cada tarea. Detalle en la planilla de avance, «Pre-flight tanda 4».
+
 ### Tarea 20: La grilla a mm enteros, los colores de los tramos y la fila de la seccionada
+
+> **Cambio aprobado por Enzo (2026-10-29):** el color de cada tramo lo elige el servidor, mirando qué tramos se tocan. La versión anterior del plan pintaba según la celda de la grilla donde cae el centro del tramo. Eso no alcanza: el servidor pega los pedacitos chicos a un tramo vecino (`_pegar_pedacitos`), así que un tramo puede ocupar parte de dos celdas, y dos vecinos podían quedar del mismo color.
 
 **Archivos:**
 - Modificar:
+  - `backend/app/services/seccionado/grilla.py` (y su `__init__.py`);
+  - `backend/app/api/esquemas_seccionado.py` y `backend/app/api/rutas_seccionado.py`;
+  - `frontend/src/api/piezasYgrupos.ts`;
   - `frontend/src/components/Seccionado/geometria.ts`;
   - `frontend/src/components/Seccionado/SeccionarPanel.tsx`;
   - `frontend/src/routes/TrabajoWorkspace/PiezasTab.tsx`.
-- Prueba: `frontend/src/components/Seccionado/geometria.test.ts`.
+- Pruebas:
+  - `backend/tests/services/seccionado/` (la de la grilla) y `backend/tests/api/test_rutas_seccionado.py`;
+  - `frontend/src/components/Seccionado/geometria.test.ts`.
 
 **Lo que deja:**
 - `enMmEnteros(valor: number): number`;
-- `celdaDeTramo(contorno: number[][], angulo: number, dx: number, dy: number, celdaAncho: number, celdaAlto: number): [number, number]`: la celda del centro del tramo, en el marco girado de la grilla;
-- `colorDeTramo([i, j]): string`: `COLORES_TRAMOS[(mod(i, 2)) * 2 + mod(j, 2)]`, con cuatro colores y `mod` siempre positivo.
+- `colores_de_tramos(tramos: list[Polygon]) -> list[int]`: para cada tramo, el primer color que no tiene ninguno de sus vecinos ya pintados. Son vecinos los que se tocan por un lado o por una esquina. Se recorren de abajo hacia arriba y de izquierda a derecha;
+- `TramoPropuesto.color: int`. El panel pinta con `COLORES_TRAMOS[color % COLORES_TRAMOS.length]`, una paleta de seis colores.
 
 - [ ] **Paso 1: Pruebas que fallan:**
   - `enMmEnteros(1219.37)` da `1219`;
-  - dos tramos vecinos, por lado o por esquina, dan colores distintos;
-  - celdas con índices negativos no rompen.
+  - dos tramos vecinos, por lado o por esquina, dan colores distintos (en `colores_de_tramos` y en la propuesta de la ruta);
+  - una cuadrícula de 3 × 3 tramos usa como mucho cuatro colores.
 - [ ] **Paso 2:** correrlas. Tienen que fallar.
 - [ ] **Paso 3: Implementar.**
   - `alSoltar` redondea los dos corrimientos.
-  - El panel pinta cada tramo con `colorDeTramo`.
+  - El panel pinta cada tramo con su `color`.
   - En `PiezasTab`, la fila se atenúa solo si `pieza.descartada && !pieza.seccionado`.
 - [ ] **Paso 4:** correr las pruebas y `tsc`.
 - [ ] **Paso 5: Commit** `fix(seccionado): grilla a mm enteros, cuatro colores y la fila de la seccionada (A17, tarea 20)`.
@@ -619,7 +628,7 @@ Rama `feat/a17-4-seccionar-y-comparar`.
   - una de 2800 × 1300, en un grupo de 2440 × 1220, aparece con «grupo».
 - [ ] **Paso 2:** correrlas. Tienen que fallar.
 - [ ] **Paso 3:** implementar los dos lados.
-- [ ] **Paso 4:** medir la ruta con Complejo en la copia: tiene que tardar menos de 2 s. Si tarda más, se guarda en memoria por trabajo hasta el próximo cambio de piezas o grupos.
+- [ ] **Paso 4:** medir la ruta con Complejo en la copia: tiene que tardar menos de 2 s. Si tarda más, primero se prueba girar solo la envolvente convexa en `angulos_que_entran`, que da las mismas cajas con muchos menos puntos. Si con eso no alcanza, se guarda en memoria por trabajo hasta el próximo cambio de piezas o grupos.
 - [ ] **Paso 5:** correr las pruebas de los dos lados.
 - [ ] **Paso 6: Commit** `feat(seccionado): qué hay que seccionar, con márgenes y kerf, lo dice el servidor (A17, tarea 21)`.
 
@@ -637,14 +646,14 @@ Rama `feat/a17-4-seccionar-y-comparar`.
 
 **Lo que deja:**
 - `config.TOPE_DE_TRAMOS = int(os.getenv("CARTELERIA_TOPE_TRAMOS", "50"))`, que es `PAR-58`;
-- `ListaDeFormatos` con la prop `unaSola?: boolean`: al tildar una, se destilda la anterior.
+- `ListaDeFormatos` con la prop `unaSola?: boolean`: al tildar una, se destilda la anterior. Con `unaSola` no está la casilla de «tildar todas», y un retazo que se agrega queda como el único tildado. La lógica va en `filas.ts`, con sus pruebas: no hay `ListaDeFormatos.test.tsx`.
 
 **Cómo es:**
 - **Antes de buscar,** se prueba una sola grilla (0°, sin corrimiento). Si da más del doble del tope, 400 con «Con la chapa de {A}×{B}, «{nombre}» saldría en más de {2·tope} tramos: elegí una chapa más grande.».
-- **Después de buscar, y al aplicar,** si da más que el tope, 400 con «Con la chapa de {A}×{B}, «{nombre}» saldría en {n} tramos, y el tope es {tope}: elegí una chapa más grande.».
+- **Después de buscar, con una grilla fija y al aplicar,** si da más que el tope, 400 con «Con la chapa de {A}×{B}, «{nombre}» saldría en {n} tramos, y el tope es {tope}: elegí una chapa más grande.». **Cambio aprobado por Enzo (2026-10-29):** también con la grilla fija, que es la que se pide al arrastrar la grilla o al cambiar el ángulo a mano. El panel deja la propuesta de antes y muestra el aviso.
 
 - [ ] **Paso 1: Pruebas que fallan:**
-  - un retazo de 300 × 300 y una pieza de 10 000 × 400 dan el primer 400, sin buscar: se comprueba que `mejor_grilla` no se llamó;
+  - un retazo de 200 × 200 y una pieza de 10 000 × 400 dan el primer 400, sin buscar: se comprueba que `mejor_grilla` no se llamó. Con los parámetros del ayudante de las pruebas, que reservan 27 mm, un retazo de 300 × 300 daba unos 74 tramos, que no pasa de 2 × 50; uno de 200 × 200 da unos 170;
   - con el tope puesto en 2 por `monkeypatch`, una pieza que da 3 tramos da el segundo 400;
   - en `ListaDeFormatos` con `unaSola`, tildar otra deja solo esa.
 - [ ] **Paso 2:** correrlas. Tienen que fallar.
@@ -668,6 +677,8 @@ Rama `feat/a17-4-seccionar-y-comparar`.
   - `espesor: str | None`;
   - `enteras: list[PiezaASeccionarLeer]`: las originales seccionadas cuyos tramos están en el grupo y que en esa chapa entran enteras.
 - **Cómo se compara:** en esa chapa se compara con la original en lugar de sus tramos. `_ComparacionPreparada` pasa a tener `piezas_por_opcion: list[list[PiezaDominio]]`, y las geometrías incluyen las originales.
+  - **Cambio aprobado por Enzo (2026-10-29):** la original va entera solo si **todos** sus tramos están en el grupo. Si alguno se pasó a otro grupo, se compara con los tramos: si no, la pieza contaría dos veces, entera acá y en tramos en el otro grupo.
+  - Con el motor rectangular, cada chapa se anida por separado y con su `try`, como con Sparrow: cada una tiene su propia lista de piezas, y así la tarea 24 puede decir la medida de la chapa en el mensaje de `PiezasSinUbicar`. De paso, una chapa que falla queda en su fila y no tira abajo toda la comparación.
 - **En la pantalla:**
   - la columna Material muestra el espesor;
   - la fila con `enteras` dice «"{nombre}" entra entera en esta chapa: si la usás, deshacé el seccionado en Piezas.»;
@@ -808,6 +819,25 @@ Rama `feat/a17-5-mensajes`.
 - [ ] **Paso 3:** implementar.
 - [ ] **Paso 4:** correr las pruebas de los dos lados.
 - [ ] **Paso 5: Commit** `fix(comparacion): distinguir reinicio de reemplazo (A17, tarea 28)`.
+
+### Tarea 28 bis: El respaldo que falla y la carpeta temporal
+
+Lo decidió Enzo el 2026-10-29, al repasar lo que quedó suelto de la tanda 1 (§8.1 del diseño).
+
+**Archivos:**
+- Modificar: `backend/app/arranque.py`, `backend/app/api/app.py` y el docstring de `backend/scripts/leer_un_dxf.py`.
+- Prueba: `backend/tests/test_arranque.py`.
+
+**Lo que deja:**
+- **Si el respaldo falla** (disco lleno, permisos): se borra la carpeta a medio hacer, queda una línea en el registro, y el servidor no arranca con `ActualizacionFallida` («No se pudo hacer el respaldo de la base antes de actualizarla: … La base no se tocó: liberá espacio y volvé a arrancar.»). Hoy sale una traza cruda, y la carpeta a medias la encuentra `_respaldos_anteriores`: si después otra actualización falla, el mensaje la nombraría como la base sana.
+- **Al arrancar, se vacía `<datos>/tmp`:** lo que dejó un anidado, o ver o cargar un DXF, si el proceso murió a mitad.
+- **El docstring de `leer_un_dxf.py`** dice que, al correr, pone al día la base de `CARTELERIA_DATOS`, con respaldo, como el servidor.
+
+- [ ] **Paso 1: Pruebas que fallan:** un respaldo que falla (`sqlite3.Connection.backup` que levanta `OperationalError`) no deja carpeta y da el mensaje; un archivo en `<datos>/tmp` no está después de arrancar.
+- [ ] **Paso 2:** correrlas. Tienen que fallar.
+- [ ] **Paso 3:** implementar.
+- [ ] **Paso 4:** correr las pruebas del arranque.
+- [ ] **Paso 5: Commit** `fix(arranque): el respaldo que falla avisa claro, y la carpeta temporal se vacía al arrancar (A17, tarea 28 bis)`.
 
 ### Cierre de la tanda 5
 
