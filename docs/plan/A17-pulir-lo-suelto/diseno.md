@@ -359,6 +359,47 @@ Rama `feat/a17-3-chapas`.
   - **Queda anotado:** la miniatura de la chapa baja la imagen dos veces la primera vez; `separacion_extra_mm` de `validacion_manual.py` lo usaba solo el visor borrado.
 - **Las pruebas completas:** el servidor, 1004 de 1004; la pantalla, 238 de 238 y sin errores de tipos.
 
+### 8.4 Tanda 4 — Seccionar y comparar chapas (2026-10-29)
+
+Rama `feat/a17-4-seccionar-y-comparar`. Antes de empezar se revisaron las tareas contra el código, y Enzo aprobó tres cambios al plan: el color de cada tramo lo elige el servidor, el tope de tramos vale también con la grilla fija, y la pieza va entera en la comparación solo si todos sus tramos están en el grupo.
+
+- **La grilla y los tramos** (tarea 20).
+  - Al soltar la grilla, el corrimiento queda en milímetros enteros.
+  - Cada tramo lleva un color distinto del de los que lo tocan, por lado o por esquina, de una paleta de seis. El color sale del servidor y no de la celda: un tramo con un pedacito pegado ocupa parte de dos celdas.
+  - En Piezas, la fila de una pieza seccionada ya no se ve apagada.
+- **Qué hay que seccionar lo dice el servidor** (tarea 21): con la forma, el giro libre, los márgenes y el kerf, como el anidado. Con Complejo y la máquina libre tarda menos de un segundo; con el aro sin seccionar, que no entra en ninguna de las 30 chapas, 1,8 s.
+- **La chapa del panel y el tope de tramos** (tarea 22, `PAR-58`, 50).
+  - El panel elige la chapa en la tabla de Grupos, de a una.
+  - Una chapa con la que la pieza saldría en más de 50 tramos no se propone ni se aplica: al buscar, con la grilla fija y al aplicar.
+  - Antes de buscar, dos frenos:
+    - **por área:** cada tramo entra en una celda, así que la pieza sale en al menos su área sobre la de la celda. Si eso pasa el tope, ninguna grilla lo baja. Es el caso del retazo de 300 × 300 con una pieza de 10 m, que sale en al menos 54;
+    - **con una grilla de prueba:** si da más del doble del tope, también se rechaza sin buscar. Sirve para las formas de poca área que cruzan muchas celdas, como un marco.
+  - Fuera del plan: con un retazo de 50 × 50, la grilla de prueba sola tardaba 47 s. Por eso se sumó el freno por área.
+- **La comparación** (tarea 23).
+  - Usa los parámetros del grupo si los tiene; si no, los de cada material.
+  - Una pieza seccionada con todos sus tramos en el grupo se compara entera donde entra, y la fila avisa que hay que deshacer el seccionado para usar esa chapa.
+  - La fila trae el espesor.
+  - Con el motor rectangular, cada chapa se calcula aparte: la que falla queda en su fila.
+- **Los avisos, por chapa** (tarea 24): juntos solo si dicen lo mismo de las mismas piezas, con cada chapa nombrada por su material, espesor y medida. El mensaje del motor rectangular dice la medida y qué hacer.
+- **La revisión de la rama** (un revisor aparte): sin nada grave, y una cosa importante, ya arreglada con su prueba. La cuenta por área se comparaba contra el doble del tope y no contra el tope, así que el retazo de 300 × 300 buscaba uno o dos minutos para terminar rechazando. Ahora sale en el momento: «Con la chapa de 300 × 300, «…» saldría en al menos 54 tramos, y el tope es 50: elegí una chapa más grande.», un texto que aprobó Enzo.
+  - Lo chico, también arreglado:
+    - con la grilla girada, los colores llegaban a seis, justo el tamaño de la paleta. Ahora se pinta primero el tramo con más colores alrededor, y en 140 grillas de prueba alcanzaron cuatro;
+    - la comparación rectangular se corta si se cancela;
+    - quitar un retazo que no es el elegido no borra la propuesta;
+    - crear o quitar un retazo vuelve a pedir qué hay que seccionar;
+    - la medida de la chapa, escrita de una sola forma en los mensajes del seccionado;
+    - las pruebas que faltaban.
+  - **Queda anotado:** acelerar la consulta de qué hay que seccionar, girando solo el contorno de afuera simplificado. Con la máquina libre no hace falta.
+- **El recorrido en Chrome sin ventana**, sobre una copia de la base con el aro de Complejo sin seccionar y una pieza de 1215 × 2435 en un grupo de 1220 × 2440:
+  - en Piezas, el aro con «No entra en ninguna chapa» y la otra con «No entra en la chapa de su grupo (1220×2440)», las dos con «Seccionar»;
+  - la comparación con «Hay que seccionar 1 pieza(s)» y la forma del aro, y el material que distingue el acrílico de 2 mm del de 3 mm;
+  - el panel sin «Seleccionar todas» y con una sola chapa tildada;
+  - la propuesta en 8 tramos con tres colores, en 13 s;
+  - el arrastre que manda el corrimiento en mm enteros;
+  - la fila de la seccionada sin apagar;
+  - el retazo de 100 × 100 creado desde el panel, que queda como única chapa elegida, y el aviso del tope en 0,1 s.
+- **Visto en el recorrido, es de antes:** al deshacer el seccionado, la pieza original no vuelve al grupo de sus tramos. Para que la comparación la vea, hay que ponerla en el grupo a mano.
+
 ## 9. Lo que decidí yo y conviene revisar
 
 - **El orden de las tandas.** Una rama por tanda, que se fusiona con el ok de Enzo en cada pausa.

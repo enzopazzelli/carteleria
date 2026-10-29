@@ -250,14 +250,14 @@ Se detallan cuando les toque, cada una con su diseño.
 |---|---|---|
 | Validar con el aro real exportado soldado | §7 de su diseño | `SUP-17`: que el diseñador lo mande |
 | La segunda pasada de la búsqueda repite ángulos ya probados: solo afina el corrimiento | Revisión | — |
-| No hay tope para chapas chicas pero válidas, y el selector de chapa del panel lista todo el catálogo | Revisión | La tabla de A8 (`ListaDeFormatos`, con filtros y buscador; [`historico/A8-lista-de-materiales-y-retazos/`](../historico/A8-lista-de-materiales-y-retazos/diseno.md)) sirve para el selector |
-| Una pieza tiene un solo seccionado, para una chapa: la comparación de formatos usa los tramos aunque la pieza entraría entera en una chapa más grande | Revisión | — |
+| No hay tope para chapas chicas pero válidas, y el selector de chapa del panel lista todo el catálogo | Revisión | **Cerrado (A17, tanda 4):** tope de 50 tramos (`PAR-58`), y el panel elige la chapa en la tabla de A8 |
+| Una pieza tiene un solo seccionado, para una chapa: la comparación de formatos usa los tramos aunque la pieza entraría entera en una chapa más grande | Revisión | **Cerrado (A17, tanda 4):** en cada chapa donde entra entera, la comparación la usa entera y la fila lo avisa |
 | Con veta, los tramos quedan girados respecto del dibujo | Revisión | `P-30` |
-| La comparación de formatos usa los parámetros de corte del material aunque el grupo tenga propios | Arreglo del 2026-10-09 | `CART-210` |
+| La comparación de formatos usa los parámetros de corte del material aunque el grupo tenga propios | Arreglo del 2026-10-09 | **Cerrado (A17, tanda 4):** usa los del grupo si los tiene |
 | La fila de la pieza seccionada queda atenuada y sus enlaces parecen deshabilitados | Panel | — |
-| Dos colores no alcanzan para distinguir tramos vecinos | Panel | — |
-| Arrastrar la grilla deja medidas no redondas: falta decidir si se ajusta a milímetros enteros | Panel | Decisión de Enzo |
-| El botón «Seccionar» se decide con una cuenta sin márgenes ni kerf: una pieza casi del tamaño de la chapa no lo muestra | Panel | `P-28` |
+| Dos colores no alcanzan para distinguir tramos vecinos | Panel | **Cerrado (A17, tanda 4):** el servidor elige el color de cada tramo, distinto del de sus vecinos, de una paleta de seis |
+| Arrastrar la grilla deja medidas no redondas: falta decidir si se ajusta a milímetros enteros | Panel | **Cerrado (A17, tanda 4):** el corrimiento queda en mm enteros (Enzo, 2026-10-26) |
+| El botón «Seccionar» se decide con una cuenta sin márgenes ni kerf: una pieza casi del tamaño de la chapa no lo muestra | Panel | **Cerrado (A17, tanda 4):** lo decide el servidor, con la regla del anidado |
 | La pieza 1009 del trabajo 4 parece un plano de referencia y no una pieza a cortar | Panel | 2.1, la revisión de la importación |
 
 **Resueltos el 2026-10-14** (rama `fix/depuracion`): «Volver a seccionar» abre con el corte guardado; un ángulo o un corrimiento infinito o que no es un número da un aviso y no un 500, y una pieza descartada a mano no se secciona; no se secciona ni se deshace mientras corre un anidado del grupo, ni se vuelve a cargar el dibujo mientras corre uno del trabajo.
@@ -333,7 +333,7 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 |---|---|---|
 | En Complejo casi nada entra en otra chapa: aunque están usadas al 34-39 %, lo libre está repartido entre los rayos del aro. Ni la letra más chica de la chapa 1 (447 × 626 mm) entra en otra. La búsqueda está bien: en su propia chapa encuentra el lugar donde ya estaba. Se puede probar con más giros, o reacomodar la chapa de destino cuando no entra | Recorrido del tramo 3 | **Cerrado (A17, tanda 3):** si no entra en lo libre, la chapa de destino se reacomoda con Sparrow, con «Deshacer» |
 | El diseño chiquito de 44 px marca poco en un diseño grande como Complejo: agrandarlo, o recortarlo alrededor de la pieza | Recorrido del tramo 4 | **Cerrado (A17, tanda 3):** va recortado alrededor de la pieza |
-| No se vio en pantalla el «Hay que seccionar» de la comparación con sus formas: en la copia ningún grupo lo da (el aro ya está seccionado) | Recorrido del tramo 4 | Que aparezca un caso |
+| No se vio en pantalla el «Hay que seccionar» de la comparación con sus formas: en la copia ningún grupo lo da (el aro ya está seccionado) | Recorrido del tramo 4 | **Cerrado (A17, tanda 4):** visto en el recorrido, con el aro sin seccionar en una copia |
 | No se pudo comprobar que el clic en una pieza del diseño lleve el mosaico hasta su chapa: en la pantalla del recorrido todo entra sin desplazarse | Recorrido del tramo 2 | **Cerrado (A17, tanda 3):** comprobado en el recorrido, con una pantalla de 900 × 600 |
 | Un trabajo de la importación de varios diseños tendría de fondo el archivo entero, con todos los diseños | Tarea 1 | — |
 | La chapa grande dibuja las piezas en verde, como Ajuste, y no con el color de su chapa | Recorrido del tramo 2 | **Cerrado (A17, tanda 3):** dibuja con el color de su chapa |
@@ -362,7 +362,7 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 
 | Pendiente | De dónde sale | Depende de |
 |---|---|---|
-| En la comparación de chapas, los avisos de todas las chapas se juntan por texto: si una pieza es grande para una chapa y no para otra, el aviso muestra las piezas de la primera chapa que lo dio | Tarea 2 de su diseño | Que aparezca un caso: con Complejo las chapas comparables tienen el mismo ancho |
+| En la comparación de chapas, los avisos de todas las chapas se juntan por texto: si una pieza es grande para una chapa y no para otra, el aviso muestra las piezas de la primera chapa que lo dio | Tarea 2 de su diseño | **Cerrado (A17, tanda 4):** juntos solo si dicen lo mismo de las mismas piezas, con cada chapa nombrada |
 | Los ángulos se prueban de a 1°: una pieza que solo entra entre dos grados enteros no lo aprovecha | §5.2 de su diseño | — |
 | Una pieza grande adentro del hueco de otra (A10) puede quedar en un ángulo que no está en su lista; está bien, porque va adentro de su contenedora | §5.3 de su diseño | Que aparezca un caso |
 | Repetir las mediciones con varias corridas: cada una se hizo una vez | §8 de su diseño | — |
@@ -385,14 +385,14 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 |---|---|---|
 | Con el servidor apagado al abrir una pestaña, la pantalla queda en blanco: solo avisan las acciones (anidar, guardar), no las consultas que cargan la pestaña | Recorrido de A9 | — |
 | Un mensaje que nombra muchas piezas escribe todos los nombres: con 32 piezas el texto se hace largo. Mostrar los primeros y «y N más», con las miniaturas al lado | Recorrido de A9 | — |
-| En la comparación, dos chapas de la misma medida y distinto espesor se ven iguales: la fila no dice el espesor | Recorrido de A9; es anterior | — |
+| En la comparación, dos chapas de la misma medida y distinto espesor se ven iguales: la fila no dice el espesor | Recorrido de A9; es anterior | **Cerrado (A17, tanda 4):** la fila trae el espesor |
 | La miniatura de una chapa en Ajuste puede mostrar el plano de antes del movimiento: la dirección es la misma y el navegador la guarda | Recorrido de A9 | **Cerrado (A17, tanda 3):** la miniatura se vuelve a pedir después de cada cambio |
 | El error y los avisos de un anidado del historial no se ven al volver a la pestaña: solo los del que está en curso, aunque el error queda guardado entero | Revisión de A9 | — |
 | Que el aviso de un error en la comparación distinga «el servidor se reinició» de «la reemplazó una comparación más nueva» | Revisión de A9 | — |
-| El mensaje del motor rectangular cuando no ubica piezas no dice qué hacer ni la medida de la chapa | Revisión de A9; texto del diseño | — |
+| El mensaje del motor rectangular cuando no ubica piezas no dice qué hacer ni la medida de la chapa | Revisión de A9; texto del diseño | **Cerrado (A17, tanda 4):** dice la medida de la chapa y qué hacer |
 | En Ajuste, varias piezas en rojo por el margen dan varios avisos iguales: no nombran la pieza | Revisión de A9 | **Cerrado (A17, tanda 3):** un solo aviso que nombra todas las piezas |
 | Las trazas de un error inesperado ya no salen por la consola del servidor, solo en el registro; y la línea de lo que escribió el cálculo no dice de qué anidado es | Revisión de A9 | — |
-| Los mensajes de la importación de varios diseños (`/importaciones/dxf/...`) solo se revisaron con la regla, sin miniaturas; la comparación con el motor rectangular de prueba sigue cayéndose entera si falla un formato | §4 de su diseño | Que una pantalla los use |
+| Los mensajes de la importación de varios diseños (`/importaciones/dxf/...`) solo se revisaron con la regla, sin miniaturas; la comparación con el motor rectangular ya no se cae entera si falla un formato (A17, tanda 4) | §4 de su diseño | Que una pantalla los use |
 
 **Pendientes de la lectura con imagen (2.1a).** Se cerró el 2026-10-12 y su carpeta pasó a [`historico/2.1a-lectura-con-imagen/`](../historico/2.1a-lectura-con-imagen/). Esto es lo que quedó vivo y se sigue desde acá. El detalle está en los «Desvíos» de su [`plan.md`](../historico/2.1a-lectura-con-imagen/plan.md).
 
