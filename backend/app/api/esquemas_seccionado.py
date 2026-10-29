@@ -5,7 +5,7 @@ una vista previa para dibujar, no se guarda. Los tramos guardados sí
 van como strings, en `Pieza.contorno_mm`."""
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -32,6 +32,14 @@ class SeccionadoAplicar(BaseModel):
     angulo_grados: Angulo
     desplazamiento_x_mm: Corrimiento
     desplazamiento_y_mm: Corrimiento
+
+
+class ASeccionarLeer(BaseModel):
+    """Una pieza a la que la pantalla le ofrece «Seccionar» (A17): no entra
+    entera en ninguna chapa del catálogo, o no entra en la de su grupo."""
+
+    pieza_id: int
+    motivo: Literal["ninguna", "grupo"]
 
 
 class CorteLeer(BaseModel):

@@ -4,22 +4,31 @@ import {
   deshacerSeccionado,
   descartarPieza,
   leerDxf,
+  listarASeccionar,
   listarPiezas,
   subirDxf,
   type Correcciones,
   type PedidoAplicarSeccionado,
 } from "../api/piezasYgrupos";
 
-/** Cargar, descartar y seccionar cambian las piezas y también el diseño (A14). */
+/** Cargar, descartar y seccionar cambian las piezas y también el diseño (A14),
+ * y qué hay que seccionar (A17). */
 function refrescarPiezasYDisenio(queryClient: QueryClient, trabajoId: number) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: ["piezas", trabajoId] }),
     queryClient.invalidateQueries({ queryKey: ["disenio", trabajoId] }),
+    queryClient.invalidateQueries({ queryKey: ["a-seccionar", trabajoId] }),
   ]);
 }
 
 export function usePiezas(trabajoId: number) {
   return useQuery({ queryKey: ["piezas", trabajoId], queryFn: () => listarPiezas(trabajoId) });
+}
+
+/** Las piezas a las que se les ofrece «Seccionar», según el servidor (A17).
+ * Cambia con las piezas y con los grupos: los dos la vuelven a pedir. */
+export function useASeccionar(trabajoId: number) {
+  return useQuery({ queryKey: ["a-seccionar", trabajoId], queryFn: () => listarASeccionar(trabajoId) });
 }
 
 export function useSubirDxf(trabajoId: number) {

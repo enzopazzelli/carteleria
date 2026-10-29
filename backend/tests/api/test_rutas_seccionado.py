@@ -532,3 +532,64 @@ def test_reimportar_el_dxf_de_un_trabajo_con_una_pieza_seccionada_funciona(clien
 
     assert respuesta.status_code == 200, respuesta.text
     assert len(_piezas(cliente, trabajo["id"])) == 1
+
+
+# --- Qué hay que seccionar, según el servidor (A17, tarea 21) ---------------
+
+
+def _material_con_chapas(cliente, nombre, medidas, *, con_parametros=True) -> list[dict]:
+    material = cliente.post("/materiales", json={"nombre": nombre}).json()
+    if con_parametros:
+        cliente.put(f"/materiales/{material['id']}/parametros-corte", json={
+            "kerf_mm": "2", "margen_borde_mm": "10", "separacion_piezas_mm": "5", "rotaciones_permitidas": "LIBRE_0_90",
+        })
+    return [
+        cliente.post(f"/materiales/{material['id']}/formatos", json={"ancho_mm": str(a), "alto_mm": str(b)}).json()
+        for a, b in medidas
+    ]
+
+
+def test_que_hay_que_seccionar_lo_dice_el_servidor(cliente, tmp_path):
+    """Con el catálogo de 2440 × 1220 y 3000 × 1500, márgenes y kerf: la de
+    2600 × 100 entra (no aparece); la de 3200 × 1600 no entra en ninguna; la
+    de 2800 × 1300 entra en la de 3000 × 1500 pero no en la de su grupo. Una
+    chapa sin parámetros no cuenta, y una descartada no se mira."""
+    chica, _grande = _material_con_chapas(cliente, "Chapa A17", [(2440, 1220), (3000, 1500)])
+    _material_con_chapas(cliente, "Sin parámetros", [(5000, 2500)], con_parametros=False)
+    trabajo = cliente.post("/trabajos", json={"nombre": "A seccionar"}).json()
+    documento = ezdxf.new()
+    msp = documento.modelspace()
+    for i, (ancho, alto) in enumerate([(2600, 100), (3200, 1600), (2800, 1300), (3300, 1700)]):
+        y = i * 2000
+        msp.add_lwpolyline([(0, y), (ancho, y), (ancho, y + alto), (0, y + alto)], close=True)
+    ruta = tmp_path / "grandes.dxf"
+    documento.saveas(ruta)
+    cliente.post(
+        f"/trabajos/{trabajo['id']}/dxf",
+        files={"archivo": ("grandes.dxf", ruta.read_bytes(), "application/dxf")},
+        data={"escala_a_mm": "1"},
+    )
+    angosta, en_el_grupo, enorme, descartada = sorted(_piezas(cliente, trabajo["id"]), key=lambda p: Decimal(p["alto_mm"]))
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "G", "formato_id": chica["id"]}).json()
+    cliente.patch(f"/piezas/{en_el_grupo['id']}", json={"grupo_id": grupo["id"]})
+    cliente.patch(f"/piezas/{descartada['id']}", json={"descartada": True})
+
+    respuesta = cliente.get(f"/trabajos/{trabajo['id']}/a-seccionar")
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert sorted(respuesta.json(), key=lambda fila: fila["pieza_id"]) == sorted(
+        [{"pieza_id": enorme["id"], "motivo": "ninguna"}, {"pieza_id": en_el_grupo["id"], "motivo": "grupo"}],
+        key=lambda fila: fila["pieza_id"],
+    )
+    assert angosta["id"] not in {fila["pieza_id"] for fila in respuesta.json()}
+
+
+def test_los_tramos_no_se_miran_para_seccionar(cliente, tmp_path):
+    trabajo, formato, pieza = _trabajo_con_franja(cliente, tmp_path, ancho=1500, alto=500)
+    grupo = cliente.post(f"/trabajos/{trabajo['id']}/grupos", json={"nombre": "G", "formato_id": formato["id"]}).json()
+    cliente.patch(f"/piezas/{pieza['id']}", json={"grupo_id": grupo["id"]})
+    assert cliente.get(f"/trabajos/{trabajo['id']}/a-seccionar").json() == [{"pieza_id": pieza["id"], "motivo": "ninguna"}]
+
+    assert _aplicar(cliente, pieza["id"], formato["id"]).status_code == 201
+
+    assert cliente.get(f"/trabajos/{trabajo['id']}/a-seccionar").json() == []

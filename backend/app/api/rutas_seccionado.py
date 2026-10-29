@@ -31,9 +31,17 @@ from ..services.seccionado import (
 )
 from .anidado_en_curso import rechazar_si_hay_anidado_en_curso
 from .dependencias import obtener_sesion
-from .esquemas_seccionado import CorteLeer, PropuestaLeer, SeccionadoAplicar, SeccionadoPedido, TramoPropuesto
+from .esquemas_seccionado import (
+    ASeccionarLeer,
+    CorteLeer,
+    PropuestaLeer,
+    SeccionadoAplicar,
+    SeccionadoPedido,
+    TramoPropuesto,
+)
 from .esquemas_trabajos import PiezaLeer
 from .rutas_nesting import _parametros_de_corte
+from .rutas_trabajos import _trabajo_o_404
 
 router = APIRouter(tags=["seccionado"])
 
@@ -155,6 +163,60 @@ def _propuesta(resultado: Seccionado, celda: tuple[float, float]) -> PropuestaLe
         cortes=[CorteLeer(puntos=_a_lista(corte.coords), largo_mm=round(corte.length, 3)) for corte in resultado.cortes],
         soldadura_mm=round(resultado.soldadura_mm, 3),
     )
+
+
+def _entra_en(contorno: list[tuple[float, float]], formato: Formato, grupo: GrupoDeCorte | None) -> bool | None:
+    """Si la forma entra entera en esa chapa, con los parámetros que valdrían
+    para su grupo, o `None` si la chapa no tiene parámetros."""
+    try:
+        params = _parametros_de_corte(grupo, formato.material)
+    except ValueError:
+        return None
+    return entra_en_la_chapa(contorno, Plancha(formato.ancho_mm, formato.alto_mm), params, giro_libre=True)
+
+
+def _motivo_para_seccionar(sesion: Session, pieza: Pieza, catalogo: list[Formato]) -> str | None:
+    """«grupo», «ninguna» o `None` (A17). Si entra en la chapa de su grupo,
+    entra en alguna del catálogo y no hace falta mirar las demás."""
+    contorno = [(float(x), float(y)) for x, y in pieza.contorno_mm]
+    if len(contorno) < 3:
+        return None
+    grupo = pieza.grupo
+    chapa_del_grupo = sesion.get(Formato, grupo.formato_id) if grupo is not None and grupo.formato_id else None
+    entra_en_la_del_grupo = _entra_en(contorno, chapa_del_grupo, grupo) if chapa_del_grupo is not None else None
+    if entra_en_la_del_grupo:
+        return None
+    # De la más grande a la más chica: se corta en la primera donde entra.
+    usables = 0
+    for formato in catalogo:
+        entra = _entra_en(contorno, formato, grupo)
+        if entra is None:
+            continue
+        if entra:
+            return "grupo" if entra_en_la_del_grupo is False else None
+        usables += 1
+    return "ninguna" if usables else None
+
+
+@router.get("/trabajos/{trabajo_id}/a-seccionar", response_model=list[ASeccionarLeer])
+def piezas_a_seccionar(trabajo_id: int, sesion: Session = Depends(obtener_sesion)) -> list[ASeccionarLeer]:
+    """Las piezas a las que la pantalla les ofrece «Seccionar», con la misma
+    regla que el anidado y que `_validar_que_no_entra`: su forma, giro
+    libre, márgenes y kerf (A17). Antes lo calculaba la pantalla con la
+    caja de la pieza, y una casi del tamaño de la chapa no mostraba el
+    botón. Se miran las que no están descartadas ni son tramos."""
+    _trabajo_o_404(sesion, trabajo_id)
+    piezas = sesion.execute(
+        select(Pieza)
+        .where(Pieza.trabajo_id == trabajo_id, Pieza.descartada.is_(False), Pieza.seccionada_de_id.is_(None))
+        .order_by(Pieza.id)
+    ).scalars()
+    catalogo = sorted(sesion.execute(select(Formato)).scalars(), key=lambda f: f.ancho_mm * f.alto_mm, reverse=True)
+    return [
+        ASeccionarLeer(pieza_id=pieza.id, motivo=motivo)
+        for pieza in piezas
+        if (motivo := _motivo_para_seccionar(sesion, pieza, catalogo)) is not None
+    ]
 
 
 @router.post("/piezas/{pieza_id}/seccionado/propuesta", response_model=PropuestaLeer)

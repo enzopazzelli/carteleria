@@ -1,6 +1,6 @@
 import { Fragment, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { usePiezas, useSubirDxf, useLeerDxf, useDescartarPieza, useDeshacerSeccionado } from "../../hooks/usePiezas";
+import { useASeccionar, usePiezas, useSubirDxf, useLeerDxf, useDescartarPieza, useDeshacerSeccionado } from "../../hooks/usePiezas";
 import { useGrupos } from "../../hooks/useGrupos";
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import PiezaMiniPreview from "../../components/PiezaMiniPreview";
@@ -10,7 +10,7 @@ import Banner from "../../components/Banner";
 import SeccionarPanel from "../../components/Seccionado/SeccionarPanel";
 import LecturaPanel from "../../components/LecturaDxf/LecturaPanel";
 import { esLaLecturaDe } from "../../components/LecturaDxf/dibujo";
-import { originalesASeccionar, porQueSeccionar } from "../../components/Seccionado/geometria";
+import { originalesASeccionar } from "../../components/Seccionado/geometria";
 import { crearTurnos } from "../../components/Seccionado/turnos";
 import type { Correcciones, LecturaDxf, Pieza } from "../../api/piezasYgrupos";
 import { escalaParaCargar } from "./cargaDxf";
@@ -49,6 +49,9 @@ function PiezasDelTrabajo() {
   const deshacerSeccionado = useDeshacerSeccionado(id);
   const { data: grupos } = useGrupos(id);
   const { formatos } = useTodosLosFormatos();
+  // Qué piezas no entran enteras, con márgenes y kerf: lo calcula el servidor (A17).
+  const { data: noEntran } = useASeccionar(id);
+  const motivoDelServidor = new Map((noEntran ?? []).map((fila) => [fila.pieza_id, fila.motivo]));
   // La pieza cuyo panel de seccionar está abierto.
   const [seccionando, setSeccionando] = useState<number | null>(null);
   const [escalaAMm, setEscalaAMm] = useState("1");
@@ -227,15 +230,14 @@ function PiezasDelTrabajo() {
       );
     }
     const chapaDelGrupo = formatos.find((f) => f.id === formatoDelGrupo(pieza)) ?? null;
-    // Un tramo o una descartada no se seccionan. A las que mandó Grupos
-    // se les ofrece siempre: que no entran ya lo calculó el servidor,
-    // con márgenes y kerf, y acá la cuenta es aproximada.
+    // Un tramo o una descartada no se seccionan. Las que mandó Grupos van
+    // con la chapa que se comparó; las demás, con lo que dijo el servidor.
     const motivo =
       pieza.seccionada_de_id !== null || pieza.descartada
         ? null
         : aSeccionar.has(pieza.id)
           ? "pedida"
-          : porQueSeccionar(Number(pieza.ancho_mm), Number(pieza.alto_mm), formatos, chapaDelGrupo);
+          : (motivoDelServidor.get(pieza.id) ?? null);
     const aviso = {
       ninguna: "No entra en ninguna chapa",
       grupo: `No entra en la chapa de su grupo${chapaDelGrupo ? ` (${medidas(chapaDelGrupo)})` : ""}`,

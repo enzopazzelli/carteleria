@@ -9,38 +9,6 @@ export interface Segmento {
   y2: number;
 }
 
-/** ¿Entra la caja de la pieza en alguna chapa del catálogo, derecha o
- * girada 90°? Es la cuenta aproximada que decide si se muestra
- * «Seccionar»: la exacta, con márgenes y kerf, la hace el servidor.
- * Sin catálogo cargado no se ofrece seccionar. */
-export function entraEnAlgunFormato(
-  anchoMm: number,
-  altoMm: number,
-  formatos: { ancho_mm: string; alto_mm: string }[],
-): boolean {
-  if (formatos.length === 0) return true;
-  return formatos.some((formato) => {
-    const a = Number(formato.ancho_mm);
-    const b = Number(formato.alto_mm);
-    return (anchoMm <= a && altoMm <= b) || (anchoMm <= b && altoMm <= a);
-  });
-}
-
-/** Por qué se le ofrece «Seccionar» a una pieza: no entra en ninguna
- * chapa del catálogo, o entra en alguna pero no en la que tiene
- * asignada su grupo. `null` si entra. Como `entraEnAlgunFormato`, es la
- * cuenta aproximada: la exacta la hace el servidor. */
-export function porQueSeccionar(
-  anchoMm: number,
-  altoMm: number,
-  formatos: { ancho_mm: string; alto_mm: string }[],
-  formatoDelGrupo: { ancho_mm: string; alto_mm: string } | null,
-): "ninguna" | "grupo" | null {
-  if (!entraEnAlgunFormato(anchoMm, altoMm, formatos)) return "ninguna";
-  if (formatoDelGrupo && !entraEnAlgunFormato(anchoMm, altoMm, [formatoDelGrupo])) return "grupo";
-  return null;
-}
-
 /** Las piezas donde hay que tocar «Seccionar» cuando Grupos manda una
  * lista de las que no entran en una chapa. Un tramo no se secciona: en
  * su lugar va la pieza de la que salió, que es la que se puede volver a

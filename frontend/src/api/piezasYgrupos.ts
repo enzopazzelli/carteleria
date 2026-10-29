@@ -34,6 +34,18 @@ export interface GrupoDeCorte {
   parametros_usados: ParametrosCorteOverride | null;
 }
 
+/** Una pieza a la que se le ofrece «Seccionar» (A17): no entra entera en
+ * ninguna chapa del catálogo, o no entra en la de su grupo. Lo decide el
+ * servidor, con su forma, márgenes y kerf. */
+export interface ASeccionar {
+  pieza_id: number;
+  motivo: "ninguna" | "grupo";
+}
+
+export function listarASeccionar(trabajoId: number): Promise<ASeccionar[]> {
+  return apiGet<ASeccionar[]>(`/trabajos/${trabajoId}/a-seccionar`);
+}
+
 export function listarPiezas(trabajoId: number): Promise<Pieza[]> {
   return apiGet<Pieza[]>(`/trabajos/${trabajoId}/piezas`);
 }
