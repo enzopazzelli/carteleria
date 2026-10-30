@@ -57,6 +57,7 @@ Cosas que damos por ciertas sin haberlas confirmado. Un supuesto que se cae pued
 | **SUP-16** | Una sola empresa, una sola instancia: no hace falta multi-tenancy | 🟢 | Alcance definido en `EPICA.md §6` | El modelo de datos necesitaría `empresa_id` en todas las tablas — caro de agregar después |
 | **SUP-17** | Lo que hay que seccionar el diseñador lo exporta **soldado** desde Corel: una sola forma con sus huecos, no la vista armada en capas encimadas | 🔴 | Diseño: pedirle el aro de `Complejo.dxf` exportado así (`historico/A5-seccionado/diseno.md §2`) | El sistema tendría que reconstruir el metal desde las capas, y puede ser imposible: en `Complejo.dxf` ni la unión ni la regla par-impar lo reconstruyen, y el DXF probablemente no guarda el grosor de los trazos |
 | **SUP-18** | La máquina corta en el orden del archivo: lo de adentro de un hueco antes que la pieza que lo rodea, que es como lo escribe el DXF exportado (`historico/A10-huecos-primero/diseno.md §5.5`). Si no, el operador elige el orden en la máquina | 🟡 | Enzo lo da por bueno el 2026-10-24: en el taller ya meten piezas adentro de otras en sus propios archivos. Se termina de confirmar al cortar el primer anidado con piezas en huecos | Una pieza de adentro podría cortarse después que la que la rodea y moverse al quedar suelta: el operador tendría que reordenar el corte a mano |
+| **SUP-19** | La hoja `COTIZADOR` de la planilla de la empresa mantiene sus columnas de una exportación a otra, y el sistema del taller que hace otro equipo guarda los materiales con esa misma estructura, unidos por el código (`plan/A18-pantalla-de-materiales/diseno.md §1`) | 🟡 | Enzo, 2026-10-30: los dos sistemas parten de la misma planilla. Se confirma con la próxima planilla que pase la empresa y con `P-35` | Si cambian las columnas, la carga de la planilla falla con un aviso que dice qué falta. Si el otro sistema usa otra estructura, la puerta del cotizador necesita un traductor antes de poder tomar sus materiales |
 
 > **SUP-04 y SUP-08 son los dos que más pueden doler.** El primero reordena el roadmap; el segundo invalida los cálculos del motor. Los dos se responden en el encuentro 2 del relevamiento ([§6](#6-guion-de-relevamiento)).
 
@@ -125,6 +126,7 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-56** | Retazo más chico que se guarda: lado mínimo de un sobrante para contarlo como retazo. Una chapa cuyo sobrante no llega cuenta como entera | 250 | mm | Sistema | Config | `historico/A12-material-usado-y-sobrante/diseno.md` | 🔴 a confirmar con el dueño — estimación de Enzo del 2026-10-23 («25 cm × 25 cm»). En `backend/app/config.py` (`RETAZO_MINIMO_MM`) |
 | **PAR-57** | Tiempo máximo para reacomodar una chapa al pasarle una pieza que no entra en lo libre: la pantalla espera hasta esto | 30 | s | Sistema | Config | `historico/A17-pulir-lo-suelto/diseno.md §4.3.1` | 🟡 provisorio — propuesta del diseño de A17 (2026-10-26). En `backend/app/config.py` (`TIEMPO_PARA_REACOMODAR_S`) |
 | **PAR-58** | Tope de tramos del seccionado: una chapa con la que la pieza saldría en más tramos no se acepta, y un aviso pide una más grande. Antes de buscar, una sola grilla que dé más del doble ya frena | 50 | tramos | Sistema | Config | `historico/A17-pulir-lo-suelto/diseno.md §4.4.5` | 🟡 provisorio — propuesta del diseño de A17 (2026-10-26). En `backend/app/config.py` (`TOPE_DE_TRAMOS`, variable `CARTELERIA_TOPE_TRAMOS`) |
+| **PAR-59** | Cuánto se puede apartar el área de la medida leída de la descripción de los m² que dice la planilla (factor de conversión) antes de mandar el artículo a «Hay que mirarlo» | 5 | % | Sistema | Config | `plan/A18-pantalla-de-materiales/diseno.md §5.2` | 🟡 provisorio — propuesta del diseño de A18 (2026-10-30). En la planilla real, la planilla redondea hasta 1,5 % (MDF de 1,83 × 3,66: 6,70 m² contra 6,6); una medida mal leída, como la de `CHA0013`, se aparta 72 % |
 
 ### 2.4 Parámetros del dashboard
 
@@ -311,6 +313,14 @@ Surgen de construir el PDF del presupuesto ([`historico/1.3-pdf-del-presupuesto/
 | **P-32** | Cuando redondean o acuerdan el precio final con el cliente, ¿ese número es con IVA o sin IVA? *Hoy: el total que se fija a mano es el final, con IVA; el subtotal y el IVA salen de ahí.* | `D-21`, `PAR-13` |
 | **P-33** | Cuando hacen un descuento o una bonificación, ¿lo cargan como un renglón aparte con importe negativo, o bajan el precio de algún ítem o del total? *Hoy: la pantalla no acepta importes negativos. Un descuento se hace bajando el precio de un ítem o fijando el total. Si se usan renglones negativos hay que volver a permitirlos, y hacer que un total fijado con suma negativa cuente como incompleto (lo marcó la revisión de la rama).* | Cómo se cargan las líneas (`CART-304` a `CART-306`); «Desvíos» de `historico/1.3-pdf-del-presupuesto/plan.md` |
 | **P-34** | En el presupuesto que le mandan hoy al cliente, ¿cada renglón lleva su importe, o va el detalle y un solo precio por el cartel? ¿Juntan varias cosas en un mismo renglón? *Hoy: cada línea de costo sale como un ítem con su importe (decisión de Enzo, 2026-10-12, sin el formato real a la vista). Juntar varias líneas en un ítem quedó afuera.* | `B-13`, el formato de la empresa (4.4), `CART-309` |
+
+### 🟡 Los materiales y el sistema del otro equipo
+
+Surge del diseño de la pantalla de materiales ([`plan/A18-pantalla-de-materiales/`](plan/A18-pantalla-de-materiales/diseno.md)). Es para el otro equipo. Hasta que conteste, el cotizador toma los materiales de la planilla.
+
+| ID | Pregunta | Alimenta |
+|---|---|---|
+| **P-35** | El sistema del taller que hace el otro equipo, ¿con qué columnas guarda los materiales y sus precios, y cómo se va a poder consultar desde el cotizador? *Hoy: el cotizador guarda los artículos con las columnas de la hoja `COTIZADOR`, unidos por el código, y los recibe por una sola puerta que hoy llena la planilla.* | `SUP-19`, el conector con ese sistema (anotado en §8 del diseño de A18) |
 
 ### 🟢 Fotomontaje y dashboard
 
