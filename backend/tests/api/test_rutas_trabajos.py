@@ -377,6 +377,35 @@ def test_subir_dxf_no_descarta_lo_de_adentro_de_un_rectangulo_que_no_entra_en_ni
     assert [p["descartada"] for p in piezas] == [False, False]
 
 
+def _tablero_con_una_medida_de_familia(cliente, tmp_path, familia):
+    """Un rectángulo de 3000 x 3000 con una forma adentro, y una medida de
+    4000 x 4000 de `familia` en el catálogo, en la que ese rectángulo entra."""
+    _chapa_en_el_catalogo(cliente)
+    material = cliente.post("/materiales", json={"nombre": f"Material de {familia}", "familia": familia}).json()
+    cliente.post(f"/materiales/{material['id']}/formatos", json={"ancho_mm": "4000", "alto_mm": "4000"})
+    trabajo = _crear_trabajo(cliente)
+    contenido = _dxf_bytes(tmp_path, "tablero.dxf", lambda msp: _forma_con_otra_adentro(msp, 3000))
+    assert _subir(cliente, trabajo["id"], contenido).status_code == 200
+    return cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+
+
+@pytest.mark.parametrize("familia", ["MDF", "ACM", "PVC", "Polyfan", "Metalex", "Iluminación"])
+def test_una_medida_de_otra_familia_no_vuelve_pieza_a_un_tablero(cliente, tmp_path, familia):
+    """Con la planilla entran MDF de 1830 x 3660 y ACM de 5000 x 1500: si la
+    lectura los mirara, un tablero de presentación «entraría» en una chapa y
+    sus letras pasarían a ser el recorte de sus huecos (`PAR-60`, A18)."""
+    piezas = _tablero_con_una_medida_de_familia(cliente, tmp_path, familia)
+
+    assert [p["descartada"] for p in piezas] == [False, False]
+
+
+@pytest.mark.parametrize("familia", ["Chapas", "Acrílicos", "Policarbonato"])
+def test_las_medidas_de_las_familias_de_siempre_cuentan_para_leer(cliente, tmp_path, familia):
+    piezas = _tablero_con_una_medida_de_familia(cliente, tmp_path, familia)
+
+    assert sorted(p["descartada"] for p in piezas) == [False, True]
+
+
 # --- Piezas ------------------------------------------------------------
 
 

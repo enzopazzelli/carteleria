@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from .. import config
 from ..modelos.catalogo import Formato, Material, ParametrosCorteMaterial
 from ..modelos.trabajo import GrupoDeCorte
 from ..services.catalogo.precios import CAMPOS_DEL_PRECIO, retazos_de
@@ -52,7 +53,8 @@ def _formatos_del_catalogo(sesion: Session) -> list[Plancha]:
     disponibles de materiales que se anidan por área (un tubo o una
     tira de LED no son una chapa). Sin los retazos (A8): su medida se
     eligió para un trabajo, y no tiene que cambiar cómo se leen los
-    diseños que vengan después."""
+    diseños que vengan después. Y solo de las familias de `PAR-60`, por lo
+    mismo: una medida nueva en la planilla no cambia cómo se lee un dibujo."""
     filas = sesion.execute(
         select(Formato.ancho_mm, Formato.alto_mm)
         .join(Material)
@@ -60,6 +62,7 @@ def _formatos_del_catalogo(sesion: Session) -> list[Plancha]:
             Formato.disponible.is_(True),
             Formato.es_retazo.is_(False),
             Material.nesteable_por_area.is_(True),
+            Material.familia.in_(config.FAMILIAS_PARA_LEER_EL_DXF),
         )
     ).all()
     return [Plancha(ancho_mm=ancho, alto_mm=alto) for ancho, alto in filas]

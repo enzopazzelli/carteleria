@@ -70,6 +70,15 @@ RETAZO_MINIMO_MM = int(os.getenv("CARTELERIA_RETAZO_MINIMO_MM", "250"))
 #: (0.05 es 5 %). Si se aparta más, el artículo va a «Hay que mirarlo» (A18).
 DIFERENCIA_MAXIMA_CON_EL_FACTOR = Decimal(os.getenv("CARTELERIA_DIFERENCIA_CON_EL_FACTOR", "0.05"))
 
+#: `PAR-60` (`docs/REGISTRO.md`): las familias cuyas medidas usa la lectura del
+#: DXF, separadas por coma. «Qué medidas se venden» y «qué medidas sirven para
+#: leer un dibujo» son dos preguntas: una medida grande de otra familia haría
+#: «entrar» a un tablero de presentación, y sus letras se descartarían (A18).
+FAMILIAS_PARA_LEER_EL_DXF = tuple(
+    familia.strip()
+    for familia in os.getenv("CARTELERIA_FAMILIAS_PARA_LEER_EL_DXF", "Chapas,Acrílicos,Policarbonato").split(",")
+)
+
 #: `PAR-57` (`docs/REGISTRO.md`): cuánto puede tardar Sparrow en reacomodar
 #: la chapa de destino al pasarle una pieza (A17). La pantalla espera.
 TIEMPO_PARA_REACOMODAR_S = int(os.getenv("CARTELERIA_TIEMPO_REACOMODAR_S", "30"))
