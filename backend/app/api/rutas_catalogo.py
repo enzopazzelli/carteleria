@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from ..modelos.catalogo import Formato, Material, ParametrosCorteMaterial
 from ..modelos.trabajo import GrupoDeCorte
+from ..services.catalogo.precios import CAMPOS_DEL_PRECIO, retazos_de
 from ..services.nesting.models import Plancha
 from .dependencias import obtener_sesion
 from .traducir_errores import medida
@@ -62,28 +63,6 @@ def _formatos_del_catalogo(sesion: Session) -> list[Plancha]:
         )
     ).all()
     return [Plancha(ancho_mm=ancho, alto_mm=alto) for ancho, alto in filas]
-
-
-#: Lo que un retazo copia de su chapa al crearse, y vuelve a copiar cada
-#: vez que el precio de la chapa cambia (A8, decisión de Enzo 2026-10-14).
-_CAMPOS_DEL_PRECIO = ("moneda", "costo_unidad_venta", "precio_simulado")
-
-
-def _retazos_de(sesion: Session, formato: Formato) -> list[Formato]:
-    """Los retazos que salieron de `formato`: mismo material y su código
-    con «-R» (`crear_retazo`). Uno de una chapa sin código no tiene cómo
-    reconocerse y se queda con el precio con el que se creó."""
-    if not formato.codigo:
-        return []
-    return list(
-        sesion.execute(
-            select(Formato).where(
-                Formato.material_id == formato.material_id,
-                Formato.es_retazo.is_(True),
-                Formato.codigo == f"{formato.codigo}-R",
-            )
-        ).scalars()
-    )
 
 
 def _commit_o_409(sesion: Session, mensaje: str) -> None:
@@ -190,9 +169,9 @@ def actualizar_formato(
     cambios = datos.model_dump(exclude_unset=True)
     for campo, valor in cambios.items():
         setattr(formato, campo, valor)
-    if not formato.es_retazo and cambios.keys() & set(_CAMPOS_DEL_PRECIO):
-        for retazo in _retazos_de(sesion, formato):
-            for campo in _CAMPOS_DEL_PRECIO:
+    if not formato.es_retazo and cambios.keys() & set(CAMPOS_DEL_PRECIO):
+        for retazo in retazos_de(sesion, formato):
+            for campo in CAMPOS_DEL_PRECIO:
                 setattr(retazo, campo, getattr(formato, campo))
     sesion.commit()
     return formato
