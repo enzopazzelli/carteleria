@@ -7,11 +7,10 @@ from decimal import Decimal
 
 import pytest
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
 
 from app.mensajes import ErrorParaElUsuario
 from app.modelos import Base
-from app.modelos.base import crear_motor
+from app.modelos.base import Sesion, crear_motor
 from app.modelos.catalogo import Articulo, CambioDePrecio, CargaDePlanilla, CotizacionMoneda, Formato, Material
 from app.modelos.trabajo import GrupoDeCorte, Trabajo
 from app.services.catalogo.aplicar import aplicar_revision
@@ -34,7 +33,7 @@ _MAYO = datetime(2026, 5, 15, 12, 0, tzinfo=timezone.utc)
 def sesion(tmp_path):
     motor = crear_motor(f"sqlite:///{tmp_path / 'prueba.db'}")
     Base.metadata.create_all(motor)
-    with Session(motor) as abierta:
+    with Sesion(bind=motor) as abierta:
         yield abierta
 
 

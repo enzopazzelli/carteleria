@@ -11,10 +11,9 @@ from decimal import Decimal
 
 import pytest
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
 
 from app.modelos import Base
-from app.modelos.base import crear_motor
+from app.modelos.base import Sesion, crear_motor
 from app.modelos.catalogo import Articulo, CargaDePlanilla, Formato, Material
 from app.services.catalogo.planilla import leer_planilla
 from app.services.catalogo.revision import armar_revision
@@ -34,7 +33,7 @@ _MARZO = datetime(2026, 3, 15)
 def sesion(tmp_path):
     motor = crear_motor(f"sqlite:///{tmp_path / 'prueba.db'}")
     Base.metadata.create_all(motor)
-    with Session(motor) as abierta:
+    with Sesion(bind=motor) as abierta:
         yield abierta
 
 

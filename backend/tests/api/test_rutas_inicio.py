@@ -6,6 +6,8 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from services.catalogo.planilla_de_prueba import chapa as renglon_de_chapa, insumo as renglon_de_insumo, planilla_de_prueba
+
 from .test_rutas_ajuste import _dxf_dos_piezas, _trabajo_anidado_con_dos_piezas, cliente  # noqa: F401
 
 from app.api.rutas_trabajos import _ruta_del_fondo
@@ -226,11 +228,30 @@ def test_los_conteos_de_materiales(cliente):
     assert cliente.get("/resumen-del-inicio").json()["materiales"] == {
         "materiales": 2, "medidas": 2, "retazos": 1,
         "por_familia": [{"familia": "Acrílicos", "materiales": 1}, {"familia": "Chapas", "materiales": 1}],
+        "articulos": 0, "ultima_planilla_en": None,
     }
+
+
+def test_el_resumen_del_inicio_cuenta_los_articulos_y_la_fecha(cliente):
+    def cargar(*renglones):
+        archivo = ("planilla.xlsx", planilla_de_prueba(list(renglones)), "application/vnd.ms-excel")
+        revision = cliente.post("/planilla/revisar", files={"archivo": archivo}).json()
+        cliente.post(f"/planilla/revisiones/{revision['id']}/aplicar", json={"medidas": []})
+
+    negra = renglon_de_chapa("CHA0011", "CHAPA NEGRA - 1,22 x 2,44 - cal. 20", 1000)
+    cargar(negra, renglon_de_insumo("LED0001", "TIRA LED", 500))
+
+    materiales = cliente.get("/resumen-del-inicio").json()["materiales"]
+    assert materiales["articulos"] == 2
+    assert datetime.fromisoformat(materiales["ultima_planilla_en"]).utcoffset() == timedelta(0)
+
+    # Solo los que están en la última planilla.
+    cargar(negra)
+    assert cliente.get("/resumen-del-inicio").json()["materiales"]["articulos"] == 1
 
 
 def test_el_resumen_sin_nada(cliente):
     assert cliente.get("/resumen-del-inicio").json() == {
         "presupuestos": [], "total_presupuestos": 0,
-        "materiales": {"materiales": 0, "medidas": 0, "retazos": 0, "por_familia": []},
+        "materiales": {"materiales": 0, "medidas": 0, "retazos": 0, "por_familia": [], "articulos": 0, "ultima_planilla_en": None},
     }

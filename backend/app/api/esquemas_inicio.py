@@ -58,6 +58,10 @@ class MaterialesResumidosLeer(BaseModel):
     retazos: int
     #: Por nombre de familia.
     por_familia: list[FamiliaLeer]
+    #: Los renglones de la última planilla cargada (A18).
+    articulos: int
+    #: Con zona (UTC). `None` si todavía no se cargó ninguna.
+    ultima_planilla_en: datetime | None
 
 
 class ResumenDelInicioLeer(BaseModel):
