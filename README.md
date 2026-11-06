@@ -19,7 +19,7 @@ El sprint para cerrar lo chico que quedó suelto (A17) terminó el 2026-10-29: [
 
 ---
 
-## 🧭 En qué estamos — 2026-11-01
+## 🧭 En qué estamos — 2026-11-06
 
 Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Lo que sigue, desde la reunión del 2026-10-22».
 
@@ -35,11 +35,13 @@ Las dos cosas ya están. Ahora se arman las pantallas que faltan, empezando por 
   - una pantalla de Materiales en dos columnas: la lista a la izquierda y el detalle del material a la derecha. Los precios se miran ahí. Solo se cambia lo que la planilla no tiene: el corte, los retazos, si se anida y la medida cuando la descripción no se puede leer;
   - cuando un mismo código viene de dos proveedores, cuenta el último al que le cambió el precio, o el marcado a mano en Materiales. En el trabajo no se elige proveedor;
   - de paso, las opciones del motor (motor, semilla, búsqueda, tiempo, simplificación, vaciar chapas) pasan a un desplegable «Opciones avanzadas» en Anidado. **Para Vale:** el motor no cambia, solo el lugar de esas opciones en la pantalla.
-- **Hecho, 3 de 13 tareas:**
+- **Hecho, 5 de 13 tareas:**
   1. leer la descripción de cada renglón: la medida de la chapa, la categoría y si se anida (se anida lo que es plancha vendida por m²);
   2. leer el Excel: 288 renglones de la planilla real, 254 códigos;
-  3. guardar en la base los artículos de la planilla tal como vienen, cada planilla aplicada y los precios que cambiaron. La base se actualiza sola al arrancar, como desde A17.
-- **Sigue:** la regla de qué proveedor cuenta; armar la revisión y aplicarla; probar la planilla real sobre una copia de la base; la pantalla; subir la planilla desde la pantalla; el desplegable en Anidado; y el recorrido completo.
+  3. guardar en la base los artículos de la planilla tal como vienen, cada planilla aplicada y los precios que cambiaron. La base se actualiza sola al arrancar, como desde A17;
+  4. la regla de qué proveedor cuenta cuando un código viene de dos;
+  5. armar la revisión, sin aplicar nada: qué cambia de precio, qué entra, qué ya no está y qué hay que mirar. Con la planilla real y una copia de la base se enlazan 27 códigos, entran 261 renglones, 2 medidas quedan a mano y solo hay que mirar `CHA0013`.
+- **Sigue:** aplicar la revisión; probar la planilla real sobre una copia de la base; la pantalla; subir la planilla desde la pantalla; el desplegable en Anidado; y el recorrido completo.
 - **El riesgo que se controla en el camino:** la planilla trae medidas de chapa que hoy no están, como MDF de 1830 × 2600 o ACM de 5000 × 1500. La lectura del DXF usa las medidas del catálogo para reconocer las hojas del diseñador, así que un rectángulo del diseño con una de esas medidas podría empezar a leerse como hoja. Se compara la lectura de todos los DXF de prueba antes y después de cargar la planilla; si algo cambia, se para y se decide.
 
 **Ya está en `main`:**
