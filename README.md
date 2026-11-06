@@ -35,14 +35,17 @@ Las dos cosas ya están. Ahora se arman las pantallas que faltan, empezando por 
   - una pantalla de Materiales en dos columnas: la lista a la izquierda y el detalle del material a la derecha. Los precios se miran ahí. Solo se cambia lo que la planilla no tiene: el corte, los retazos, si se anida y la medida cuando la descripción no se puede leer;
   - cuando un mismo código viene de dos proveedores, cuenta el último al que le cambió el precio, o el marcado a mano en Materiales. En el trabajo no se elige proveedor;
   - de paso, las opciones del motor (motor, semilla, búsqueda, tiempo, simplificación, vaciar chapas) pasan a un desplegable «Opciones avanzadas» en Anidado. **Para Vale:** el motor no cambia, solo el lugar de esas opciones en la pantalla.
-- **Hecho, 5 de 13 tareas:**
+- **Hecho, 8 de 13 tareas:**
   1. leer la descripción de cada renglón: la medida de la chapa, la categoría y si se anida (se anida lo que es plancha vendida por m²);
   2. leer el Excel: 288 renglones de la planilla real, 254 códigos;
   3. guardar en la base los artículos de la planilla tal como vienen, cada planilla aplicada y los precios que cambiaron. La base se actualiza sola al arrancar, como desde A17;
   4. la regla de qué proveedor cuenta cuando un código viene de dos;
-  5. armar la revisión, sin aplicar nada: qué cambia de precio, qué entra, qué ya no está y qué hay que mirar. Con la planilla real y una copia de la base se enlazan 27 códigos, entran 261 renglones, 2 medidas quedan a mano y solo hay que mirar `CHA0013`.
-- **Sigue:** aplicar la revisión; probar la planilla real sobre una copia de la base; la pantalla; subir la planilla desde la pantalla; el desplegable en Anidado; y el recorrido completo.
-- **El riesgo que se controla en el camino:** la planilla trae medidas de chapa que hoy no están, como MDF de 1830 × 2600 o ACM de 5000 × 1500. La lectura del DXF usa las medidas del catálogo para reconocer las hojas del diseñador, así que un rectángulo del diseño con una de esas medidas podría empezar a leerse como hoja. Se compara la lectura de todos los DXF de prueba antes y después de cargar la planilla; si algo cambia, se para y se decide.
+  5. armar la revisión, sin aplicar nada: qué cambia de precio, qué entra, qué ya no está y qué hay que mirar. Con la planilla real y una copia de la base se enlazan 27 códigos, entran 261 renglones, 2 medidas quedan a mano y solo hay que mirar `CHA0013`;
+  6. aplicar la revisión: guardar los artículos, copiar el precio del proveedor que cuenta a las medidas y a sus retazos, crear lo que falta y dejar de ofrecer lo que ya no está;
+  7. las rutas del servidor: subir y aplicar la planilla, el catálogo para la pantalla y marcar el proveedor;
+  8. probar la planilla real sobre una copia de la base: el costeo de los 3 trabajos da igual, y subirla dos veces no cambia nada.
+- **Sigue:** la pantalla; subir la planilla desde la pantalla; el desplegable en Anidado; y el recorrido completo.
+- **El riesgo que se controlaba en el camino, ya resuelto:** la lectura del DXF usa medidas del catálogo para decidir qué es una hoja y qué no entra en ninguna chapa. Con la planilla real, MDF y ACM hacían que un tablero de presentación «entrara» en una chapa: sus letras se descartaban y sus huecos se cortaban. Enzo decidió el 2026-11-06 que la lectura siga mirando solo Chapas, Acrílicos y Policarbonato (`PAR-60`). Con eso, los 9 DXF de prueba se leen igual que antes de cargar la planilla.
 
 **Ya está en `main`:**
 - **Pulir lo que quedó suelto (A17), cerrado el 2026-10-29.** Un sprint de 41 tareas en 7 tandas para cerrar los pendientes chicos de las tablas del plan maestro. Lo que más se nota:
