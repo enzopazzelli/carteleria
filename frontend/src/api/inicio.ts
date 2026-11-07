@@ -39,6 +39,10 @@ export interface ResumenDelInicio {
     medidas: number;
     retazos: number;
     por_familia: { familia: string; materiales: number }[];
+    /** Los renglones de la última planilla cargada (A18). */
+    articulos: number;
+    /** En UTC. `null` si todavía no se cargó ninguna. */
+    ultima_planilla_en: string | null;
   };
 }
 

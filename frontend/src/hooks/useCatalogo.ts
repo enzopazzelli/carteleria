@@ -1,4 +1,4 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
   crearRetazo,
   quitarFormato,
@@ -51,13 +51,15 @@ export function useTodosLosFormatos() {
   return { formatos, materiales: materiales ?? [], cargando, error, reintentar };
 }
 
-/** Un retazo nuevo aparece en la lista de su material. */
-/** Un retazo nuevo o quitado cambia el catálogo, y con él qué hay que
- * seccionar en cualquier trabajo (A17). */
-function alCambiarLosRetazos(queryClient: ReturnType<typeof useQueryClient>, materialId: number) {
+/** Un retazo nuevo o quitado cambia la lista de su material, qué hay que
+ * seccionar en cualquier trabajo (A17), la pantalla de Materiales y los
+ * retazos que cuenta el inicio (A18). */
+export function alCambiarLosRetazos(queryClient: QueryClient, materialId: number) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: ["formatos", materialId] }),
     queryClient.invalidateQueries({ queryKey: ["a-seccionar"] }),
+    queryClient.invalidateQueries({ queryKey: ["catalogo"] }),
+    queryClient.invalidateQueries({ queryKey: ["resumen-del-inicio"] }),
   ]);
 }
 

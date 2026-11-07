@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import ConBarra from "./routes/ConBarra";
 import Inicio from "./routes/Inicio";
+import Materiales from "./routes/Materiales";
 import Trabajos from "./routes/Trabajos";
 import WorkspaceLayout from "./routes/TrabajoWorkspace/WorkspaceLayout";
 import PiezasTab from "./routes/TrabajoWorkspace/PiezasTab";
@@ -16,6 +17,7 @@ const router = createBrowserRouter([
     children: [
       { path: "/", element: <Inicio /> },
       { path: "/trabajos", element: <Trabajos /> },
+      { path: "/materiales", element: <Materiales /> },
       {
         path: "/trabajos/:trabajoId",
         element: <WorkspaceLayout />,

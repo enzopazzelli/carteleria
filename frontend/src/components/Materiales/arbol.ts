@@ -1,6 +1,6 @@
 /** La lista de categorías de la pantalla de Materiales. Sin React, para poder
  * probarla. */
-import type { Catalogo, MaterialDelCatalogo } from "../../api/materiales";
+import type { Catalogo, Categoria, CorteParaGuardar, MaterialDelCatalogo, MedidaDelCatalogo } from "../../api/materiales";
 import { coincideConLaBusqueda } from "../Tarjeta/formato";
 
 export type Eleccion =
@@ -62,4 +62,74 @@ export function primeraEleccion(catalogo: Catalogo): Eleccion | null {
     if (insumo) return { tipo: "insumo", codigo: insumo.codigo, proveedor: insumo.proveedor };
   }
   return null;
+}
+
+/** Lo que se marca al lado de una medida: su precio y si está en la planilla.
+ * Un retazo aparece como medida solo si su chapa ya no está (tarea 7). */
+export function marcasDeLaMedida(medida: MedidaDelCatalogo): string[] {
+  const marcas: string[] = [];
+  if (medida.formato.es_retazo) marcas.push("retazo");
+  if (medida.formato.costo_unidad_venta === null) marcas.push("sin precio");
+  else if (medida.formato.precio_simulado) marcas.push("de prueba");
+  if (medida.ya_no_esta) marcas.push("ya no está en la planilla");
+  if (medida.cargada_a_mano) marcas.push("cargada a mano, no está en la planilla");
+  return marcas;
+}
+
+/** El taller está en Argentina: el día se mira ahí, como en las tarjetas (A16). */
+const DIA_EN_ARGENTINA = new Intl.DateTimeFormat("es-AR", {
+  timeZone: "America/Argentina/Buenos_Aires",
+  day: "2-digit",
+  month: "2-digit",
+});
+
+/** «30/10», «06/11»: el día en que se cargó una planilla. El cero va a mano:
+ * sin el año, «es-AR» da «6/11» aunque se le pida «2-digit». */
+export function diaDeLaPlanilla(iso: string): string {
+  const partes = Object.fromEntries(DIA_EN_ARGENTINA.formatToParts(new Date(iso)).map((parte) => [parte.type, parte.value]));
+  return `${partes.day.padStart(2, "0")}/${partes.month.padStart(2, "0")}`;
+}
+
+/** Los renglones de la última planilla que hay en una categoría: cada
+ * proveedor de cada medida, y los insumos. */
+export function articulosDe(categoria: Categoria): number {
+  const deLasMedidas = categoria.materiales
+    .flatMap((material) => material.espesores)
+    .flatMap((espesor) => espesor.medidas)
+    .flatMap((medida) => medida.proveedores)
+    .filter((proveedor) => proveedor.articulo.en_ultima_planilla).length;
+  return deLasMedidas + categoria.insumos.length;
+}
+
+export interface CamposDelCorte {
+  kerf: string;
+  borde: string;
+  separacion: string;
+  giro: CorteParaGuardar["rotaciones_permitidas"];
+  confirmado: boolean;
+}
+
+/** Milímetros de 0 en adelante, con la coma como punto: «1,5» es «1.5». Solo
+ * cifras y un decimal, como los retazos (`medidaDeRetazo`). */
+function milimetros(texto: string): string | null {
+  const limpio = texto.trim().replace(",", ".");
+  return /^\d+(\.\d+)?$/.test(limpio) ? limpio : null;
+}
+
+/** Lo que se escribió en el corte de un espesor, listo para guardar, o el
+ * mensaje que explica qué falta. */
+export function corteParaGuardar(campos: CamposDelCorte): CorteParaGuardar | string {
+  const kerf = milimetros(campos.kerf);
+  const borde = milimetros(campos.borde);
+  const separacion = milimetros(campos.separacion);
+  if (kerf === null || borde === null || separacion === null) {
+    return "Lo que se come el corte, el borde y la separación van en mm: números de 0 en adelante.";
+  }
+  return {
+    kerf_mm: kerf,
+    margen_borde_mm: borde,
+    separacion_piezas_mm: separacion,
+    rotaciones_permitidas: campos.giro,
+    confirmado_con_taller: campos.confirmado,
+  };
 }

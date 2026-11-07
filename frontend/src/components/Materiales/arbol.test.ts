@@ -1,6 +1,22 @@
 import { describe, expect, it } from "vitest";
-import type { Articulo, Catalogo, Categoria, MaterialDelCatalogo, MedidaDelCatalogo } from "../../api/materiales";
-import { filtrarCatalogo, nombreParaMostrar, primeraEleccion } from "./arbol";
+import type { Formato } from "../../api/catalogo";
+import type {
+  Articulo,
+  Catalogo,
+  Categoria,
+  MaterialDelCatalogo,
+  MedidaDelCatalogo,
+  ProveedorDelCatalogo,
+} from "../../api/materiales";
+import {
+  articulosDe,
+  corteParaGuardar,
+  diaDeLaPlanilla,
+  filtrarCatalogo,
+  marcasDeLaMedida,
+  nombreParaMostrar,
+  primeraEleccion,
+} from "./arbol";
 
 const medida = (codigo: string | null) => ({ formato: { codigo } }) as MedidaDelCatalogo;
 
@@ -98,5 +114,87 @@ describe("primeraEleccion", () => {
 
   it("si no hay nada, ninguna", () => {
     expect(primeraEleccion(catalogo())).toBeNull();
+  });
+});
+
+describe("marcasDeLaMedida", () => {
+  const conFormato = (formato: Partial<Formato>, resto: Partial<MedidaDelCatalogo> = {}): MedidaDelCatalogo =>
+    ({
+      formato: { es_retazo: false, precio_simulado: false, costo_unidad_venta: "13720.40", ...formato },
+      cargada_a_mano: false,
+      ya_no_esta: false,
+      ...resto,
+    }) as MedidaDelCatalogo;
+
+  it("una medida de la planilla con precio no lleva marcas", () => {
+    expect(marcasDeLaMedida(conFormato({}))).toEqual([]);
+  });
+
+  it("marca el precio de prueba y la medida sin precio", () => {
+    expect(marcasDeLaMedida(conFormato({ precio_simulado: true }))).toEqual(["de prueba"]);
+    expect(marcasDeLaMedida(conFormato({ costo_unidad_venta: null }))).toEqual(["sin precio"]);
+  });
+
+  it("marca lo que ya no está en la planilla y lo cargado a mano", () => {
+    expect(marcasDeLaMedida(conFormato({}, { ya_no_esta: true }))).toEqual(["ya no está en la planilla"]);
+    expect(marcasDeLaMedida(conFormato({}, { cargada_a_mano: true }))).toEqual(["cargada a mano, no está en la planilla"]);
+  });
+
+  it("junta las marcas del precio y de la planilla", () => {
+    expect(marcasDeLaMedida(conFormato({ precio_simulado: true }, { cargada_a_mano: true }))).toEqual([
+      "de prueba",
+      "cargada a mano, no está en la planilla",
+    ]);
+  });
+
+  it("un retazo cuya chapa ya no está se ve como retazo", () => {
+    expect(marcasDeLaMedida(conFormato({ es_retazo: true }))).toEqual(["retazo"]);
+  });
+});
+
+describe("diaDeLaPlanilla", () => {
+  it("es el día en Argentina, no en UTC", () => {
+    // Las 23:30 del 30/10 en Argentina ya son el 31/10 en UTC.
+    expect(diaDeLaPlanilla("2026-10-31T02:30:00Z")).toBe("30/10");
+    expect(diaDeLaPlanilla("2026-11-06T15:00:00Z")).toBe("06/11");
+  });
+});
+
+describe("articulosDe", () => {
+  const proveedor = (en_ultima_planilla: boolean) => ({ articulo: { en_ultima_planilla } }) as ProveedorDelCatalogo;
+
+  it("cuenta los proveedores de cada medida de la última planilla y los insumos", () => {
+    const pvc = {
+      nombre: "PVC ESPUMADO",
+      espesores: [
+        { medidas: [{ proveedores: [proveedor(true), proveedor(true)] }, { proveedores: [] }] },
+        { medidas: [{ proveedores: [proveedor(false)] }] },
+      ],
+    } as unknown as MaterialDelCatalogo;
+    expect(articulosDe(categoria("PVC", [pvc], [insumo("PVC0099", "PEGAMENTO PVC")]))).toBe(3);
+  });
+});
+
+describe("corteParaGuardar", () => {
+  const campos = { kerf: "2", borde: "10", separacion: "5", giro: "LIBRE_0_90" as const, confirmado: false };
+
+  it("deja los números listos para mandar, con la coma como punto", () => {
+    expect(corteParaGuardar({ ...campos, kerf: "1,5" })).toEqual({
+      kerf_mm: "1.5",
+      margen_borde_mm: "10",
+      separacion_piezas_mm: "5",
+      rotaciones_permitidas: "LIBRE_0_90",
+      confirmado_con_taller: false,
+    });
+  });
+
+  it("acepta el cero", () => {
+    expect(corteParaGuardar({ ...campos, borde: "0" })).not.toBeTypeOf("string");
+  });
+
+  it("un campo vacío, negativo o que no es un número no se guarda", () => {
+    for (const malo of ["", "-1", "dos", "1.000,5"]) {
+      expect(corteParaGuardar({ ...campos, separacion: malo })).toBeTypeOf("string");
+    }
   });
 });

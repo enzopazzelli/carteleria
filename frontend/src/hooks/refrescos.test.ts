@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
+import { alCambiarLosRetazos } from "./useCatalogo";
 import { refrescar } from "./useGrupos";
 import { refrescarElCatalogo } from "./useMateriales";
 import { refrescarPiezasYDisenio } from "./usePiezas";
@@ -49,5 +50,19 @@ describe("el refresco del catálogo", () => {
 
     expect(claves.map((clave) => vencida(cliente, clave))).toEqual(claves.map(() => true));
     expect(vencida(cliente, ["piezas", 1])).toBe(false);
+  });
+});
+
+describe("el refresco de los retazos", () => {
+  it("agregar o quitar un retazo vuelve a pedir la pantalla de Materiales y el recuadro del inicio", async () => {
+    const claves = [["formatos", 3], ["a-seccionar", 1], ["catalogo"], ["resumen-del-inicio"]];
+    const cliente = new QueryClient();
+    claves.forEach((clave) => cliente.setQueryData(clave, {}));
+    cliente.setQueryData(["formatos", 4], []);
+
+    await alCambiarLosRetazos(cliente, 3);
+
+    expect(claves.map((clave) => vencida(cliente, clave))).toEqual(claves.map(() => true));
+    expect(vencida(cliente, ["formatos", 4])).toBe(false);
   });
 });

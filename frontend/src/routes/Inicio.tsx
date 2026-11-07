@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { descargarPdf } from "../api/presupuestos";
 import type { PresupuestoResumido, ResumenDelInicio } from "../api/inicio";
 import { bajarArchivo } from "../components/bajarArchivo";
+import { diaDeLaPlanilla } from "../components/Materiales/arbol";
 import Mensaje from "../components/Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../components/Mensaje/contenido";
 import NuevoTrabajo from "../components/Tarjeta/NuevoTrabajo";
@@ -99,18 +100,41 @@ function UltimosPresupuestos({ resumen }: { resumen: ResumenDelInicio }) {
   );
 }
 
+const VER_MATERIALES = (
+  <Link to="/materiales" className="inline-block mt-3 text-sm underline hover:text-cut">
+    Ver materiales
+  </Link>
+);
+
 function Materiales({ resumen }: { resumen: ResumenDelInicio }) {
   const { materiales } = resumen;
-  if (materiales.materiales === 0) {
-    return <p className="text-sm text-ink/60">No hay materiales cargados.</p>;
+  if (materiales.materiales === 0 && materiales.ultima_planilla_en === null) {
+    return (
+      <>
+        <p className="text-sm text-ink/60">No hay materiales cargados.</p>
+        {VER_MATERIALES}
+      </>
+    );
   }
   return (
     <>
-      <p className="text-sm">
-        {cuantos(materiales.materiales, "material", "materiales")},{" "}
-        {cuantos(materiales.medidas, "medida de chapa", "medidas de chapa")} y{" "}
-        {cuantos(materiales.retazos, "retazo", "retazos")}.
-      </p>
+      {materiales.ultima_planilla_en === null ? (
+        <p className="text-sm">
+          {cuantos(materiales.materiales, "material", "materiales")},{" "}
+          {cuantos(materiales.medidas, "medida de chapa", "medidas de chapa")} y{" "}
+          {cuantos(materiales.retazos, "retazo", "retazos")}.
+        </p>
+      ) : (
+        <>
+          <p className="text-sm">
+            {cuantos(materiales.articulos, "artículo", "artículos")},{" "}
+            {cuantos(materiales.materiales, "material para cortar", "materiales para cortar")},{" "}
+            {cuantos(materiales.medidas, "medida de chapa", "medidas de chapa")} y{" "}
+            {cuantos(materiales.retazos, "retazo", "retazos")}.
+          </p>
+          <p className="text-xs text-ink/60 mt-1">Planilla del {diaDeLaPlanilla(materiales.ultima_planilla_en)}</p>
+        </>
+      )}
       <ul className="mt-2 text-sm">
         {materiales.por_familia.map((familia) => (
           <li key={familia.familia} className="flex justify-between py-0.5">
@@ -119,6 +143,7 @@ function Materiales({ resumen }: { resumen: ResumenDelInicio }) {
           </li>
         ))}
       </ul>
+      {VER_MATERIALES}
     </>
   );
 }
