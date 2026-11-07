@@ -19,13 +19,40 @@ El sprint para cerrar lo chico que quedó suelto (A17) terminó el 2026-10-29: [
 
 ---
 
-## 🧭 En qué estamos — 2026-10-29
+## 🧭 En qué estamos — 2026-11-07
 
 Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Lo que sigue, desde la reunión del 2026-10-22».
 
 **Lo que se busca.** En la reunión del 2026-10-22 se mostró el cotizador. Gustó poder hacer varios anidados a la vez, aparecieron dos fallas del anidado y salieron pedidos nuevos. El objetivo ahora es doble:
 - que el motor de anidado sea confiable con diseños reales y aproveche mejor la chapa. **Sparrow es el motor principal**; el rectangular queda de prueba;
 - después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
+
+Las dos cosas ya están. Ahora se arman las pantallas que faltan, empezando por Materiales.
+
+**En curso: la pantalla de Materiales con la planilla de precios (A18), desde el 2026-10-31.** Se trabaja en la rama `feat/a18-pantalla-de-materiales`, todavía sin subir. El diseño y el plan, aprobados por Enzo el 2026-10-30, están en [`docs/plan/A18-pantalla-de-materiales/`](docs/plan/A18-pantalla-de-materiales/diseno.md).
+- **Qué se busca:**
+  - los materiales y sus precios salen de la planilla de la empresa (`CARTELERIA 2026.xlsx`, hoja `COTIZADOR`, la misma de AppSheet). Se ponen al día subiendo la planilla nueva, con una revisión de lo que entra, lo que cambia de precio y lo que ya no está antes de aplicar;
+  - una pantalla de Materiales en dos columnas: la lista a la izquierda y el detalle del material a la derecha. Los precios se miran ahí. Solo se cambia lo que la planilla no tiene: el corte, los retazos, si se anida y la medida cuando la descripción no se puede leer;
+  - cuando un mismo código viene de dos proveedores, cuenta el último al que le cambió el precio, o el marcado a mano en Materiales. En el trabajo no se elige proveedor;
+  - de paso, las opciones del motor (motor, semilla, búsqueda, tiempo, simplificación, vaciar chapas) pasan a un desplegable «Opciones avanzadas» en Anidado. **Para Vale:** el motor no cambia, solo el lugar de esas opciones en la pantalla.
+- **Hecho, 11 de 13 tareas:**
+  1. leer la descripción de cada renglón: la medida de la chapa, la categoría y si se anida (se anida lo que es plancha vendida por m²);
+  2. leer el Excel: 288 renglones de la planilla real, 254 códigos;
+  3. guardar en la base los artículos de la planilla tal como vienen, cada planilla aplicada y los precios que cambiaron. La base se actualiza sola al arrancar, como desde A17;
+  4. la regla de qué proveedor cuenta cuando un código viene de dos;
+  5. armar la revisión, sin aplicar nada: qué cambia de precio, qué entra, qué ya no está y qué hay que mirar. Con la planilla real y una copia de la base se enlazan 27 códigos, entran 261 renglones, 2 medidas quedan a mano y solo hay que mirar `CHA0013`;
+  6. aplicar la revisión: guardar los artículos, copiar el precio del proveedor que cuenta a las medidas y a sus retazos, crear lo que falta y dejar de ofrecer lo que ya no está;
+  7. las rutas del servidor: subir y aplicar la planilla, el catálogo para la pantalla y marcar el proveedor;
+  8. probar la planilla real sobre una copia de la base: el costeo de los 3 trabajos da igual, y subirla dos veces no cambia nada;
+  9. lo que la pantalla le pide al servidor: el catálogo, marcar el proveedor, guardar el corte y si se anida;
+  10. la pantalla de Materiales, vista por Enzo el 2026-11-07:
+      - a la izquierda, un buscador y las categorías, que se abren y se cierran;
+      - a la derecha, el material elegido: si se anida, el corte de cada espesor, las medidas con su proveedor, su costo por m² y sus retazos, y lo que dice la planilla, plegado;
+      - con dos proveedores, cuál cuenta y «Usar este» en el otro;
+      - «Materiales» se prende en la barra, y el recuadro del inicio cuenta los artículos y el día de la planilla;
+  11. subir la planilla desde la pantalla, vista por Enzo el 2026-11-07: antes de aplicar se ve la revisión, con lo que cambia de precio, lo que entra, lo que ya no está y un campo para la medida de lo que hay que mirar. Probado con la planilla real sobre una copia de la base: la primera carga, la misma planilla otra vez (todo sin cambios), un precio cambiado a mano y el cambio de proveedor en el Costeo.
+- **Sigue:** el desplegable en Anidado y el recorrido completo. La primera carga en la base real la hace Enzo desde la pantalla, después de un respaldo.
+- **El riesgo que se controlaba en el camino, ya resuelto:** la lectura del DXF usa medidas del catálogo para decidir qué es una hoja y qué no entra en ninguna chapa. Con la planilla real, MDF y ACM hacían que un tablero de presentación «entrara» en una chapa: sus letras se descartaban y sus huecos se cortaban. Enzo decidió el 2026-11-06 que la lectura siga mirando solo Chapas, Acrílicos y Policarbonato (`PAR-60`). Con eso, los 9 DXF de prueba se leen igual que antes de cargar la planilla.
 
 **Ya está en `main`:**
 - **Pulir lo que quedó suelto (A17), cerrado el 2026-10-29.** Un sprint de 41 tareas en 7 tandas para cerrar los pendientes chicos de las tablas del plan maestro. Lo que más se nota:
@@ -53,11 +80,11 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - Ver [`docs/historico/A10-huecos-primero/`](docs/historico/A10-huecos-primero/diseno.md).
 - Cómo probar Sparrow (semilla, tiempo, simplificación, cancelar): [`docs/GUIA-SPARROW-PRUEBAS.md`](docs/GUIA-SPARROW-PRUEBAS.md).
 
-**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, también llenar mejor los huecos, que se sumó después, ver y mover las chapas (A14), el diseño anidado en PDF (A15), la página de inicio con las tarjetas (A16) y lo chico que quedó suelto (A17). El orden de lo que queda es una propuesta, para que Enzo lo confirme.
+**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, también llenar mejor los huecos, que se sumó después, ver y mover las chapas (A14), el diseño anidado en PDF (A15), la página de inicio con las tarjetas (A16) y lo chico que quedó suelto (A17). La pantalla de Materiales está en curso (A18, arriba). El orden de lo que queda es una propuesta, para que Enzo lo confirme.
 
 | # | Qué | Cómo está hoy | Qué se busca | Estado |
 |---|---|---|---|---|
-| 1 | **Materiales, presupuestos y retocar el presupuesto, en pantalla** | La página de inicio (A16) muestra un resumen de los presupuestos y de los materiales, y sus lugares en la barra están apagados. Los materiales se cargan por la API | El alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro. De a una, cada una con su diseño (Enzo, 2026-10-25) | Planeado el 2026-10-15; falta diseño |
+| 1 | **Materiales, presupuestos y retocar el presupuesto, en pantalla** | La página de inicio (A16) muestra un resumen de los presupuestos y de los materiales, y sus lugares en la barra están apagados. Los materiales se cargan por la API | El alta, la edición y la baja de materiales en pantalla; ver los presupuestos generados; y la pantalla para retocar el presupuesto, con los campos de un lado y el PDF del otro. De a una, cada una con su diseño (Enzo, 2026-10-25) | **Materiales: en curso (A18)**, 3 de 13 tareas. Presupuestos y retocar el presupuesto: planeados el 2026-10-15, falta diseño |
 | 2 | **La aprobación del presupuesto** | No existe | Estados borrador, pendiente, observado y aprobado; aviso al dueño por mail con un link para aprobar u observar sin iniciar sesión; historial de quién cambió qué (sub-proyecto 1.4 del plan maestro) | Planeado; falta diseño |
 | — | **Colores de referencia por pieza** | Los DXF que llegan no traen color | Elegir un color por pieza (la «O» de Complejo en rojo) y que se vea en el plano, en Chapas y en el PDF, para reconocerla anidada | En espera (Enzo, 2026-10-22) |
 | — | **Entrada `.cdr`** | Solo se lee DXF | Leer el archivo de CorelDRAW directo. Ya hay un estudio que funcionó con LibreOffice, sin CorelDRAW: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | En espera (Enzo, 2026-10-22) |
@@ -65,6 +92,7 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 **Lo que espera a alguien** está en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Esperando a alguien». Lo principal:
 - **Medir la tanda 2 de A17.** Complejo entra en 7 chapas (lo encontraron dos anidados que corrían a la vez), pero de a uno siempre da 8. Los dos caminos para que la búsqueda lo encuentre más seguido ya están en el código, apagados. Medirlos lleva unos 75 minutos con la máquina libre (Enzo).
 - **Imprimir una hoja de chapas y medirla con regla** (Enzo).
+- **Un código repetido en la planilla:** `CAB0004` de LUNA SUD está dos veces (filas 44 y 221, las dos sin precio). El sistema toma el de más abajo; hay que mirarlo en AppSheet (Enzo).
 - **Las preguntas a Vale y al taller.**
 
 **Lo grande que viene después**, en «Lo grande, después de A17», en el mismo lugar.
