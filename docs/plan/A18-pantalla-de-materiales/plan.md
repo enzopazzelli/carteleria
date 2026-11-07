@@ -1,6 +1,6 @@
 # A18 · La pantalla de Materiales, con la planilla de precios — plan
 
-> **Estado:** aprobado por Enzo el 2026-10-30; en ejecución desde el 2026-10-31 en la rama `feat/a18-pantalla-de-materiales`. Al 2026-11-07, tramos 1 a 3 hechos (tareas 1 a 10).
+> **Estado:** aprobado por Enzo el 2026-10-30; en ejecución desde el 2026-10-31 en la rama `feat/a18-pantalla-de-materiales`. Al 2026-11-07, tramos 1 a 4 hechos (tareas 1 a 11).
 
 > **Para quien ejecuta:** tarea por tarea, con **pausa al final de cada una** para que Enzo la vea antes de seguir. Así trabaja este proyecto, aunque el skill de ejecución diga otra cosa. Los pasos usan casillas (`- [ ]`) para llevar la cuenta.
 

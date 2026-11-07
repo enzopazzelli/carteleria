@@ -35,7 +35,7 @@ Las dos cosas ya están. Ahora se arman las pantallas que faltan, empezando por 
   - una pantalla de Materiales en dos columnas: la lista a la izquierda y el detalle del material a la derecha. Los precios se miran ahí. Solo se cambia lo que la planilla no tiene: el corte, los retazos, si se anida y la medida cuando la descripción no se puede leer;
   - cuando un mismo código viene de dos proveedores, cuenta el último al que le cambió el precio, o el marcado a mano en Materiales. En el trabajo no se elige proveedor;
   - de paso, las opciones del motor (motor, semilla, búsqueda, tiempo, simplificación, vaciar chapas) pasan a un desplegable «Opciones avanzadas» en Anidado. **Para Vale:** el motor no cambia, solo el lugar de esas opciones en la pantalla.
-- **Hecho, 10 de 13 tareas:**
+- **Hecho, 11 de 13 tareas:**
   1. leer la descripción de cada renglón: la medida de la chapa, la categoría y si se anida (se anida lo que es plancha vendida por m²);
   2. leer el Excel: 288 renglones de la planilla real, 254 códigos;
   3. guardar en la base los artículos de la planilla tal como vienen, cada planilla aplicada y los precios que cambiaron. La base se actualiza sola al arrancar, como desde A17;
@@ -49,8 +49,9 @@ Las dos cosas ya están. Ahora se arman las pantallas que faltan, empezando por 
       - a la izquierda, un buscador y las categorías, que se abren y se cierran;
       - a la derecha, el material elegido: si se anida, el corte de cada espesor, las medidas con su proveedor, su costo por m² y sus retazos, y lo que dice la planilla, plegado;
       - con dos proveedores, cuál cuenta y «Usar este» en el otro;
-      - «Materiales» se prende en la barra, y el recuadro del inicio cuenta los artículos y el día de la planilla.
-- **Sigue:** subir la planilla desde la pantalla; el desplegable en Anidado; y el recorrido completo.
+      - «Materiales» se prende en la barra, y el recuadro del inicio cuenta los artículos y el día de la planilla;
+  11. subir la planilla desde la pantalla, vista por Enzo el 2026-11-07: antes de aplicar se ve la revisión, con lo que cambia de precio, lo que entra, lo que ya no está y un campo para la medida de lo que hay que mirar. Probado con la planilla real sobre una copia de la base: la primera carga, la misma planilla otra vez (todo sin cambios), un precio cambiado a mano y el cambio de proveedor en el Costeo.
+- **Sigue:** el desplegable en Anidado y el recorrido completo. La primera carga en la base real la hace Enzo desde la pantalla, después de un respaldo.
 - **El riesgo que se controlaba en el camino, ya resuelto:** la lectura del DXF usa medidas del catálogo para decidir qué es una hoja y qué no entra en ninguna chapa. Con la planilla real, MDF y ACM hacían que un tablero de presentación «entrara» en una chapa: sus letras se descartaban y sus huecos se cortaban. Enzo decidió el 2026-11-06 que la lectura siga mirando solo Chapas, Acrílicos y Policarbonato (`PAR-60`). Con eso, los 9 DXF de prueba se leen igual que antes de cargar la planilla.
 
 **Ya está en `main`:**
