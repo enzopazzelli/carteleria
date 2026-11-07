@@ -34,7 +34,9 @@ from .rutas_disenio import router as router_disenio
 from .rutas_pdf_anidado import router as router_pdf_anidado
 from .rutas_importacion import router as router_importacion
 from .rutas_inicio import router as router_inicio
+from .rutas_materiales import router as router_materiales
 from .rutas_nesting import router as router_nesting
+from .rutas_planilla import router as router_planilla
 from .rutas_presupuesto import router as router_presupuesto
 from .rutas_seccionado import router as router_seccionado
 from .rutas_trabajos import router as router_trabajos
@@ -102,3 +104,5 @@ app.include_router(router_seccionado)
 app.include_router(router_disenio)
 app.include_router(router_pdf_anidado)
 app.include_router(router_inicio)
+app.include_router(router_planilla)
+app.include_router(router_materiales)

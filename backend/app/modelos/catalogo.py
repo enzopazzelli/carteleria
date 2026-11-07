@@ -15,9 +15,10 @@ from __future__ import annotations
 
 import enum
 import unicodedata
+from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -165,7 +166,94 @@ class Formato(Base):
     #: Todo lo que lo calcule debería mostrarlo marcado, no como firme.
     precio_simulado: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    #: --- Lo que se cambia a mano en Materiales (A18) -----------------
+    #: Con dos proveedores para el mismo código, el marcado a mano gana
+    #: sobre el último que cambió de precio (diseño de A18, §5.3). `None`:
+    #: automático.
+    proveedor_a_mano: Mapped[str | None] = mapped_column(String(120), default=None)
+    #: La medida se escribió a mano porque la descripción de la planilla
+    #: no se pudo leer; una planilla nueva no la pisa.
+    medida_a_mano: Mapped[bool] = mapped_column(Boolean, default=False)
+
     material: Mapped[Material] = relationship(back_populates="formatos")
+
+
+class Articulo(Base):
+    """Un renglón de la hoja `COTIZADOR`, guardado tal cual (A18).
+
+    Uno por código y proveedor: el mismo código puede venir de dos
+    proveedores con precios distintos. Lo que agrega la app (corte,
+    retazos, si se anida) no vive acá sino en `Material`, `Formato` y
+    `ParametrosCorteMaterial`, unido por el código. Las columnas tienen los
+    nombres de `app.services.catalogo.planilla.Renglon`.
+    """
+
+    __tablename__ = "articulos"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    codigo: Mapped[str] = mapped_column(String(40))
+    proveedor: Mapped[str] = mapped_column(String(120))
+    descripcion: Mapped[str] = mapped_column(String(300))
+    categoria: Mapped[str] = mapped_column(String(120))
+    unidad_compra: Mapped[str | None] = mapped_column(String(20), default=None)
+    factor_conversion: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    unidad_venta: Mapped[str | None] = mapped_column(String(20), default=None)
+    precio_bruto_compra: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    moneda: Mapped[str | None] = mapped_column(String(10), default=None)
+    precio_bruto_ars: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    iva: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    precio_neto_compra: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    porcentaje_costo_1: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    porcentaje_costo_2: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    #: Siempre en pesos, aunque la compra sea en dólares. `None` es «sin precio».
+    costo_unidad_venta: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    margen_venta_1: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    margen_venta_2: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    margen_venta_3: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    margen_venta_4: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    #: La fila en la última planilla en que estuvo: desempata al proveedor que cuenta.
+    fila: Mapped[int]
+    #: `False` cuando la última planilla subida ya no lo trae.
+    en_ultima_planilla: Mapped[bool] = mapped_column(Boolean, default=True)
+    #: La carga en que apareció o en que cambió su costo: decide qué proveedor cuenta.
+    precio_cambiado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (UniqueConstraint("codigo", "proveedor", name="uq_articulo_codigo_proveedor"),)
+
+
+class CargaDePlanilla(Base):
+    """Cada vez que se aplicó una planilla. El archivo no se guarda: trae
+    datos de clientes. La fecha es `creado_en`."""
+
+    __tablename__ = "cargas_de_planilla"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    archivo: Mapped[str] = mapped_column(String(255))
+    dolar_compra: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    dolar_venta: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    #: Renglones de la planilla.
+    articulos: Mapped[int]
+    #: Precios que cambiaron.
+    cambios: Mapped[int]
+
+    cambios_de_precio: Mapped[list[CambioDePrecio]] = relationship(
+        back_populates="carga", cascade="all, delete-orphan"
+    )
+
+
+class CambioDePrecio(Base):
+    """Un costo de unidad de venta que cambió al aplicar una planilla."""
+
+    __tablename__ = "cambios_de_precio"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    carga_id: Mapped[int] = mapped_column(ForeignKey("cargas_de_planilla.id", ondelete="CASCADE"))
+    codigo: Mapped[str] = mapped_column(String(40))
+    proveedor: Mapped[str] = mapped_column(String(120))
+    antes: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    despues: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+
+    carga: Mapped[CargaDePlanilla] = relationship(back_populates="cambios_de_precio")
 
 
 class ParametrosCorteMaterial(Base):

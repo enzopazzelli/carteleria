@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 
 // La barra fija de arriba, en todas las pantallas (A16, diseño §5.1).
-// Presupuestos y Materiales se prenden cuando tengan su pantalla.
+// Presupuestos se prende cuando tenga su pantalla; Materiales la tiene desde A18.
 
 const LUGAR = "h-12 flex items-center px-1 border-b-2 text-sm";
 
@@ -24,9 +24,9 @@ export default function Barra() {
         <span className={`${LUGAR} border-transparent text-ink/35 cursor-default`} title="Próximamente">
           Presupuestos
         </span>
-        <span className={`${LUGAR} border-transparent text-ink/35 cursor-default`} title="Próximamente">
+        <NavLink to="/materiales" className={claseDelLugar}>
           Materiales
-        </span>
+        </NavLink>
       </nav>
     </header>
   );

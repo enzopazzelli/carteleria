@@ -27,34 +27,25 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - que el motor de anidado sea confiable con diseños reales y aproveche mejor la chapa. **Sparrow es el motor principal**; el rectangular queda de prueba;
 - después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
 
-Las dos cosas ya están. Ahora se arman las pantallas que faltan, empezando por Materiales.
+Las dos cosas ya están, y también la primera de las pantallas que faltaban: Materiales (A18). Siguen las de presupuestos.
 
-**En curso: la pantalla de Materiales con la planilla de precios (A18), desde el 2026-10-31.** Se trabaja en la rama `feat/a18-pantalla-de-materiales`, todavía sin subir. El diseño y el plan, aprobados por Enzo el 2026-10-30, están en [`docs/plan/A18-pantalla-de-materiales/`](docs/plan/A18-pantalla-de-materiales/diseno.md).
-- **Qué se busca:**
-  - los materiales y sus precios salen de la planilla de la empresa (`CARTELERIA 2026.xlsx`, hoja `COTIZADOR`, la misma de AppSheet). Se ponen al día subiendo la planilla nueva, con una revisión de lo que entra, lo que cambia de precio y lo que ya no está antes de aplicar;
-  - una pantalla de Materiales en dos columnas: la lista a la izquierda y el detalle del material a la derecha. Los precios se miran ahí. Solo se cambia lo que la planilla no tiene: el corte, los retazos, si se anida y la medida cuando la descripción no se puede leer;
-  - cuando un mismo código viene de dos proveedores, cuenta el último al que le cambió el precio, o el marcado a mano en Materiales. En el trabajo no se elige proveedor;
-  - de paso, las opciones del motor (motor, semilla, búsqueda, tiempo, simplificación, vaciar chapas) pasan a un desplegable «Opciones avanzadas» en Anidado. **Para Vale:** el motor no cambia, solo el lugar de esas opciones en la pantalla.
-- **Hecho, 11 de 13 tareas:**
-  1. leer la descripción de cada renglón: la medida de la chapa, la categoría y si se anida (se anida lo que es plancha vendida por m²);
-  2. leer el Excel: 288 renglones de la planilla real, 254 códigos;
-  3. guardar en la base los artículos de la planilla tal como vienen, cada planilla aplicada y los precios que cambiaron. La base se actualiza sola al arrancar, como desde A17;
-  4. la regla de qué proveedor cuenta cuando un código viene de dos;
-  5. armar la revisión, sin aplicar nada: qué cambia de precio, qué entra, qué ya no está y qué hay que mirar. Con la planilla real y una copia de la base se enlazan 27 códigos, entran 261 renglones, 2 medidas quedan a mano y solo hay que mirar `CHA0013`;
-  6. aplicar la revisión: guardar los artículos, copiar el precio del proveedor que cuenta a las medidas y a sus retazos, crear lo que falta y dejar de ofrecer lo que ya no está;
-  7. las rutas del servidor: subir y aplicar la planilla, el catálogo para la pantalla y marcar el proveedor;
-  8. probar la planilla real sobre una copia de la base: el costeo de los 3 trabajos da igual, y subirla dos veces no cambia nada;
-  9. lo que la pantalla le pide al servidor: el catálogo, marcar el proveedor, guardar el corte y si se anida;
-  10. la pantalla de Materiales, vista por Enzo el 2026-11-07:
-      - a la izquierda, un buscador y las categorías, que se abren y se cierran;
-      - a la derecha, el material elegido: si se anida, el corte de cada espesor, las medidas con su proveedor, su costo por m² y sus retazos, y lo que dice la planilla, plegado;
-      - con dos proveedores, cuál cuenta y «Usar este» en el otro;
-      - «Materiales» se prende en la barra, y el recuadro del inicio cuenta los artículos y el día de la planilla;
-  11. subir la planilla desde la pantalla, vista por Enzo el 2026-11-07: antes de aplicar se ve la revisión, con lo que cambia de precio, lo que entra, lo que ya no está y un campo para la medida de lo que hay que mirar. Probado con la planilla real sobre una copia de la base: la primera carga, la misma planilla otra vez (todo sin cambios), un precio cambiado a mano y el cambio de proveedor en el Costeo.
-- **Sigue:** el desplegable en Anidado y el recorrido completo. La primera carga en la base real la hace Enzo desde la pantalla, después de un respaldo.
-- **El riesgo que se controlaba en el camino, ya resuelto:** la lectura del DXF usa medidas del catálogo para decidir qué es una hoja y qué no entra en ninguna chapa. Con la planilla real, MDF y ACM hacían que un tablero de presentación «entrara» en una chapa: sus letras se descartaban y sus huecos se cortaban. Enzo decidió el 2026-11-06 que la lectura siga mirando solo Chapas, Acrílicos y Policarbonato (`PAR-60`). Con eso, los 9 DXF de prueba se leen igual que antes de cargar la planilla.
+**Lo que sigue:**
+- **La primera carga de la planilla en la base real.** La hace Enzo desde Materiales, con «Actualizar desde la planilla», después de un respaldo de la base. Sobre una copia, la planilla real dio:
+  - 27 códigos se enlazan y entran 261 artículos;
+  - `CHA0016` y `POL0006` quedan a mano;
+  - hay que mirar `CHA0013`, que va con 1250 × 2500.
+- **Después,** lo próximo de «Lo grande»: la pantalla de presupuestos y la de retocar el presupuesto, cada una con su diseño.
 
 **Ya está en `main`:**
+- **La pantalla de Materiales con la planilla de precios (A18), desde el 2026-11-07.**
+  - **De dónde salen los precios:** los materiales y sus precios salen de la planilla de la empresa (`CARTELERIA 2026.xlsx`, hoja `COTIZADOR`, la misma de AppSheet).
+  - **Cómo se actualizan:** en Materiales, «Actualizar desde la planilla» la sube y muestra una revisión antes de aplicar: qué precios cambian, qué entra, qué ya no está y qué hay que mirar.
+  - **La pantalla, en dos columnas:** a la izquierda, un buscador y las categorías; a la derecha, el material elegido, con si se anida, el corte de cada espesor, las medidas con su proveedor, su costo por m² y sus retazos.
+  - **Dos proveedores para un código:** cuenta el último al que le cambió el precio, o el marcado con «Usar este». En el trabajo no se elige proveedor.
+  - **La lectura del DXF** sigue mirando solo las medidas de Chapas, Acrílicos y Policarbonato (`PAR-60`).
+  - **Para Vale:** en Anidado, el motor, la semilla, la búsqueda, el tiempo, la simplificación y «Vaciar chapas» pasaron a un desplegable «Opciones avanzadas», cerrado. Si alguna no es la de siempre, dice «cambiadas». Lo que se manda al motor no cambió.
+
+  Ver [`docs/historico/A18-pantalla-de-materiales/`](docs/historico/A18-pantalla-de-materiales/diseno.md).
 - **Pulir lo que quedó suelto (A17), cerrado el 2026-10-29.** Un sprint de 41 tareas en 7 tandas para cerrar los pendientes chicos de las tablas del plan maestro. Lo que más se nota:
   - la base se pone al día sola al arrancar;
   - en Chapas, si una pieza no entra en otra chapa, esa chapa se reacomoda, con «Deshacer»;
@@ -106,7 +97,7 @@ Plataforma a medida para una empresa de cartelería de gran formato en chapa. Au
 **Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**: lectura del DXF, anidado con Sparrow, costeo y PDF del presupuesto · faltan el login, la aprobación y el envío — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) y, arriba, «En qué estamos»
 **Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md)
 **Equipo:** Enzo (todo lo que no es el motor) · Vale (motor de anidado)
-**Última actualización:** 2026-10-29 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
+**Última actualización:** 2026-11-07 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 

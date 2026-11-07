@@ -8,6 +8,7 @@ instalar nada — ver `docs/historico/PLAN-SLICE-VERTICAL.md`. Los defaults son 
 from __future__ import annotations
 
 import os
+from decimal import Decimal
 from pathlib import Path
 
 #: Raíz del backend. Todo lo que se guarda en disco cuelga de acá.
@@ -63,6 +64,20 @@ ARCHIVOS_DE_REGISTRO = int(os.getenv("CARTELERIA_REGISTRO_ARCHIVOS", "5"))
 #: `PAR-56` (`docs/REGISTRO.md`): el retazo más chico que se guarda, en mm
 #: por lado. Una chapa cuyo sobrante no llega cuenta como entera (A12).
 RETAZO_MINIMO_MM = int(os.getenv("CARTELERIA_RETAZO_MINIMO_MM", "250"))
+
+#: `PAR-59` (`docs/REGISTRO.md`): cuánto se puede apartar el área de la
+#: medida leída de la descripción de los m² de la planilla, como fracción
+#: (0.05 es 5 %). Si se aparta más, el artículo va a «Hay que mirarlo» (A18).
+DIFERENCIA_MAXIMA_CON_EL_FACTOR = Decimal(os.getenv("CARTELERIA_DIFERENCIA_CON_EL_FACTOR", "0.05"))
+
+#: `PAR-60` (`docs/REGISTRO.md`): las familias cuyas medidas usa la lectura del
+#: DXF, separadas por coma. «Qué medidas se venden» y «qué medidas sirven para
+#: leer un dibujo» son dos preguntas: una medida grande de otra familia haría
+#: «entrar» a un tablero de presentación, y sus letras se descartarían (A18).
+FAMILIAS_PARA_LEER_EL_DXF = tuple(
+    familia.strip()
+    for familia in os.getenv("CARTELERIA_FAMILIAS_PARA_LEER_EL_DXF", "Chapas,Acrílicos,Policarbonato").split(",")
+)
 
 #: `PAR-57` (`docs/REGISTRO.md`): cuánto puede tardar Sparrow en reacomodar
 #: la chapa de destino al pasarle una pieza (A17). La pantalla espera.

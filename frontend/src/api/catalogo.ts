@@ -5,6 +5,8 @@ export interface Material {
   nombre: string;
   espesor: string | null;
   familia: string;
+  /** Si entra al anidado; lo que se vende por metro o por unidad, no. */
+  nesteable_por_area: boolean;
 }
 
 export interface Formato {

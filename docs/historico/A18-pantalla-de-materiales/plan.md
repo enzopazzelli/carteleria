@@ -1,6 +1,6 @@
 # A18 · La pantalla de Materiales, con la planilla de precios — plan
 
-> **Estado:** aprobado por Enzo el 2026-10-30; en ejecución desde el 2026-10-31 en la rama `feat/a18-pantalla-de-materiales`. Al 2026-11-07, tramos 1 a 4 hechos (tareas 1 a 11).
+> **Estado:** aprobado por Enzo el 2026-10-30; ejecutado del 2026-10-31 al 2026-11-07 en la rama `feat/a18-pantalla-de-materiales`. **Cerrado el 2026-11-07**, con las 13 tareas hechas; cómo quedó, en §10 del diseño.
 
 > **Para quien ejecuta:** tarea por tarea, con **pausa al final de cada una** para que Enzo la vea antes de seguir. Así trabaja este proyecto, aunque el skill de ejecución diga otra cosa. Los pasos usan casillas (`- [ ]`) para llevar la cuenta.
 
@@ -808,4 +808,40 @@ export function cambiadas(actuales: OpcionesAvanzadas): boolean;
 
 ## Desvíos
 
-(Se completa al ejecutar.)
+### Tarea 8: la planilla real sobre una copia de la base (2026-11-06)
+
+**Lo que dio bien**, con `CARTELERIA 2026.xlsx` por la app entera, con su arranque real:
+- La copia, en `d4b2e8a1f630`, se actualizó sola a `e7a1c5d9b318`, con su respaldo.
+- La revisión de la primera carga: 288 renglones, 254 códigos. Se enlazan 27 códigos, entran 261 renglones (231 insumos y 30 que se anidan: 29 medidas y 21 materiales nuevos), quedan a mano `CHA0016` y `POL0006`, hay que mirar `CHA0013` y no cambia ningún precio. Las medidas pasan de 29 a 58, y los materiales de 23 a 44.
+- El costeo de Complejo, Parador y Corpóreas da igual, y los grupos siguen con su medida. El catálogo responde en 0,07 s.
+- La misma planilla otra vez: 287 renglones sin cambios, `CHA0013` sigue para mirar, y no se duplica ni se anota nada.
+- Siguen con precio de prueba `ACR0009`, `CHA0001`, `CHA0002`, `CHA0007`, `CHA0008` y `CHA0009`, porque la planilla no les trae precio, y `CHA0016` y `POL0006`, que no están en ella. Quedan sin precio `MDF0003` a `MDF0006`.
+
+**Lo que paró la tarea (lo que más podía fallar, punto 1).** Con la planilla cargada cambió la lectura de 2 de los 9 DXF de prueba: `Muestra Vectores` (9 formas) y `muestra 2` (33). La regla es que un rectángulo que no entra en ninguna chapa es un tablero de presentación y lo de adentro son piezas (`_marcar_contrapiezas`). Con MDF de 1830 × 2750 y 1830 × 3660 y ACM de 5000 × 1500 esos tableros «entraban»: sus letras pasaban a ser el recorte de un hueco y se descartaban (38 formas, 2,18 m²), y los huecos de las letras pasaban a cortarse (4 formas). Metalex, Polyfan y MDF de 1830 × 2600 no cambiaban nada.
+
+**Lo que decidió Enzo (2026-11-06):** la lectura sigue con las medidas de hoy. `_formatos_del_catalogo` mira solo las familias de `PAR-60` (Chapas, Acrílicos y Policarbonato); las otras se venden pero no cambian cómo se lee un dibujo. Antes de la primera planilla, Alto impacto y Corrugado todavía tienen su propia familia, pero sus medidas ya están en Chapas. Con el cambio, la lectura de los 9 DXF con la planilla cargada no tiene ninguna diferencia, tampoco en la escala sugerida.
+
+**Lo que queda igual que hoy:** una pieza de MDF más grande que las medidas de esas familias figura como que no entra en ninguna chapa, y una hoja de MDF dibujada no se reconoce. Decidir el tablero por lo que tiene adentro y no por la medida quedó en el plan maestro, con «cambiar cómo decide el lector».
+
+### Tareas 9 a 13: la pantalla, la planilla, Anidado y el cierre (2026-11-06 y 2026-11-07)
+
+Lo que se decidió al construir y el plan no decía:
+- **Sin corte cargado no hay un corte del sistema.** El plan pedía «Sin cargar: el anidado usa el del sistema», pero el anidado no deja anidar sin corte (`_parametros_de_corte`). Por eso la pantalla dice «Sin cargar: hay que cargarlo antes de anidar» y los campos arrancan vacíos.
+- **El corte se controla en la pantalla:** milímetros de 0 en adelante, con la coma como punto. El servidor aceptaba negativos.
+- **«Se anida» se guarda por espesor.** Hay una casilla por material, que cambia todos los espesores; queda a medias si están mezclados.
+- **Las marcas de una medida:**
+  - «retazo», para el retazo cuya chapa ya no está;
+  - antes de la primera planilla, ni «cargada a mano» ni «ya no está en la planilla». Esto lo mostró el recorrido sobre una copia de la base real, que todavía no tiene planilla.
+- **La lista de la izquierda:**
+  - sin planilla, no se cuentan los artículos de cada categoría;
+  - buscando, se ven abiertas todas las categorías que coinciden;
+  - los insumos muestran el proveedor, para distinguir los dos renglones de un código.
+- **Los proveedores:** «el que cuenta» y «Usar este» aparecen solo con dos proveedores o más, y nunca en una medida que ya no está. Un retazo escondido dice «quitado, en uso», sin «Quitar».
+- **Agregar o quitar un retazo** refresca también Materiales y el inicio.
+- **En la revisión:**
+  - el dólar va «antes → ahora» solo si cambió;
+  - «en USD: cambió el dólar» solo si cambió; si no, «en USD»;
+  - el «Listo: se aplicó la planilla …» va en un renglón verde propio.
+- **El precio en el Costeo** se controló en lo que calcula el servidor (`precio_unitario` de la línea del grupo), porque la pestaña solo muestra el costo total, que necesita un anidado terminado.
+- **En Anidado,** el párrafo «Con "Aprovechar huecos"…» quedó a la vista, porque explica una opción que está a la vista.
+- **La revisión del cierre** la hizo el mismo que escribió el código, sin un revisor aparte. No encontró nada crítico ni importante; lo chico quedó en §10 del diseño.

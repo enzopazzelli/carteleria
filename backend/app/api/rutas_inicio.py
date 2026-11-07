@@ -15,7 +15,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..costeo import _ejecucion_para_costear, anidado_vigente
-from ..modelos.catalogo import Formato, Material
+from ..modelos.catalogo import Articulo, CargaDePlanilla, Formato, Material
 from ..modelos.presupuesto import LineaCosto, Presupuesto
 from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza, Trabajo
 from ..pasos import GrupoParaPasos, TrabajoParaPasos, pasos_del_trabajo
@@ -194,6 +194,7 @@ def _materiales_resumidos(sesion: Session) -> MaterialesResumidosLeer:
     def contar(consulta) -> int:
         return sesion.scalar(consulta) or 0
 
+    ultima_planilla_en = sesion.scalar(select(CargaDePlanilla.creado_en).order_by(CargaDePlanilla.id.desc()).limit(1))
     return MaterialesResumidosLeer(
         materiales=contar(select(func.count(Material.id))),
         medidas=contar(select(func.count(Formato.id)).where(Formato.es_retazo.is_(False))),
@@ -204,6 +205,8 @@ def _materiales_resumidos(sesion: Session) -> MaterialesResumidosLeer:
                 select(Material.familia, func.count(Material.id)).group_by(Material.familia).order_by(Material.familia)
             )
         ],
+        articulos=contar(select(func.count(Articulo.id)).where(Articulo.en_ultima_planilla.is_(True))),
+        ultima_planilla_en=en_utc(ultima_planilla_en) if ultima_planilla_en is not None else None,
     )
 
 

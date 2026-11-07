@@ -105,6 +105,15 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   return manejarRespuesta<T>(respuesta);
 }
 
+export async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const respuesta = await pedir(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return manejarRespuesta<T>(respuesta);
+}
+
 export async function apiDelete(path: string): Promise<void> {
   const respuesta = await pedir(path, { method: "DELETE" });
   return manejarRespuesta<void>(respuesta);
