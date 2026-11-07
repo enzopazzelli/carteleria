@@ -15,9 +15,9 @@ describe("tildarUna", () => {
 });
 
 const materiales: Material[] = [
-  { id: 1, nombre: "CHAPA NEGRA", espesor: "cal. 22", familia: "Chapas" },
-  { id: 2, nombre: "CHAPA NEGRA", espesor: "cal. 20", familia: "Chapas" },
-  { id: 3, nombre: "ACRILICO CRISTAL", espesor: "3 mm", familia: "Acrílicos" },
+  { id: 1, nombre: "CHAPA NEGRA", espesor: "cal. 22", familia: "Chapas", nesteable_por_area: true },
+  { id: 2, nombre: "CHAPA NEGRA", espesor: "cal. 20", familia: "Chapas", nesteable_por_area: true },
+  { id: 3, nombre: "ACRILICO CRISTAL", espesor: "3 mm", familia: "Acrílicos", nesteable_por_area: true },
 ];
 
 function formato(id: number, material_id: number, extra: Partial<Formato> = {}): Formato {
@@ -104,8 +104,8 @@ describe("filtrarFilas, con lo que se lee en la tabla", () => {
     [formato(20, 1), formato(21, 4), formato(22, 5)],
     [
       materiales[0],
-      { id: 4, nombre: "ACRILICO CRISTAL", espesor: "2.4 mm", familia: "Acrílicos" },
-      { id: 5, nombre: "POLICARBONATO CRISTAL", espesor: "0.5 mm", familia: "Policarbonato" },
+      { id: 4, nombre: "ACRILICO CRISTAL", espesor: "2.4 mm", familia: "Acrílicos", nesteable_por_area: true },
+      { id: 5, nombre: "POLICARBONATO CRISTAL", espesor: "0.5 mm", familia: "Policarbonato", nesteable_por_area: true },
     ],
   );
   const ids = (busqueda: string) => filtrarFilas(conEspesores, null, busqueda).map((f) => f.formato.id);
