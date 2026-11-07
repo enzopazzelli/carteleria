@@ -1,5 +1,5 @@
 """Revisar y aplicar la planilla por la API
-(`docs/plan/A18-pantalla-de-materiales/diseno.md §5.4` y `§5.9`)."""
+(`docs/historico/A18-pantalla-de-materiales/diseno.md §5.4` y `§5.9`)."""
 from __future__ import annotations
 
 from datetime import datetime

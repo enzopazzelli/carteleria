@@ -1,5 +1,5 @@
 """Qué proveedor cuenta cuando un código viene de varios
-(`docs/plan/A18-pantalla-de-materiales/diseno.md §5.3`)."""
+(`docs/historico/A18-pantalla-de-materiales/diseno.md §5.3`)."""
 from __future__ import annotations
 
 from datetime import datetime, timezone

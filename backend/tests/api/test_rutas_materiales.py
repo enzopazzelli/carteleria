@@ -1,5 +1,5 @@
 """El catálogo para la pantalla de Materiales y el proveedor que cuenta
-(`docs/plan/A18-pantalla-de-materiales/diseno.md §5.3`, `§5.6` y `§5.9`)."""
+(`docs/historico/A18-pantalla-de-materiales/diseno.md §5.3`, `§5.6` y `§5.9`)."""
 from __future__ import annotations
 
 from decimal import Decimal

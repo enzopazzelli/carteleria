@@ -1,5 +1,5 @@
 """Armar la revisión de una planilla: qué entra, qué cambia de precio y qué ya
-no está, sin aplicar nada (`docs/plan/A18-pantalla-de-materiales/diseno.md §5.4`
+no está, sin aplicar nada (`docs/historico/A18-pantalla-de-materiales/diseno.md §5.4`
 y `§5.5`).
 
 `armar_revision` es la puerta de §5.1: recibe renglones con las columnas de la

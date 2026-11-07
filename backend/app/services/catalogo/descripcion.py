@@ -1,6 +1,6 @@
 """Lo que se lee de un renglón de la planilla: la medida y el espesor de la
 descripción, el nombre de la categoría y si el artículo se anida
-(`docs/plan/A18-pantalla-de-materiales/diseno.md §5.2`).
+(`docs/historico/A18-pantalla-de-materiales/diseno.md §5.2`).
 
 Reglas puras, sin base: las usa la revisión de la planilla (tarea 5).
 """

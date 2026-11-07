@@ -1,5 +1,5 @@
 """Aplicar la revisión de una planilla: artículos, precios, proveedor y medidas
-(`docs/plan/A18-pantalla-de-materiales/diseno.md §5.4` y `§5.5`)."""
+(`docs/historico/A18-pantalla-de-materiales/diseno.md §5.4` y `§5.5`)."""
 from __future__ import annotations
 
 from datetime import datetime, timezone

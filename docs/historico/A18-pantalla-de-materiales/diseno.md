@@ -1,8 +1,8 @@
 # A18 · La pantalla de Materiales, con la planilla de precios — diseño
 
-> **Estado:** escrito el 2026-10-30, después de una charla con bocetos (§3). **Aprobado por Enzo ese mismo día** («Mandale»). El plan va en `plan.md` de esta carpeta.
+> **Estado:** escrito el 2026-10-30, después de una charla con bocetos (§3). **Aprobado por Enzo ese mismo día** («Mandale»). El plan va en `plan.md` de esta carpeta. **Cerrado el 2026-11-07:** las 13 tareas del plan, en `main`. Cómo quedó, en §10.
 >
-> **De dónde sale.** Es el primero de «Lo grande, después de A17» del [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md): las pantallas de materiales, de presupuestos y de retocar el presupuesto, de a una. Esta es la de materiales. En la charla cambió el pedido original: el alta y la baja de materiales no se hacen en la pantalla, porque los materiales y sus precios vienen de la planilla de la empresa (§3). Cubre `CART-102` y `CART-104`, y la parte de ver de `CART-101` y `CART-106` del [`BACKLOG.md`](../../BACKLOG.md). Suma un aparte chico que pidió Enzo en la misma charla: las opciones del motor en un desplegable en Anidado (§5.8).
+> **De dónde sale.** Es el primero de «Lo grande, después de A17» del [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md): las pantallas de materiales, de presupuestos y de retocar el presupuesto, de a una. Esta es la de materiales. En la charla cambió el pedido original: el alta y la baja de materiales no se hacen en la pantalla, porque los materiales y sus precios vienen de la planilla de la empresa (§3). Cubre `CART-102` y `CART-104`, y la parte de ver de `CART-101` y `CART-106` del [`BACKLOG.md`](../../BACKLOG.md). Suma un aparte chico que pidió Enzo en la misma charla: las opciones del motor en un desplegable en Anidado (§5.8).
 >
 > **Sobre los valores.** Agrega al [`REGISTRO.md`](../../REGISTRO.md) el supuesto `SUP-19` (la planilla mantiene sus columnas y el sistema del otro equipo usa la misma estructura) la pregunta `P-35` (cómo es y cómo se consulta el sistema del otro equipo) y el parámetro `PAR-59` (cuánto se puede apartar la medida leída de los m² de la planilla, §5.2). La regla de qué se anida (§5.2) no es un parámetro: sale de los datos de la planilla.
 
@@ -233,3 +233,53 @@ En tramos, con pausa al final de cada uno para que Enzo lo vea:
 - La primera carga en la base real la hace Enzo desde la pantalla, después de un respaldo.
 - Qué queda a la vista en Anidado, y el aviso «cambiadas» en Opciones avanzadas.
 - El recuadro del inicio con la fecha de la última planilla.
+
+## 10. Cómo quedó
+
+*Cerrado el 2026-11-07. Rama `feat/a18-pantalla-de-materiales`, las 13 tareas del plan en 6 tramos, del 2026-10-31 al 2026-11-07, cada una con su pausa para que Enzo la viera.*
+
+**Lo que se hizo.**
+- **El servidor (tramos 1 y 2).**
+  - Leer la hoja `COTIZADOR` y, de cada descripción, la medida de la chapa, la categoría y si se anida.
+  - Las tablas `articulos`, `cargas_de_planilla` y `cambios_de_precio`. La migración es `e7a1c5d9b318`, y la base se pone al día sola al arrancar, con respaldo, como desde A17.
+  - La regla del proveedor que cuenta, la revisión, aplicarla y las rutas.
+- **La pantalla (tramos 3 a 5).**
+  - Materiales en dos columnas, con «Materiales» prendido en la barra y el recuadro del inicio con los artículos y el día de la planilla.
+  - Subir la planilla, revisarla y aplicarla.
+  - «Opciones avanzadas» en Anidado.
+
+**Lo medido con la planilla real, sobre una copia nueva de la base real** (2026-11-07, `backend/local/herramientas-a18/recorrido-a18.mjs`):
+- **La primera carga:**
+  - 288 renglones y 254 códigos;
+  - se enlazan 27 códigos y entran 261 renglones (231 insumos y 30 que se anidan);
+  - quedan a mano `CHA0016` y `POL0006`, y hay que mirar `CHA0013`, que se aplicó con 1250 × 2500;
+  - 26 sin cambios y ningún precio cambia;
+  - las medidas pasan de 29 a 58, y los materiales de 23 a 44.
+- **La misma planilla otra vez:** 288 sin cambios.
+- **Una copia con `CHA0011` un 10 % más cara:** «1 precio cambia, +10 %». Al aplicarla, la medida y Materiales toman el precio nuevo.
+- **`PVC0001` con el otro proveedor:** el precio que usa el Costeo pasa de $ 9.764,31 a $ 14.175,23, y «Volver a automático» lo devuelve.
+- **El corte y los retazos:**
+  - se guardó el corte del PVC de 3 mm escrito con coma, y después el mismo corte en los 3 espesores;
+  - un retazo de 1000 × 800 de `CHA0012` se agregó y se quitó.
+- **Lo que no tenía que cambiar:**
+  - el costeo de los 3 trabajos da igual que antes de la planilla (tarea 8);
+  - la lectura de los 9 DXF de prueba, también (con `PAR-60`);
+  - con las opciones de siempre, Complejo («Calibre 22») anidó en 7 chapas en 236 s y el Parador en 1.
+- **Pruebas:** el servidor, 1195 (y las 3 fallas conocidas de antes); la pantalla, 313.
+
+**Lo que cambió respecto de este diseño.**
+- **La lectura del DXF mira solo las medidas de Chapas, Acrílicos y Policarbonato** (`PAR-60`, decisión de Enzo, 2026-11-06). Con las de MDF y ACM, dos dibujos de prueba perdían letras. El detalle está en «Desvíos» del plan.
+- **No hay un corte del sistema.** §5.4 decía que un material nuevo se anidaba con el corte del sistema; en realidad, sin corte cargado el anidado no deja anidar. La pantalla lo dice («Sin cargar: hay que cargarlo antes de anidar»): un material nuevo de la planilla se anida recién cuando se le carga el corte en Materiales.
+- **Antes de la primera planilla** no se marca nada como «no está en la planilla»: sin artículos, todas las medidas lo estarían.
+- Las demás decisiones chicas de la construcción, en «Desvíos» del plan.
+
+**Lo que queda.**
+- **La primera carga en la base real.** La hace Enzo desde Materiales, después de un respaldo (§5.5).
+- **Lo anotado para después (§8),** sin cambios.
+- **Siguen con precio de prueba,** porque la planilla no les trae precio, `ACR0009`, `CHA0001`, `CHA0002`, `CHA0007`, `CHA0008` y `CHA0009`. Quedan sin precio `MDF0003` a `MDF0006`.
+- **Lo que vio la revisión del cierre y quedó sin arreglar,** para decidir:
+  - la ruta de aplicar acepta la medida de un código que no estaba en «Hay que mirarlo»; la pantalla nunca la manda, pero por la API se podría;
+  - dos «Aplicar» de la misma revisión al mismo tiempo pasarían los dos el control de «otra carga entre medio»;
+  - el archivo subido se lee entero, sin un tamaño máximo;
+  - los nombres de los hooks se cruzan: `useCatalogo.ts` exporta `useMateriales`, y `useMateriales.ts` exporta `useCatalogo`;
+  - una categoría sin artículos en la planilla dice 0 en la lista (Policarbonato: `POL0006` está cargada a mano).

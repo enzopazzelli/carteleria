@@ -1,6 +1,6 @@
 # A18 · La pantalla de Materiales, con la planilla de precios — plan
 
-> **Estado:** aprobado por Enzo el 2026-10-30; en ejecución desde el 2026-10-31 en la rama `feat/a18-pantalla-de-materiales`. Al 2026-11-07, tramos 1 a 4 hechos (tareas 1 a 11).
+> **Estado:** aprobado por Enzo el 2026-10-30; ejecutado del 2026-10-31 al 2026-11-07 en la rama `feat/a18-pantalla-de-materiales`. **Cerrado el 2026-11-07**, con las 13 tareas hechas; cómo quedó, en §10 del diseño.
 
 > **Para quien ejecuta:** tarea por tarea, con **pausa al final de cada una** para que Enzo la vea antes de seguir. Así trabaja este proyecto, aunque el skill de ejecución diga otra cosa. Los pasos usan casillas (`- [ ]`) para llevar la cuenta.
 
@@ -822,3 +822,26 @@ export function cambiadas(actuales: OpcionesAvanzadas): boolean;
 **Lo que decidió Enzo (2026-11-06):** la lectura sigue con las medidas de hoy. `_formatos_del_catalogo` mira solo las familias de `PAR-60` (Chapas, Acrílicos y Policarbonato); las otras se venden pero no cambian cómo se lee un dibujo. Antes de la primera planilla, Alto impacto y Corrugado todavía tienen su propia familia, pero sus medidas ya están en Chapas. Con el cambio, la lectura de los 9 DXF con la planilla cargada no tiene ninguna diferencia, tampoco en la escala sugerida.
 
 **Lo que queda igual que hoy:** una pieza de MDF más grande que las medidas de esas familias figura como que no entra en ninguna chapa, y una hoja de MDF dibujada no se reconoce. Decidir el tablero por lo que tiene adentro y no por la medida quedó en el plan maestro, con «cambiar cómo decide el lector».
+
+### Tareas 9 a 13: la pantalla, la planilla, Anidado y el cierre (2026-11-06 y 2026-11-07)
+
+Lo que se decidió al construir y el plan no decía:
+- **Sin corte cargado no hay un corte del sistema.** El plan pedía «Sin cargar: el anidado usa el del sistema», pero el anidado no deja anidar sin corte (`_parametros_de_corte`). Por eso la pantalla dice «Sin cargar: hay que cargarlo antes de anidar» y los campos arrancan vacíos.
+- **El corte se controla en la pantalla:** milímetros de 0 en adelante, con la coma como punto. El servidor aceptaba negativos.
+- **«Se anida» se guarda por espesor.** Hay una casilla por material, que cambia todos los espesores; queda a medias si están mezclados.
+- **Las marcas de una medida:**
+  - «retazo», para el retazo cuya chapa ya no está;
+  - antes de la primera planilla, ni «cargada a mano» ni «ya no está en la planilla». Esto lo mostró el recorrido sobre una copia de la base real, que todavía no tiene planilla.
+- **La lista de la izquierda:**
+  - sin planilla, no se cuentan los artículos de cada categoría;
+  - buscando, se ven abiertas todas las categorías que coinciden;
+  - los insumos muestran el proveedor, para distinguir los dos renglones de un código.
+- **Los proveedores:** «el que cuenta» y «Usar este» aparecen solo con dos proveedores o más, y nunca en una medida que ya no está. Un retazo escondido dice «quitado, en uso», sin «Quitar».
+- **Agregar o quitar un retazo** refresca también Materiales y el inicio.
+- **En la revisión:**
+  - el dólar va «antes → ahora» solo si cambió;
+  - «en USD: cambió el dólar» solo si cambió; si no, «en USD»;
+  - el «Listo: se aplicó la planilla …» va en un renglón verde propio.
+- **El precio en el Costeo** se controló en lo que calcula el servidor (`precio_unitario` de la línea del grupo), porque la pestaña solo muestra el costo total, que necesita un anidado terminado.
+- **En Anidado,** el párrafo «Con "Aprovechar huecos"…» quedó a la vista, porque explica una opción que está a la vista.
+- **La revisión del cierre** la hizo el mismo que escribió el código, sin un revisor aparte. No encontró nada crítico ni importante; lo chico quedó en §10 del diseño.

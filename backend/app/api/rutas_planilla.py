@@ -1,5 +1,5 @@
 """Revisar y aplicar la planilla de precios
-(A18, `docs/plan/A18-pantalla-de-materiales/diseno.md §5.4`).
+(A18, `docs/historico/A18-pantalla-de-materiales/diseno.md §5.4`).
 
 El archivo subido se lee de `archivo.file` y no se guarda en ningún lado
 (§5.1): trae datos de clientes. Sin `async`, como las demás rutas que leen un

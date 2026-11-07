@@ -1,5 +1,5 @@
 """Esquemas de la planilla y de la pantalla de Materiales
-(A18, `docs/plan/A18-pantalla-de-materiales/diseno.md §5.9`).
+(A18, `docs/historico/A18-pantalla-de-materiales/diseno.md §5.9`).
 
 Los de la revisión son la forma JSON de las dataclasses de
 `app/services/catalogo/revision.py`, sin la planilla entera.

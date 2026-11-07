@@ -1,5 +1,5 @@
 """Leer la descripción, la categoría y qué se anida de la planilla
-(`docs/plan/A18-pantalla-de-materiales/diseno.md §5.2`)."""
+(`docs/historico/A18-pantalla-de-materiales/diseno.md §5.2`)."""
 from __future__ import annotations
 
 from decimal import Decimal

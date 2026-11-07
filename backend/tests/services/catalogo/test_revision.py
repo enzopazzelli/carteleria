@@ -1,5 +1,5 @@
 """Armar la revisión de una planilla, sin aplicarla
-(`docs/plan/A18-pantalla-de-materiales/diseno.md §5.4` y `§5.5`).
+(`docs/historico/A18-pantalla-de-materiales/diseno.md §5.4` y `§5.5`).
 
 Las que necesitan una carga anterior la arman a mano con `Articulo` y
 `CargaDePlanilla`, hasta que exista la tarea 6.

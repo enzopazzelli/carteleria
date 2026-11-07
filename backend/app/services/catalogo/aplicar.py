@@ -1,5 +1,5 @@
 """Aplicar la revisión de una planilla: artículos, precios, proveedor y medidas
-(`docs/plan/A18-pantalla-de-materiales/diseno.md §5.4` y `§5.5`).
+(`docs/historico/A18-pantalla-de-materiales/diseno.md §5.4` y `§5.5`).
 
 Lo que agrega la app (corte, retazos, grupos, la medida puesta a mano) no se
 pisa: los artículos se guardan aparte y se unen a las medidas por el código.

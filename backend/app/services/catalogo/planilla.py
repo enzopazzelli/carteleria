@@ -1,5 +1,5 @@
 """Leer la hoja `COTIZADOR` de la planilla de AppSheet
-(`docs/plan/A18-pantalla-de-materiales/diseno.md §5.1`).
+(`docs/historico/A18-pantalla-de-materiales/diseno.md §5.1`).
 
 Solo lee y limpia las celdas: qué se hace con cada renglón lo decide la
 revisión (tarea 5). El archivo no se guarda en ningún lado: la planilla

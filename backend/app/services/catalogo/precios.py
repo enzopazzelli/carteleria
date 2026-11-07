@@ -1,5 +1,5 @@
 """El precio de una medida: se copia del artículo que cuenta a la medida y a sus
-retazos (`docs/plan/A18-pantalla-de-materiales/diseno.md §5.1` y `§5.3`).
+retazos (`docs/historico/A18-pantalla-de-materiales/diseno.md §5.1` y `§5.3`).
 
 Así el costeo, la comparación de chapas y los retazos siguen leyendo de donde
 leen hoy.

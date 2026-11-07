@@ -1,5 +1,5 @@
 """Leer la hoja `COTIZADOR` de la planilla de AppSheet
-(`docs/plan/A18-pantalla-de-materiales/diseno.md §5.1`)."""
+(`docs/historico/A18-pantalla-de-materiales/diseno.md §5.1`)."""
 from __future__ import annotations
 
 from decimal import Decimal
