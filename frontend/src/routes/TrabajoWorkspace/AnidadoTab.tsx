@@ -18,6 +18,7 @@ import ResumenAnidado from "../../components/ResumenAnidado";
 import { ejecucionALaVista, queMostrarDelHistorial } from "./historial";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { giroLibreSeAplica } from "./giroLibre";
+import { cambiadas, POR_DEFECTO } from "./opcionesAvanzadas";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
@@ -177,15 +178,16 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const [error, setError] = useState<QueMostrar | null>(null);
   // Marcada por defecto (Enzo, 2026-10-22, A10). Solo con Sparrow.
   const [usarHuecos, setUsarHuecos] = useState(true);
-  const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
+  const [motor, setMotor] = useState(POR_DEFECTO.motor);
   const [verEjecucion, setVerEjecucion] = useState<number | undefined>();
   const vista = ejecucionALaVista(historial, verEjecucion);
   const delHistorial = vista && vista.id !== enCurso?.id ? queMostrarDelHistorial(vista) : null;
-  const [semilla, setSemilla] = useState(42);
-  const [busqueda, setBusqueda] = useState(2);
-  const [limite, setLimite] = useState(240);
-  const [simplificacion, setSimplificacion] = useState(0.3);
-  const [vaciarChapas, setVaciarChapas] = useState(true);
+  const [semilla, setSemilla] = useState(POR_DEFECTO.semilla);
+  const [busqueda, setBusqueda] = useState(POR_DEFECTO.busqueda);
+  const [limite, setLimite] = useState(POR_DEFECTO.limite);
+  const [simplificacion, setSimplificacion] = useState(POR_DEFECTO.simplificacion);
+  const [vaciarChapas, setVaciarChapas] = useState(POR_DEFECTO.vaciarChapas);
+  const avanzadasCambiadas = cambiadas({ motor, semilla, busqueda, limite, simplificacion, vaciarChapas });
   // Marcada por defecto (Enzo, 2026-10-14). Con veta no se aplica.
   const [giroLibre, setGiroLibre] = useState(true);
   // El sobrante arriba, como bloque, por defecto (Enzo, 2026-10-23, A12).
@@ -297,22 +299,8 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 text-xs mb-3">
-        <label>Motor <select value={motor} onChange={(e) => setMotor(e.target.value as "rectpack" | "sparrow")} className="border rounded p-1">
-          <option value="rectpack">Rectangular</option><option value="sparrow">Sparrow irregular (prueba)</option>
-        </select></label>
-        {motor === "sparrow" && <>
-          <label>Semilla <input type="number" min="0" max="2147483647" value={semilla} onChange={(e) => setSemilla(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
-          <label>Búsqueda por chapa (s) <input type="number" min="1" max="30" value={busqueda} onChange={(e) => setBusqueda(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
-          <label>Tiempo máximo total (s) <input type="number" min="5" max="300" value={limite} onChange={(e) => setLimite(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
-          <label>Simplificación (mm) <input type="number" min="0" max="2" step="0.1" value={simplificacion} onChange={(e) => setSimplificacion(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
-          <label
-            className="flex items-center gap-1 cursor-pointer"
-            title="Después de repartir en chapas, intenta vaciar las que quedaron a medio llenar pasando sus piezas a las demás. Usa el tiempo que sobra del máximo."
-          >
-            <input type="checkbox" checked={vaciarChapas} onChange={(e) => setVaciarChapas(e.target.checked)} />
-            Vaciar chapas
-          </label>
+      {motor === "sparrow" && (
+        <div className="flex flex-wrap items-center gap-3 text-xs mb-2">
           <label
             className={`flex items-center gap-1 ${giroLibreAplica ? "cursor-pointer" : "opacity-60"}`}
             title={
@@ -342,10 +330,44 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
               Al costado, como tira (como hasta ahora)
             </label>
           </fieldset>
-          <p>Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que quedaron a medio llenar. Conserva el anidado validado con menos planchas. No se garantiza el óptimo global.</p>
-          <p className="text-xs text-ink/70">Con «Aprovechar huecos», primero mete las piezas chicas en los huecos de las grandes, y después acomoda el resto.</p>
-        </>}
-      </div>
+          <p className="basis-full text-xs text-ink/70">Con «Aprovechar huecos», primero mete las piezas chicas en los huecos de las grandes, y después acomoda el resto.</p>
+        </div>
+      )}
+      {/* Cerrado cada vez que se abre la pestaña (diseño §5.8). */}
+      <details className="text-xs mb-3 rounded border border-line/70 px-3 py-2">
+        <summary className="cursor-pointer select-none">
+          Opciones avanzadas
+          {avanzadasCambiadas && <span className="ml-2 text-bronze">cambiadas</span>}
+        </summary>
+        <div className="flex flex-wrap items-center gap-3 mt-2">
+          <label>
+            Motor{" "}
+            <select value={motor} onChange={(e) => setMotor(e.target.value as "rectpack" | "sparrow")} className="border rounded p-1">
+              <option value="rectpack">Rectangular</option>
+              <option value="sparrow">Sparrow irregular (prueba)</option>
+            </select>
+          </label>
+          {motor === "sparrow" && (
+            <>
+              <label>Semilla <input type="number" min="0" max="2147483647" value={semilla} onChange={(e) => setSemilla(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
+              <label>Búsqueda por chapa (s) <input type="number" min="1" max="30" value={busqueda} onChange={(e) => setBusqueda(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
+              <label>Tiempo máximo total (s) <input type="number" min="5" max="300" value={limite} onChange={(e) => setLimite(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
+              <label>Simplificación (mm) <input type="number" min="0" max="2" step="0.1" value={simplificacion} onChange={(e) => setSimplificacion(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
+              <label
+                className="flex items-center gap-1 cursor-pointer"
+                title="Después de repartir en chapas, intenta vaciar las que quedaron a medio llenar pasando sus piezas a las demás. Usa el tiempo que sobra del máximo."
+              >
+                <input type="checkbox" checked={vaciarChapas} onChange={(e) => setVaciarChapas(e.target.checked)} />
+                Vaciar chapas
+              </label>
+              <p className="basis-full">
+                Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que
+                quedaron a medio llenar. Conserva el anidado validado con menos planchas. No se garantiza el óptimo global.
+              </p>
+            </>
+          )}
+        </div>
+      </details>
       <ParametrosCorteForm grupo={grupo} onCambio={alCambiarParametros} />
 
       {error && <Mensaje variante="error" que={error} trabajoId={trabajoId} />}
