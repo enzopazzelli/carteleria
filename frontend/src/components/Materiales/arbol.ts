@@ -1,6 +1,15 @@
 /** La lista de categorías de la pantalla de Materiales. Sin React, para poder
  * probarla. */
-import type { Catalogo, Categoria, CorteParaGuardar, MaterialDelCatalogo, MedidaDelCatalogo } from "../../api/materiales";
+import type {
+  Catalogo,
+  Categoria,
+  CorteParaGuardar,
+  MaterialDelCatalogo,
+  MedidaAMano,
+  MedidaDelCatalogo,
+  Revision,
+} from "../../api/materiales";
+import { MEDIDA_MAXIMA_DE_RETAZO_MM, medidaDeRetazo } from "../ListaDeFormatos/filas";
 import { coincideConLaBusqueda } from "../Tarjeta/formato";
 
 export type Eleccion =
@@ -65,12 +74,15 @@ export function primeraEleccion(catalogo: Catalogo): Eleccion | null {
 }
 
 /** Lo que se marca al lado de una medida: su precio y si está en la planilla.
- * Un retazo aparece como medida solo si su chapa ya no está (tarea 7). */
-export function marcasDeLaMedida(medida: MedidaDelCatalogo): string[] {
+ * Un retazo aparece como medida solo si su chapa ya no está (tarea 7). Sin
+ * ninguna planilla cargada, ninguna medida tiene artículos: decir que no está
+ * en la planilla marcaría todas. */
+export function marcasDeLaMedida(medida: MedidaDelCatalogo, hayPlanilla: boolean): string[] {
   const marcas: string[] = [];
   if (medida.formato.es_retazo) marcas.push("retazo");
   if (medida.formato.costo_unidad_venta === null) marcas.push("sin precio");
   else if (medida.formato.precio_simulado) marcas.push("de prueba");
+  if (!hayPlanilla) return marcas;
   if (medida.ya_no_esta) marcas.push("ya no está en la planilla");
   if (medida.cargada_a_mano) marcas.push("cargada a mano, no está en la planilla");
   return marcas;
@@ -132,4 +144,68 @@ export function corteParaGuardar(campos: CamposDelCorte): CorteParaGuardar | str
     rotaciones_permitidas: campos.giro,
     confirmado_con_taller: campos.confirmado,
   };
+}
+
+// --- La revisión de una planilla (tarea 11) ----------------------------------
+
+export interface CuentaDeLaRevision {
+  etiqueta: string;
+  cantidad: number;
+  /** En amarillo: hay algo para completar antes de aplicar. */
+  aviso: boolean;
+}
+
+const cuenta = (cantidad: number, singular: string, plural: string, aviso = false): CuentaDeLaRevision => ({
+  etiqueta: cantidad === 1 ? singular : plural,
+  cantidad,
+  aviso,
+});
+
+/** Las cajitas de arriba de la revisión, en el orden del boceto. En la primera
+ * carga no hay precios de antes: en su lugar va lo que se enlaza por código y
+ * lo que queda a mano. */
+export function cuentasDeLaRevision(revision: Revision): CuentaDeLaRevision[] {
+  const primeras = revision.primera_carga
+    ? [
+        cuenta(revision.se_enlazan, "se enlaza", "se enlazan"),
+        cuenta(revision.quedan_a_mano.length, "queda a mano", "quedan a mano"),
+      ]
+    : [cuenta(revision.cambian.length, "precio cambia", "precios cambian")];
+  const mirar = revision.hay_que_mirar.length;
+  return [
+    ...primeras,
+    cuenta(revision.de_prueba.length, "con precio de verdad (antes «de prueba»)", "con precio de verdad (antes «de prueba»)"),
+    cuenta(revision.nuevos.length, "artículo nuevo", "artículos nuevos"),
+    cuenta(revision.ya_no_estan.length, "ya no está en la planilla", "ya no están en la planilla"),
+    cuenta(mirar, "hay que mirarlo", "hay que mirarlo", mirar > 0),
+    cuenta(revision.sin_cambios, "sin cambios", "sin cambios"),
+  ];
+}
+
+/** «+10 %» o «−7 %»: cuánto cambió un precio, redondeado al entero. Sin uno
+ * de los dos precios (o con el de antes en cero) no hay porcentaje. */
+export function cambioDelPrecio(antes: string | null, ahora: string | null): { texto: string; sube: boolean } | null {
+  if (antes === null || ahora === null || Number(antes) === 0) return null;
+  const de = Number(antes);
+  const a = Number(ahora);
+  const porcentaje = Math.abs(Math.round(((a - de) / de) * 100));
+  const sube = a > de;
+  return { texto: `${sube ? "+" : "−"}${porcentaje} %`, sube };
+}
+
+/** Lo escrito en «Hay que mirarlo», listo para aplicar: las medidas completas,
+ * sin las vacías (ese artículo queda como estaba). Una a medias o mal escrita
+ * no se manda: el mensaje dice cuál. */
+export function medidasParaAplicar(campos: Record<string, { ancho: string; alto: string }>): MedidaAMano[] | string {
+  const medidas: MedidaAMano[] = [];
+  for (const [codigo, { ancho, alto }] of Object.entries(campos)) {
+    if (!ancho.trim() && !alto.trim()) continue;
+    const anchoMm = medidaDeRetazo(ancho);
+    const altoMm = medidaDeRetazo(alto);
+    if (anchoMm === null || altoMm === null) {
+      return `La medida de ${codigo} va en mm, ancho y alto: números mayores que 0 y hasta ${MEDIDA_MAXIMA_DE_RETAZO_MM.toLocaleString("es-AR")}.`;
+    }
+    medidas.push({ codigo, ancho_mm: anchoMm, alto_mm: altoMm });
+  }
+  return medidas;
 }

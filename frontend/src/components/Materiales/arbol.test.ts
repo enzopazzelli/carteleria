@@ -7,13 +7,17 @@ import type {
   MaterialDelCatalogo,
   MedidaDelCatalogo,
   ProveedorDelCatalogo,
+  Revision,
 } from "../../api/materiales";
 import {
   articulosDe,
+  cambioDelPrecio,
   corteParaGuardar,
+  cuentasDeLaRevision,
   diaDeLaPlanilla,
   filtrarCatalogo,
   marcasDeLaMedida,
+  medidasParaAplicar,
   nombreParaMostrar,
   primeraEleccion,
 } from "./arbol";
@@ -127,28 +131,34 @@ describe("marcasDeLaMedida", () => {
     }) as MedidaDelCatalogo;
 
   it("una medida de la planilla con precio no lleva marcas", () => {
-    expect(marcasDeLaMedida(conFormato({}))).toEqual([]);
+    expect(marcasDeLaMedida(conFormato({}), true)).toEqual([]);
   });
 
   it("marca el precio de prueba y la medida sin precio", () => {
-    expect(marcasDeLaMedida(conFormato({ precio_simulado: true }))).toEqual(["de prueba"]);
-    expect(marcasDeLaMedida(conFormato({ costo_unidad_venta: null }))).toEqual(["sin precio"]);
+    expect(marcasDeLaMedida(conFormato({ precio_simulado: true }), true)).toEqual(["de prueba"]);
+    expect(marcasDeLaMedida(conFormato({ costo_unidad_venta: null }), true)).toEqual(["sin precio"]);
   });
 
   it("marca lo que ya no está en la planilla y lo cargado a mano", () => {
-    expect(marcasDeLaMedida(conFormato({}, { ya_no_esta: true }))).toEqual(["ya no está en la planilla"]);
-    expect(marcasDeLaMedida(conFormato({}, { cargada_a_mano: true }))).toEqual(["cargada a mano, no está en la planilla"]);
+    expect(marcasDeLaMedida(conFormato({}, { ya_no_esta: true }), true)).toEqual(["ya no está en la planilla"]);
+    expect(marcasDeLaMedida(conFormato({}, { cargada_a_mano: true }), true)).toEqual(["cargada a mano, no está en la planilla"]);
   });
 
   it("junta las marcas del precio y de la planilla", () => {
-    expect(marcasDeLaMedida(conFormato({ precio_simulado: true }, { cargada_a_mano: true }))).toEqual([
+    expect(marcasDeLaMedida(conFormato({ precio_simulado: true }, { cargada_a_mano: true }), true)).toEqual([
       "de prueba",
       "cargada a mano, no está en la planilla",
     ]);
   });
 
+  it("sin ninguna planilla cargada no dice que algo no está en la planilla", () => {
+    const aMano = conFormato({ precio_simulado: true }, { cargada_a_mano: true });
+    expect(marcasDeLaMedida(aMano, false)).toEqual(["de prueba"]);
+    expect(marcasDeLaMedida(conFormato({}, { ya_no_esta: true }), false)).toEqual([]);
+  });
+
   it("un retazo cuya chapa ya no está se ve como retazo", () => {
-    expect(marcasDeLaMedida(conFormato({ es_retazo: true }))).toEqual(["retazo"]);
+    expect(marcasDeLaMedida(conFormato({ es_retazo: true }), true)).toEqual(["retazo"]);
   });
 });
 
@@ -196,5 +206,101 @@ describe("corteParaGuardar", () => {
     for (const malo of ["", "-1", "dos", "1.000,5"]) {
       expect(corteParaGuardar({ ...campos, separacion: malo })).toBeTypeOf("string");
     }
+  });
+});
+
+describe("cuentasDeLaRevision", () => {
+  const revision = (cambios: Partial<Revision>): Revision => ({
+    id: "r1",
+    archivo: "CARTELERIA 2026.xlsx",
+    carga_anterior_en: "2026-10-30T15:00:00Z",
+    dolar_antes: "1530",
+    dolar_ahora: "1580",
+    primera_carga: false,
+    cambian: [],
+    de_prueba: [],
+    nuevos: [],
+    ya_no_estan: [],
+    hay_que_mirar: [],
+    sin_cambios: 0,
+    se_enlazan: 0,
+    quedan_a_mano: [],
+    ...cambios,
+  });
+  const varios = <T,>(cuantos: number) => Array.from({ length: cuantos }, () => ({}) as T);
+
+  it("una carga común: lo que cambia, en el orden del boceto, y solo «hay que mirarlo» avisa", () => {
+    const cuentas = cuentasDeLaRevision(
+      revision({
+        cambian: varios(14),
+        de_prueba: varios(2),
+        nuevos: varios(3),
+        ya_no_estan: varios(1),
+        hay_que_mirar: varios(1),
+        sin_cambios: 268,
+      }),
+    );
+    expect(cuentas).toEqual([
+      { etiqueta: "precios cambian", cantidad: 14, aviso: false },
+      { etiqueta: "con precio de verdad (antes «de prueba»)", cantidad: 2, aviso: false },
+      { etiqueta: "artículos nuevos", cantidad: 3, aviso: false },
+      { etiqueta: "ya no está en la planilla", cantidad: 1, aviso: false },
+      { etiqueta: "hay que mirarlo", cantidad: 1, aviso: true },
+      { etiqueta: "sin cambios", cantidad: 268, aviso: false },
+    ]);
+  });
+
+  it("en singular y en plural, y sin nada que mirar no avisa", () => {
+    const cuentas = cuentasDeLaRevision(revision({ cambian: varios(1), nuevos: varios(1), ya_no_estan: varios(2) }));
+    expect(cuentas.map((c) => c.etiqueta).slice(0, 4)).toEqual([
+      "precio cambia",
+      "con precio de verdad (antes «de prueba»)",
+      "artículo nuevo",
+      "ya no están en la planilla",
+    ]);
+    expect(cuentas.find((c) => c.etiqueta === "hay que mirarlo")).toEqual({ etiqueta: "hay que mirarlo", cantidad: 0, aviso: false });
+  });
+
+  it("la primera carga cuenta lo que se enlaza y lo que queda a mano, en lugar de los precios que cambian", () => {
+    const cuentas = cuentasDeLaRevision(
+      revision({ primera_carga: true, se_enlazan: 27, quedan_a_mano: ["CHA0016", "POL0006"], nuevos: varios(261), hay_que_mirar: varios(1) }),
+    );
+    expect(cuentas.map((c) => [c.etiqueta, c.cantidad])).toEqual([
+      ["se enlazan", 27],
+      ["quedan a mano", 2],
+      ["con precio de verdad (antes «de prueba»)", 0],
+      ["artículos nuevos", 261],
+      ["ya no están en la planilla", 0],
+      ["hay que mirarlo", 1],
+      ["sin cambios", 0],
+    ]);
+  });
+});
+
+describe("cambioDelPrecio", () => {
+  it("el porcentaje redondeado al entero, con su signo", () => {
+    expect(cambioDelPrecio("16966", "18700")).toEqual({ texto: "+10 %", sube: true });
+    expect(cambioDelPrecio("5250", "4900")).toEqual({ texto: "−7 %", sube: false });
+  });
+
+  it("sin uno de los dos precios no hay porcentaje", () => {
+    expect(cambioDelPrecio(null, "100")).toBeNull();
+    expect(cambioDelPrecio("100", null)).toBeNull();
+    expect(cambioDelPrecio("0", "100")).toBeNull();
+  });
+});
+
+describe("medidasParaAplicar", () => {
+  it("manda las completas, con la coma como punto, y saltea las vacías", () => {
+    expect(
+      medidasParaAplicar({ CHA0013: { ancho: "1250", alto: "2500,5" }, MDF0099: { ancho: "", alto: " " } }),
+    ).toEqual([{ codigo: "CHA0013", ancho_mm: "1250", alto_mm: "2500.5" }]);
+  });
+
+  it("una a medias o mal escrita no se manda: dice cuál", () => {
+    expect(medidasParaAplicar({ CHA0013: { ancho: "1250", alto: "" } })).toBe(
+      "La medida de CHA0013 va en mm, ancho y alto: números mayores que 0 y hasta 10.000.",
+    );
+    expect(medidasParaAplicar({ CHA0013: { ancho: "0", alto: "2500" } })).toBeTypeOf("string");
   });
 });

@@ -24,7 +24,13 @@ function Marca({ texto }: { texto: string }) {
 /** Todo lo que cambia algo pasa por acá, para mostrar el error arriba. */
 type Hacer = (accion: () => Promise<unknown>, siFalla: string) => Promise<void>;
 
-export default function DetalleDelMaterial({ material }: { material: MaterialDelCatalogo }) {
+interface DetalleDelMaterialProps {
+  material: MaterialDelCatalogo;
+  /** Sin ninguna planilla cargada no se dice qué falta en la planilla. */
+  hayPlanilla: boolean;
+}
+
+export default function DetalleDelMaterial({ material, hayPlanilla }: DetalleDelMaterialProps) {
   const [error, setError] = useState<QueMostrar | null>(null);
   const cambiarSeAnida = useCambiarSeAnida();
 
@@ -48,7 +54,9 @@ export default function DetalleDelMaterial({ material }: { material: MaterialDel
     <article className="rounded border border-line bg-white p-4 sm:p-5">
       <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 className="text-lg font-semibold">{nombreParaMostrar(material.nombre)}</h2>
-        <span className="text-sm text-ink/60">{proveedores.length > 0 ? proveedores.join(" · ") : "sin proveedor en la planilla"}</span>
+        {(proveedores.length > 0 || hayPlanilla) && (
+          <span className="text-sm text-ink/60">{proveedores.length > 0 ? proveedores.join(" · ") : "sin proveedor en la planilla"}</span>
+        )}
         <label className="ml-auto flex items-center gap-1.5 text-sm">
           <input
             type="checkbox"
@@ -98,7 +106,9 @@ export default function DetalleDelMaterial({ material }: { material: MaterialDel
           </thead>
           <tbody>
             {material.espesores.flatMap((espesor) =>
-              espesor.medidas.map((m) => <RenglonesDeLaMedida key={m.formato.id} espesor={espesor} medida={m} hacer={hacer} />),
+              espesor.medidas.map((m) => (
+                <RenglonesDeLaMedida key={m.formato.id} espesor={espesor} medida={m} hayPlanilla={hayPlanilla} hacer={hacer} />
+              )),
             )}
           </tbody>
         </table>
@@ -110,7 +120,14 @@ export default function DetalleDelMaterial({ material }: { material: MaterialDel
   );
 }
 
-function RenglonesDeLaMedida({ espesor, medida: m, hacer }: { espesor: EspesorDelCatalogo; medida: MedidaDelCatalogo; hacer: Hacer }) {
+function RenglonesDeLaMedida({
+  espesor, medida: m, hayPlanilla, hacer,
+}: {
+  espesor: EspesorDelCatalogo;
+  medida: MedidaDelCatalogo;
+  hayPlanilla: boolean;
+  hacer: Hacer;
+}) {
   const marcar = useMarcarProveedor();
   const quitar = useQuitarFormato();
   const [agregando, setAgregando] = useState(false);
@@ -151,7 +168,7 @@ function RenglonesDeLaMedida({ espesor, medida: m, hacer }: { espesor: EspesorDe
           {formato.costo_unidad_venta !== null && (
             <span className="font-mono whitespace-nowrap">{mostrarImporte(formato.costo_unidad_venta, formato.moneda ?? "ARS")}</span>
           )}
-          {marcasDeLaMedida(m).map((marca) => (
+          {marcasDeLaMedida(m, hayPlanilla).map((marca) => (
             <Marca key={marca} texto={marca} />
           ))}
         </td>
