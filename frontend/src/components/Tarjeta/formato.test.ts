@@ -49,6 +49,12 @@ describe("el presupuesto", () => {
     expect(textoDelPresupuesto(PRESUPUESTO)).toBe("P-2026-0001 · Parador · $ 300.000,00 · borrador");
   });
 
+  it("dice el estado como se lee, no como se guarda", () => {
+    expect(textoDelPresupuesto({ ...PRESUPUESTO, estado: "PENDIENTE_APROBACION" })).toBe(
+      "P-2026-0001 · Parador · $ 300.000,00 · pendiente de aprobación",
+    );
+  });
+
   it("sin total, lo deja afuera", () => {
     expect(textoDelPresupuesto({ ...PRESUPUESTO, total: null })).toBe("P-2026-0001 · Parador · borrador");
   });

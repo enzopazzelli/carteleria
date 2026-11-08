@@ -1,21 +1,12 @@
 import type { AccionDeAprobacion, CambioDeEstado } from "../../api/presupuestos";
+import { nombreDeEstado } from "../../components/Presupuestos/estado";
 import { fechaDeTarjeta } from "../../components/Tarjeta/formato";
+
+export { nombreDeEstado };
 
 // Lo que muestra la franja de aprobación (A20, `docs/plan/A20-aprobacion-del-presupuesto/diseno.md §5`).
 // Las reglas de verdad las tiene el servidor; acá solo se decide qué botones
 // ofrecer y cómo se lee cada cosa.
-
-const NOMBRES: Record<string, string> = {
-  BORRADOR: "borrador",
-  PENDIENTE_APROBACION: "pendiente de aprobación",
-  OBSERVADO: "observado",
-  APROBADO: "aprobado",
-};
-
-/** «pendiente de aprobación», no `PENDIENTE_APROBACION`. */
-export function nombreDeEstado(estado: string): string {
-  return NOMBRES[estado] ?? estado.toLowerCase().replace(/_/g, " ");
-}
 
 /** Se edita en borrador y en observado; pendiente y aprobado están bloqueados. */
 export function esEditable(estado: string): boolean {

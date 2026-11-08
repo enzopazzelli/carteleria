@@ -15,9 +15,14 @@ EstadoPaso = Literal["hecho", "a_medias", "error", "pendiente"]
 Destino = Literal["piezas", "grupos", "anidado", "chapas", "costeo"]
 
 _EN_CURSO = {EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value}
-#: La frase con todo hecho. Hoy solo existe el borrador; un estado que no
-#: está acá se nombra tal cual.
-_FRASE_DEL_PRESUPUESTO = {"BORRADOR": "Presupuesto en borrador"}
+#: La frase con todo hecho, según el estado del presupuesto (A20). Un estado
+#: que no está acá se nombra tal cual.
+_FRASE_DEL_PRESUPUESTO = {
+    "BORRADOR": "Presupuesto en borrador",
+    "PENDIENTE_APROBACION": "Presupuesto esperando aprobación",
+    "OBSERVADO": "Presupuesto observado: falta corregirlo",
+    "APROBADO": "Presupuesto aprobado",
+}
 
 
 @dataclass(frozen=True)
