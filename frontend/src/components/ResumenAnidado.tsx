@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useFormato, useMateriales } from "../hooks/useCatalogo";
-import { useEjecucionesDeGrupo, useMaterialUsado } from "../hooks/useNesting";
+import { useEjecucionesDeGrupo, useGuardarSobrante, useMaterialUsado } from "../hooks/useNesting";
 import { urlPlano, urlDxf, urlPdfAnidado, type MedidaLeer } from "../api/nesting";
 import type { GrupoDeCorte } from "../api/piezasYgrupos";
 import { ejecucionALaVista, paraElPresupuesto } from "../routes/TrabajoWorkspace/historial";
+import Mensaje from "./Mensaje/Mensaje";
+import { falla, type QueMostrar } from "./Mensaje/contenido";
 
 /** «1220 × 900», como lo escribe el servidor en la línea del material usado. */
 const medida = (m: MedidaLeer) => `${m.ancho_mm} × ${m.alto_mm}`;
@@ -28,6 +30,16 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
   // En ancho × alto (A12). Mientras no llega, o si no se puede calcular
   // (un anidado viejo sin sus parámetros), quedan los m² de siempre.
   const { data: materialUsado } = useMaterialUsado(ejecucion?.estado === "lista" ? ejecucion.id : null);
+  const guardar = useGuardarSobrante(ejecucion?.id ?? -1);
+  const [errorAlGuardar, setErrorAlGuardar] = useState<QueMostrar | null>(null);
+  async function alGuardarElSobrante(chapa: number) {
+    setErrorAlGuardar(null);
+    try {
+      await guardar.mutateAsync(chapa);
+    } catch (e) {
+      setErrorAlGuardar(falla(e, "No se pudo guardar el sobrante como retazo."));
+    }
+  }
   return <section className="border border-line rounded-xl bg-white p-5 mb-5">
     <div className="flex flex-wrap justify-between gap-3 mb-4">
       <div><p className="text-xs uppercase text-ink/60">{grupo.nombre} · material elegido</p>
@@ -54,13 +66,19 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
           <div key={label} className="bg-paper rounded-lg p-3"><p className="text-xs text-ink/60">{label}</p><p className="text-xl font-semibold font-mono">{value}</p></div>)}
       </div>
       {materialUsado && materialUsado.chapas.length > 0 && <table className="text-sm mb-4">
-        <thead><tr className="text-left border-b border-line"><th className="pr-8 font-medium">Chapa</th><th className="pr-8 font-medium">Usado</th><th className="font-medium">Sobrante</th></tr></thead>
+        <thead><tr className="text-left border-b border-line"><th className="pr-8 font-medium">Chapa</th><th className="pr-8 font-medium">Usado</th><th className="pr-8 font-medium">Sobrante</th><th /></tr></thead>
         <tbody>{materialUsado.chapas.map((c) => <tr key={c.plancha}>
           <td className="pr-8">{c.plancha + 1}</td>
           <td className="pr-8 font-mono">{c.usado.ancho_mm === 0 ? "sin piezas" : medida(c.usado)}</td>
-          <td className={c.es_retazo ? "font-mono" : "font-mono text-ink/50"}>{medida(c.sobrante)}{c.es_retazo ? "" : " · no llega a retazo"}</td>
+          <td className={c.es_retazo ? "pr-8 font-mono" : "pr-8 font-mono text-ink/50"}>{medida(c.sobrante)}{c.es_retazo ? "" : " · no llega a retazo"}</td>
+          <td>
+            {c.retazo_id != null ? <span className="text-ink/60">guardado como retazo</span>
+              : c.es_retazo && <button type="button" className="underline disabled:opacity-50" disabled={guardar.isPending}
+                  onClick={() => void alGuardarElSobrante(c.plancha)}>Guardar como retazo</button>}
+          </td>
         </tr>)}</tbody>
       </table>}
+      {errorAlGuardar && <div className="mb-4"><Mensaje variante="error" que={errorAlGuardar} trabajoId={grupo.trabajo_id} /></div>}
       <p className="text-sm mb-3">{ejecucion.motor === "sparrow" ? "Sparrow irregular" : "Rectangular"} · anidado #{ejecucion.id} · {paraElPresupuesto(ejecucion, historial ?? [])}</p>
       <div className="flex flex-wrap items-center gap-3 mb-3 text-sm">
         <label>Plancha <select className="border rounded p-1" value={hoja} onChange={(e) => setPlancha(Number(e.target.value))}>

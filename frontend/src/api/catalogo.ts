@@ -16,6 +16,12 @@ export interface Formato {
   ancho_mm: string;
   alto_mm: string;
   es_retazo: boolean;
+  /** Solo un retazo guardado desde un sobrante (A21): «Sobrante de Parador, chapa 2». */
+  origen_texto?: string | null;
+  /** En qué anda un retazo (A21). Solo lo llena la pantalla de Materiales. */
+  estado?: "disponible" | "en_uso" | "usado" | null;
+  /** Los trabajos que lo usan (A21). */
+  trabajos?: string[];
   // Un retazo que se quitó estando en uso queda escondido (A8).
   disponible: boolean;
   moneda: string | null;

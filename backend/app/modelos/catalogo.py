@@ -18,7 +18,7 @@ import unicodedata
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -174,6 +174,20 @@ class Formato(Base):
     #: La medida se escribió a mano porque la descripción de la planilla
     #: no se pudo leer; una planilla nueva no la pisa.
     medida_a_mano: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    #: --- De dónde salió un retazo (A21) -------------------------------
+    #: El sobrante que se guardó: de qué corrida y de qué chapa. Vacíos en
+    #: una chapa de catálogo y en un retazo creado a mano. La pareja es única:
+    #: el mismo sobrante no se guarda dos veces (los vacíos no cuentan).
+    origen_ejecucion_id: Mapped[int | None] = mapped_column(
+        ForeignKey("ejecuciones_nesting.id", ondelete="SET NULL"), default=None
+    )
+    origen_plancha: Mapped[int | None] = mapped_column(Integer, default=None)
+    #: «Sobrante de Parador, chapa 2», escrito al guardar: se sigue leyendo si
+    #: el trabajo se borra después y la corrida deja de existir.
+    origen_texto: Mapped[str | None] = mapped_column(String(200), default=None)
+
+    __table_args__ = (UniqueConstraint("origen_ejecucion_id", "origen_plancha", name="uq_formato_origen"),)
 
     material: Mapped[Material] = relationship(back_populates="formatos")
 

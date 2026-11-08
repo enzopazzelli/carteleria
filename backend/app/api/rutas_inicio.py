@@ -19,6 +19,7 @@ from ..modelos.catalogo import Articulo, CargaDePlanilla, Formato, Material
 from ..modelos.presupuesto import LineaCosto, Presupuesto
 from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza, Trabajo
 from ..pasos import GrupoParaPasos, TrabajoParaPasos, pasos_del_trabajo
+from ..services.catalogo.retazos import estados_de_retazos
 from ..services.nesting.hojas_pdf import DisenioDelPdf
 from ..services.nesting.miniatura_svg import svg_de_miniatura
 from ..services.presupuesto.totales import calcular
@@ -197,10 +198,13 @@ def _materiales_resumidos(sesion: Session) -> MaterialesResumidosLeer:
         return sesion.scalar(consulta) or 0
 
     ultima_planilla_en = sesion.scalar(select(CargaDePlanilla.creado_en).order_by(CargaDePlanilla.id.desc()).limit(1))
+    # Solo los retazos con los que se cuenta: ni los quitados ni los que ya usa un trabajo aprobado (A21).
+    guardados = list(sesion.scalars(select(Formato).where(Formato.es_retazo.is_(True), Formato.disponible.is_(True))))
+    estados = estados_de_retazos(sesion, guardados)
     return MaterialesResumidosLeer(
         materiales=contar(select(func.count(Material.id))),
         medidas=contar(select(func.count(Formato.id)).where(Formato.es_retazo.is_(False))),
-        retazos=contar(select(func.count(Formato.id)).where(Formato.es_retazo.is_(True))),
+        retazos=sum(1 for retazo in guardados if estados[retazo.id].estado == "disponible"),
         por_familia=[
             FamiliaLeer(familia=familia, materiales=cantidad)
             for familia, cantidad in sesion.execute(

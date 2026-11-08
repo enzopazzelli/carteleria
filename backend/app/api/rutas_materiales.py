@@ -16,6 +16,7 @@ from ..modelos.catalogo import Articulo, CargaDePlanilla, Formato, Material, Par
 from ..services.catalogo.descripcion import nombre_de_categoria, se_anida
 from ..services.catalogo.precios import poner_el_precio
 from ..services.catalogo.proveedor import Opcion, proveedor_que_cuenta
+from ..services.catalogo.retazos import EnQueAnda, estados_de_retazos
 from .dependencias import obtener_sesion
 from .esquemas_catalogo import FormatoLeer
 from .esquemas_materiales import (
@@ -45,25 +46,38 @@ def _orden_por_numero(texto: str | None) -> list:
     return [float(parte) if i % 2 else parte for i, parte in enumerate(partes)]
 
 
-def _medida_leer(formato: Formato, retazos: list[Formato], articulos: list[Articulo]) -> MedidaLeer:
-    """`articulos` son los de su código, por fila."""
+def _con_su_estado(formato: Formato, estados: dict[int, EnQueAnda]) -> FormatoLeer:
+    """El formato como lo lee la pantalla: un retazo con en qué anda (A21); una chapa, tal cual."""
+    leido = FormatoLeer.model_validate(formato)
+    if not formato.es_retazo:
+        return leido
+    anda = estados.get(formato.id, EnQueAnda("disponible"))
+    return leido.model_copy(update={"estado": anda.estado, "trabajos": list(anda.trabajos)})
+
+
+def _medida_leer(
+    formato: Formato, retazos: list[Formato], articulos: list[Articulo], estados: dict[int, EnQueAnda]
+) -> MedidaLeer:
+    """`articulos` son los de su código, por fila; `estados`, en qué anda cada retazo (A21)."""
     vigentes = [articulo for articulo in articulos if articulo.en_ultima_planilla]
     cuenta = proveedor_que_cuenta(
         [Opcion(a.proveedor, a.precio_cambiado_en, a.fila) for a in vigentes], formato.proveedor_a_mano
     )
     return MedidaLeer(
-        formato=formato,
+        formato=_con_su_estado(formato, estados),
         cargada_a_mano=not articulos,
         ya_no_esta=bool(articulos) and not vigentes,
         proveedores=[
             ProveedorLeer(proveedor=a.proveedor, cuenta=a.proveedor == cuenta, articulo=a) for a in vigentes or articulos
         ],
         proveedor_a_mano=formato.proveedor_a_mano,
-        retazos=retazos,
+        retazos=[_con_su_estado(retazo, estados) for retazo in retazos],
     )
 
 
-def _medidas_del_material(formatos: list[Formato], articulos_por_codigo: dict[str, list[Articulo]]) -> list[MedidaLeer]:
+def _medidas_del_material(
+    formatos: list[Formato], articulos_por_codigo: dict[str, list[Articulo]], estados: dict[int, EnQueAnda]
+) -> list[MedidaLeer]:
     """Cada chapa con sus retazos (mismo material y su código con «-R», como
     `retazos_de`). Un retazo cuya chapa ya no está va suelto, para que no se pierda."""
     retazos_por_codigo: dict[str | None, list[Formato]] = defaultdict(list)
@@ -81,7 +95,7 @@ def _medidas_del_material(formatos: list[Formato], articulos_por_codigo: dict[st
 
     medidas.sort(key=lambda medida: _orden(medida[0].codigo or ""))
     return [
-        _medida_leer(formato, retazos, articulos_por_codigo.get(formato.codigo, []))
+        _medida_leer(formato, retazos, articulos_por_codigo.get(formato.codigo, []), estados)
         for formato, retazos in medidas
     ]
 
@@ -97,6 +111,10 @@ def catalogo(sesion: Session = Depends(obtener_sesion)) -> CatalogoLeer:
     formatos_por_material: dict[int, list[Formato]] = defaultdict(list)
     for formato in sesion.scalars(select(Formato)):
         formatos_por_material[formato.material_id].append(formato)
+    # En qué anda cada retazo, de una vez para todos (A21).
+    estados = estados_de_retazos(
+        sesion, [formato for formatos in formatos_por_material.values() for formato in formatos if formato.es_retazo]
+    )
 
     articulos_por_codigo: dict[str, list[Articulo]] = defaultdict(list)
     insumos_por_categoria: dict[str, list[Articulo]] = defaultdict(list)
@@ -117,7 +135,7 @@ def catalogo(sesion: Session = Depends(obtener_sesion)) -> CatalogoLeer:
                 EspesorLeer(
                     material=material,
                     corte=cortes.get(material.id),
-                    medidas=_medidas_del_material(formatos_por_material[material.id], articulos_por_codigo),
+                    medidas=_medidas_del_material(formatos_por_material[material.id], articulos_por_codigo, estados),
                 )
                 for material in sorted(espesores, key=lambda material: _orden_por_numero(material.espesor))
             ],

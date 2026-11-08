@@ -1279,3 +1279,137 @@ def test_comparar_usa_siempre_el_sobrante_arriba(cliente, tmp_path, monkeypatch)
 
     assert respuesta.status_code == 200, respuesta.text
     assert anotadas == ["arriba"]
+
+
+# --- Guardar el sobrante como retazo (A21) -----------------------------------
+
+
+def _retazos_del_catalogo(cliente) -> list[dict]:
+    catalogo = cliente.get("/catalogo").json()
+    medidas = [
+        medida
+        for categoria in catalogo["categorias"]
+        for material in categoria["materiales"]
+        for espesor in material["espesores"]
+        for medida in espesor["medidas"]
+    ]
+    # Un retazo cuya chapa no tiene código no se reconoce como suyo: va como una medida más.
+    return [r for m in medidas for r in m["retazos"]] + [m["formato"] for m in medidas if m["formato"]["es_retazo"]]
+
+
+def test_guardar_el_sobrante_crea_un_retazo_con_su_origen_y_aparece_disponible(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    antes = cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()["chapas"][0]
+    assert antes["retazo_id"] is None
+    sobrante = antes["sobrante"]
+
+    respuesta = cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante")
+
+    assert respuesta.status_code == 201, respuesta.text
+    retazo = respuesta.json()
+    assert retazo["es_retazo"] is True
+    assert (Decimal(retazo["ancho_mm"]), Decimal(retazo["alto_mm"])) == (
+        Decimal(sobrante["ancho_mm"]),
+        Decimal(sobrante["alto_mm"]),
+    )
+    assert retazo["origen_texto"] == "Sobrante de Prueba, chapa 1"
+    assert Decimal(retazo["costo_unidad_venta"]) == Decimal("1000")
+    guardados = _retazos_del_catalogo(cliente)
+    assert [(r["id"], r["estado"], r["trabajos"]) for r in guardados] == [(retazo["id"], "disponible", [])]
+    # La lista de chapas dice que ese sobrante ya está guardado, y en cuál retazo.
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()["chapas"][0]["retazo_id"] == retazo["id"]
+
+
+def test_el_mismo_sobrante_no_se_guarda_dos_veces(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    assert cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante").status_code == 201
+
+    segunda = cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante")
+
+    assert segunda.status_code == 409
+    assert "ya está guardado" in mensaje_de(segunda)
+    assert len(_retazos_del_catalogo(cliente)) == 1
+
+
+def test_un_sobrante_quitado_se_puede_volver_a_guardar(cliente, tmp_path):
+    """Quitar un retazo que ningún grupo usa lo borra: el sobrante vuelve a poder guardarse."""
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    primero = cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante").json()
+    assert cliente.delete(f"/formatos/{primero['id']}").status_code == 204
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()["chapas"][0]["retazo_id"] is None
+
+    segundo = cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante")
+
+    assert segundo.status_code == 201, segundo.text
+    # Hay un solo retazo, y la lista de chapas vuelve a decir que ese sobrante está guardado.
+    assert [r["id"] for r in _retazos_del_catalogo(cliente)] == [segundo.json()["id"]]
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()["chapas"][0]["retazo_id"] == segundo.json()["id"]
+
+
+def test_guardar_el_sobrante_de_una_chapa_que_no_existe_da_404(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    assert cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/7/guardar-sobrante").status_code == 404
+    assert cliente.post("/ejecuciones/9999/chapas/0/guardar-sobrante").status_code == 404
+
+
+def test_guardar_el_sobrante_de_un_anidado_que_no_termino_da_409(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    with Session(cliente.motor) as sesion:
+        ejecucion = EjecucionNesting(grupo_id=grupo["id"], motor="rectpack", estado=EstadoEjecucion.ENCOLADA.value)
+        sesion.add(ejecucion)
+        sesion.commit()
+        ejecucion_id = ejecucion.id
+
+    respuesta = cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante")
+
+    assert respuesta.status_code == 409
+    assert "terminó" in mensaje_de(respuesta)
+
+
+def test_un_retazo_en_uso_y_uno_usado_dicen_que_trabajo_los_tiene(cliente, tmp_path):
+    from app.modelos import Cliente, EstadoPresupuesto, GrupoDeCorte, Presupuesto, Trabajo
+
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    retazo = cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante").json()
+
+    # Otro trabajo corta en ese retazo, todavía sin presupuesto aprobado.
+    with Session(cliente.motor) as sesion:
+        otro = Trabajo(nombre="Rosa")
+        sesion.add(GrupoDeCorte(trabajo=otro, nombre="Retazo", formato_id=retazo["id"]))
+        sesion.commit()
+        otro_id = otro.id
+    en_uso = _retazos_del_catalogo(cliente)[0]
+    assert (en_uso["estado"], en_uso["trabajos"]) == ("en_uso", ["Rosa"])
+
+    # Aprobado el presupuesto de ese trabajo, queda usado.
+    with Session(cliente.motor) as sesion:
+        sesion.add(
+            Presupuesto(
+                codigo="P-2026-0001",
+                cliente=Cliente(nombre="Peña"),
+                trabajo_id=otro_id,
+                validez_dias=15,
+                estado=EstadoPresupuesto.APROBADO.value,
+            )
+        )
+        sesion.commit()
+    usado = _retazos_del_catalogo(cliente)[0]
+    assert (usado["estado"], usado["trabajos"]) == ("usado", ["Rosa"])
+
+
+def test_el_inicio_cuenta_solo_los_retazos_disponibles(cliente, tmp_path):
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    assert cliente.get("/resumen-del-inicio").json()["materiales"]["retazos"] == 0
+
+    retazo = cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante").json()
+    assert cliente.get("/resumen-del-inicio").json()["materiales"]["retazos"] == 1
+
+    # Quitado con la ✕, deja de contar.
+    assert cliente.delete(f"/formatos/{retazo['id']}").status_code == 204
+    assert cliente.get("/resumen-del-inicio").json()["materiales"]["retazos"] == 0
