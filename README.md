@@ -35,7 +35,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 |---|---|---|---|---|
 | **Aprobación del presupuesto** | Un presupuesto solo existía en borrador: nada decía si alguien lo había visto, ni quién. | Cuatro estados (borrador, pendiente, observado y aprobado) y el historial de quién cambió qué y cuándo. Lo pendiente y lo aprobado no se edita; para tocarlo hay que volverlo a borrador, con un motivo. El nombre de quien aprueba se escribe a mano. | Usuarios con el permiso «puede aprobar», el aviso al dueño y el envío al cliente. | El diseñador manda a aprobar. Al dueño le llega un mail con un link, lo abre en el celular sin iniciar sesión y aprueba o lo devuelve con una observación. Al aprobar, el PDF sale al cliente y el presupuesto queda congelado con los precios de ese día. |
 | **Materiales y precios** | 23 materiales cargados por la API, sin los precios de la planilla de la empresa. | La pantalla de Materiales y la planilla ya cargada en la base real: 44 materiales, 59 medidas y 288 artículos. Cada vez que la planilla cambie, se sube y se revisa antes de aplicar. | Enlazar a mano dos códigos que la planilla no relaciona con ningún material (`CHA0016` y `POL0006`), y conectar con el sistema del taller que hace el otro equipo. | La planilla de la empresa sigue siendo la fuente: se sube, se miran los cambios y se aplican. Cuando el otro sistema esté listo, los materiales se consultarían de ahí. |
-| **Precio del presupuesto** | Se calculaba el costo. El precio dependía de quién armara el presupuesto, y los empleados cobraban mucho menos de lo que podían. | El precio sugerido con el margen de la planilla, y lo que queda por debajo se marca en amarillo. La lista de todos los presupuestos y el PDF para el cliente, que no muestra costos ni márgenes. | Que el dueño diga cuándo se usa el segundo margen (× 6); el logo, los datos fiscales y el formato de la empresa en el PDF; y cobrar por lo que realmente se usa de la chapa. | El sistema sugiere y marca; quien arma o el dueño decide. El PDF sale con el formato de la empresa, y el precio de una chapa se basa en lo usado y no en la chapa entera. |
+| **Precio del presupuesto** | Se calculaba el costo. El precio dependía de quién armara el presupuesto, y los empleados cobraban mucho menos de lo que podían. | El precio sugerido con el margen de la planilla, y lo que queda por debajo se marca en amarillo. La lista de todos los presupuestos y el PDF para el cliente, que no muestra costos ni márgenes. Y el PDF con la marca de la empresa: su logo, los colores negro y naranja, y los datos de contacto al pie. | Que el dueño diga cuándo se usa el segundo margen (× 6); los datos fiscales (CUIT, razón social) y las condiciones de pago en el PDF; y cobrar por lo que realmente se usa de la chapa. | El sistema sugiere y marca; quien arma o el dueño decide. El PDF sale con el formato de la empresa, y el precio de una chapa se basa en lo usado y no en la chapa entera. |
 | **Anidado y chapas** | Un anidado que fallaba con diseños grandes (como Complejo) y de a un trabajo por vez. | Sparrow como motor principal: varios anidados a la vez, piezas chicas en los huecos de las grandes, giro libre, el material usado en ancho × alto, todas las chapas juntas con mover piezas entre ellas, y el diseño anidado en PDF. Y la cuenta de los retazos: el sobrante de una chapa se guarda con un botón, el retazo dice de dónde salió y en qué anda (disponible, en uso o usado), y Materiales suma cuántos hay. | Cobrar por lo usado (depende del dueño), proponer un retazo al anidar un trabajo nuevo, medir la segunda tanda de A17 e imprimir una hoja del PDF para comprobar la escala. | Al anidar, el sistema podría proponer un retazo que sirva antes de gastar una chapa entera. |
 | **Lectura del dibujo (DXF)** | No se veía cómo había leído el dibujo el sistema antes de cargarlo. | Una imagen de la lectura antes de cargar, corregirla con clics, y seccionar solas las piezas que no entran en una chapa. | Recordar las correcciones al volver a cargar el mismo dibujo, mejorar cómo decide qué es pieza y qué es agujero, e importar varios diseños a la vez desde la pantalla. En espera: colores por pieza y leer `.cdr`. | Se carga el dibujo, se ve cómo lo leyó, se corrige y se sigue; y la próxima vez que llegue el mismo diseño ya no hay que corregirlo de nuevo. |
 | **Usuarios, servidor y avisos** | Todo corre en una sola computadora, sin usuarios ni login. | Igual: una sola máquina, sin usuarios. La base se respalda sola antes de actualizarse. | Usuarios con contraseña, servidor y dominio reales con HTTPS y copias de seguridad, mail real y aviso por WhatsApp. | Un servidor al que se entra desde el celular, con usuarios (diseñador y dueño), mails reales y aviso por WhatsApp. Es lo que termina de cerrar la aprobación. |
@@ -52,6 +52,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 - Cuándo se usa el segundo margen de la planilla (× 6) en el precio sugerido.
 - Cómo cobrar por lo usado de cada chapa.
 - El retazo más chico que se guarda (hoy se asume 250 × 250 mm).
+- Los datos fiscales (razón social, CUIT) y el texto de condiciones del presupuesto (forma de pago, plazo de entrega): se cargan en `backend/local/empresa/datos.json` y el PDF ya los imprime.
 - Los valores que el sistema asumió y hay que confirmar: la validez del presupuesto (15 días), el margen general, quién aprueba y por qué canal.
 
 **Espera al diseñador, al taller y a Vale**
@@ -65,7 +66,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 - Cambiar cómo decide el lector qué es pieza y qué es agujero (hay tres lecturas que salen mal y quedaron como falla conocida).
 - Importar varios diseños a la vez desde la pantalla.
 
-**Lo de afuera (etapa 4):** usuarios y login, servidor y dominio, mail real, WhatsApp, logo y datos fiscales en el PDF, y el envío al cliente con el presupuesto congelado.
+**Lo de afuera (etapa 4):** usuarios y login, servidor y dominio, mail real, WhatsApp, copiar la carpeta de la empresa (`backend/local/empresa/`) al servidor, y el envío al cliente con el presupuesto congelado.
 
 **En espera por tu decisión (2026-10-22):** los colores de referencia por pieza y leer archivos `.cdr`.
 
@@ -74,6 +75,15 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 **Hecho el 2026-11-08, en la base real:** las migraciones de A20 y de A21 y la primera carga de la planilla, con respaldos antes de cada una en `backend/local/`.
 - Entraron 288 artículos: los 27 códigos enlazados y 261 nuevos. El catálogo pasó de 23 a 44 materiales y de 30 a 59 formatos.
 - `CHA0013` quedó con la medida a mano, 1250 × 2500, confirmada por Enzo (el 0,7 es el espesor).
+
+**Ya está en la rama `feat/pdf-con-la-marca`** (todavía sin fusionar a `main`):
+- **El PDF del presupuesto con la marca de la empresa (A22), desde el 2026-11-08.**
+  - **Para qué:** que quien recibe el presupuesto vea de quién es y cómo contactarlos.
+  - **Cómo se ve:** el logo a la izquierda, una banda negra inclinada con «PRESUPUESTO» en naranja y el código, el recuadro del cliente con una marca naranja, el detalle con una línea naranja y el total en un recuadro negro. El pie lleva el nombre, la dirección, el WhatsApp, el mail, la web y el Instagram, en cada hoja. De la segunda hoja en adelante, una banda finita con el código.
+  - **De dónde salen el logo y los datos:** de `backend/local/empresa/` (`logo.png` y `datos.json`), **fuera de git**: el repositorio es público. Si falta la carpeta, el PDF sale igual, sin logo ni pie. Para cambiar un dato, se edita `datos.json`.
+  - **Todavía no:** los datos fiscales y las condiciones de pago (el PDF ya los imprime cuando se carguen en `datos.json`), y el fotomontaje del cartel sobre la foto del local (3.2).
+
+  Ver [`docs/historico/A22-pdf-con-la-marca/`](docs/historico/A22-pdf-con-la-marca/diseno.md).
 
 **Ya está en `main`:**
 - **La cuenta de los retazos (A21), desde el 2026-11-08.**
