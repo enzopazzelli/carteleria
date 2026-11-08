@@ -127,6 +127,13 @@ def test_sin_precio_por_m2_no_se_puede_guardar(sesion):
     assert "precio por m²" in error.value.mensaje
 
 
+def test_las_medidas_se_escriben_sin_cortar_decimales(sesion):
+    ejecucion = _anidado(sesion, _chapa_de_catalogo(sesion))
+    with pytest.raises(ErrorParaElUsuario) as error:
+        guardar_sobrante(sesion, ejecucion, _sobrante(ancho=Decimal("1219.9"), alto=80, es_retazo=False))
+    assert "1219,9 × 80" in error.value.mensaje
+
+
 def test_un_grupo_sin_chapa_asignada_no_tiene_de_donde_sacar_el_retazo(sesion):
     trabajo = Trabajo(nombre="Parador")
     grupo = GrupoDeCorte(trabajo=trabajo, nombre="Chapa")

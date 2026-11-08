@@ -606,8 +606,14 @@ def guardar_sobrante_de_chapa(ejecucion_id: int, plancha: int, sesion: Session =
     try:
         sesion.commit()
     except IntegrityError as error:
-        # Dos pedidos a la vez por el mismo sobrante: lo frena la base.
+        # Dos pedidos a la vez por el mismo sobrante: lo frena la base. Solo se
+        # dice «ya guardado» si lo está; otro error de integridad sigue de largo.
         sesion.rollback()
+        ya_guardado = sesion.scalar(
+            select(Formato.id).where(Formato.origen_ejecucion_id == ejecucion_id, Formato.origen_plancha == plancha)
+        )
+        if ya_guardado is None:
+            raise
         raise ErrorPrevisto("Ese sobrante ya está guardado como retazo.", estado=409) from error
     return retazo
 

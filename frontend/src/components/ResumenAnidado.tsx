@@ -72,7 +72,7 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
           <td className="pr-8 font-mono">{c.usado.ancho_mm === 0 ? "sin piezas" : medida(c.usado)}</td>
           <td className={c.es_retazo ? "pr-8 font-mono" : "pr-8 font-mono text-ink/50"}>{medida(c.sobrante)}{c.es_retazo ? "" : " · no llega a retazo"}</td>
           <td>
-            {c.retazo_id !== null ? <span className="text-ink/60">guardado como retazo</span>
+            {c.retazo_id != null ? <span className="text-ink/60">guardado como retazo</span>
               : c.es_retazo && <button type="button" className="underline disabled:opacity-50" disabled={guardar.isPending}
                   onClick={() => void alGuardarElSobrante(c.plancha)}>Guardar como retazo</button>}
           </td>

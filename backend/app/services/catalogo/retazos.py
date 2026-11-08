@@ -34,8 +34,13 @@ class EnQueAnda:
     trabajos: tuple[str, ...] = ()
 
 
+def _mm(valor) -> str:
+    """Como el mensaje de A8: sin ceros de más, con coma, y sin cortar decimales."""
+    return format(Decimal(str(valor)).normalize(), "f").replace(".", ",")
+
+
 def _medida(ancho, alto) -> str:
-    return f"{int(Decimal(ancho))} × {int(Decimal(alto))}"
+    return f"{_mm(ancho)} × {_mm(alto)}"
 
 
 def retazo_desde(

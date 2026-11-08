@@ -106,3 +106,9 @@ Cada paso se pide con el ok de Enzo antes de seguir.
 - **Retazos con forma irregular** y los huecos sueltos entre piezas.
 - **Un retazo «usado» todavía ofrece «Quitar»:** lo esconde, pero el trabajo que lo usa lo sigue viendo (A8). Se puede dejar de ofrecer el botón en ese caso.
 - **El retazo más chico que se guarda** (`PAR-56`, hoy 250 × 250 mm) lo confirma el dueño.
+- **Lo que vio la revisión de la rama y quedó sin arreglar,** para decidir:
+  - **El sobrante puede cambiar después de guardarlo:** si se mueven piezas en Ajuste, el retazo guardado ya no coincide con lo que sobra, y el sobrante nuevo de esa chapa no se puede guardar porque ya hay uno de esa corrida y esa chapa (`SUP-30`). También puede cambiar entre que se muestra el botón y se hace clic.
+  - **«Usado» nombra solo los trabajos aprobados:** si otro trabajo todavía sin aprobar usa el mismo retazo, no se lo menciona. Si se vuelve a borrador el presupuesto aprobado, el retazo pasa a «en uso» y recién ahí aparecen los dos (`SUP-29`).
+  - **El conteo del inicio** carga los retazos disponibles y calcula su estado con dos consultas más; con muchos retazos convendría una sola consulta que cuente.
+  - **Cada clic en «Guardar como retazo»** vuelve a calcular la geometría de todo el anidado para encontrar una chapa.
+  - **Dos formas de escribir una medida** (una en el servicio de retazos y otra en `traducir_errores`): si cambia una, hay que cambiar la otra.

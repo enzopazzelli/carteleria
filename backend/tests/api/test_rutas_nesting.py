@@ -1333,6 +1333,22 @@ def test_el_mismo_sobrante_no_se_guarda_dos_veces(cliente, tmp_path):
     assert len(_retazos_del_catalogo(cliente)) == 1
 
 
+def test_un_sobrante_quitado_se_puede_volver_a_guardar(cliente, tmp_path):
+    """Quitar un retazo que ningún grupo usa lo borra: el sobrante vuelve a poder guardarse."""
+    _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
+    ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
+    primero = cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante").json()
+    assert cliente.delete(f"/formatos/{primero['id']}").status_code == 204
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()["chapas"][0]["retazo_id"] is None
+
+    segundo = cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante")
+
+    assert segundo.status_code == 201, segundo.text
+    # Hay un solo retazo, y la lista de chapas vuelve a decir que ese sobrante está guardado.
+    assert [r["id"] for r in _retazos_del_catalogo(cliente)] == [segundo.json()["id"]]
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()["chapas"][0]["retazo_id"] == segundo.json()["id"]
+
+
 def test_guardar_el_sobrante_de_una_chapa_que_no_existe_da_404(cliente, tmp_path):
     _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
     ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
