@@ -10,6 +10,7 @@ import { falla, type QueMostrar } from "../Mensaje/contenido";
 import CorteDelEspesor from "./CorteDelEspesor";
 import LoQueDiceLaPlanilla from "./LoQueDiceLaPlanilla";
 import { marcasDeLaMedida, nombreParaMostrar } from "./arbol";
+import { cuentaDeRetazos, estadoParaMostrar, origenParaMostrar, retazosDeLasMedidas, textoDeLaCuenta } from "./retazos";
 
 // Un material que se corta, a la derecha de la pantalla de Materiales (A18,
 // diseño §5.6, boceto C).
@@ -19,6 +20,25 @@ const BOTON_CHICO = "border border-line bg-white rounded px-2 py-0.5 text-xs hov
 
 function Marca({ texto }: { texto: string }) {
   return <span className="ml-1.5 inline-block rounded border border-bronze/50 bg-bronze/10 px-1 font-sans text-[11px] text-bronze">{texto}</span>;
+}
+
+const TONO_DEL_ESTADO = {
+  libre: "text-cut font-medium",
+  "en-uso": "text-bronze",
+  usado: "text-ink/60",
+  quitado: "text-ink/50",
+} as const;
+
+/** De dónde salió un retazo y en qué anda (A21): «Sobrante de Parador, chapa 2 · disponible». */
+function EnQueAnda({ retazo }: { retazo: Formato }) {
+  const { texto, tono } = estadoParaMostrar(retazo);
+  return (
+    <span>
+      <span className="text-ink/60">{origenParaMostrar(retazo)}</span>
+      <span className="text-ink/40"> · </span>
+      <span className={TONO_DEL_ESTADO[tono]}>{texto}</span>
+    </span>
+  );
 }
 
 /** Todo lo que cambia algo pasa por acá, para mostrar el error arriba. */
@@ -44,6 +64,7 @@ export default function DetalleDelMaterial({ material, hayPlanilla }: DetalleDel
   };
 
   const medidas = material.espesores.flatMap((espesor) => espesor.medidas);
+  const retazos = retazosDeLasMedidas(medidas);
   const articulos = medidas.flatMap((m) => m.proveedores.map((p) => p.articulo));
   const proveedores = [...new Set(articulos.filter((a) => a.en_ultima_planilla).map((a) => a.proveedor))];
   // «Se anida» se guarda por espesor: la casilla los cambia todos juntos.
@@ -92,6 +113,11 @@ export default function DetalleDelMaterial({ material, hayPlanilla }: DetalleDel
       </div>
 
       <h3 className={SECCION}>Medidas</h3>
+      {retazos.length > 0 && (
+        <p className="mb-2 text-sm" aria-label="Cuenta de retazos">
+          <span className="font-medium">Retazos:</span> {textoDeLaCuenta(cuentaDeRetazos(retazos))}
+        </p>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -149,7 +175,8 @@ function RenglonesDeLaMedida({
         <td className={`${celda} font-mono whitespace-nowrap`}>{medida(formato)}</td>
         <td className={`${celda} font-mono`}>{formato.codigo ?? "—"}</td>
         <td className={celda}>
-          {queCuenta?.proveedor ?? "—"}
+          {formato.es_retazo && <EnQueAnda retazo={formato} />}
+          {!formato.es_retazo && (queCuenta?.proveedor ?? "—")}
           {sePuedeElegir && <span className="ml-1.5 text-xs text-cut font-medium">el que cuenta</span>}
           {sePuedeElegir && m.proveedor_a_mano !== null && (
             <button
@@ -216,7 +243,9 @@ function RenglonesDeLaMedida({
           <td className={`${celda} whitespace-nowrap`} colSpan={2}>
             Retazo <span className="font-mono">{medida(retazo)}</span>
           </td>
-          <td className={celda}></td>
+          <td className={celda}>
+            <EnQueAnda retazo={retazo} />
+          </td>
           <td className={`${celda} text-right font-mono`}>
             {retazo.costo_unidad_venta !== null && mostrarImporte(retazo.costo_unidad_venta, retazo.moneda ?? "ARS")}
           </td>
@@ -226,7 +255,7 @@ function RenglonesDeLaMedida({
                 Quitar
               </button>
             ) : (
-              <span title="Se quitó, pero el grupo de un trabajo lo sigue usando">quitado, en uso</span>
+              <span title="Se quitó, pero el grupo de un trabajo lo sigue usando">quitado</span>
             )}
           </td>
         </tr>
