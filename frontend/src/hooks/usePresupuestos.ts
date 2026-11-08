@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  type AccionDeAprobacion,
   actualizarLineaCliente,
   actualizarLineaLibre,
   actualizarMargenEIva,
   actualizarPresupuesto,
   aplicarOverride,
+  cambiarEstado,
   crearCliente,
   crearLineaLibre,
   crearPresupuesto,
@@ -15,6 +17,7 @@ import {
   listarTodosLosPresupuestos,
   obtenerCosteo,
   obtenerDesglose,
+  obtenerHistorial,
   recalcularMateriales,
 } from "../api/presupuestos";
 
@@ -156,5 +159,28 @@ export function useDesglose(presupuestoId: number | null) {
     queryKey: ["desglose", presupuestoId],
     queryFn: () => obtenerDesglose(presupuestoId as number),
     enabled: presupuestoId !== null,
+  });
+}
+
+export function useHistorial(presupuestoId: number) {
+  return useQuery({ queryKey: ["historial", presupuestoId], queryFn: () => obtenerHistorial(presupuestoId) });
+}
+
+/** Un paso de la aprobación (A20). Cambia el estado y deja una fila en el
+ * historial: se vuelve a pedir todo lo que depende de eso. */
+export function useCambiarEstado(presupuestoId: number) {
+  const refrescar = useRefrescarPresupuesto(presupuestoId);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ accion, por, motivo }: { accion: AccionDeAprobacion; por: string; motivo?: string | null }) =>
+      cambiarEstado(presupuestoId, accion, { por, motivo }),
+    onSuccess: () => {
+      refrescar();
+      queryClient.invalidateQueries({ queryKey: ["historial", presupuestoId] });
+      // El estado también se ve en el inicio y en la lista de presupuestos.
+      for (const queryKey of ["tarjetas", "resumen-del-inicio", "presupuestos-resumidos"]) {
+        queryClient.invalidateQueries({ queryKey: [queryKey] });
+      }
+    },
   });
 }
