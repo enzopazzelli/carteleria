@@ -16,11 +16,17 @@ from .tipos import Milimetros
 
 
 class EstadoPresupuesto(str, enum.Enum):
-    """Solo `BORRADOR` por ahora — el resto de la máquina de estados
-    (`ENVIADO`, `APROBADO`, `RECHAZADO`, `VENCIDO`) es `CART-401`, F4.
+    """Los cuatro estados de la aprobación mínima (A20, `CART-401`).
+
+    Enviado, aceptado o rechazado por el cliente, vencido y anulado quedan
+    para 2.4. La columna mide 20 caracteres y `PENDIENTE_APROBACION` ocupa
+    exactamente 20: un nombre más largo pide una migración.
     """
 
     BORRADOR = "BORRADOR"
+    PENDIENTE_APROBACION = "PENDIENTE_APROBACION"
+    OBSERVADO = "OBSERVADO"
+    APROBADO = "APROBADO"
 
 
 class RubroLineaCosto(str, enum.Enum):
@@ -94,6 +100,35 @@ class Presupuesto(Base):
     lineas: Mapped[list[LineaCosto]] = relationship(
         back_populates="presupuesto", cascade="all, delete-orphan"
     )
+    cambios_de_estado: Mapped[list[CambioDeEstado]] = relationship(
+        back_populates="presupuesto",
+        cascade="all, delete-orphan",
+        order_by="CambioDeEstado.id",
+    )
+
+
+class CambioDeEstado(Base):
+    """Una fila del historial de la aprobación (A20, `CART-401`): de qué
+    estado a cuál pasó un presupuesto, quién lo hizo y por qué.
+
+    `por` es texto libre: todavía no hay usuarios (1.1), así que quien
+    aprueba escribe su nombre. Cuando haya sesión, se llena con el usuario.
+    `motivo` es obligatorio al observar y al volver a borrador; en el resto
+    puede quedar vacío. El cuándo es `creado_en`, que ya pone la base.
+    """
+
+    __tablename__ = "cambios_de_estado"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    presupuesto_id: Mapped[int] = mapped_column(
+        ForeignKey("presupuestos.id", ondelete="CASCADE")
+    )
+    estado_anterior: Mapped[str] = mapped_column(String(20))
+    estado_nuevo: Mapped[str] = mapped_column(String(20))
+    por: Mapped[str] = mapped_column(String(120))
+    motivo: Mapped[str | None] = mapped_column(Text(), default=None)
+
+    presupuesto: Mapped[Presupuesto] = relationship(back_populates="cambios_de_estado")
 
 
 class LineaCosto(Base):

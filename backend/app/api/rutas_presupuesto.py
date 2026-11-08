@@ -16,13 +16,23 @@ from sqlalchemy.orm import Session
 
 from ..costeo import resumen_materiales
 from ..modelos.catalogo import Formato
-from ..modelos.presupuesto import Cliente, LineaCosto, Presupuesto, RubroLineaCosto
+from ..modelos.presupuesto import (
+    CambioDeEstado,
+    Cliente,
+    EstadoPresupuesto,
+    LineaCosto,
+    Presupuesto,
+    RubroLineaCosto,
+)
 from ..services.presupuesto.documento import PresupuestoIncompleto, armar_documento, hoy_en_argentina
+from ..services.presupuesto.estados import cambiar_estado, exigir_editable
 from ..services.presupuesto.pdf import generar_pdf
 from ..services.presupuesto.sugerido import multiplicador_de
 from ..services.presupuesto.totales import Cuenta, calcular
 from .dependencias import obtener_sesion
 from .esquemas_presupuesto import (
+    CambioDeEstadoCrear,
+    CambioDeEstadoLeer,
     ClienteActualizar,
     ClienteCrear,
     ClienteLeer,
@@ -156,6 +166,7 @@ def actualizar_presupuesto(
     presupuesto_id: int, datos: PresupuestoActualizar, sesion: Session = Depends(obtener_sesion)
 ) -> Presupuesto:
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    exigir_editable(presupuesto)
     valores = datos.model_dump(exclude_unset=True)
     if "cliente_id" in valores:
         _cliente_o_404(sesion, valores["cliente_id"])
@@ -223,6 +234,60 @@ def duplicar_presupuesto(
     return copia
 
 
+# --- La aprobación (A20: `CART-401` a `CART-404`) ---------------------------
+# Las reglas viven en `services/presupuesto/estados.py`; acá solo se
+# atienden los cuatro pedidos y se guarda.
+
+
+def _pasar_a(
+    presupuesto_id: int, nuevo: EstadoPresupuesto, datos: CambioDeEstadoCrear, sesion: Session
+) -> Presupuesto:
+    presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    cambiar_estado(sesion, presupuesto, nuevo, por=datos.por, motivo=datos.motivo)
+    sesion.commit()
+    return presupuesto
+
+
+@router.post("/presupuestos/{presupuesto_id}/mandar-a-aprobar", response_model=PresupuestoLeer)
+def mandar_a_aprobar(
+    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+) -> Presupuesto:
+    """De borrador u observado a pendiente. Se rechaza diciendo qué falta si
+    el presupuesto no está completo."""
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.PENDIENTE_APROBACION, datos, sesion)
+
+
+@router.post("/presupuestos/{presupuesto_id}/aprobar", response_model=PresupuestoLeer)
+def aprobar(
+    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+) -> Presupuesto:
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.APROBADO, datos, sesion)
+
+
+@router.post("/presupuestos/{presupuesto_id}/observar", response_model=PresupuestoLeer)
+def observar(
+    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+) -> Presupuesto:
+    """Devuelve el presupuesto con un motivo (obligatorio) para que se corrija."""
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.OBSERVADO, datos, sesion)
+
+
+@router.post("/presupuestos/{presupuesto_id}/volver-a-borrador", response_model=PresupuestoLeer)
+def volver_a_borrador(
+    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+) -> Presupuesto:
+    """Desbloquea un presupuesto pendiente o aprobado. El motivo es obligatorio."""
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.BORRADOR, datos, sesion)
+
+
+@router.get("/presupuestos/{presupuesto_id}/historial", response_model=list[CambioDeEstadoLeer])
+def historial_de_estados(
+    presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
+) -> list[CambioDeEstado]:
+    """Cada cambio de estado, del más viejo al más nuevo."""
+    return list(_presupuesto_o_404(sesion, presupuesto_id).cambios_de_estado)
+
+
 # --- Líneas de costo (paso 2: `CART-302`) -----------------------------
 
 
@@ -249,6 +314,7 @@ def recalcular_materiales(
     (se borró desde el último recálculo) se elimina.
     """
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    exigir_editable(presupuesto)
     if presupuesto.trabajo_id is None:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
@@ -347,6 +413,13 @@ def _linea_costo_o_404(sesion: Session, linea_id: int) -> LineaCosto:
     return linea
 
 
+def _linea_editable_o_409(sesion: Session, linea_id: int) -> LineaCosto:
+    """La línea, si su presupuesto se puede modificar (borrador u observado)."""
+    linea = _linea_costo_o_404(sesion, linea_id)
+    exigir_editable(linea.presupuesto)
+    return linea
+
+
 def _rechazar_si_es_material(linea: LineaCosto, accion: str) -> None:
     if linea.rubro == RubroLineaCosto.MATERIAL.value:
         raise HTTPException(
@@ -365,7 +438,7 @@ def aplicar_override(
     overridear un costo calculado es exactamente el punto acá.
     `valor_override: null` revierte al valor calculado y limpia
     `override_por`/`override_en`. `valor_calculado` nunca se toca."""
-    linea = _linea_costo_o_404(sesion, linea_id)
+    linea = _linea_editable_o_409(sesion, linea_id)
     linea.valor_override = datos.valor_override
     if datos.valor_override is None:
         linea.override_por = None
@@ -385,7 +458,7 @@ def actualizar_linea_para_el_cliente(
     (`docs/historico/1.3-pdf-del-presupuesto/diseno.md §5`) — de cualquier
     rubro, incluido `MATERIAL`. Son una capa encima del costo, como el
     override: `valor_calculado` y `valor_override` no se tocan."""
-    linea = _linea_costo_o_404(sesion, linea_id)
+    linea = _linea_editable_o_409(sesion, linea_id)
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         setattr(linea, campo, valor)
     sesion.commit()
@@ -408,6 +481,7 @@ def crear_linea_libre(
     lo calcula el servidor (`cantidad × precio_unitario`), nunca se
     confía en un total que mande el cliente."""
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    exigir_editable(presupuesto)
     linea = LineaCosto(
         presupuesto_id=presupuesto_id,
         rubro=datos.rubro,
@@ -428,7 +502,7 @@ def actualizar_linea_libre(
     linea_id: int, datos: LineaCostoActualizar, sesion: Session = Depends(obtener_sesion)
 ) -> LineaCosto:
     """Editar una línea libre ya cargada — rechazado sobre `MATERIAL`."""
-    linea = _linea_costo_o_404(sesion, linea_id)
+    linea = _linea_editable_o_409(sesion, linea_id)
     _rechazar_si_es_material(linea, "edita")
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         setattr(linea, campo, valor)
@@ -442,7 +516,7 @@ def eliminar_linea_libre(linea_id: int, sesion: Session = Depends(obtener_sesion
     """Elimina una línea libre — rechazado sobre `MATERIAL`: esas
     desaparecen solas cuando su grupo de corte ya no existe, vía
     `recalcular-materiales`, nunca por un `DELETE` directo."""
-    linea = _linea_costo_o_404(sesion, linea_id)
+    linea = _linea_editable_o_409(sesion, linea_id)
     _rechazar_si_es_material(linea, "elimina")
     sesion.delete(linea)
     sesion.commit()

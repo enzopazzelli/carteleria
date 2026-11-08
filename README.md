@@ -27,14 +27,24 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - que el motor de anidado sea confiable con diseños reales y aproveche mejor la chapa. **Sparrow es el motor principal**; el rectangular queda de prueba;
 - después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
 
-Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18) y Presupuestos, con el precio sugerido (A19). Sigue la aprobación del presupuesto.
+Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18) y Presupuestos, con el precio sugerido (A19). Y la aprobación del presupuesto (A20), sin usuarios todavía.
 
 **Lo que sigue:**
 - **La primera carga de la planilla en la base real.** La hace Enzo desde Materiales, con «Actualizar desde la planilla», después de un respaldo de la base. Sobre una copia, la planilla real dio:
   - 27 códigos se enlazan y entran 261 artículos;
   - `CHA0016` y `POL0006` quedan a mano;
   - hay que mirar `CHA0013`, que va con 1250 × 2500.
-- **Después,** lo próximo de «Lo grande»: la aprobación del presupuesto.
+- **Aplicar la migración de A20** (la tabla del historial de aprobaciones): al levantar el servidor la base se actualiza sola, así que antes, un respaldo.
+- **Después,** lo próximo de «Lo grande»: cobrar por lo usado y llevar la cuenta de los retazos, o lo de afuera (usuarios, mail, servidor).
+
+**Ya está en la rama `feat/a20-aprobacion-del-presupuesto`** (todavía sin fusionar a `main`):
+- **La aprobación del presupuesto (A20), desde el 2026-11-08.**
+  - **Para qué:** que quede asentado que el dueño vio un presupuesto y lo dio por bueno, o que lo devolvió con una observación, y quién y cuándo.
+  - **Los estados:** borrador, pendiente de aprobación, observado y aprobado. Mandarlo a aprobar exige que esté completo, y dice qué falta si no.
+  - **En el Costeo:** una franja con el estado, los botones de cada paso, tu nombre (se recuerda) y el historial. Un presupuesto pendiente o aprobado queda bloqueado; para tocarlo hay que volverlo a borrador, con un motivo. El PDF se baja igual.
+  - **Todavía no:** el aviso por mail con link para aprobar desde el celular, y el envío al cliente. Hace falta tener usuarios, servidor y buzón.
+
+  Ver [`docs/historico/A20-aprobacion-del-presupuesto/`](docs/historico/A20-aprobacion-del-presupuesto/diseno.md).
 
 **Ya está en `main`:**
 - **Los presupuestos con precio sugerido (A19), desde el 2026-11-07.**

@@ -101,6 +101,26 @@ class PresupuestoLeer(BaseModel):
     actualizado_en: datetime
 
 
+class CambioDeEstadoCrear(BaseModel):
+    """Lo que pide cada paso de la aprobación (A20). `por` es el nombre de
+    quien lo hace, a mano mientras no haya usuarios; el motivo es obligatorio
+    al observar y al volver a borrador (lo exige el servicio)."""
+
+    por: str = Field(max_length=120)
+    motivo: str | None = Field(default=None, max_length=1000)
+
+
+class CambioDeEstadoLeer(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    estado_anterior: str
+    estado_nuevo: str
+    por: str
+    motivo: str | None
+    creado_en: datetime
+
+
 # --- Líneas de costo (paso 2: solo lectura y generación automática de
 # rubro MATERIAL — el override de CART-303 es el paso 3) -------------------
 

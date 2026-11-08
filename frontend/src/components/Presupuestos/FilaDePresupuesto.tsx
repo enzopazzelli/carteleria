@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { PresupuestoResumido } from "../../api/inicio";
+import { nombreDeEstado } from "./estado";
 import { mostrarImporte } from "../../routes/TrabajoWorkspace/importes";
 import type { QueMostrar } from "../Mensaje/contenido";
 import { fechaDeTarjeta, rutaDelPresupuesto } from "../Tarjeta/formato";
@@ -23,7 +24,10 @@ export default function FilaDePresupuesto({ presupuesto, ahora, alFallarElPdf }:
         <span className="font-medium">{presupuesto.codigo}</span>
         <span className="text-xs text-ink/60">
           {ahora && `${fechaDeTarjeta(presupuesto.creado_en, ahora)} · `}
-          {presupuesto.estado.toLowerCase()}
+          {/* Lo que espera al dueño se marca: es lo que viene a buscar. */}
+          <span className={presupuesto.estado === "PENDIENTE_APROBACION" ? "text-bronze font-medium" : ""}>
+            {nombreDeEstado(presupuesto.estado)}
+          </span>
         </span>
       </span>
       <span className="block text-sm truncate">

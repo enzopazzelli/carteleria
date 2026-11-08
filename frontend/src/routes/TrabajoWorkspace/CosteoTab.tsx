@@ -20,6 +20,8 @@ import { urlPlano } from "../../api/nesting";
 import { useGrupos } from "../../hooks/useGrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
 import type { LineaCosto } from "../../api/presupuestos";
+import AprobacionSeccion from "./AprobacionSeccion";
+import { esEditable } from "./aprobacion";
 import PresupuestoClienteSeccion from "./PresupuestoClienteSeccion";
 import { avisosDelCosteo } from "./costeo";
 import {
@@ -168,9 +170,14 @@ export default function CosteoTab() {
 
       {presupuestoActivo && (
         <div className="border border-line rounded p-4">
+          <AprobacionSeccion presupuestoId={presupuestoActivo.id} estado={presupuestoActivo.estado} />
           <div className="flex justify-between items-center mb-3">
             <h2 className="font-medium">Costeo de materiales</h2>
-            <button className="text-sm underline" onClick={alRecalcular}>
+            <button
+              className="text-sm underline disabled:opacity-50 disabled:no-underline"
+              disabled={!esEditable(presupuestoActivo.estado)}
+              onClick={alRecalcular}
+            >
               Recalcular materiales
             </button>
           </div>
@@ -204,15 +211,19 @@ export default function CosteoTab() {
             </div>
           ))}
 
-          <SeccionDesglose presupuestoId={presupuestoActivo.id} />
-          <PresupuestoClienteSeccion key={presupuestoActivo.id} presupuestoId={presupuestoActivo.id} />
+          <SeccionDesglose presupuestoId={presupuestoActivo.id} editable={esEditable(presupuestoActivo.estado)} />
+          <PresupuestoClienteSeccion
+            key={presupuestoActivo.id}
+            presupuestoId={presupuestoActivo.id}
+            editable={esEditable(presupuestoActivo.estado)}
+          />
         </div>
       )}
     </div>
   );
 }
 
-function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
+function SeccionDesglose({ presupuestoId, editable }: { presupuestoId: number; editable: boolean }) {
   const { data: desglose } = useDesglose(presupuestoId);
   const crearLinea = useCrearLineaLibre(presupuestoId);
   const override = useAplicarOverride(presupuestoId);
@@ -330,8 +341,10 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
   if (!desglose) return null;
   const { totales } = desglose;
 
+  // Pendiente y aprobado están bloqueados: el `fieldset` apaga de una vez
+  // todos los campos y botones de adentro. El servidor los rechaza igual.
   return (
-    <div className="mt-6 border-t border-line pt-4">
+    <fieldset disabled={!editable} className="mt-6 border-t border-line pt-4 min-w-0 disabled:opacity-70">
       <h2 className="font-medium mb-3">Líneas por rubro</h2>
 
       {error && (
@@ -495,6 +508,6 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
             </a>
           ))}
       </div>
-    </div>
+    </fieldset>
   );
 }

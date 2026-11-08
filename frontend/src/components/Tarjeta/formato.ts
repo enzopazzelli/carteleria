@@ -1,4 +1,5 @@
 import type { Destino, PresupuestoResumido, Tarjeta } from "../../api/inicio";
+import { nombreDeEstado } from "../Presupuestos/estado";
 import { mostrarImporte } from "../../routes/TrabajoWorkspace/importes";
 
 // Lo que dice una tarjeta de trabajo (A16, `docs/plan/A16-pagina-de-inicio/diseno.md §5.3`).
@@ -35,7 +36,7 @@ export function renglonesDeChapas(chapas: string[]): string[] {
 
 export function textoDelPresupuesto(presupuesto: PresupuestoResumido): string {
   const total = presupuesto.total === null ? null : mostrarImporte(presupuesto.total, presupuesto.moneda);
-  return [presupuesto.codigo, presupuesto.cliente, total, presupuesto.estado.toLowerCase()]
+  return [presupuesto.codigo, presupuesto.cliente, total, nombreDeEstado(presupuesto.estado)]
     .filter((parte) => parte !== null)
     .join(" · ");
 }

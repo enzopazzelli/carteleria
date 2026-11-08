@@ -199,3 +199,30 @@ export function actualizarLineaCliente(
 export function descargarPdf(presupuestoId: number): Promise<Blob> {
   return apiGetArchivo(`/presupuestos/${presupuestoId}/pdf`);
 }
+
+// --- La aprobación (A20) ---------------------------------------------------
+
+export type AccionDeAprobacion = "mandar-a-aprobar" | "aprobar" | "observar" | "volver-a-borrador";
+
+export interface CambioDeEstado {
+  id: number;
+  estado_anterior: string;
+  estado_nuevo: string;
+  por: string;
+  motivo: string | null;
+  creado_en: string;
+}
+
+/** Un paso de la aprobación. Las reglas las decide el servidor: si el paso no
+ * corresponde o falta algo, responde con el motivo y esto tira un `ApiError`. */
+export function cambiarEstado(
+  presupuestoId: number,
+  accion: AccionDeAprobacion,
+  datos: { por: string; motivo?: string | null }
+): Promise<Presupuesto> {
+  return apiPost<Presupuesto>(`/presupuestos/${presupuestoId}/${accion}`, datos);
+}
+
+export function obtenerHistorial(presupuestoId: number): Promise<CambioDeEstado[]> {
+  return apiGet<CambioDeEstado[]>(`/presupuestos/${presupuestoId}/historial`);
+}

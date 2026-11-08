@@ -45,7 +45,14 @@ function falloAlgunGuardado(queryClient: QueryClient, desde: number): boolean {
 /** Lo que va a leer el cliente: el texto y el precio de cada ítem y el
  * total, editables, y el PDF (`docs/historico/1.3-pdf-del-presupuesto/diseno.md §8`).
  * Cada campo se guarda al salir de él, igual que el margen y el IVA. */
-export default function PresupuestoClienteSeccion({ presupuestoId }: { presupuestoId: number }) {
+export default function PresupuestoClienteSeccion({
+  presupuestoId,
+  editable = true,
+}: {
+  presupuestoId: number;
+  /** Pendiente y aprobado están bloqueados; el PDF se baja igual. */
+  editable?: boolean;
+}) {
   const { data: desglose } = useDesglose(presupuestoId);
   const { data: clientes } = useClientes();
   const actualizarPresupuesto = useActualizarPresupuesto(presupuestoId);
@@ -190,6 +197,7 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
 
   return (
     <div className="mt-6 border-t border-line pt-4">
+      <fieldset disabled={!editable} className="min-w-0 disabled:opacity-70">
       <div className="flex justify-between items-center mb-3">
         <h2 className="font-medium">Presupuesto para el cliente</h2>
         <label className="text-sm">
@@ -333,6 +341,7 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
           <Banner variante="error">El precio queda por debajo del costo.</Banner>
         </div>
       )}
+      </fieldset>
 
       {faltantes.length > 0 && (
         <div className="mb-4">

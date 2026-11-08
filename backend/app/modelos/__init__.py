@@ -15,12 +15,20 @@ from .catalogo import (
     Moneda,
     ParametrosCorteMaterial,
 )
-from .presupuesto import Cliente, EstadoPresupuesto, LineaCosto, Presupuesto, RubroLineaCosto
+from .presupuesto import (
+    CambioDeEstado,
+    Cliente,
+    EstadoPresupuesto,
+    LineaCosto,
+    Presupuesto,
+    RubroLineaCosto,
+)
 from .trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza, Trabajo
 
 __all__ = [
     "Articulo",
     "Base",
+    "CambioDeEstado",
     "CambioDePrecio",
     "CargaDePlanilla",
     "Cliente",

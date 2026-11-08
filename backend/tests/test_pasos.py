@@ -89,6 +89,19 @@ def test_anidado_sin_presupuesto_lleva_a_chapas():
     assert (p.presupuesto, p.frase, p.destino) == ("pendiente", "Falta el presupuesto", "chapas")
 
 
+@pytest.mark.parametrize(
+    "estado, frase",
+    [
+        ("PENDIENTE_APROBACION", "Presupuesto esperando aprobación"),
+        ("OBSERVADO", "Presupuesto observado: falta corregirlo"),
+        ("APROBADO", "Presupuesto aprobado"),
+    ],
+)
+def test_cada_estado_de_la_aprobacion_tiene_su_frase_y_lleva_al_costeo(estado, frase):
+    p = pasos_del_trabajo(_trabajo(grupos=[_grupo(terminado=True, ultimo="lista")], presupuesto=estado))
+    assert (p.presupuesto, p.frase, p.destino) == ("hecho", frase, "costeo")
+
+
 def test_con_presupuesto_dice_su_estado_y_lleva_al_costeo():
     p = pasos_del_trabajo(_trabajo(grupos=[_grupo(terminado=True, ultimo="lista")], presupuesto="BORRADOR"))
     assert p == Pasos("hecho", "hecho", "hecho", "hecho", "Presupuesto en borrador", "costeo")
