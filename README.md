@@ -44,7 +44,6 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 
 **Lo tuyo (Enzo), ahora**
 - Enlazar `CHA0016` y `POL0006` a mano desde Materiales.
-- Aplicar la migración de A21 (el origen de los retazos) en la base real: se aplica sola al levantar el servidor, así que antes, un respaldo.
 - Imprimir una hoja del PDF de chapas y medirla con regla: la barra de referencia debería medir 25 mm, y una chapa de 1220 × 2440, 61 × 122 mm.
 - Mirar el código repetido de la planilla: `CAB0004` de LUNA SUD está dos veces (filas 44 y 221, las dos sin precio) y el sistema toma el de más abajo. Hay que verlo en AppSheet.
 - Medir la segunda tanda de A17 (unos 75 minutos con la máquina libre), solo si la pedís.
@@ -72,7 +71,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 
 **Lo que dejó anotado la revisión de A20,** para decidir cuando haga falta: editar un cliente cambia el PDF de un presupuesto ya aprobado; dos personas aprobando u observando a la vez el mismo presupuesto; y las piezas y el anidado siguen editables con el presupuesto aprobado. Ver [`docs/historico/A20-aprobacion-del-presupuesto/`](docs/historico/A20-aprobacion-del-presupuesto/diseno.md).
 
-**Hecho el 2026-11-08, en la base real:** la migración de A20 y la primera carga de la planilla, con respaldos antes de cada una en `backend/local/`.
+**Hecho el 2026-11-08, en la base real:** las migraciones de A20 y de A21 y la primera carga de la planilla, con respaldos antes de cada una en `backend/local/`.
 - Entraron 288 artículos: los 27 códigos enlazados y 261 nuevos. El catálogo pasó de 23 a 44 materiales y de 30 a 59 formatos.
 - `CHA0013` quedó con la medida a mano, 1250 × 2500, confirmada por Enzo (el 0,7 es el espesor).
 
