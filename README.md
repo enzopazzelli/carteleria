@@ -76,7 +76,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 - Entraron 288 artículos: los 27 códigos enlazados y 261 nuevos. El catálogo pasó de 23 a 44 materiales y de 30 a 59 formatos.
 - `CHA0013` quedó con la medida a mano, 1250 × 2500, confirmada por Enzo (el 0,7 es el espesor).
 
-**Ya está en la rama `feat/a23-materiales-en-el-presupuesto`** (todavía sin fusionar a `main`):
+**Ya está en `main`:**
 - **Agregar materiales del catálogo al presupuesto (A23), desde el 2026-11-08.**
   - **Para qué:** un cartel lleva más que la chapa que se anida: corrugado, vinilos, pintura, tornillos, iluminación, y también diseño, montaje y traslado. Antes se escribían a mano, con descripción, cantidad y precio.
   - **Cómo se usa:** en el Costeo, en «Líneas por rubro», el botón **«Agregar del catálogo»** abre un buscador de los 288 artículos de la planilla: por texto, sin distinguir tildes ni mayúsculas, y con un filtro por categoría. Se elige el artículo, se escribe la cantidad (en m², metros, unidades o litros, según el artículo) y se agrega.
@@ -85,8 +85,6 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
   - **Todavía no:** actualizar los precios de un presupuesto armado, y agrupar renglones chicos en el PDF.
 
   Ver [`docs/historico/A23-materiales-en-el-presupuesto/`](docs/historico/A23-materiales-en-el-presupuesto/diseno.md).
-
-**Ya está en `main`:**
 - **El PDF del presupuesto con la marca de la empresa (A22), desde el 2026-11-08.**
   - **Para qué:** que quien recibe el presupuesto vea de quién es y cómo contactarlos.
   - **Cómo se ve:** el logo a la izquierda, una banda negra inclinada con «PRESUPUESTO» en naranja y el código, el recuadro del cliente con una marca naranja, el detalle con una línea naranja y el total en un recuadro negro. El pie lleva el nombre, la dirección, el WhatsApp, el mail, la web y el Instagram, en cada hoja. De la segunda hoja en adelante, una banda finita con el código.

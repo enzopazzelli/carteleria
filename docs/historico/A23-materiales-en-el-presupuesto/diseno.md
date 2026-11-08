@@ -1,6 +1,6 @@
 # A23 — Agregar materiales del catálogo al presupuesto (propuesta de diseño)
 
-**Estado:** construido el 2026-11-08, en la rama `feat/a23-materiales-en-el-presupuesto`. Enzo aprobó la propuesta ese día. Cómo quedó, en §9. Sale de lo que dijo Enzo ese día: «luego de los anidados, cuando se está haciendo el presupuesto, se pueden agregar materiales que hacen al diseño completo (corrugados, etc.): desde esa parte se debería poder agregar». Es lo que el plan maestro dejó para 2.3 («insumos desde catálogo»). Los supuestos de §4 los puso Claude, Enzo los aprobó y están en `REGISTRO.md`.
+**Estado:** construido y en `main` el 2026-11-08 (`2b7de56`). Enzo aprobó la propuesta ese día. Cómo quedó, en §9. Sale de lo que dijo Enzo ese día: «luego de los anidados, cuando se está haciendo el presupuesto, se pueden agregar materiales que hacen al diseño completo (corrugados, etc.): desde esa parte se debería poder agregar». Es lo que el plan maestro dejó para 2.3 («insumos desde catálogo»). Los supuestos de §4 los puso Claude, Enzo los aprobó y están en `REGISTRO.md`.
 
 ## 1. Qué problema resuelve
 
