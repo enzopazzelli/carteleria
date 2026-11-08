@@ -4,7 +4,7 @@ import { fechaDeTarjeta } from "../../components/Tarjeta/formato";
 
 export { nombreDeEstado };
 
-// Lo que muestra la franja de aprobación (A20, `docs/plan/A20-aprobacion-del-presupuesto/diseno.md §5`).
+// Lo que muestra la franja de aprobación (A20, `docs/historico/A20-aprobacion-del-presupuesto/diseno.md §5`).
 // Las reglas de verdad las tiene el servidor; acá solo se decide qué botones
 // ofrecer y cómo se lee cada cosa.
 

@@ -10,7 +10,7 @@
 
 ## En una frase
 
-**El cotizador funciona de punta a punta en local, por API y en pantalla, hasta el PDF del presupuesto; faltan el login, la aprobación del dueño y el envío al cliente.** El motor de anidado es **Sparrow**, en el producto desde octubre: contornos reales, giro libre, piezas en los huecos de otras, seccionado de lo que no entra, y el material usado en ancho × alto con el sobrante arriba. El rectangular queda de prueba.
+**El cotizador funciona de punta a punta en local, por API y en pantalla, hasta el PDF del presupuesto; la aprobación del presupuesto ya existe (A20), sin usuarios; faltan el login, el aviso al dueño y el envío al cliente.** El motor de anidado es **Sparrow**, en el producto desde octubre: contornos reales, giro libre, piezas en los huecos de otras, seccionado de lo que no entra, y el material usado en ancho × alto con el sobrante arriba. El rectangular queda de prueba.
 
 ---
 
@@ -27,7 +27,7 @@ La columna «Sigue en» es el paso del plan maestro que lo completa.
 | **Cotizador** | Presupuesto con cliente, líneas por rubro, override con trazabilidad, líneas libres, margen, IVA, total, desglose y duplicar como otra opción, texto y precio por ítem para el cliente, total fijado y PDF (`CART-301` a `CART-309`) | Insumos elegidos de un catálogo, mano de obra por etapa, presupuestos fuera de un trabajo en pantalla | 1.2, 2.3 |
 | **Frontend** | Lista de trabajos y un espacio de trabajo con cinco pestañas: Piezas (con la lectura del DXF con imagen y la corrección a mano), Grupos (con la lista de materiales y la comparación de chapas), Anidado, Ajuste y Costeo | Login, página de inicio, pantalla de presupuestos y para retocarlos | 1.1, 1.2, plan maestro §7 |
 | **Fundaciones** | SQLite en local y PostgreSQL por configuración, migraciones de Alembic, tests del backend en CI | Servidor, login, roles, usuarios, clientes con email, auditoría, backups | 1.1, 2.5 |
-| **Aprobación y envío** | Nada: el presupuesto solo conoce el estado borrador | Todo (`CART-401` a `CART-408`) | 1.4, 1.5, 2.4 |
+| **Aprobación y envío** | Los estados borrador, pendiente, observado y aprobado, el historial y el bloqueo de edición (A20), sin usuarios: el nombre se escribe a mano | El aviso por mail con link firmado, el envío al cliente, vencimientos y anulación (`CART-403` a `CART-408`) | 1.4, 1.5, 2.4 |
 | **Dashboard** | Prototipo de las 9 vistas con datos de muestra (`prototipo-dashboard/`) | Todo lo real (`CART-801` a `CART-808`) | 3.1 |
 | **Fotomontaje** | Nada | Todo (`CART-601` a `CART-607`) | 3.2 |
 | **Motor** | Sparrow (`spyrrow`) integrado al producto: ver la fila de Anidado. Deepnest sigue sin interfaz en `nesting-engine/`, medido en Belgrano (A1 y A2 de `motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`) | Los pendientes de cada paso del motor (plan maestro §7) | Plan maestro §7 |
