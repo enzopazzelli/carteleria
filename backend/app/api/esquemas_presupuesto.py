@@ -221,11 +221,18 @@ class ArticuloDelCatalogoLeer(BaseModel):
     costo_unidad_venta: Decimal | None
 
 
+class CategoriaDelCatalogoLeer(BaseModel):
+    #: Como la escribe la planilla: es lo que se manda para filtrar.
+    valor: str
+    #: Como se lee: «Bulonería y anclaje», no `BULONERIA/ANCLAJE`.
+    nombre: str
+
+
 class BusquedaDeArticulosLeer(BaseModel):
     articulos: list[ArticuloDelCatalogoLeer]
     #: Cuántos cumplen la búsqueda en total, aunque se devuelvan menos.
     total: int
-    categorias: list[str]
+    categorias: list[CategoriaDelCatalogoLeer]
 
 
 class LineaCostoActualizar(BaseModel):

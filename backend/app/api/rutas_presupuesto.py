@@ -24,6 +24,7 @@ from ..modelos.presupuesto import (
     Presupuesto,
     RubroLineaCosto,
 )
+from ..services.catalogo.descripcion import nombre_de_categoria
 from ..services.presupuesto.del_catalogo import agregar_del_catalogo, buscar_articulos, categorias_del_catalogo
 from ..services.presupuesto.documento import PresupuestoIncompleto, armar_documento, hoy_en_argentina
 from ..services.presupuesto.estados import cambiar_estado, exigir_editable
@@ -36,6 +37,7 @@ from .esquemas_presupuesto import (
     ArticuloDelCatalogoLeer,
     BusquedaDeArticulosLeer,
     CambioDeEstadoCrear,
+    CategoriaDelCatalogoLeer,
     CambioDeEstadoLeer,
     ClienteActualizar,
     ClienteCrear,
@@ -487,7 +489,9 @@ def buscar_en_el_catalogo(
     return BusquedaDeArticulosLeer(
         articulos=[ArticuloDelCatalogoLeer.model_validate(a) for a in articulos],
         total=total,
-        categorias=categorias_del_catalogo(sesion),
+        categorias=[
+            CategoriaDelCatalogoLeer(valor=c, nombre=nombre_de_categoria(c)) for c in categorias_del_catalogo(sesion)
+        ],
     )
 
 

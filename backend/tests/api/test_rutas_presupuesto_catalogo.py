@@ -90,7 +90,10 @@ def test_buscar_devuelve_los_articulos_el_total_y_las_categorias(api):
     todo = api.get("/articulos-del-catalogo").json()
     assert [a["codigo"] for a in todo["articulos"]] == ["COR0001", "PIN1"]
     assert todo["total"] == 2
-    assert todo["categorias"] == ["ACRILICOS", "PINTURA"]
+    assert todo["categorias"] == [
+        {"valor": "ACRILICOS", "nombre": "Acrílicos"},
+        {"valor": "PINTURA", "nombre": "Pintura"},
+    ]
 
     uno = api.get("/articulos-del-catalogo", params={"texto": "corrug"}).json()
     assert [a["codigo"] for a in uno["articulos"]] == ["COR0001"]
