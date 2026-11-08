@@ -76,6 +76,14 @@ export function mostrarPorcentaje(valor: string | null | undefined): string {
   return numero === null ? "—" : `${numero.toFixed(2).replace(".", ",")} %`;
 }
 
+/** «3» → «× 3», «2.64» → «× 2,6»: un margen como lo escribe la planilla, un
+ * multiplicador del costo, con una cifra decimal como mucho (A19). */
+export function mostrarMultiplicador(valor: string | null | undefined): string {
+  const numero = aNumero(valor);
+  if (numero === null) return "—";
+  return `× ${String(Math.round(numero * 10) / 10).replace(".", ",")}`;
+}
+
 /** «388.7470000000012» → «389 mm»: las medidas de las piezas, en
  * milímetros enteros (A17). */
 export function mostrarMm(valor: string): string {

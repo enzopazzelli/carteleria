@@ -83,9 +83,11 @@ def test_la_tarjeta_trae_el_presupuesto_mas_reciente(cliente, tmp_path):
     tarjeta = cliente.get("/tarjetas").json()[0]
 
     total = cliente.get(f"/presupuestos/{ultimo['id']}/totales").json()["total"]
+    creado_en = tarjeta["presupuesto"].pop("creado_en")
+    assert datetime.fromisoformat(creado_en).utcoffset() == timedelta(0)
     assert tarjeta["presupuesto"] == {
         "id": ultimo["id"], "codigo": ultimo["codigo"], "cliente": "Parador", "trabajo_id": trabajo["id"],
-        "trabajo": "Prueba", "total": total, "moneda": "ARS", "estado": "BORRADOR",
+        "trabajo": "Prueba", "total": total, "moneda": "ARS", "estado": "BORRADOR", "por_debajo": 0,
     }
     assert (tarjeta["frase"], tarjeta["destino"]) == ("Presupuesto en borrador", "costeo")
 
@@ -255,3 +257,53 @@ def test_el_resumen_sin_nada(cliente):
         "presupuestos": [], "total_presupuestos": 0,
         "materiales": {"materiales": 0, "medidas": 0, "retazos": 0, "por_familia": [], "articulos": 0, "ultima_planilla_en": None},
     }
+
+
+# --- La lista de todos los presupuestos (A19, tarea 4) --------------------
+
+
+def test_la_lista_trae_todos_del_mas_nuevo_al_mas_viejo(cliente):
+    trabajo = cliente.post("/trabajos", json={"nombre": "A"}).json()
+    ids = [_presupuesto(cliente, trabajo["id"], f"Cliente {n}")["id"] for n in range(7)]
+
+    lista = cliente.get("/resumen-de-presupuestos").json()
+
+    assert [p["id"] for p in lista] == ids[::-1]
+    assert lista[0]["cliente"] == "Cliente 6"
+    assert lista[0]["trabajo"] == "A"
+
+
+def test_la_lista_cuenta_los_productos_por_debajo(cliente):
+    trabajo = cliente.post("/trabajos", json={"nombre": "A"}).json()
+    presupuesto = _presupuesto(cliente, trabajo["id"])
+    cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"margen_pct": "50"})
+    linea = cliente.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo",
+        json={"rubro": "FLETE", "descripcion": "Traslado", "cantidad": "1", "precio_unitario": "1000"},
+    ).json()
+    # El sugerido es 1500; a mano, 1200.
+    cliente.patch(f"/lineas-costo/{linea['id']}/cliente", json={"precio_cliente": "1200"})
+
+    [fila] = cliente.get("/resumen-de-presupuestos").json()
+
+    assert fila["por_debajo"] == 1
+
+
+def test_un_presupuesto_cuyo_trabajo_se_borro_queda_en_la_lista(cliente):
+    trabajo = cliente.post("/trabajos", json={"nombre": "A"}).json()
+    presupuesto = _presupuesto(cliente, trabajo["id"])
+
+    cliente.delete(f"/trabajos/{trabajo['id']}")
+
+    [fila] = cliente.get("/resumen-de-presupuestos").json()
+    assert (fila["id"], fila["trabajo_id"], fila["trabajo"], fila["por_debajo"]) == (presupuesto["id"], None, None, 0)
+
+
+def test_el_inicio_trae_tambien_la_fecha_y_por_debajo(cliente):
+    trabajo = cliente.post("/trabajos", json={"nombre": "A"}).json()
+    _presupuesto(cliente, trabajo["id"])
+
+    [fila] = cliente.get("/resumen-del-inicio").json()["presupuestos"]
+
+    assert datetime.fromisoformat(fila["creado_en"]).utcoffset() == timedelta(0)
+    assert fila["por_debajo"] == 0

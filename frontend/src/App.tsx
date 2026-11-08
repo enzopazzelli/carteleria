@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom"
 import ConBarra from "./routes/ConBarra";
 import Inicio from "./routes/Inicio";
 import Materiales from "./routes/Materiales";
+import Presupuestos from "./routes/Presupuestos";
 import Trabajos from "./routes/Trabajos";
 import WorkspaceLayout from "./routes/TrabajoWorkspace/WorkspaceLayout";
 import PiezasTab from "./routes/TrabajoWorkspace/PiezasTab";
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
       { path: "/", element: <Inicio /> },
       { path: "/trabajos", element: <Trabajos /> },
       { path: "/materiales", element: <Materiales /> },
+      { path: "/presupuestos", element: <Presupuestos /> },
       {
         path: "/trabajos/:trabajoId",
         element: <WorkspaceLayout />,

@@ -125,6 +125,8 @@ class LineaCostoLeer(BaseModel):
     override_en: datetime | None
     texto_cliente: str | None
     precio_cliente: Decimal | None
+    #: El margen de la planilla, como multiplicador del costo (A19, `PAR-61`).
+    multiplicador: Decimal | None
 
 
 class LineaCostoOverride(BaseModel):
@@ -208,6 +210,8 @@ class TotalesLeer(BaseModel):
     total: Decimal | None
     total_fijado: Decimal | None
     advertencias: list[str]
+    #: Cuántos ítems quedaron por debajo del precio sugerido (A19).
+    por_debajo: int
 
 
 # --- Desglose completo (paso 6: `CART-308`, el último del plan) ----------
@@ -225,6 +229,13 @@ class ItemClienteLeer(BaseModel):
     precio_base: Decimal | None
     a_mano: bool
     precio_final: Decimal | None
+    #: A19: el multiplicador de la planilla (o `None`: margen general), el
+    #: precio sugerido, la ganancia (final ÷ costo) y cuánto por debajo del
+    #: sugerido quedó, en %.
+    multiplicador: Decimal | None
+    sugerido: Decimal | None
+    ganancia: Decimal | None
+    por_debajo_pct: int | None
 
 
 class DesgloseLeer(BaseModel):

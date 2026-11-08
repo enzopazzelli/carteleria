@@ -96,6 +96,8 @@ def presupuesto_resumido(sesion: Session, presupuesto: Presupuesto) -> Presupues
         total=cuenta.total,
         moneda=cuenta.moneda,
         estado=presupuesto.estado,
+        creado_en=en_utc(presupuesto.creado_en),
+        por_debajo=cuenta.por_debajo,
     )
 
 
@@ -208,6 +210,17 @@ def _materiales_resumidos(sesion: Session) -> MaterialesResumidosLeer:
         articulos=contar(select(func.count(Articulo.id)).where(Articulo.en_ultima_planilla.is_(True))),
         ultima_planilla_en=en_utc(ultima_planilla_en) if ultima_planilla_en is not None else None,
     )
+
+
+@router.get("/resumen-de-presupuestos", response_model=list[PresupuestoResumidoLeer])
+def listar_presupuestos_resumidos(sesion: Session = Depends(obtener_sesion)) -> list[PresupuestoResumidoLeer]:
+    """Todos los presupuestos, del más nuevo al más viejo, con el mismo renglón
+    que el inicio (A19, `docs/historico/A19-presupuestos-y-precio-sugerido/diseno.md §5.4`).
+    Fuera de `/presupuestos/...`, para no chocar con `/presupuestos/{presupuesto_id}`."""
+    presupuestos = sesion.scalars(
+        select(Presupuesto).order_by(Presupuesto.creado_en.desc(), Presupuesto.id.desc())
+    ).all()
+    return [presupuesto_resumido(sesion, presupuesto) for presupuesto in presupuestos]
 
 
 @router.get("/resumen-del-inicio", response_model=ResumenDelInicioLeer)

@@ -15,7 +15,7 @@ const AHORA = new Date("2026-10-26T12:00:00Z");
 
 const PRESUPUESTO: PresupuestoResumido = {
   id: 3, codigo: "P-2026-0001", cliente: "Parador", trabajo_id: 4, trabajo: "parador",
-  total: "300000.00", moneda: "ARS", estado: "BORRADOR",
+  total: "300000.00", moneda: "ARS", estado: "BORRADOR", creado_en: "2026-10-26T12:00:00Z", por_debajo: 0,
 };
 
 describe("fechaDeTarjeta", () => {

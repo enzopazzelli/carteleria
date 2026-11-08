@@ -110,7 +110,7 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-15** | Criterio de facturación de plancha | plancha entera | — | Sistema | Config | `CART-302` | 🔴 **bloqueante** (`P-10`, `D-02`) — evidencia 2026-09-26 (`P-26`): el criterio parece variar por material o formato, lo que probablemente lo vuelve un dato del formato y no del sistema |
 | **PAR-16** | Precisión de redondeo del total | 2 | decimales | Sistema | Config | `CART-307` | 🟡 provisorio |
 | **PAR-40** | Moneda de referencia para conversión (`CotizacionMoneda`) | ARS | — | Sistema | Config + `CotizacionMoneda` | `CART-211` | 🟡 provisorio |
-| **PAR-61** | Qué margen de venta de la hoja `COTIZADOR` usa el precio sugerido de un material: un multiplicador del costo (× 3 es costo por 3) | `MARGEN DE VENTA 1` | columna | Sistema | Config | `plan/A19-presupuestos-y-precio-sugerido/diseno.md §5.1` | ✅ decidido por Enzo el 2026-11-07. El segundo (× 6 en chapa, acrílicos, PVC, Polyfan, Metalex y vinilos de corte) espera `P-36`; el 3 y el 4 están vacíos en la planilla real |
+| **PAR-61** | Qué margen de venta de la hoja `COTIZADOR` usa el precio sugerido de un material: un multiplicador del costo (× 3 es costo por 3) | `MARGEN DE VENTA 1` | columna | Sistema | Config | `historico/A19-presupuestos-y-precio-sugerido/diseno.md §5.1` | ✅ decidido por Enzo el 2026-11-07. El segundo (× 6 en chapa, acrílicos, PVC, Polyfan, Metalex y vinilos de corte) espera `P-36`; el 3 y el 4 están vacíos en la planilla real |
 
 ### 2.3 Parámetros de flujo y notificación
 
@@ -326,7 +326,7 @@ Surge del diseño de la pantalla de materiales ([`historico/A18-pantalla-de-mate
 
 ### 🟡 El precio sugerido
 
-Surge del diseño de los presupuestos con precio sugerido ([`plan/A19-presupuestos-y-precio-sugerido/`](plan/A19-presupuestos-y-precio-sugerido/diseno.md)). Es para el dueño o administración. Hasta que conteste, el sistema hace lo que dice «Hoy».
+Surge del diseño de los presupuestos con precio sugerido ([`historico/A19-presupuestos-y-precio-sugerido/`](historico/A19-presupuestos-y-precio-sugerido/diseno.md)). Es para el dueño o administración. Hasta que conteste, el sistema hace lo que dice «Hoy».
 
 | ID | Pregunta | Alimenta |
 |---|---|---|

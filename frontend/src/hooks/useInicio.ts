@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { borrarTrabajo, listarTarjetas, obtenerResumenDelInicio } from "../api/inicio";
+import { borrarTrabajo, listarPresupuestosResumidos, listarTarjetas, obtenerResumenDelInicio } from "../api/inicio";
 
 // Se vuelven a pedir al entrar y al volver a la pestaña del navegador, no
 // solas cada tantos segundos: un «Anidando…» se actualiza al volver a mirar.
@@ -24,6 +24,16 @@ export function useResumenDelInicio() {
   });
 }
 
+/** La pantalla Presupuestos (A19). */
+export function usePresupuestosResumidos() {
+  return useQuery({
+    queryKey: ["presupuestos-resumidos"],
+    queryFn: listarPresupuestosResumidos,
+    refetchOnWindowFocus: true,
+    meta: { avisaSola: true },
+  });
+}
+
 /** Al borrar, la tarjeta se va del inicio y de Trabajos, y el presupuesto
  * que quedaba aparece sin trabajo. */
 export function useBorrarTrabajo() {
@@ -32,7 +42,7 @@ export function useBorrarTrabajo() {
     mutationFn: borrarTrabajo,
     onSuccess: () =>
       Promise.all(
-        [["tarjetas"], ["resumen-del-inicio"], ["presupuestos"]].map((queryKey) =>
+        [["tarjetas"], ["resumen-del-inicio"], ["presupuestos"], ["presupuestos-resumidos"]].map((queryKey) =>
           queryClient.invalidateQueries({ queryKey }),
         ),
       ),

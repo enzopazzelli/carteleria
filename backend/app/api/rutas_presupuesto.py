@@ -15,9 +15,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..costeo import resumen_materiales
+from ..modelos.catalogo import Formato
 from ..modelos.presupuesto import Cliente, LineaCosto, Presupuesto, RubroLineaCosto
 from ..services.presupuesto.documento import PresupuestoIncompleto, armar_documento, hoy_en_argentina
 from ..services.presupuesto.pdf import generar_pdf
+from ..services.presupuesto.sugerido import multiplicador_de
 from ..services.presupuesto.totales import Cuenta, calcular
 from .dependencias import obtener_sesion
 from .esquemas_presupuesto import (
@@ -214,6 +216,7 @@ def duplicar_presupuesto(
                 override_en=linea.override_en,
                 texto_cliente=linea.texto_cliente,
                 precio_cliente=linea.precio_cliente,
+                multiplicador=linea.multiplicador,
             )
         )
     sesion.commit()
@@ -270,7 +273,11 @@ def recalcular_materiales(
 
     resultado: list[LineaCosto] = []
     for linea in resumen.lineas:
-        advertencia = "; ".join(linea.advertencias) or None
+        # El margen de la planilla se toma ahora y queda guardado (A19, §5.1):
+        # un presupuesto armado no cambia solo con la planilla.
+        formato = sesion.get(Formato, linea.formato_id) if linea.formato_id is not None else None
+        multiplicador = multiplicador_de(sesion, formato)
+        advertencia = "; ".join([*linea.advertencias, *filter(None, [multiplicador.aviso])]) or None
         existente = existentes_por_grupo.get(linea.grupo_id)
 
         # Sin material asignado, `linea.moneda` es None (`costeo.py`) —
@@ -291,6 +298,7 @@ def recalcular_materiales(
                 valor_calculado=linea.costo_estimado,
                 moneda=moneda,
                 advertencia=advertencia,
+                multiplicador=multiplicador.valor,
             )
             sesion.add(nueva)
             resultado.append(nueva)
@@ -311,6 +319,7 @@ def recalcular_materiales(
         existente.moneda = moneda
         existente.ejecucion_id = linea.ejecucion_id
         existente.advertencia = advertencia
+        existente.multiplicador = multiplicador.valor
         resultado.append(existente)
 
     sesion.commit()
@@ -466,6 +475,7 @@ def _totales_leer(presupuesto: Presupuesto, cuenta: Cuenta) -> TotalesLeer:
         total=cuenta.total,
         total_fijado=cuenta.total_fijado,
         advertencias=cuenta.advertencias,
+        por_debajo=cuenta.por_debajo,
     )
 
 

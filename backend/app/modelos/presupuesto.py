@@ -163,5 +163,10 @@ class LineaCosto(Base):
     texto_cliente: Mapped[str | None] = mapped_column(String(300), default=None)
     #: Sin IVA, en la moneda del presupuesto.
     precio_cliente: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    #: El margen de la planilla de su material, como multiplicador del costo
+    #: (`PAR-61`, A19). Se toma al recalcular los materiales y queda guardado:
+    #: un presupuesto armado no cambia solo con la planilla. `None`: la línea
+    #: usa el margen general del presupuesto.
+    multiplicador: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
 
     presupuesto: Mapped[Presupuesto] = relationship(back_populates="lineas")

@@ -1,8 +1,8 @@
 # A19 · Los presupuestos y el precio sugerido — diseño
 
-> **Estado:** escrito el 2026-11-07, después de una charla corta con Enzo (§3), que aprobó la descripción en la charla («Dale»). Falta que apruebe este documento; después va el plan, en `plan.md` de esta carpeta.
+> **Estado:** escrito el 2026-11-07, después de una charla corta con Enzo (§3), que lo aprobó ese día («Dale»). El plan está en `plan.md` de esta carpeta. **Cerrado el 2026-11-07:** las 7 tareas del plan, en `main`. Cómo quedó, en §10.
 >
-> **De dónde sale.** Es lo que sigue de «Lo grande, después de A17» del [`PLAN-MAESTRO.md §7`](../PLAN-MAESTRO.md): después de la pantalla de materiales (A18), las de presupuestos y de retocar el presupuesto. En la charla quedó que no hace falta una pantalla nueva para retocar: se mejora la que ya existe en el Costeo (§4).
+> **De dónde sale.** Es lo que sigue de «Lo grande, después de A17» del [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md): después de la pantalla de materiales (A18), las de presupuestos y de retocar el presupuesto. En la charla quedó que no hace falta una pantalla nueva para retocar: se mejora la que ya existe en el Costeo (§4).
 >
 > **Sobre los valores.** Agrega al [`REGISTRO.md`](../../REGISTRO.md) el parámetro `PAR-61` (qué margen de la planilla usa el precio sugerido) y la pregunta `P-36` (cuándo se usa el segundo margen de la planilla). Toca `PAR-12` (el margen por defecto, todavía sin definir): pasa a valer solo para lo que no tiene margen en la planilla.
 
@@ -180,3 +180,48 @@ Los nombres son a elección de quien construye.
 - La ganancia se muestra como multiplicador («× 2,6»), igual que en la planilla, y no en %.
 - La lista va del más nuevo al más viejo, y marca los presupuestos con productos por debajo.
 - Duplicar un presupuesto copia el multiplicador; una línea fuera de la cuenta no tiene sugerido ni marca.
+
+## 10. Cómo quedó
+
+*Cerrado el 2026-11-07. Rama `feat/a19-presupuestos-y-precio-sugerido`, las 7 tareas del plan en 3 tramos, en el día, cada una con su pausa para que Enzo la viera.*
+
+**Lo que se hizo.**
+- **El servidor (tramo 1):**
+  - el multiplicador de la planilla de cada medida (`services/presupuesto/sugerido.py`, `PAR-61` en `config.py`);
+  - la columna `multiplicador` en las líneas de costo, con su migración `a3c9f1e2b7d4`; la base se pone al día sola al arrancar, con respaldo;
+  - «Recalcular materiales» lo guarda y «Duplicar» lo copia;
+  - la cuenta (`totales.py`) arma el sugerido, la ganancia y lo que queda por debajo de cada ítem;
+  - la lista resumida de todos los presupuestos (`GET /resumen-de-presupuestos`).
+- **La pantalla (tramo 2):**
+  - en el Costeo, las columnas «Sugerido» y «Ganancia», el renglón en amarillo con «por debajo del sugerido: −N %» y el aviso arriba de la tabla;
+  - la pantalla «Presupuestos», con buscador, y su lugar en la barra prendido;
+  - «Ver todos» y la misma marca en el inicio.
+
+**Lo medido, sobre una copia de la base real con la planilla cargada** (`backend/local/herramientas-a19/recorrido-a19.mjs`):
+- **En el Parador,** «Recalcular materiales»: la chapa `CHA0009` sugiere su costo × 3 ($ 191.883,58) y su ganancia es × 3.
+- **Un flete sin margen general:** «A «Traslado» le falta precio: …». Con un margen general del 40 %, sugiere $ 42.000 y dice «margen general».
+- **La chapa bajada a mano un 15 %:** el renglón en amarillo con «−15 %» y «1 producto queda por debajo del precio sugerido.».
+- **Un total un 10 % más bajo:** los dos por debajo (−24 % y −10 %), y el servidor cuenta 2.
+- **La lista:**
+  - marca ese presupuesto («2 por debajo del sugerido»);
+  - encuentra con y sin tilde;
+  - abre su Costeo;
+  - un presupuesto cuyo trabajo se borró sale «sin trabajo» y avisa qué le falta para el PDF.
+- **El PDF del cliente** no tiene ni sugerido, ni ganancia, ni margen.
+- **Pruebas:** el servidor, 1231 (y las 3 fallas conocidas de antes); la pantalla, 321.
+
+**Lo que cambió respecto de este diseño.**
+- **Una línea calculada sin total fijado nunca se marca «por debajo»** (decisión del plan): la cuenta le pasa a un ítem el centavo que sobra al redondear, y ese ítem puede quedar un centavo abajo de su sugerido sin que nadie lo haya bajado.
+- **Sin ninguna línea en la cuenta no hay precios** (ni un total de $ 0) **ni aviso del margen:** no le falta precio a ninguna. Antes, un presupuesto vacío avisaba el margen.
+- **El botón «PDF» y el renglón de un presupuesto** son el mismo componente en el inicio y en la lista.
+- Las demás decisiones chicas de la construcción, en «Desvíos» del plan.
+
+**Lo que queda.**
+- **Que los presupuestos que ya existen tomen su multiplicador:** recién al volver a «Recalcular materiales» en cada uno. Hasta entonces dan lo mismo que antes.
+- **El segundo margen (× 6),** cuando se conteste `P-36`.
+- **Lo anotado para después (§8),** sin cambios.
+- **Lo que vio la revisión del cierre y quedó sin arreglar,** para decidir:
+  - la lista calcula la cuenta de cada presupuesto en cada pedido: con decenas va bien, con miles convendría guardar el total;
+  - el aviso «… no tiene margen en la planilla» suena raro para la mano de obra o el flete, que nunca lo tienen;
+  - mientras a un renglón le falta precio, el campo «Precio» de los demás queda vacío, como antes;
+  - con las dos columnas nuevas, el texto para el cliente del Costeo quedó más angosto.

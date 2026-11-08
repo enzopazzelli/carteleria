@@ -79,6 +79,16 @@ FAMILIAS_PARA_LEER_EL_DXF = tuple(
     for familia in os.getenv("CARTELERIA_FAMILIAS_PARA_LEER_EL_DXF", "Chapas,Acrílicos,Policarbonato").split(",")
 )
 
+#: `PAR-61` (`docs/REGISTRO.md`): qué margen de venta de la hoja `COTIZADOR`
+#: usa el precio sugerido de un material, como la columna de `Articulo` que lo
+#: guarda. Es un multiplicador del costo: × 3 es el costo por 3 (A19).
+MARGEN_DEL_PRECIO_SUGERIDO = os.getenv("CARTELERIA_MARGEN_DEL_PRECIO_SUGERIDO", "margen_venta_1")
+if MARGEN_DEL_PRECIO_SUGERIDO not in {f"margen_venta_{numero}" for numero in range(1, 5)}:
+    raise RuntimeError(
+        "CARTELERIA_MARGEN_DEL_PRECIO_SUGERIDO tiene que ser margen_venta_1, margen_venta_2, margen_venta_3"
+        f" o margen_venta_4, no «{MARGEN_DEL_PRECIO_SUGERIDO}»."
+    )
+
 #: `PAR-57` (`docs/REGISTRO.md`): cuánto puede tardar Sparrow en reacomodar
 #: la chapa de destino al pasarle una pieza (A17). La pantalla espera.
 TIEMPO_PARA_REACOMODAR_S = int(os.getenv("CARTELERIA_TIEMPO_REACOMODAR_S", "30"))
