@@ -1,5 +1,5 @@
 """El multiplicador de la planilla para una medida (A19,
-`docs/plan/A19-presupuestos-y-precio-sugerido/diseno.md §5.1`).
+`docs/historico/A19-presupuestos-y-precio-sugerido/diseno.md §5.1`).
 
 El precio sugerido de una línea de material es su costo por el margen de venta
 de la planilla (`PAR-61`). Ese margen sale del artículo que cuenta para el

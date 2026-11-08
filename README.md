@@ -27,16 +27,24 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - que el motor de anidado sea confiable con diseños reales y aproveche mejor la chapa. **Sparrow es el motor principal**; el rectangular queda de prueba;
 - después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
 
-Las dos cosas ya están, y también la primera de las pantallas que faltaban: Materiales (A18). Siguen las de presupuestos.
+Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18) y Presupuestos, con el precio sugerido (A19). Sigue la aprobación del presupuesto.
 
 **Lo que sigue:**
 - **La primera carga de la planilla en la base real.** La hace Enzo desde Materiales, con «Actualizar desde la planilla», después de un respaldo de la base. Sobre una copia, la planilla real dio:
   - 27 códigos se enlazan y entran 261 artículos;
   - `CHA0016` y `POL0006` quedan a mano;
   - hay que mirar `CHA0013`, que va con 1250 × 2500.
-- **Después,** lo próximo de «Lo grande»: la pantalla de presupuestos y la de retocar el presupuesto, cada una con su diseño.
+- **Después,** lo próximo de «Lo grande»: la aprobación del presupuesto.
 
 **Ya está en `main`:**
+- **Los presupuestos con precio sugerido (A19), desde el 2026-11-07.**
+  - **Para qué:** que el presupuesto salga con la ganancia que corresponde aunque lo arme alguien que no sabe, y que una baja se note. El dueño lo pidió porque los empleados cobraban mucho menos de lo que podían.
+  - **El precio sugerido:** cada material toma el primer margen de la planilla, que es un multiplicador del costo (la chapa × 3, el MDF × 5); lo que no tiene margen usa el margen general del presupuesto. El margen se guarda al «Recalcular materiales».
+  - **En el Costeo:** al lado de cada producto, el sugerido, el precio (que se cambia a mano) y la ganancia. Un producto por debajo del sugerido va en amarillo, con cuánto, y arriba hay un aviso.
+  - **«Presupuestos»** se prende en la barra: la lista de todos, con buscador, marca los que tienen productos por debajo, abre su Costeo y baja su PDF. El cliente no ve nada de esto.
+  - **Queda para el dueño** cuándo se usa el segundo margen de la planilla (× 6, `P-36`).
+
+  Ver [`docs/historico/A19-presupuestos-y-precio-sugerido/`](docs/historico/A19-presupuestos-y-precio-sugerido/diseno.md).
 - **La pantalla de Materiales con la planilla de precios (A18), desde el 2026-11-07.**
   - **De dónde salen los precios:** los materiales y sus precios salen de la planilla de la empresa (`CARTELERIA 2026.xlsx`, hoja `COTIZADOR`, la misma de AppSheet).
   - **Cómo se actualizan:** en Materiales, «Actualizar desde la planilla» la sube y muestra una revisión antes de aplicar: qué precios cambian, qué entra, qué ya no está y qué hay que mirar.

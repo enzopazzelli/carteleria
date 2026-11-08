@@ -6,7 +6,7 @@ import { falla, type QueMostrar } from "../components/Mensaje/contenido";
 import { usePresupuestosResumidos } from "../hooks/useInicio";
 
 /** Todos los presupuestos, del más nuevo al más viejo, con un buscador (A19,
- * `docs/plan/A19-presupuestos-y-precio-sugerido/diseno.md §5.4`). Marca los que
+ * `docs/historico/A19-presupuestos-y-precio-sugerido/diseno.md §5.4`). Marca los que
  * tienen productos por debajo del precio sugerido. */
 export default function Presupuestos() {
   const presupuestos = usePresupuestosResumidos();

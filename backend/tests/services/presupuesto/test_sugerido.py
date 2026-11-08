@@ -1,5 +1,5 @@
 """El multiplicador de la planilla para una medida (A19, tarea 1;
-`docs/plan/A19-presupuestos-y-precio-sugerido/diseno.md §5.1`)."""
+`docs/historico/A19-presupuestos-y-precio-sugerido/diseno.md §5.1`)."""
 from __future__ import annotations
 
 from datetime import datetime, timezone

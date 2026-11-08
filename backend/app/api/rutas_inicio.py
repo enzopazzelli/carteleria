@@ -215,7 +215,7 @@ def _materiales_resumidos(sesion: Session) -> MaterialesResumidosLeer:
 @router.get("/resumen-de-presupuestos", response_model=list[PresupuestoResumidoLeer])
 def listar_presupuestos_resumidos(sesion: Session = Depends(obtener_sesion)) -> list[PresupuestoResumidoLeer]:
     """Todos los presupuestos, del más nuevo al más viejo, con el mismo renglón
-    que el inicio (A19, `docs/plan/A19-presupuestos-y-precio-sugerido/diseno.md §5.4`).
+    que el inicio (A19, `docs/historico/A19-presupuestos-y-precio-sugerido/diseno.md §5.4`).
     Fuera de `/presupuestos/...`, para no chocar con `/presupuestos/{presupuesto_id}`."""
     presupuestos = sesion.scalars(
         select(Presupuesto).order_by(Presupuesto.creado_en.desc(), Presupuesto.id.desc())

@@ -1,6 +1,6 @@
 # A19 · Los presupuestos y el precio sugerido — plan
 
-> **Estado:** escrito y aprobado por Enzo el 2026-11-07 («Si dale»); en ejecución en la rama `feat/a19-presupuestos-y-precio-sugerido`.
+> **Estado:** escrito y aprobado por Enzo el 2026-11-07 («Si dale»); ejecutado ese día en la rama `feat/a19-presupuestos-y-precio-sugerido`. **Cerrado el 2026-11-07**, con las 7 tareas hechas; cómo quedó, en §10 del diseño.
 
 > **Para quien ejecuta:** tarea por tarea, con **pausa al final de cada una** para que Enzo la vea antes de seguir. Así trabaja este proyecto, aunque el skill de ejecución diga otra cosa (superpowers:executing-plans). Los pasos usan casillas (`- [ ]`) para llevar la cuenta.
 
@@ -295,4 +295,15 @@ export default function BotonPdf({ presupuesto }: { presupuesto: PresupuestoResu
 
 ## Desvíos
 
-(Se completa al ejecutar.)
+Lo que se decidió al construir y el plan no decía:
+- **Tarea 1.** Una medida sin código tampoco tiene multiplicador. La migración usa `batch_alter_table`, porque SQLite no saca columnas sin él.
+- **Tarea 3.**
+  - Sin ninguna línea en la cuenta (un presupuesto vacío, o con todas sin costo o en otra moneda) no hay precios ni aviso del margen, haya o no margen general. Antes, con margen general daba $ 0 y sin él avisaba el margen.
+  - Cambian a esa regla `test_el_desglose_dice_que_le_falta_al_presupuesto` y la prueba de los totales sin líneas, y al aviso por línea las que miraban «Falta cargar el margen…».
+- **Tarea 4.** La prueba que comparaba el renglón del presupuesto de una tarjeta campo por campo suma los dos campos nuevos: las tarjetas usan la misma función.
+- **Tarea 5.** «Por debajo del sugerido: −N %» va debajo del importe en «En el presupuesto», y el renglón entero se pinta de amarillo.
+- **Tarea 6.**
+  - `BotonPdf` le pasa su error a quien lo usa (`alFallar`): el inicio lo muestra debajo de la lista, como antes, y la lista nueva arriba.
+  - El renglón de un presupuesto se sacó a `FilaDePresupuesto`, compartido por los dos.
+  - Borrar un trabajo también refresca la lista.
+- **El cierre.** La revisión de la rama la hizo el mismo que escribió el código, sin un revisor aparte. No encontró nada crítico ni importante; lo chico quedó en §10 del diseño.

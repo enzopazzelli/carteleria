@@ -46,7 +46,7 @@ class ItemCuenta:
     precio_base: Decimal | None
     a_mano: bool
     precio_final: Decimal | None
-    #: Lo de A19 (`docs/plan/A19-presupuestos-y-precio-sugerido/diseno.md §5.2`),
+    #: Lo de A19 (`docs/historico/A19-presupuestos-y-precio-sugerido/diseno.md §5.2`),
     #: solo para las líneas que entran en la cuenta. El multiplicador de la
     #: planilla, si la línea lo tiene; `None`, el sugerido salió del margen
     #: general.
