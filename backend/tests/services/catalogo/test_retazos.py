@@ -1,5 +1,5 @@
 """Guardar el sobrante de una chapa como retazo y saber en qué anda cada retazo
-(A21, paso 2, `docs/plan/A21-cuenta-de-retazos/diseno.md`)."""
+(A21, paso 2, `docs/historico/A21-cuenta-de-retazos/diseno.md`)."""
 from __future__ import annotations
 
 from decimal import Decimal

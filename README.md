@@ -36,7 +36,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 | **Aprobación del presupuesto** | Un presupuesto solo existía en borrador: nada decía si alguien lo había visto, ni quién. | Cuatro estados (borrador, pendiente, observado y aprobado) y el historial de quién cambió qué y cuándo. Lo pendiente y lo aprobado no se edita; para tocarlo hay que volverlo a borrador, con un motivo. El nombre de quien aprueba se escribe a mano. | Usuarios con el permiso «puede aprobar», el aviso al dueño y el envío al cliente. | El diseñador manda a aprobar. Al dueño le llega un mail con un link, lo abre en el celular sin iniciar sesión y aprueba o lo devuelve con una observación. Al aprobar, el PDF sale al cliente y el presupuesto queda congelado con los precios de ese día. |
 | **Materiales y precios** | 23 materiales cargados por la API, sin los precios de la planilla de la empresa. | La pantalla de Materiales y la planilla ya cargada en la base real: 44 materiales, 59 medidas y 288 artículos. Cada vez que la planilla cambie, se sube y se revisa antes de aplicar. | Enlazar a mano dos códigos que la planilla no relaciona con ningún material (`CHA0016` y `POL0006`), y conectar con el sistema del taller que hace el otro equipo. | La planilla de la empresa sigue siendo la fuente: se sube, se miran los cambios y se aplican. Cuando el otro sistema esté listo, los materiales se consultarían de ahí. |
 | **Precio del presupuesto** | Se calculaba el costo. El precio dependía de quién armara el presupuesto, y los empleados cobraban mucho menos de lo que podían. | El precio sugerido con el margen de la planilla, y lo que queda por debajo se marca en amarillo. La lista de todos los presupuestos y el PDF para el cliente, que no muestra costos ni márgenes. | Que el dueño diga cuándo se usa el segundo margen (× 6); el logo, los datos fiscales y el formato de la empresa en el PDF; y cobrar por lo que realmente se usa de la chapa. | El sistema sugiere y marca; quien arma o el dueño decide. El PDF sale con el formato de la empresa, y el precio de una chapa se basa en lo usado y no en la chapa entera. |
-| **Anidado y chapas** | Un anidado que fallaba con diseños grandes (como Complejo) y de a un trabajo por vez. | Sparrow como motor principal: varios anidados a la vez, piezas chicas en los huecos de las grandes, giro libre, el material usado en ancho × alto, todas las chapas juntas con mover piezas entre ellas, y el diseño anidado en PDF. | Llevar la cuenta de los retazos, medir la segunda tanda de A17 e imprimir una hoja del PDF para comprobar la escala. | Cada trabajo guarda cuánto material se usó y qué sobró. Los retazos quedan registrados para aprovecharlos en otros trabajos. |
+| **Anidado y chapas** | Un anidado que fallaba con diseños grandes (como Complejo) y de a un trabajo por vez. | Sparrow como motor principal: varios anidados a la vez, piezas chicas en los huecos de las grandes, giro libre, el material usado en ancho × alto, todas las chapas juntas con mover piezas entre ellas, y el diseño anidado en PDF. Y la cuenta de los retazos: el sobrante de una chapa se guarda con un botón, el retazo dice de dónde salió y en qué anda (disponible, en uso o usado), y Materiales suma cuántos hay. | Cobrar por lo usado (depende del dueño), proponer un retazo al anidar un trabajo nuevo, medir la segunda tanda de A17 e imprimir una hoja del PDF para comprobar la escala. | Al anidar, el sistema podría proponer un retazo que sirva antes de gastar una chapa entera. |
 | **Lectura del dibujo (DXF)** | No se veía cómo había leído el dibujo el sistema antes de cargarlo. | Una imagen de la lectura antes de cargar, corregirla con clics, y seccionar solas las piezas que no entran en una chapa. | Recordar las correcciones al volver a cargar el mismo dibujo, mejorar cómo decide qué es pieza y qué es agujero, e importar varios diseños a la vez desde la pantalla. En espera: colores por pieza y leer `.cdr`. | Se carga el dibujo, se ve cómo lo leyó, se corrige y se sigue; y la próxima vez que llegue el mismo diseño ya no hay que corregirlo de nuevo. |
 | **Usuarios, servidor y avisos** | Todo corre en una sola computadora, sin usuarios ni login. | Igual: una sola máquina, sin usuarios. La base se respalda sola antes de actualizarse. | Usuarios con contraseña, servidor y dominio reales con HTTPS y copias de seguridad, mail real y aviso por WhatsApp. | Un servidor al que se entra desde el celular, con usuarios (diseñador y dueño), mails reales y aviso por WhatsApp. Es lo que termina de cerrar la aprobación. |
 
@@ -44,6 +44,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 
 **Lo tuyo (Enzo), ahora**
 - Enlazar `CHA0016` y `POL0006` a mano desde Materiales.
+- Aplicar la migración de A21 (el origen de los retazos) en la base real: se aplica sola al levantar el servidor, así que antes, un respaldo.
 - Imprimir una hoja del PDF de chapas y medirla con regla: la barra de referencia debería medir 25 mm, y una chapa de 1220 × 2440, 61 × 122 mm.
 - Mirar el código repetido de la planilla: `CAB0004` de LUNA SUD está dos veces (filas 44 y 221, las dos sin precio) y el sistema toma el de más abajo. Hay que verlo en AppSheet.
 - Medir la segunda tanda de A17 (unos 75 minutos con la máquina libre), solo si la pedís.
@@ -60,7 +61,6 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 - **Vale:** si tiene cambios en curso sobre `sparrow_worker.py` y si ya había probado otro reparto del tiempo.
 
 **Se puede construir ya, sin esperar a nadie**
-- Llevar la cuenta de los retazos (cobrar por lo usado depende de la respuesta del dueño).
 - Recordar las correcciones de la lectura al volver a cargar el mismo dibujo.
 - Una sola regla de qué anidado cuenta para el presupuesto: hoy se decide en cuatro lugares distintos.
 - Cambiar cómo decide el lector qué es pieza y qué es agujero (hay tres lecturas que salen mal y quedaron como falla conocida).
@@ -75,6 +75,19 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 **Hecho el 2026-11-08, en la base real:** la migración de A20 y la primera carga de la planilla, con respaldos antes de cada una en `backend/local/`.
 - Entraron 288 artículos: los 27 códigos enlazados y 261 nuevos. El catálogo pasó de 23 a 44 materiales y de 30 a 59 formatos.
 - `CHA0013` quedó con la medida a mano, 1250 × 2500, confirmada por Enzo (el 0,7 es el espesor).
+
+**Ya está en la rama `feat/a21-cuenta-de-retazos`** (todavía sin fusionar a `main`):
+- **La cuenta de los retazos (A21), desde el 2026-11-08.**
+  - **Para qué:** que el taller sepa con qué retazos cuenta, en vez de que el sobrante de cada chapa se pierda de vista.
+  - **Guardar:** en la tabla de chapas del resumen del anidado, al lado de cada sobrante que llega al mínimo (hoy 250 × 250 mm), un botón «Guardar como retazo». Crea el retazo con esa medida, del mismo material y al precio por m² de su chapa. El mismo sobrante no se guarda dos veces.
+  - **En Materiales:** arriba de las medidas de cada material, «Retazos: 1 retazo disponible · 2,22 m²». Cada retazo dice de dónde salió («Sobrante de Parador, chapa 2» o «a mano») y en qué anda:
+    - **disponible:** ningún trabajo lo usa;
+    - **en uso:** lo usa un trabajo cuyo presupuesto no está aprobado (sigue pudiéndose elegir);
+    - **usado:** lo usa un trabajo con el presupuesto aprobado. Si el presupuesto vuelve a borrador, se libera solo.
+  - **En el inicio:** el número de retazos cuenta solo los disponibles.
+  - **Todavía no:** cobrar por lo usado, y proponer un retazo al anidar un trabajo nuevo.
+
+  Ver [`docs/historico/A21-cuenta-de-retazos/`](docs/historico/A21-cuenta-de-retazos/diseno.md).
 
 **Ya está en `main`:**
 - **La aprobación del presupuesto (A20), desde el 2026-11-08.**

@@ -1,5 +1,5 @@
 """Los retazos: guardar el sobrante de una chapa y saber en qué anda cada uno
-(A21, `docs/plan/A21-cuenta-de-retazos/diseno.md`).
+(A21, `docs/historico/A21-cuenta-de-retazos/diseno.md`).
 
 Un retazo es un formato marcado `es_retazo` (A8). Acá se suma de dónde salió
 y el estado, que **se calcula y no se guarda**: un retazo está *disponible* si
