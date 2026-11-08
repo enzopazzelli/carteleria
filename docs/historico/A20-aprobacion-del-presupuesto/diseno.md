@@ -1,6 +1,6 @@
 # A20 — La aprobación del presupuesto (propuesta de diseño)
 
-**Estado:** construido y en la rama `feat/a20-aprobacion-del-presupuesto` el 2026-11-08; los supuestos de §4 los confirmó Enzo ese día y están en `REGISTRO.md`. Es el punto 8 de la tabla de `PLAN-MAESTRO.md §7` y la parte que se puede hacer hoy de 1.4 (`CART-401` a `CART-404`). Cómo quedó, en §8.
+**Estado:** construido y en `main` el 2026-11-08 (`8fe527f`); los supuestos de §4 los confirmó Enzo ese día y están en `REGISTRO.md`. Es el punto 8 de la tabla de `PLAN-MAESTRO.md §7` y la parte que se puede hacer hoy de 1.4 (`CART-401` a `CART-404`). Cómo quedó, en §8.
 
 ## 1. Qué problema resuelve
 

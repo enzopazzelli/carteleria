@@ -37,7 +37,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 - **Aplicar la migración de A20** (la tabla del historial de aprobaciones): al levantar el servidor la base se actualiza sola, así que antes, un respaldo.
 - **Después,** lo próximo de «Lo grande»: cobrar por lo usado y llevar la cuenta de los retazos, o lo de afuera (usuarios, mail, servidor).
 
-**Ya está en la rama `feat/a20-aprobacion-del-presupuesto`** (todavía sin fusionar a `main`):
+**Ya está en `main`:**
 - **La aprobación del presupuesto (A20), desde el 2026-11-08.**
   - **Para qué:** que quede asentado que el dueño vio un presupuesto y lo dio por bueno, o que lo devolvió con una observación, y quién y cuándo.
   - **Los estados:** borrador, pendiente de aprobación, observado y aprobado. Mandarlo a aprobar exige que esté completo, y dice qué falta si no.
@@ -45,8 +45,6 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
   - **Todavía no:** el aviso por mail con link para aprobar desde el celular, y el envío al cliente. Hace falta tener usuarios, servidor y buzón.
 
   Ver [`docs/historico/A20-aprobacion-del-presupuesto/`](docs/historico/A20-aprobacion-del-presupuesto/diseno.md).
-
-**Ya está en `main`:**
 - **Los presupuestos con precio sugerido (A19), desde el 2026-11-07.**
   - **Para qué:** que el presupuesto salga con la ganancia que corresponde aunque lo arme alguien que no sabe, y que una baja se note. El dueño lo pidió porque los empleados cobraban mucho menos de lo que podían.
   - **El precio sugerido:** cada material toma el primer margen de la planilla, que es un multiplicador del costo (la chapa × 3, el MDF × 5); lo que no tiene margen usa el margen general del presupuesto. El margen se guarda al «Recalcular materiales».
