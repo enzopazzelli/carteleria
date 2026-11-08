@@ -155,6 +155,24 @@ def test_un_articulo_sin_precio_se_agrega_y_el_presupuesto_dice_que_falta(api):
     assert not any("ARTICULO SIN PRECIO" in f for f in api.get(f"/presupuestos/{presupuesto['id']}/desglose").json()["faltantes"])
 
 
+def test_editar_una_linea_que_vino_sin_precio_no_rompe_y_sigue_sin_valor(api):
+    articulo_id = _articulo(api, "SIN1", "ARTICULO SIN PRECIO", costo=None)
+    presupuesto = _presupuesto(api)
+    linea = api.post(
+        f"/presupuestos/{presupuesto['id']}/lineas-costo/desde-catalogo", json={"articulo_id": articulo_id, "cantidad": "3"}
+    ).json()
+
+    # Cambiar solo la cantidad: sin precio, no hay valor calculado.
+    cambiada = api.patch(f"/lineas-costo/{linea['id']}", json={"cantidad": "5"})
+    assert cambiada.status_code == 200, cambiada.text
+    assert cambiada.json()["valor_calculado"] is None and Decimal(cambiada.json()["cantidad"]) == 5
+
+    # Con un precio escrito a mano, sí se calcula.
+    con_precio = api.patch(f"/lineas-costo/{linea['id']}", json={"precio_unitario": "200"})
+    assert con_precio.status_code == 200, con_precio.text
+    assert Decimal(con_precio.json()["valor_calculado"]) == Decimal("1000")
+
+
 @pytest.mark.parametrize(
     ("cuerpo", "estado"),
     [

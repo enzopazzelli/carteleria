@@ -104,6 +104,25 @@ def test_el_proveedor_marcado_a_mano_en_materiales_es_el_que_se_ofrece(sesion):
     assert [(a.proveedor) for a in buscar_articulos(sesion)[0]] == ["LUNA SUD"]
 
 
+def test_si_dos_medidas_marcaron_proveedores_distintos_la_busqueda_y_el_agregado_eligen_el_mismo(sesion):
+    luna = _articulo(sesion, "CHA1", "CHAPA", proveedor="LUNA SUD", cuando=AHORA - timedelta(days=5), fila=1, costo="10")
+    _articulo(sesion, "CHA1", "CHAPA", proveedor="IBARRA", cuando=AHORA - timedelta(days=3), fila=2, costo="12")
+    _articulo(sesion, "CHA1", "CHAPA", proveedor="SIDERMAQ", cuando=AHORA, fila=3, costo="15")
+    material = Material(nombre="CHAPA NEGRA", familia="CHAPA")
+    sesion.add_all(
+        [
+            Formato(material=material, codigo="CHA1", ancho_mm=1000, alto_mm=2000, proveedor_a_mano="LUNA SUD"),
+            Formato(material=material, codigo="CHA1", ancho_mm=1220, alto_mm=2440, proveedor_a_mano="IBARRA"),
+        ]
+    )
+    sesion.commit()
+
+    visto = buscar_articulos(sesion)[0][0]
+    linea = agregar_del_catalogo(sesion, _presupuesto(sesion), luna.id, D("1"), "INSUMO")
+
+    assert linea.articulo_proveedor == visto.proveedor, "lo que se ve y lo que se agrega tienen que coincidir"
+
+
 def test_el_limite_corta_la_lista_pero_el_total_dice_cuantos_hay(sesion):
     for n in range(7):
         _articulo(sesion, f"X{n}", f"TORNILLO {n}")

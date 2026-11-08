@@ -552,7 +552,12 @@ def actualizar_linea_libre(
     _rechazar_si_es_material(linea, "edita")
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         setattr(linea, campo, valor)
-    linea.valor_calculado = linea.cantidad * linea.precio_unitario
+    # Una línea que vino del catálogo puede no tener precio todavía (A23): sin cantidad o
+    # sin precio no hay valor calculado, y hay que ponerle uno a mano.
+    if linea.cantidad is None or linea.precio_unitario is None:
+        linea.valor_calculado = None
+    else:
+        linea.valor_calculado = linea.cantidad * linea.precio_unitario
     sesion.commit()
     return linea
 

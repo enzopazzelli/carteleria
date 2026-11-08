@@ -37,6 +37,20 @@ def _plano(texto: str | None) -> str:
     return "".join(c for c in texto if not unicodedata.combining(c)).casefold()
 
 
+def _proveedores_a_mano(sesion: Session, codigos: list[str]) -> dict[str, str]:
+    """El proveedor marcado a mano en Materiales para cada código, si lo hay. Si dos
+    medidas con el mismo código marcaron distinto, vale la más nueva: la búsqueda y el
+    agregado tienen que elegir el mismo."""
+    if not codigos:
+        return {}
+    filas = sesion.execute(
+        select(Formato.codigo, Formato.proveedor_a_mano)
+        .where(Formato.proveedor_a_mano.is_not(None), Formato.codigo.in_(codigos))
+        .order_by(Formato.id)
+    )
+    return {codigo: proveedor for codigo, proveedor in filas}
+
+
 def buscar_articulos(
     sesion: Session, texto: str = "", categoria: str | None = None, limite: int = LIMITE_DE_RESULTADOS
 ) -> tuple[list[Articulo], int]:
@@ -51,14 +65,7 @@ def buscar_articulos(
     por_codigo: dict[str, list[Articulo]] = {}
     for articulo in articulos:
         por_codigo.setdefault(articulo.codigo, []).append(articulo)
-    a_mano = {
-        codigo: proveedor
-        for codigo, proveedor in sesion.execute(
-            select(Formato.codigo, Formato.proveedor_a_mano).where(
-                Formato.proveedor_a_mano.is_not(None), Formato.codigo.in_(list(por_codigo))
-            )
-        )
-    }
+    a_mano = _proveedores_a_mano(sesion, list(por_codigo))
     cuentan = []
     for codigo, del_codigo in por_codigo.items():
         proveedor = proveedor_que_cuenta(
@@ -111,9 +118,7 @@ def agregar_del_catalogo(
         raise ErrorPrevisto(
             f"«{pedido.descripcion}» ya no está en la última planilla de precios: no se puede agregar.", estado=409
         )
-    a_mano = sesion.scalar(
-        select(Formato.proveedor_a_mano).where(Formato.codigo == pedido.codigo, Formato.proveedor_a_mano.is_not(None))
-    )
+    a_mano = _proveedores_a_mano(sesion, [pedido.codigo]).get(pedido.codigo)
     articulo = articulo_que_cuenta(sesion, pedido.codigo, a_mano) or pedido
 
     multiplicador = multiplicador_del_articulo(articulo)

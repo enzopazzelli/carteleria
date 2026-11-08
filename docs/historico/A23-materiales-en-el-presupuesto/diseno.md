@@ -98,3 +98,7 @@ Cada paso se pide con el ok de Enzo antes de seguir.
 - **Escribir la cantidad en planchas** y no en m² para un material que se vende por plancha entera (`SUP-37`).
 - **`CHA0016` y `POL0006`** no se ofrecen en el buscador porque la planilla no los trae: si se venden, la empresa tiene que agregarlos.
 - **Stock y kits** de artículos, y crear artículos desde la pantalla: la planilla sigue siendo la fuente.
+- **Lo que vio la revisión de la rama:** se arregló que editar una línea que vino de un artículo sin precio daba un error del servidor, que la búsqueda y el agregado podían elegir distinto proveedor si dos medidas del mismo código marcaron proveedores distintos, y que el artículo elegido seguía en el formulario aunque saliera de la lista. **Queda sin arreglar:**
+  - **La moneda:** la línea se guarda siempre en pesos, así que en un presupuesto en dólares queda afuera de la suma con el aviso de siempre; no hay conversión.
+  - **El rendimiento de la búsqueda:** carga todos los artículos de la planilla y filtra en memoria. Con 288 no se nota; con miles convendría filtrar en la base.
+  - **Una cantidad enorme** (más allá del tope) da un mensaje de validación genérico del servidor.

@@ -95,13 +95,19 @@ export default function BuscadorDeCatalogo({ presupuestoId }: { presupuestoId: n
           aria-label="Buscar en el catálogo"
           value={texto}
           autoFocus
-          onChange={(e) => setTexto(e.target.value)}
+          onChange={(e) => {
+            setTexto(e.target.value);
+            setElegido(null);
+          }}
         />
         <select
           className="border border-line rounded px-2 py-1 bg-paper text-sm"
           aria-label="Categoría"
           value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
+          onChange={(e) => {
+            setCategoria(e.target.value);
+            setElegido(null);
+          }}
         >
           <option value="">Todas las categorías</option>
           {data?.categorias.map((c) => (
