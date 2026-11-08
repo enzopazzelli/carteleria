@@ -125,6 +125,8 @@ class LineaCostoLeer(BaseModel):
     override_en: datetime | None
     texto_cliente: str | None
     precio_cliente: Decimal | None
+    #: El margen de la planilla, como multiplicador del costo (A19, `PAR-61`).
+    multiplicador: Decimal | None
 
 
 class LineaCostoOverride(BaseModel):
