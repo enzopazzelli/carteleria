@@ -229,6 +229,9 @@ def duplicar_presupuesto(
                 texto_cliente=linea.texto_cliente,
                 precio_cliente=linea.precio_cliente,
                 multiplicador=linea.multiplicador,
+                articulo_id=linea.articulo_id,
+                articulo_codigo=linea.articulo_codigo,
+                articulo_proveedor=linea.articulo_proveedor,
             )
         )
     sesion.commit()
