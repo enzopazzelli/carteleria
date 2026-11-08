@@ -242,14 +242,19 @@ Abrí **exactamente** `http://localhost:5173` (no `127.0.0.1`, no otro puerto): 
 | 6 | **Anidado** | Cambiá kerf, margen, separación o rotación y apretá "Aplicar y recalcular"; probá también "Aprovechar huecos" | Se crea una ejecución nueva; la anterior queda en el historial |
 | 7 | **Chapas** | Elegí el grupo arriba. Pasá el mouse por una pieza o una chapa; arrastrá una pieza a otra chapa o a «Chapa nueva». Doble clic en una chapa para retocarla: arrastrá piezas y girá con la rueda del mouse (o los botones ±15° / ±90°) | Todas las chapas juntas y el diseño inicial pintado por chapa; lo que está bajo el mouse se ilumina en los dos. Una pieza que se sale o choca se marca en rojo. "Ver plano imprimible" y "Descargar DXF de corte" exportan cada chapa. "Descargar PDF", arriba a la derecha, baja el PDF del trabajo entero para imprimir en A4 |
 | 8 | **Costeo** | Elegí «+ Cliente nuevo…» → "Crear primera opción de presupuesto" → "Recalcular materiales" → agregá líneas (mano de obra, flete…) | El desglose por rubro, con margen, IVA y total |
-| 9 | **Inicio** | Volvé con «Inicio» en la barra | La tarjeta del trabajo, con la miniatura pintada por chapa, los cuatro pasos en verde y el presupuesto. En «Trabajos» están todas, con un buscador; el «⋯» de una tarjeta borra el trabajo, con confirmación |
+| 9 | **Anidado** | Con el anidado listo, mirá la tabla de chapas del resumen y apretá «Guardar como retazo» al lado de un sobrante | El botón pasa a «guardado como retazo». En **Materiales**, el material muestra «Retazos: 1 retazo disponible · … m²» y de dónde salió |
+| 10 | **Costeo** | «Agregar del catálogo», buscá «corrug», elegí el artículo, escribí una cantidad y «Agregar». Hace falta la planilla cargada: en Materiales, «Actualizar desde la planilla» | La línea con su costo y, en «Presupuesto para el cliente», el precio sugerido con el margen de la planilla |
+| 11 | **Costeo** | Escribí tu nombre y apretá «Mandar a aprobar»; después «Aprobar» u «Observar» (con un motivo) | El estado cambia y queda el historial. Un presupuesto pendiente o aprobado queda bloqueado hasta que lo vuelvas a borrador |
+| 12 | **Costeo** | «Descargar PDF» | El PDF del cliente, sin costos ni márgenes. Con la marca de la empresa si existe `backend/local/empresa/` (ver abajo); sin esa carpeta, sale sin logo ni pie |
+| 13 | **Inicio** | Volvé con «Inicio» en la barra | La tarjeta del trabajo, con la miniatura pintada por chapa, los cuatro pasos en verde y el presupuesto. En «Trabajos» están todas, con un buscador; el «⋯» de una tarjeta borra el trabajo, con confirmación |
 
 ### Qué tener en cuenta (no son errores)
 
 - **Los precios de la demo son inventados.** Cualquier costo marcado "(simulado)" no es un dato real.
 - **Kerf, margen y separación son provisorios** (2 / 10 / 5 mm): todavía no se confirmaron con el taller.
 - **El anidado acomoda el rectángulo que envuelve a cada pieza**, no su forma real: con piezas curvas o muy irregulares va a dejar huecos. "Aprovechar huecos" intenta meter piezas chicas adentro de los agujeros de otras.
-- **Todavía no hay** login, PDF del presupuesto, aprobación ni envío al cliente.
+- **Todavía no hay** login, aviso por mail ni envío al cliente: la aprobación se hace a mano, escribiendo el nombre de quien aprueba.
+- **El logo y los datos de contacto del PDF** viven en `backend/local/empresa/` (`logo.png` y `datos.json`), fuera de git. Sin esa carpeta el PDF sale igual, sin logo ni pie. El formato, en [`docs/GUIA-PRUEBAS-LOCALES.md §5`](docs/GUIA-PRUEBAS-LOCALES.md).
 - Todo lo que cargues se guarda en `backend/local/` (no se sube a Git). **Para empezar de cero:** frená el backend, borrá `backend/local/carteleria.db` y la carpeta `backend/local/archivos`, arrancá el backend de nuevo (crea la base vacía) y repetí el paso 3.
 
 ### Probar con tus propios DXF

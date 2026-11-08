@@ -58,6 +58,48 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-08 — Materiales, presupuestos, aprobación, retazos, PDF con la marca y catálogo en el presupuesto (A18 a A23)
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+Seis trabajos, del 2026-11-07 al 2026-11-08, cada uno con su diseño aprobado, su rama, su revisión de código y su fusión a `main` (la carpeta de cada uno está en `docs/historico/`):
+
+- **A18, la pantalla de Materiales:** los materiales y sus precios salen de la planilla de la empresa, que se sube con una revisión antes de aplicar.
+- **A19, los presupuestos con precio sugerido:** la lista de todos los presupuestos y, en el Costeo, el precio sugerido con el margen de la planilla, con lo que queda por debajo marcado.
+- **A20, la aprobación del presupuesto:** cuatro estados (borrador, pendiente, observado y aprobado), el historial de quién cambió qué y el bloqueo de edición. Sin usuarios todavía: el nombre se escribe a mano.
+- **A21, la cuenta de los retazos:** el sobrante de una chapa se guarda como retazo con un botón; el retazo dice de dónde salió y en qué anda (disponible, en uso o usado por un trabajo con presupuesto aprobado), y Materiales suma cuántos hay.
+- **A22, el PDF con la marca de la empresa:** la banda negra con el logo, los colores negro y naranja y los datos de contacto al pie. El logo y los datos viven en `backend/local/empresa/`, fuera de git, porque el repositorio es público.
+- **A23, materiales del catálogo en el presupuesto:** en el Costeo, un buscador de los artículos de la planilla (corrugado, vinilos, pintura, tornillos, diseño, montaje) para agregarlos como línea, con su costo y su margen.
+
+**En la base real** se hizo la primera carga de la planilla (288 artículos) y se aplicaron las migraciones de A20, A21 y A23, cada una con un respaldo antes en `backend/local/`.
+
+### Qué se decidió
+
+- **Aprobar a mano mientras no haya usuarios:** el nombre de quien aprueba se escribe; el permiso «puede aprobar» y el aviso por mail esperan a 1.1, 1.5 y la etapa 4.
+- **«Usado» se calcula, no se guarda:** un retazo está usado si un trabajo con presupuesto aprobado lo usa; volver el presupuesto a borrador lo libera solo.
+- **El logo y los datos de la empresa no van a git.** El PDF sale igual sin ellos.
+- **Los colores de la marca son negro y naranja,** tomados del logo. Una primera suposición, azul y violeta, venía del tablero de otro sistema y estaba mal.
+- **Cada artículo agregado del catálogo copia su precio al agregarlo:** un presupuesto armado no cambia solo con la planilla.
+- **`CHA0016` y `POL0006` no son códigos sin enlazar:** son medidas del catálogo viejo que la planilla no trae, con un precio de prueba.
+
+### Cambios en el registro
+
+- **Supuestos nuevos:** `SUP-20` a `SUP-25` (aprobación), `SUP-26` a `SUP-31` (retazos), `SUP-32` a `SUP-35` (PDF con la marca) y `SUP-36` a `SUP-41` (catálogo en el presupuesto).
+- **`B-13`** (logo, datos fiscales y formato): parcial. Llegaron el logo y los datos de contacto; faltan los datos fiscales y el texto de condiciones.
+- **`P-17`** y **`D-15`:** quedan anotados con lo que hace el sistema hoy (el presupuesto observado vuelve a quien lo armó; se aprueba entero).
+- **`PAR-61`** (el margen del precio sugerido) y **`P-36`** (cuándo se usa el segundo margen, × 6) vienen de A19; `P-35` (el sistema del otro equipo), de A18.
+
+### Pendiente
+
+- **De Enzo:** confirmar si se venden hoy `CHA0016` y `POL0006`; cargar en la planilla el precio de las medidas que la trae sin precio (por ejemplo `CHA0009`); imprimir y medir una hoja del PDF de chapas.
+- **Del dueño:** el segundo margen (× 6), cómo cobrar por lo usado, el retazo más chico que se guarda, y los datos fiscales y las condiciones de pago.
+- **Para construir:** juntar renglones chicos en el PDF (`P-34`), actualizar los precios de un presupuesto armado, y recordar las correcciones de la lectura del dibujo.
+- **Lo grande:** el fotomontaje del diseño sobre la foto del local (3.2), y lo de afuera (usuarios, servidor, mail, WhatsApp).
+
+---
+
 ## 2026-10-29 — Pulir lo que quedó suelto (A17), cerrado
 
 **Quién:** Enzo · **Carril:** A y B · **Sprint:** —

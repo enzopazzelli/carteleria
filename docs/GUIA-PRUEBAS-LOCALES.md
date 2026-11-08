@@ -175,6 +175,28 @@ python -m pytest -q tests/services/presupuesto/test_pdf.py
 
 Hasta el 2026-10-13 el PDF se hacía con WeasyPrint, que en Windows pedía instalar MSYS2 con Pango y fijar la variable `WEASYPRINT_DLL_DIRECTORIES`. Ya no hace falta nada de eso: si quedó instalado, se puede sacar.
 
+### La marca de la empresa
+
+El PDF sale con una banda negra, los colores negro y naranja de la marca, el logo arriba y los datos de contacto al pie (A22, [`historico/A22-pdf-con-la-marca/`](historico/A22-pdf-con-la-marca/diseno.md)). El logo y los datos **no están en el repositorio**, que es público: se leen de `backend/local/empresa/`, que git ignora.
+
+- **`logo.png`:** el logo, con fondo transparente (con letras oscuras, porque va sobre blanco). Se recorta solo a su contenido.
+- **`datos.json`:** los datos de contacto. Lo que esté vacío no aparece:
+
+```json
+{
+  "nombre": "Nombre de la empresa",
+  "direccion": "Calle 123 · Ciudad · 0000",
+  "whatsapp": "+54 9 000 000-0000",
+  "mail": "contacto@ejemplo.com",
+  "web": "ejemplo.com",
+  "instagram": "usuario",
+  "cuit": "00-00000000-0",
+  "condiciones": "Forma de pago, plazo de entrega…\nSe puede escribir en varias líneas."
+}
+```
+
+`cuit` y `condiciones` son opcionales: el CUIT sale junto al nombre en el pie, y las condiciones en un bloque debajo del total. Si la carpeta no está, o un archivo está roto, el PDF sale igual, sin logo o sin pie; un error de lectura queda en el registro del servidor. **Al armar un servidor hay que copiar esta carpeta:** git no la lleva. Las pruebas automáticas no leen la carpeta real.
+
 ### La tipografía
 
 El PDF usa Source Sans 3, guardada en `backend/app/services/presupuesto/fuentes/` con su licencia (SIL Open Font License 1.1). Va en el repo para que el PDF salga igual en Windows y en el servidor.
