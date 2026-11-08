@@ -475,6 +475,7 @@ def _totales_leer(presupuesto: Presupuesto, cuenta: Cuenta) -> TotalesLeer:
         total=cuenta.total,
         total_fijado=cuenta.total_fijado,
         advertencias=cuenta.advertencias,
+        por_debajo=cuenta.por_debajo,
     )
 
 

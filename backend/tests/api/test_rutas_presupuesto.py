@@ -607,7 +607,7 @@ def test_actualizar_margen_e_iva(cliente):
     assert Decimal(respuesta.json()["iva_pct"]) == Decimal("21"), "no se tocó"
 
 
-def test_totales_sin_lineas_da_cero_y_avisa_falta_margen(cliente):
+def test_totales_sin_lineas_da_costo_cero_y_ningun_precio(cliente):
     presupuesto = _crear_presupuesto(cliente)
 
     respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/totales")
@@ -617,7 +617,9 @@ def test_totales_sin_lineas_da_cero_y_avisa_falta_margen(cliente):
     assert Decimal(cuerpo["costo_total"]) == Decimal("0.00")
     assert cuerpo["monto_margen"] is None
     assert cuerpo["total"] is None
-    assert any("margen" in a for a in cuerpo["advertencias"])
+    # Sin ninguna línea no le falta precio a ninguna: no hay aviso del margen (A19).
+    assert cuerpo["advertencias"] == []
+    assert cuerpo["por_debajo"] == 0
 
 
 def test_totales_con_margen_e_iva_redondea_al_final(cliente):
@@ -941,7 +943,6 @@ def test_el_desglose_dice_que_le_falta_al_presupuesto(cliente):
 
     assert cuerpo["faltantes"] == [
         "El presupuesto no tiene ninguna línea.",
-        "Falta cargar el margen, o un precio a mano en cada ítem.",
     ]
     assert cuerpo["items_cliente"] == []
 
@@ -1002,8 +1003,8 @@ def test_el_pdf_de_un_presupuesto_incompleto_da_409_y_dice_que_falta(cliente):
 
     assert respuesta.status_code == 409
     detalle = respuesta.json()["detail"]
-    assert detalle["faltantes"] == ["Falta cargar el margen, o un precio a mano en cada ítem."]
-    assert "Falta cargar el margen" in detalle["mensaje"]
+    assert detalle["faltantes"] == ["A «Flete» le falta precio: no tiene margen en la planilla. Cargá el margen general o un precio a mano."]
+    assert "le falta precio" in detalle["mensaje"]
 
 
 def test_el_pdf_de_un_presupuesto_inexistente_da_404(cliente):
@@ -1173,3 +1174,22 @@ def test_duplicar_copia_el_multiplicador(cliente, tmp_path):
 
     [linea] = cliente.get(f"/presupuestos/{copia['id']}/lineas-costo").json()
     assert Decimal(linea["multiplicador"]) == Decimal("3")
+
+
+def test_el_desglose_trae_el_sugerido_y_cuantos_quedan_por_debajo(cliente, tmp_path):
+    trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path, codigo="CHA0011")
+    _margen_en_la_planilla("CHA0011", 3)
+    presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
+    linea = _recalcular(cliente, presupuesto)
+    # 1 m² a $ 5000: el sugerido es 15000; a mano, 13200 (12 % menos).
+    cliente.patch(f"/lineas-costo/{linea['id']}/cliente", json={"precio_cliente": "13200"})
+
+    cuerpo = cliente.get(f"/presupuestos/{presupuesto['id']}/desglose").json()
+
+    [item] = cuerpo["items_cliente"]
+    assert Decimal(item["multiplicador"]) == Decimal("3")
+    assert Decimal(item["sugerido"]) == Decimal("15000")
+    assert Decimal(item["ganancia"]) == Decimal("2.64")
+    assert item["por_debajo_pct"] == 12
+    assert cuerpo["totales"]["por_debajo"] == 1
+    assert cliente.get(f"/presupuestos/{presupuesto['id']}/totales").json()["por_debajo"] == 1

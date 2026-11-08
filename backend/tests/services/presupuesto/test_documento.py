@@ -98,7 +98,7 @@ def test_un_presupuesto_incompleto_no_arma_nada_y_dice_que_falta():
 
     assert error.value.faltantes == [
         "«Chapa» no tiene costo.",
-        "Falta cargar el margen, o un precio a mano en cada ítem.",
+        "A «Flete» le falta precio: no tiene margen en la planilla. Cargá el margen general o un precio a mano.",
     ]
 
 

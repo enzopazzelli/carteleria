@@ -10,7 +10,7 @@ leídos, y nunca modifica ninguno de los dos.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from ...modelos.presupuesto import LineaCosto, Presupuesto
 
@@ -46,6 +46,18 @@ class ItemCuenta:
     precio_base: Decimal | None
     a_mano: bool
     precio_final: Decimal | None
+    #: Lo de A19 (`docs/plan/A19-presupuestos-y-precio-sugerido/diseno.md §5.2`),
+    #: solo para las líneas que entran en la cuenta. El multiplicador de la
+    #: planilla, si la línea lo tiene; `None`, el sugerido salió del margen
+    #: general.
+    multiplicador: Decimal | None = None
+    #: El costo por el multiplicador, o más el margen general.
+    sugerido: Decimal | None = None
+    #: El precio final dividido por el costo.
+    ganancia: Decimal | None = None
+    #: Cuánto por debajo del sugerido quedó, en %, si alguien lo bajó: con un
+    #: precio a mano o con el total fijado.
+    por_debajo_pct: int | None = None
 
 
 @dataclass(frozen=True)
@@ -72,10 +84,31 @@ class Cuenta:
     total_fijado: Decimal | None
     advertencias: list[str]
     faltantes: list[str]
+    #: Cuántos ítems quedaron por debajo del sugerido (A19).
+    por_debajo: int = 0
 
 
 def _costo_efectivo(linea: LineaCosto) -> Decimal | None:
     return linea.valor_override if linea.valor_override is not None else linea.valor_calculado
+
+
+def _sugerido(costo: Decimal, multiplicador: Decimal | None, margen: Decimal | None) -> Decimal | None:
+    """El costo por el multiplicador de la planilla; si no hay, más el margen
+    general; si tampoco, ninguno."""
+    if multiplicador is not None:
+        return costo * multiplicador
+    if margen is not None:
+        return costo * (1 + margen / 100)
+    return None
+
+
+def _por_debajo(final: Decimal | None, sugerido: Decimal | None) -> int | None:
+    """Cuánto por debajo del sugerido, en %, redondeado al entero y nunca menos
+    de 1: una baja chica también se ve."""
+    if final is None or sugerido is None or sugerido <= 0 or final >= sugerido:
+        return None
+    porcentaje = ((sugerido - final) / sugerido * 100).quantize(Decimal(1), rounding=ROUND_HALF_UP)
+    return max(1, int(porcentaje))
 
 
 def _ajustar_centavos(finales: list[Decimal], objetivo: Decimal, candidatos: list[int]) -> None:
@@ -144,24 +177,32 @@ def calcular(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> Cuenta:
         subtotales_por_rubro[linea.rubro] = subtotales_por_rubro.get(linea.rubro, Decimal(0)) + costo
         costo_total += costo
 
-    # 2. El precio base de cada una: a mano, o costo más margen.
+    # 2. El precio sugerido de cada una (el costo por el multiplicador de la
+    # planilla, o más el margen general) y el base: a mano, o el sugerido.
     margen = presupuesto.margen_pct
     iva = presupuesto.iva_pct
     a_mano = [lineas[i].precio_cliente is not None for i in validas]
-    hay_precios = margen is not None or (bool(validas) and all(a_mano))
+    sugeridos = {i: _sugerido(costos[i], lineas[i].multiplicador, margen) for i in validas}
+    sin_precio = [i for i in validas if lineas[i].precio_cliente is None and sugeridos[i] is None]
 
     bases: list[Decimal] = []
     finales: list[Decimal] = []
+    con_total_fijado = False
     monto_margen = margen_resultante = precio_venta = monto_iva = total = None
-    if not hay_precios:
-        advertencias.append(
-            "Falta el margen: sin él no se calcula el precio de venta."
-        )
-        faltantes.append("Falta cargar el margen, o un precio a mano en cada ítem.")
-    else:
+    if sin_precio:
+        for i in sin_precio:
+            aviso = (
+                f"A «{lineas[i].descripcion}» le falta precio: no tiene margen en la planilla. "
+                "Cargá el margen general o un precio a mano."
+            )
+            advertencias.append(aviso)
+            faltantes.append(aviso)
+    elif validas:
+        # Sin ninguna línea en la cuenta no hay nada que cobrar: sin precios,
+        # nunca un cero que parezca un total.
         for i in validas:
             a_mano_i = lineas[i].precio_cliente
-            bases.append(a_mano_i if a_mano_i is not None else costos[i] * (1 + margen / 100))
+            bases.append(a_mano_i if a_mano_i is not None else sugeridos[i])
         suma_base = sum(bases, Decimal(0))
         fijado = presupuesto.total_fijado
 
@@ -176,6 +217,7 @@ def calcular(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> Cuenta:
             total = redondear(suma_base * (1 + iva / 100))
             finales = _sin_total_fijado(bases, a_mano, precio_venta)
         else:
+            con_total_fijado = True
             total = redondear(fijado)
             precio_venta = redondear(total / (1 + iva / 100))
             if suma_base != 0:
@@ -205,6 +247,13 @@ def calcular(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> Cuenta:
             precio_base = redondear(bases[n])
         else:
             precio_base = None
+        final = finales[n] if n is not None and finales else None
+        en_la_cuenta = n is not None
+        sugerido = redondear(sugeridos[i]) if en_la_cuenta and sugeridos[i] is not None else None
+        costo = costos.get(i)
+        # Solo una baja de alguien: un precio a mano o el total fijado. El
+        # centavo que el redondeo le saca a un ítem calculado no lo es.
+        bajado = linea.precio_cliente is not None or con_total_fijado
         items.append(
             ItemCuenta(
                 linea_id=linea.id,
@@ -213,7 +262,11 @@ def calcular(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> Cuenta:
                 costo=_costo_efectivo(linea),
                 precio_base=precio_base,
                 a_mano=linea.precio_cliente is not None,
-                precio_final=finales[n] if n is not None and finales else None,
+                precio_final=final,
+                multiplicador=linea.multiplicador if en_la_cuenta else None,
+                sugerido=sugerido,
+                ganancia=redondear(final / costo) if final is not None and costo else None,
+                por_debajo_pct=_por_debajo(final, sugerido) if bajado else None,
             )
         )
 
@@ -232,4 +285,5 @@ def calcular(presupuesto: Presupuesto, lineas: list[LineaCosto]) -> Cuenta:
         total_fijado=presupuesto.total_fijado,
         advertencias=advertencias,
         faltantes=faltantes,
+        por_debajo=sum(1 for item in items if item.por_debajo_pct is not None),
     )

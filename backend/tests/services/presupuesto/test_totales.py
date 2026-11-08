@@ -180,7 +180,7 @@ def test_un_precio_a_mano_se_muestra_aunque_falte_el_margen():
 
     assert [item.precio_base for item in cuenta.items] == [D("150000.00"), None]
     assert _finales(cuenta) == [None, None]
-    assert cuenta.faltantes == ["Falta cargar el margen, o un precio a mano en cada ítem."]
+    assert cuenta.faltantes == [_FALTA_PRECIO.format("Flete")]
 
 
 def test_una_linea_en_otra_moneda_queda_afuera():
@@ -202,7 +202,7 @@ def test_sin_iva_no_hay_total():
 def test_sin_margen_falta_si_algun_item_no_tiene_precio_a_mano():
     cuenta = calcular(_presupuesto(margen_pct=None), _ejemplo(precio_cliente=D("150000")))
 
-    assert cuenta.faltantes == ["Falta cargar el margen, o un precio a mano en cada ítem."]
+    assert cuenta.faltantes == [_FALTA_PRECIO.format(nombre) for nombre in ("Chapa", "Mano de obra", "Flete")]
     assert cuenta.precio_venta is None
     assert _finales(cuenta) == [None, None, None, None]
 
@@ -266,3 +266,127 @@ def test_calcular_no_modifica_lo_que_recibe():
     assert lineas[3].precio_cliente == D("150000")
     assert lineas[0].valor_calculado == D("400000")
     assert presupuesto.total_fijado == D("1400000")
+
+
+# --- El precio sugerido (A19, tarea 3) -------------------------------------
+
+_FALTA_PRECIO = "A «{}» le falta precio: no tiene margen en la planilla. Cargá el margen general o un precio a mano."
+
+
+def _item(cuenta, n: int):
+    return next(item for item in cuenta.items if item.linea_id == n)
+
+
+def test_con_multiplicador_el_precio_es_el_costo_por_el_multiplicador():
+    cuenta = calcular(_presupuesto(margen_pct=None), [_linea(1, "Chapa", "1000", multiplicador=D("3"))])
+
+    item = _item(cuenta, 1)
+    assert (item.multiplicador, item.sugerido, item.precio_base, item.precio_final) == (D("3"), D("3000.00"), D("3000.00"), D("3000.00"))
+    assert item.ganancia == D("3.00")
+    assert item.por_debajo_pct is None
+    assert cuenta.faltantes == []
+
+
+def test_sin_multiplicador_usa_el_margen_general():
+    cuenta = calcular(_presupuesto(margen_pct=D(50)), [_linea(1, "Flete", "1000")])
+
+    item = _item(cuenta, 1)
+    assert (item.multiplicador, item.sugerido, item.precio_final, item.ganancia) == (None, D("1500.00"), D("1500.00"), D("1.50"))
+
+
+def test_mezclados_cada_linea_con_el_suyo():
+    lineas = [_linea(1, "Chapa", "1000", multiplicador=D("3")), _linea(2, "Flete", "1000")]
+
+    cuenta = calcular(_presupuesto(margen_pct=D(50)), lineas)
+
+    assert [item.sugerido for item in cuenta.items] == [D("3000.00"), D("1500.00")]
+    assert [item.multiplicador for item in cuenta.items] == [D("3"), None]
+    assert cuenta.precio_venta == D("4500.00")
+
+
+def test_sin_multiplicador_ni_margen_general_el_aviso_nombra_la_linea():
+    lineas = [_linea(1, "Chapa", "1000", multiplicador=D("3")), _linea(2, "Pintura", "500")]
+
+    cuenta = calcular(_presupuesto(margen_pct=None), lineas)
+
+    assert cuenta.faltantes == [_FALTA_PRECIO.format("Pintura")]
+    assert _FALTA_PRECIO.format("Pintura") in cuenta.advertencias
+    assert not any("Chapa" in aviso for aviso in cuenta.advertencias)
+    assert cuenta.precio_venta is None
+    assert _finales(cuenta) == [None, None]
+
+
+def test_un_precio_a_mano_mas_bajo_queda_por_debajo():
+    cuenta = calcular(_presupuesto(), [_linea(1, "Chapa", "1000", multiplicador=D("3"), precio_cliente=D("2640"))])
+
+    item = _item(cuenta, 1)
+    assert (item.sugerido, item.precio_final, item.por_debajo_pct) == (D("3000.00"), D("2640.00"), 12)
+    assert item.ganancia == D("2.64")
+    assert cuenta.por_debajo == 1
+
+
+def test_un_precio_a_mano_igual_al_sugerido_no_queda_por_debajo():
+    cuenta = calcular(_presupuesto(), [_linea(1, "Chapa", "1000", multiplicador=D("3"), precio_cliente=D("3000"))])
+
+    assert _item(cuenta, 1).por_debajo_pct is None
+    assert cuenta.por_debajo == 0
+
+
+def test_un_total_fijado_mas_bajo_deja_todos_por_debajo():
+    lineas = [_linea(1, "Chapa", "1000", multiplicador=D("3")), _linea(2, "Acrílico", "1000", multiplicador=D("3"))]
+
+    # Sin IVA, 5000 en lugar de 6000: cada uno, 2500 en lugar de 3000.
+    cuenta = calcular(_presupuesto(total_fijado=D("6050")), lineas)
+
+    assert _finales(cuenta) == [D("2500.00"), D("2500.00")]
+    assert [item.por_debajo_pct for item in cuenta.items] == [17, 17]
+    assert cuenta.por_debajo == 2
+
+
+def test_el_centavo_del_redondeo_no_es_una_baja():
+    # Cada uno redondea a 10,01, pero el subtotal es 30,02: el centavo que
+    # sobra se le saca a un ítem calculado, que queda en 10,00.
+    lineas = [_linea(1, "A", "10.006"), _linea(2, "B", "10.006"), _linea(3, "C", "10.006")]
+
+    cuenta = calcular(_presupuesto(margen_pct=D(0)), lineas)
+
+    assert sorted(_finales(cuenta)) == [D("10.00"), D("10.01"), D("10.01")]
+    assert [item.por_debajo_pct for item in cuenta.items] == [None, None, None]
+    assert cuenta.por_debajo == 0
+
+
+def test_una_baja_chica_marca_al_menos_un_uno():
+    cuenta = calcular(_presupuesto(), [_linea(1, "Chapa", "1000", multiplicador=D("3"), precio_cliente=D("2999"))])
+
+    assert _item(cuenta, 1).por_debajo_pct == 1
+
+
+def test_con_costo_en_cero_no_hay_ganancia_ni_marca():
+    lineas = [_linea(1, "Muestra", "0", multiplicador=D("3")), _linea(2, "Regalo", "0", precio_cliente=D("50"))]
+
+    cuenta = calcular(_presupuesto(), lineas)
+
+    assert [item.ganancia for item in cuenta.items] == [None, None]
+    assert [item.por_debajo_pct for item in cuenta.items] == [None, None]
+    assert cuenta.por_debajo == 0
+
+
+def test_el_costo_puesto_a_mano_es_el_que_se_multiplica():
+    linea = _linea(1, "Chapa", "1000", multiplicador=D("3"), valor_override=D("2000"))
+
+    assert _item(calcular(_presupuesto(), [linea]), 1).sugerido == D("6000.00")
+
+
+def test_sin_multiplicadores_da_lo_mismo_que_antes():
+    cuenta = calcular(_presupuesto(), _ejemplo())
+
+    assert [item.sugerido for item in cuenta.items] == _finales(cuenta)
+    assert [item.multiplicador for item in cuenta.items] == [None, None, None, None]
+    assert cuenta.por_debajo == 0
+
+
+def test_una_linea_fuera_de_la_cuenta_no_tiene_sugerido_ni_marca():
+    cuenta = calcular(_presupuesto(), [_linea(1, "Chapa", "1000", multiplicador=D("3"), moneda="USD", precio_cliente=D("10"))])
+
+    item = _item(cuenta, 1)
+    assert (item.multiplicador, item.sugerido, item.ganancia, item.por_debajo_pct) == (None, None, None, None)
