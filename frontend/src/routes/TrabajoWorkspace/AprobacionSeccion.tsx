@@ -96,6 +96,8 @@ export default function AprobacionSeccion({ presupuestoId, estado }: { presupues
               onClick={() => {
                 if (boton.pideMotivo) {
                   setError(null);
+                  // Un motivo escrito para un paso no se confirma como el de otro.
+                  setMotivo("");
                   setPidiendo(pidiendo === boton.accion ? null : boton.accion);
                 } else {
                   void dar(boton.accion, null);

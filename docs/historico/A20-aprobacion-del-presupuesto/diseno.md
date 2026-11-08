@@ -97,4 +97,9 @@ Cada paso se pide con el ok de Enzo antes de seguir.
 - **Enviado, aceptado o rechazado por el cliente, vencimiento y anulación** (2.4), y **la copia congelada de los precios** al enviar (1.5, `SUP-25`).
 - **El permiso «puede aprobar» y el nombre tomado de la sesión,** cuando haya usuarios (`SUP-20` y `SUP-21`).
 - **Si el PDF solo debe salir aprobado** (`SUP-24`): se decide con el dueño.
+- **Lo que vio la revisión de la rama y quedó sin arreglar,** para decidir:
+  - **Editar un cliente cambia el PDF de un presupuesto aprobado** (el nombre y el contacto salen ahí). Es el mismo hueco de `SUP-25`: se cierra al congelar el presupuesto con el envío (1.5).
+  - **Dos pedidos a la vez sobre el mismo presupuesto** (dos pestañas, aprobar y observar) los acepta el servidor los dos y el historial queda con dos pasos desde el mismo estado. Hoy la app corre en una sola máquina; con varias personas hace falta una escritura condicionada al estado.
+  - **El trabajo sigue editable** (piezas, grupos, anidado) con el presupuesto aprobado. Las líneas guardan su propio costo, así que lo aprobado no cambia solo, pero «Recalcular materiales» ya no se puede y la pantalla no avisa que el trabajo cambió.
+  - **Si el historial no carga,** la franja dice «Aprobado» sin quién ni cuándo, y sin avisar que faltan los datos.
 - **Sin reindentar:** el contenido del `fieldset` de `PresupuestoClienteSeccion.tsx` quedó con la sangría de antes, para no mover cien líneas en el cierre.

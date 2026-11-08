@@ -163,6 +163,17 @@ def test_sin_margen_ni_precio_a_mano_no_se_puede_mandar_a_aprobar(sesion):
     assert "Armado" in error.value.mensaje
 
 
+def test_un_estado_que_no_se_conoce_da_409_y_no_un_error_del_servidor(sesion):
+    presupuesto = _presupuesto(sesion)
+    presupuesto.estado = "ENVIADO"
+    sesion.commit()
+    with pytest.raises(ErrorParaElUsuario) as error:
+        cambiar_estado(sesion, presupuesto, E.APROBADO, por="Enzo")
+    assert error.value.estado == 409
+    assert "enviado" in error.value.mensaje
+    assert presupuesto.cambios_de_estado == []
+
+
 def test_solo_el_borrador_y_el_observado_se_editan(sesion):
     for estado, editable in [
         (E.BORRADOR, True),

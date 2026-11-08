@@ -80,10 +80,14 @@ def cambiar_estado(
       exactamente qué falta (409).
     """
     nuevo = EstadoPresupuesto(nuevo)
-    actual = EstadoPresupuesto(presupuesto.estado)
-    if nuevo not in TRANSICIONES.get(actual, frozenset()):
+    try:
+        actual = EstadoPresupuesto(presupuesto.estado)
+    except ValueError:
+        # Un estado que esta versión no conoce (de un dato viejo o cargado a mano).
+        actual = None
+    if actual is None or nuevo not in TRANSICIONES.get(actual, frozenset()):
         raise ErrorPrevisto(
-            f"Un presupuesto {_nombre(actual.value)} no puede pasar a {_nombre(nuevo.value)}.",
+            f"Un presupuesto {_nombre(presupuesto.estado)} no puede pasar a {_nombre(nuevo.value)}.",
             estado=409,
         )
 
