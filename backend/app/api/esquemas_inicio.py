@@ -23,6 +23,10 @@ class PresupuestoResumidoLeer(BaseModel):
     total: Decimal | None
     moneda: str
     estado: str
+    #: Cuándo se armó, en UTC (A19).
+    creado_en: datetime
+    #: Cuántos productos quedaron por debajo del precio sugerido (A19).
+    por_debajo: int
 
 
 class PasosLeer(BaseModel):
