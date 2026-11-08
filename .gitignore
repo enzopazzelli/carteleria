@@ -44,11 +44,8 @@ backend/local/
 
 # El logo y los datos de contacto de la empresa (A22): el repositorio es
 # público. Los que usa el sistema viven en backend/local/empresa/; estas son
-# las imágenes originales que se dejaron en la raíz.
-/logo.png
-/logo.jpg
+# las imágenes originales que quedaron en la raíz.
 /logoblanco.png
-/logoblanco.jpg
 /datosface.png
 
 # Sistema

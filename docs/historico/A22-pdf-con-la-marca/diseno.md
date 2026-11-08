@@ -13,7 +13,7 @@ El PDF que recibe el cliente sale hoy en blanco y negro, con un recuadro puntead
   - El cliente y las fechas en un recuadro gris con una marca naranja al costado.
   - El detalle con una línea naranja bajo el encabezado, y el total en un recuadro negro.
   - Un pie con una línea naranja y los datos de contacto.
-- **El logo es `logoblanco.png`** (1080 × 1080, fondo transparente, letras negras y naranjas). Las versiones con fondo negro que también hay (`logo.png` de 204 px y `logo.jpg` de 500 px) son de baja resolución y no sirven para imprimir.
+- **El logo es `logoblanco.png`** (1080 × 1080, fondo transparente, letras negras y naranjas). Las otras versiones que había (`logo.png` de 204 px y `logo.jpg` de 500 px con fondo negro, y `logoblanco.jpg` con fondo blanco sin transparencia) no sirven para imprimir y se borraron el 2026-11-08.
 - **El logo y los datos de contacto no van a git.** El repositorio es público: tu WhatsApp, tu dirección y el logo quedarían a la vista de cualquiera. Se guardan en `backend/local/empresa/` (carpeta que git ya ignora, como la base de datos). Al armar el servidor real hay que copiar esa carpeta.
 - **Sin esa carpeta, el PDF sale igual con el estilo nuevo,** pero sin logo y sin pie de contacto. Los tests no dependen de ella.
 - **Los datos se escriben como los dio la empresa,** sin agregar tildes que su imagen no tiene.
@@ -50,7 +50,7 @@ Cada paso se pide con el ok de Enzo antes de seguir.
 
 **Lo hecho,** en tres pasos, cada uno con el ok de Enzo antes de seguir:
 
-1. **La empresa como datos** (`services/presupuesto/empresa.py`): lee el logo y los datos de contacto de `backend/local/empresa/`. El logo se recorta solo a su contenido. Si la carpeta no está, o un archivo está roto, el PDF sale igual, sin ese dato. Los archivos reales de Enzo están ahí, y sus imágenes originales de la raíz quedaron en el `.gitignore`.
+1. **La empresa como datos** (`services/presupuesto/empresa.py`): lee el logo y los datos de contacto de `backend/local/empresa/`. El logo se recorta solo a su contenido. Si la carpeta no está, o un archivo está roto, el PDF sale igual, sin ese dato. Los archivos reales de Enzo están ahí, y sus dos imágenes originales de la raíz (`logoblanco.png` y `datosface.png`) quedaron en el `.gitignore`.
 2. **El PDF con la marca** (`pdf.py`): la banda negra inclinada con el logo sobre blanco, «PRESUPUESTO» en naranja y el código en blanco; el recuadro del cliente con la marca naranja al costado; el detalle con la línea naranja; el total en un recuadro negro; y el pie con los datos de contacto en cada hoja. De la segunda hoja en adelante, una banda finita con el código. Si la empresa cargó condiciones, un bloque debajo del total.
 3. **El cierre.**
 
