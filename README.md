@@ -76,7 +76,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 - Entraron 288 artículos: los 27 códigos enlazados y 261 nuevos. El catálogo pasó de 23 a 44 materiales y de 30 a 59 formatos.
 - `CHA0013` quedó con la medida a mano, 1250 × 2500, confirmada por Enzo (el 0,7 es el espesor).
 
-**Ya está en la rama `feat/pdf-con-la-marca`** (todavía sin fusionar a `main`):
+**Ya está en `main`:**
 - **El PDF del presupuesto con la marca de la empresa (A22), desde el 2026-11-08.**
   - **Para qué:** que quien recibe el presupuesto vea de quién es y cómo contactarlos.
   - **Cómo se ve:** el logo a la izquierda, una banda negra inclinada con «PRESUPUESTO» en naranja y el código, el recuadro del cliente con una marca naranja, el detalle con una línea naranja y el total en un recuadro negro. El pie lleva el nombre, la dirección, el WhatsApp, el mail, la web y el Instagram, en cada hoja. De la segunda hoja en adelante, una banda finita con el código.
@@ -84,8 +84,6 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
   - **Todavía no:** los datos fiscales y las condiciones de pago (el PDF ya los imprime cuando se carguen en `datos.json`), y el fotomontaje del cartel sobre la foto del local (3.2).
 
   Ver [`docs/historico/A22-pdf-con-la-marca/`](docs/historico/A22-pdf-con-la-marca/diseno.md).
-
-**Ya está en `main`:**
 - **La cuenta de los retazos (A21), desde el 2026-11-08.**
   - **Para qué:** que el taller sepa con qué retazos cuenta, en vez de que el sobrante de cada chapa se pierda de vista.
   - **Guardar:** en la tabla de chapas del resumen del anidado, al lado de cada sobrante que llega al mínimo (hoy 250 × 250 mm), un botón «Guardar como retazo». Crea el retazo con esa medida, del mismo material y al precio por m² de su chapa. El mismo sobrante no se guarda dos veces.

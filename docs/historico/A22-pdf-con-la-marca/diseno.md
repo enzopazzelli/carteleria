@@ -1,6 +1,6 @@
 # A22 — El PDF del presupuesto con la marca de la empresa
 
-**Estado:** construido el 2026-11-08, en la rama `feat/pdf-con-la-marca`. Enzo aprobó el boceto ese día. Cómo quedó, en §7. Es la parte de «logo, datos fiscales y formato de la empresa en el PDF» del sub-proyecto 4.4 (`B-13` del registro) que ya se puede hacer: lo que falta, los datos fiscales y el texto de condiciones, queda configurable.
+**Estado:** construido y en `main` el 2026-11-08 (`cd9bded`). Enzo aprobó el boceto ese día. Cómo quedó, en §7. Es la parte de «logo, datos fiscales y formato de la empresa en el PDF» del sub-proyecto 4.4 (`B-13` del registro) que ya se puede hacer: lo que falta, los datos fiscales y el texto de condiciones, queda configurable.
 
 ## 1. Qué problema resuelve
 
