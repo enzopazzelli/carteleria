@@ -30,11 +30,10 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18) y Presupuestos, con el precio sugerido (A19). Y la aprobación del presupuesto (A20), sin usuarios todavía.
 
 **Lo que sigue:**
-- **La primera carga de la planilla en la base real.** La hace Enzo desde Materiales, con «Actualizar desde la planilla», después de un respaldo de la base. Sobre una copia, la planilla real dio:
-  - 27 códigos se enlazan y entran 261 artículos;
-  - `CHA0016` y `POL0006` quedan a mano;
-  - hay que mirar `CHA0013`, que va con 1250 × 2500.
-- **Aplicar la migración de A20** (la tabla del historial de aprobaciones): al levantar el servidor la base se actualiza sola, así que antes, un respaldo.
+- **Hecho el 2026-11-08, en la base real:** la migración de A20 y la primera carga de la planilla (con respaldos antes de cada una, en `backend/local/`).
+  - Entraron 288 artículos: los 27 códigos enlazados y 261 nuevos. El catálogo pasó de 23 a 44 materiales y de 30 a 59 formatos.
+  - `CHA0013` quedó con la medida a mano, 1250 × 2500, confirmada por Enzo (el 0,7 es el espesor).
+  - `CHA0016` y `POL0006` quedan sin enlazar: se resuelven a mano desde Materiales.
 - **Después,** lo próximo de «Lo grande»: cobrar por lo usado y llevar la cuenta de los retazos, o lo de afuera (usuarios, mail, servidor).
 
 **Ya está en `main`:**
