@@ -18,6 +18,7 @@ from ..costeo import resumen_materiales
 from ..modelos.catalogo import Formato
 from ..modelos.presupuesto import Cliente, LineaCosto, Presupuesto, RubroLineaCosto
 from ..services.presupuesto.documento import PresupuestoIncompleto, armar_documento, hoy_en_argentina
+from ..services.presupuesto.estados import exigir_editable
 from ..services.presupuesto.pdf import generar_pdf
 from ..services.presupuesto.sugerido import multiplicador_de
 from ..services.presupuesto.totales import Cuenta, calcular
@@ -156,6 +157,7 @@ def actualizar_presupuesto(
     presupuesto_id: int, datos: PresupuestoActualizar, sesion: Session = Depends(obtener_sesion)
 ) -> Presupuesto:
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    exigir_editable(presupuesto)
     valores = datos.model_dump(exclude_unset=True)
     if "cliente_id" in valores:
         _cliente_o_404(sesion, valores["cliente_id"])
@@ -249,6 +251,7 @@ def recalcular_materiales(
     (se borró desde el último recálculo) se elimina.
     """
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    exigir_editable(presupuesto)
     if presupuesto.trabajo_id is None:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
@@ -347,6 +350,13 @@ def _linea_costo_o_404(sesion: Session, linea_id: int) -> LineaCosto:
     return linea
 
 
+def _linea_editable_o_409(sesion: Session, linea_id: int) -> LineaCosto:
+    """La línea, si su presupuesto se puede modificar (borrador u observado)."""
+    linea = _linea_costo_o_404(sesion, linea_id)
+    exigir_editable(linea.presupuesto)
+    return linea
+
+
 def _rechazar_si_es_material(linea: LineaCosto, accion: str) -> None:
     if linea.rubro == RubroLineaCosto.MATERIAL.value:
         raise HTTPException(
@@ -365,7 +375,7 @@ def aplicar_override(
     overridear un costo calculado es exactamente el punto acá.
     `valor_override: null` revierte al valor calculado y limpia
     `override_por`/`override_en`. `valor_calculado` nunca se toca."""
-    linea = _linea_costo_o_404(sesion, linea_id)
+    linea = _linea_editable_o_409(sesion, linea_id)
     linea.valor_override = datos.valor_override
     if datos.valor_override is None:
         linea.override_por = None
@@ -385,7 +395,7 @@ def actualizar_linea_para_el_cliente(
     (`docs/historico/1.3-pdf-del-presupuesto/diseno.md §5`) — de cualquier
     rubro, incluido `MATERIAL`. Son una capa encima del costo, como el
     override: `valor_calculado` y `valor_override` no se tocan."""
-    linea = _linea_costo_o_404(sesion, linea_id)
+    linea = _linea_editable_o_409(sesion, linea_id)
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         setattr(linea, campo, valor)
     sesion.commit()
@@ -408,6 +418,7 @@ def crear_linea_libre(
     lo calcula el servidor (`cantidad × precio_unitario`), nunca se
     confía en un total que mande el cliente."""
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    exigir_editable(presupuesto)
     linea = LineaCosto(
         presupuesto_id=presupuesto_id,
         rubro=datos.rubro,
@@ -428,7 +439,7 @@ def actualizar_linea_libre(
     linea_id: int, datos: LineaCostoActualizar, sesion: Session = Depends(obtener_sesion)
 ) -> LineaCosto:
     """Editar una línea libre ya cargada — rechazado sobre `MATERIAL`."""
-    linea = _linea_costo_o_404(sesion, linea_id)
+    linea = _linea_editable_o_409(sesion, linea_id)
     _rechazar_si_es_material(linea, "edita")
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         setattr(linea, campo, valor)
@@ -442,7 +453,7 @@ def eliminar_linea_libre(linea_id: int, sesion: Session = Depends(obtener_sesion
     """Elimina una línea libre — rechazado sobre `MATERIAL`: esas
     desaparecen solas cuando su grupo de corte ya no existe, vía
     `recalcular-materiales`, nunca por un `DELETE` directo."""
-    linea = _linea_costo_o_404(sesion, linea_id)
+    linea = _linea_editable_o_409(sesion, linea_id)
     _rechazar_si_es_material(linea, "elimina")
     sesion.delete(linea)
     sesion.commit()
