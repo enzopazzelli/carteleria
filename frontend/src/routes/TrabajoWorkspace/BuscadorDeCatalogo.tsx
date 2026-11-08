@@ -24,7 +24,7 @@ function useDespuesDeEscribir(valor: string, ms = 250): string {
   return lento;
 }
 
-/** «Agregar del catálogo» (A23, `docs/plan/A23-materiales-en-el-presupuesto/diseno.md §6`):
+/** «Agregar del catálogo» (A23, `docs/historico/A23-materiales-en-el-presupuesto/diseno.md §6`):
  * se busca un artículo de la planilla (corrugado, vinilos, pintura, tornillos, diseño,
  * montaje…), se escribe la cantidad y se agrega como una línea del presupuesto, con el
  * margen de la planilla para el precio sugerido. */

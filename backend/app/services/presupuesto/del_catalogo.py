@@ -1,5 +1,5 @@
 """Agregar al presupuesto un artículo del catálogo de la planilla (A23,
-`docs/plan/A23-materiales-en-el-presupuesto/diseno.md`).
+`docs/historico/A23-materiales-en-el-presupuesto/diseno.md`).
 
 Un cartel lleva más que la chapa que se anida: corrugado, vinilos, pintura,
 tornillos, diseño, montaje. Acá se buscan esos artículos y se agregan como una

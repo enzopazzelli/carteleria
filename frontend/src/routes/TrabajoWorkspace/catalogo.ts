@@ -1,7 +1,7 @@
 import type { ArticuloDelCatalogo } from "../../api/presupuestos";
 import { mostrarImporte } from "./importes";
 
-// Lo que dice el buscador del catálogo en el Costeo (A23, `docs/plan/A23-materiales-en-el-presupuesto/diseno.md §6`).
+// Lo que dice el buscador del catálogo en el Costeo (A23, `docs/historico/A23-materiales-en-el-presupuesto/diseno.md §6`).
 
 const POR = new Map([
   ["M2", "m²"],

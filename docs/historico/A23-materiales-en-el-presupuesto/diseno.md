@@ -1,6 +1,6 @@
 # A23 — Agregar materiales del catálogo al presupuesto (propuesta de diseño)
 
-**Estado:** propuesta del 2026-11-08, sin aprobar. Sale de lo que dijo Enzo ese día: «luego de los anidados, cuando se está haciendo el presupuesto, se pueden agregar materiales que hacen al diseño completo (corrugados, etc.): desde esa parte se debería poder agregar». Es lo que el plan maestro dejó para 2.3 («insumos desde catálogo»). Lo que está marcado como **supuesto** lo puso Claude; Enzo lo confirma o lo cambia.
+**Estado:** construido el 2026-11-08, en la rama `feat/a23-materiales-en-el-presupuesto`. Enzo aprobó la propuesta ese día. Cómo quedó, en §9. Sale de lo que dijo Enzo ese día: «luego de los anidados, cuando se está haciendo el presupuesto, se pueden agregar materiales que hacen al diseño completo (corrugados, etc.): desde esa parte se debería poder agregar». Es lo que el plan maestro dejó para 2.3 («insumos desde catálogo»). Los supuestos de §4 los puso Claude, Enzo los aprobó y están en `REGISTRO.md`.
 
 ## 1. Qué problema resuelve
 
@@ -33,14 +33,14 @@ Un cartel no es solo la chapa que se anida. Lleva además corrugado, vinilos, pi
 
 ## 4. Supuestos que hay que confirmar
 
-| # | Supuesto | Por qué lo elegí |
+| Registro | Supuesto | Por qué lo elegí |
 |---|---|---|
-| M1 | **La lista incluye todos los artículos de la última planilla,** también los que se anidan (chapas, acrílicos): para sumarlos enteros, sin anidar, por ejemplo una plancha de corrugado. | «Materiales que hacen al diseño completo» no se limita a lo que no se anida. |
-| M2 | **La cantidad se escribe en la unidad de venta del artículo** (m², metros lineales, unidades, litros), y esa unidad queda a la vista. Para una plancha entera hay que escribir los m² que tiene (1 plancha de 1 × 2 m = 2 m²). | Es lo que trae la planilla. Convertir de planchas a m² se puede agregar después. |
-| M3 | **El rubro de la línea es el que está elegido en el formulario** (insumo por defecto). No lo deduzco de la categoría. | Una regla automática («ART. MONTAJE» = instalación) se rompe con el primer nombre distinto. |
-| M4 | **El precio se copia al agregar y no cambia solo.** | Igual que los materiales del anidado (A19): un presupuesto armado no cambia con la planilla. |
-| M5 | **Si el artículo no tiene margen de venta en la planilla** (66 de 288, como los tornillos), la línea usa el margen general del presupuesto, como ya hace una línea libre. | Es lo que ya pasa hoy con lo que no tiene margen. |
-| M6 | **Con dos proveedores para un mismo código, se toma el que cuenta** (el último que cambió de precio, o el marcado con «Usar este», A18). | Es la regla que ya existe. |
+| `SUP-36` | **La lista incluye todos los artículos de la última planilla,** también los que se anidan (chapas, acrílicos): para sumarlos enteros, sin anidar, por ejemplo una plancha de corrugado. | «Materiales que hacen al diseño completo» no se limita a lo que no se anida. |
+| `SUP-37` | **La cantidad se escribe en la unidad de venta del artículo** (m², metros lineales, unidades, litros), y esa unidad queda a la vista. Para una plancha entera hay que escribir los m² que tiene (1 plancha de 1 × 2 m = 2 m²). | Es lo que trae la planilla. Convertir de planchas a m² se puede agregar después. |
+| `SUP-38` | **El rubro de la línea es el que está elegido en el formulario** (insumo por defecto). No lo deduzco de la categoría. | Una regla automática («ART. MONTAJE» = instalación) se rompe con el primer nombre distinto. |
+| `SUP-39` | **El precio se copia al agregar y no cambia solo.** | Igual que los materiales del anidado (A19): un presupuesto armado no cambia con la planilla. |
+| `SUP-40` | **Si el artículo no tiene margen de venta en la planilla** (66 de 288, como los tornillos), la línea usa el margen general del presupuesto, como ya hace una línea libre. | Es lo que ya pasa hoy con lo que no tiene margen. |
+| `SUP-41` | **Con dos proveedores para un mismo código, se toma el que cuenta** (el último que cambió de precio, o el marcado con «Usar este», A18). | Es la regla que ya existe. |
 
 ## 5. Lo que hay que tener en cuenta
 
@@ -74,3 +74,27 @@ La línea nueva aparece en su rubro con el precio sugerido (× 3, por ejemplo) y
 5. El cierre: documentos, registro, plan maestro y README.
 
 Cada paso se pide con el ok de Enzo antes de seguir.
+
+## 9. Cómo quedó
+
+**Lo hecho,** en cinco pasos, cada uno con el ok de Enzo antes de seguir:
+
+1. **El artículo de origen en la línea:** de qué artículo salió, y su código y su proveedor escritos aparte, para que la línea siga diciendo de dónde vino si el artículo desaparece. Migración `e1b7c4a9d256`. Duplicar un presupuesto conserva ese dato.
+2. **El servicio** (`services/presupuesto/del_catalogo.py`): buscar artículos (por texto y categoría, sin distinguir mayúsculas ni tildes, con un solo renglón por código) y agregar una línea con el costo, la unidad y el margen de la planilla. La regla del margen se sacó a una función compartida con las medidas (`multiplicador_del_articulo`).
+3. **Las rutas:** `GET /articulos-del-catalogo` y `POST /presupuestos/{id}/lineas-costo/desde-catalogo`.
+4. **El buscador en el Costeo:** el botón «Agregar del catálogo» junto a «Agregar línea», con el cuadro de texto, el filtro de categorías, la cantidad con su unidad y el rubro. Las líneas que vinieron del catálogo muestran su código.
+5. **El cierre.**
+
+**Lo medido.** El servidor, 1364 pruebas (y las 3 fallas conocidas de antes); la pantalla, 345. En Chrome, sobre una base temporal con la planilla real cargada: sin filtrar se ven «50 de 254» artículos (254 y no 288 porque un código de dos proveedores sale una vez); 2 m² de corrugado dieron costo $ 20.625 y sugerido $ 61.875 (× 3); 20 tornillos, que la planilla no trae con margen, usaron el margen general (sugerido $ 371,15); y el total y el PDF quedaron al día.
+
+**Lo que cambió respecto de este diseño.**
+- **Las categorías llegan con su nombre legible** (`valor` y `nombre`): la planilla las escribe en mayúsculas y sin tildes, y el filtro se lee mal así.
+- **El buscador queda abierto después de agregar,** con un aviso, para sumar varios artículos seguidos.
+- **El costo de la planilla va siempre en pesos:** la línea se guarda en pesos, así que en un presupuesto en dólares quedaría afuera de la suma con el aviso de siempre.
+
+**Lo que queda.**
+- **Actualizar los precios de un presupuesto armado** cuando cambia la planilla (`SUP-39`: hoy no cambian solos).
+- **Agrupar renglones en el PDF:** con muchos artículos chicos (tornillos, tacos) el presupuesto sale largo. Es la duda abierta `P-34`.
+- **Escribir la cantidad en planchas** y no en m² para un material que se vende por plancha entera (`SUP-37`).
+- **`CHA0016` y `POL0006`** no se ofrecen en el buscador porque la planilla no los trae: si se venden, la empresa tiene que agregarlos.
+- **Stock y kits** de artículos, y crear artículos desde la pantalla: la planilla sigue siendo la fuente.

@@ -1,5 +1,5 @@
 """Buscar artículos del catálogo y agregarlos al presupuesto (A23, paso 2,
-`docs/plan/A23-materiales-en-el-presupuesto/diseno.md`)."""
+`docs/historico/A23-materiales-en-el-presupuesto/diseno.md`)."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
