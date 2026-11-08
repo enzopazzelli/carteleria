@@ -72,7 +72,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 
 **Lo que dejó anotado la revisión de A20,** para decidir cuando haga falta: editar un cliente cambia el PDF de un presupuesto ya aprobado; dos personas aprobando u observando a la vez el mismo presupuesto; y las piezas y el anidado siguen editables con el presupuesto aprobado. Ver [`docs/historico/A20-aprobacion-del-presupuesto/`](docs/historico/A20-aprobacion-del-presupuesto/diseno.md).
 
-**Hecho el 2026-11-08, en la base real:** las migraciones de A20 y de A21 y la primera carga de la planilla, con respaldos antes de cada una en `backend/local/`.
+**Hecho el 2026-11-08, en la base real:** las migraciones de A20, de A21 y de A23 y la primera carga de la planilla, con respaldos antes de cada una en `backend/local/`.
 - Entraron 288 artículos: los 27 códigos enlazados y 261 nuevos. El catálogo pasó de 23 a 44 materiales y de 30 a 59 formatos.
 - `CHA0013` quedó con la medida a mano, 1250 × 2500, confirmada por Enzo (el 0,7 es el espesor).
 
