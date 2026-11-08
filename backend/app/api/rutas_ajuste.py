@@ -23,11 +23,14 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from shapely.geometry import Polygon
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import config
+from ..mensajes import ErrorPrevisto
 from ..modelos.catalogo import Formato
 from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza
+from ..services.catalogo.retazos import exigir_terminado, guardar_sobrante
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.exportacion_dxf import exportar_plancha_a_dxf, nombre_de_archivo
 from ..services.nesting.huecos_primero import lugar_libre
@@ -48,6 +51,7 @@ from ..services.nesting.validacion_manual import (
 from ..services.nesting.visualizacion import render_svg_plancha
 from .anidado_en_curso import rechazar_si_hay_anidado_en_curso
 from .dependencias import obtener_sesion
+from .esquemas_catalogo import FormatoLeer
 from .esquemas_mensajes import AvisoLeer
 from .esquemas_nesting import (
     ColocacionActualizar,
@@ -574,6 +578,30 @@ def obtener_material_usado(ejecucion_id: int, sesion: Session = Depends(obtener_
         linea=material.linea,
         retazo_minimo_mm=config.RETAZO_MINIMO_MM,
     )
+
+
+@router.post(
+    "/ejecuciones/{ejecucion_id}/chapas/{plancha}/guardar-sobrante",
+    response_model=FormatoLeer,
+    status_code=status.HTTP_201_CREATED,
+)
+def guardar_sobrante_de_chapa(ejecucion_id: int, plancha: int, sesion: Session = Depends(obtener_sesion)) -> Formato:
+    """Guarda como retazo el sobrante de una chapa del anidado (A21): con su
+    medida, del mismo material, al precio por m² de su chapa y con de dónde
+    salió. `plancha` cuenta desde 0, como en `material-usado`."""
+    ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
+    exigir_terminado(ejecucion)
+    chapa = next((c for c in material_usado_de(sesion, ejecucion).chapas if c.plancha == plancha), None)
+    if chapa is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ese anidado no tiene esa chapa: volvé a cargar la página.")
+    retazo = guardar_sobrante(sesion, ejecucion, chapa)
+    try:
+        sesion.commit()
+    except IntegrityError as error:
+        # Dos pedidos a la vez por el mismo sobrante: lo frena la base.
+        sesion.rollback()
+        raise ErrorPrevisto("Ese sobrante ya está guardado como retazo.", estado=409) from error
+    return retazo
 
 
 def material_usado_de(sesion: Session, ejecucion) -> MaterialUsado:

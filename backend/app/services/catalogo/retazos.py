@@ -79,6 +79,12 @@ def retazo_desde(
     )
 
 
+def exigir_terminado(ejecucion: EjecucionNesting) -> None:
+    """Sin anidado terminado no hay sobrante que guardar (409)."""
+    if ejecucion.estado != EstadoEjecucion.LISTA.value:
+        raise ErrorPrevisto("Este anidado todavía no terminó: no hay sobrante para guardar.", estado=409)
+
+
 def guardar_sobrante(sesion: Session, ejecucion: EjecucionNesting, chapa: MaterialDeChapa) -> Formato:
     """Guarda como retazo el sobrante de una chapa de un anidado terminado.
 
@@ -88,10 +94,7 @@ def guardar_sobrante(sesion: Session, ejecucion: EjecucionNesting, chapa: Materi
       restricción en la base.
     - El grupo tiene que tener su chapa asignada, y con precio por m² (400).
     """
-    if ejecucion.estado != EstadoEjecucion.LISTA.value:
-        raise ErrorPrevisto(
-            "Este anidado todavía no terminó: no hay sobrante para guardar.", estado=409
-        )
+    exigir_terminado(ejecucion)
     sobrante = _medida(chapa.sobrante.ancho_mm, chapa.sobrante.alto_mm)
     if not chapa.es_retazo:
         raise ErrorPrevisto(

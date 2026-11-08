@@ -180,7 +180,7 @@ class MedidaLeer(BaseModel):
     #: Por fila. Los de la última planilla; si no queda ninguno, los últimos que tuvo.
     proveedores: list[ProveedorLeer]
     proveedor_a_mano: str | None
-    #: También los escondidos, con su `disponible`.
+    #: También los escondidos, con su `disponible`, y cada uno con en qué anda (A21).
     retazos: list[FormatoLeer]
 
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -117,6 +117,13 @@ class FormatoLeer(BaseModel):
     factor_conversion: Decimal | None
     costo_unidad_venta: Decimal | None
     precio_simulado: bool
+    #: Solo un retazo guardado desde un sobrante (A21): «Sobrante de Parador, chapa 2».
+    origen_texto: str | None = None
+    #: En qué anda un retazo (A21): `disponible`, `en_uso` o `usado`, y los
+    #: trabajos que lo usan. Se calcula al leer y solo lo llena la pantalla de
+    #: Materiales (`/catalogo`); en una chapa y en las demás respuestas, vacío.
+    estado: Literal["disponible", "en_uso", "usado"] | None = None
+    trabajos: list[str] = []
 
 
 #: La medida de un retazo es libre, pero no absurda (A8, §5.2).
