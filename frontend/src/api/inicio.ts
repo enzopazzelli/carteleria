@@ -17,6 +17,10 @@ export interface PresupuestoResumido {
   total: string | null;
   moneda: string;
   estado: string;
+  /** Cuándo se armó, en UTC (A19). */
+  creado_en: string;
+  /** Cuántos productos quedaron por debajo del precio sugerido (A19). */
+  por_debajo: number;
 }
 
 export interface Tarjeta {
@@ -48,6 +52,11 @@ export interface ResumenDelInicio {
 
 export function listarTarjetas(limite?: number): Promise<Tarjeta[]> {
   return apiGet<Tarjeta[]>(limite === undefined ? "/tarjetas" : `/tarjetas?limite=${limite}`);
+}
+
+/** Todos los presupuestos, del más nuevo al más viejo (A19). */
+export function listarPresupuestosResumidos(): Promise<PresupuestoResumido[]> {
+  return apiGet<PresupuestoResumido[]>("/resumen-de-presupuestos");
 }
 
 export function obtenerResumenDelInicio(): Promise<ResumenDelInicio> {
