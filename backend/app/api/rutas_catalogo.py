@@ -16,9 +16,9 @@ from .. import config
 from ..modelos.catalogo import Formato, Material, ParametrosCorteMaterial
 from ..modelos.trabajo import GrupoDeCorte
 from ..services.catalogo.precios import CAMPOS_DEL_PRECIO, retazos_de
+from ..services.catalogo.retazos import retazo_desde
 from ..services.nesting.models import Plancha
 from .dependencias import obtener_sesion
-from .traducir_errores import medida
 from .esquemas_catalogo import (
     FormatoActualizar,
     FormatoCrear,
@@ -209,23 +209,7 @@ def crear_retazo(formato_id: int, datos: RetazoCrear, sesion: Session = Depends(
     por m² al precio de la fila de la que sale: se copia acá, así la regla
     no depende de quien lo pide."""
     origen = _formato_o_404(sesion, formato_id)
-    if origen.unidad_venta != "M2" or origen.costo_unidad_venta is None:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            f"La chapa de {medida(origen)} no tiene precio por m²: un retazo se cobra por m², "
-            "así que sin ese precio no se puede crear.",
-        )
-    retazo = Formato(
-        material_id=origen.material_id,
-        codigo=f"{origen.codigo}-R" if origen.codigo else None,
-        ancho_mm=datos.ancho_mm,
-        alto_mm=datos.alto_mm,
-        es_retazo=True,
-        moneda=origen.moneda,
-        unidad_venta=origen.unidad_venta,
-        costo_unidad_venta=origen.costo_unidad_venta,
-        precio_simulado=origen.precio_simulado,
-    )
+    retazo = retazo_desde(origen, datos.ancho_mm, datos.alto_mm)
     sesion.add(retazo)
     sesion.commit()
     return retazo
