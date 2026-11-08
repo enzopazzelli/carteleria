@@ -56,6 +56,10 @@ RUTA_MOTOR_DEEPNEST = Path(os.getenv("CARTELERIA_MOTOR", RAIZ.parent / "nesting-
 #: mantiene el sistema. Al lado de los datos, fuera de git.
 DIRECTORIO_REGISTRO = DIRECTORIO_DATOS / "registro"
 
+#: El logo y los datos de contacto de la empresa para el PDF (A22). Fuera de git,
+#: como el resto de lo que cuelga de `DIRECTORIO_DATOS`: el repositorio es público.
+DIRECTORIO_EMPRESA = DIRECTORIO_DATOS / "empresa"
+
 #: `PAR-54` y `PAR-55` (`docs/REGISTRO.md`): tamaño de cada archivo del
 #: registro y cuántos viejos se guardan.
 TAMANO_REGISTRO_BYTES = int(os.getenv("CARTELERIA_REGISTRO_BYTES", "1000000"))

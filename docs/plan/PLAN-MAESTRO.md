@@ -231,7 +231,7 @@ Se detallan cuando les toque, cada una con su diseño.
 | **4.1 Servidor y dominio** | Llevar al servidor real lo que ya corre en Docker, con HTTPS y los backups donde se defina | `CART-001` | `T-01`, `T-02`, `T-06` |
 | **4.2 Mail real** | Cambiar el buzón de prueba por la cuenta real | `CART-403`, `CART-406` | `T-03` |
 | **4.3 WhatsApp** | Aviso al dueño y envío al cliente por WhatsApp | `CART-403`, `CART-406` | `B-12`, `D-04` |
-| **4.4 Formato de la empresa** | Logo, datos fiscales y formato del presupuesto en el PDF | `CART-309` | `B-13` |
+| **4.4 Formato de la empresa** | Logo, datos fiscales y formato del presupuesto en el PDF. **El logo, los colores y los datos de contacto, hechos el 2026-11-08 (A22):** [`historico/A22-pdf-con-la-marca/`](../historico/A22-pdf-con-la-marca/diseno.md); faltan los datos fiscales y las condiciones | `CART-309` | `B-13` |
 | **4.5 Confirmar con el dueño** | Lo que avanzó con su valor por defecto: quién aprueba, validez, margen, `D-07`, `D-15`, `D-17`, `D-20` y `D-21` | — | `B-11`, `PAR-11`, `PAR-12`, `PAR-20`, `PAR-56` |
 
 **Lo que no entra en ninguna etapa de este plan**, y por qué:

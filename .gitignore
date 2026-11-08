@@ -42,6 +42,12 @@ backend/local/
 # del producto
 /Presupuesto_Cliente_Carteleria.docx
 
+# El logo y los datos de contacto de la empresa (A22): el repositorio es
+# público. Los que usa el sistema viven en backend/local/empresa/; estas son
+# las imágenes originales que quedaron en la raíz.
+/logoblanco.png
+/datosface.png
+
 # Sistema
 .DS_Store
 Thumbs.db

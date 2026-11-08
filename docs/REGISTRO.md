@@ -70,6 +70,10 @@ Cosas que damos por ciertas sin haberlas confirmado. Un supuesto que se cae pued
 | **SUP-29** | Un retazo **en uso** por un trabajo sin presupuesto aprobado sigue ofreciéndose, marcado con el trabajo que lo tiene; no se bloquea (`historico/A21-cuenta-de-retazos/diseno.md §4`) | 🟡 | Enzo, 2026-11-08 | Dos trabajos pueden elegir el mismo retazo mientras nadie aprueba, y el segundo en aprobar lo encuentra ya usado |
 | **SUP-30** | Si un trabajo se vuelve a anidar, el retazo que se guardó de su sobrante queda como está; se quita a mano con la ✕ si ya no corresponde (`historico/A21-cuenta-de-retazos/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: el sistema no puede saber si el sobrante viejo se llegó a cortar | Queda un retazo en la cuenta que no existe en el taller, o uno que existe y no está en la cuenta |
 | **SUP-31** | Un retazo se cobra por m² al precio de su chapa, igual que los de A8, y toma el precio nuevo cuando cambia la planilla (`historico/A21-cuenta-de-retazos/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: ya funciona así | Si el dueño cobra los retazos distinto (con un descuento o por pieza), hay que cambiar de dónde sale su precio (`P-10`) |
+| **SUP-32** | El pie del PDF dice «Anibal Dumit Megacarteles» y la dirección en una sola línea, tal como los dio la empresa, sin agregar tildes que su imagen no tiene (`historico/A22-pdf-con-la-marca/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: los datos salen de la imagen de su página | Un nombre o una dirección mal escritos salen así en cada presupuesto; se corrigen en `datos.json` |
+| **SUP-33** | El PDF no lleva CUIT ni condiciones de pago hasta que la empresa los pase (`historico/A22-pdf-con-la-marca/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: no los dio | Un presupuesto sale sin condiciones: el cliente puede entender otro plazo o forma de pago. Se cargan en `datos.json` y el PDF ya los imprime |
+| **SUP-34** | Los colores del PDF son fijos: negro `#0d0d0d` y naranja `#ff5d00`, tomados del logo (`historico/A22-pdf-con-la-marca/diseno.md §4`) | 🟢 | Enzo, 2026-11-08: «los colores son los de la imagen» | Si la marca cambia de colores, es un cambio de código en `pdf.py` |
+| **SUP-35** | El logo y los datos de contacto viven en `backend/local/empresa/`, fuera de git, porque el repositorio es público (`historico/A22-pdf-con-la-marca/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: aprobó guardarlos fuera de git | Al armar el servidor real hay que copiar esa carpeta; sin ella el PDF sale sin logo ni pie |
 
 > **SUP-04 y SUP-08 son los dos que más pueden doler.** El primero reordena el roadmap; el segundo invalida los cálculos del motor. Los dos se responden en el encuentro 2 del relevamiento ([§6](#6-guion-de-relevamiento)).
 
@@ -240,7 +244,7 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 | **B-10** | Costos no-material: estructura, tornillería, vinilo, mano de obra, flete, margen | S3 | `CART-106`, `CART-304`, `CART-305`, `CART-306`, `PAR-12` |
 | **B-11** | Quién aprueba y por qué canal | S4 | `CART-002`, `CART-403`, `CART-404`, `PAR-20`, `SUP-06` |
 | **B-12** | Alta de WhatsApp Business API (**el trámite arranca en S0**) | S4 | `CART-403`, `CART-406`, `SUP-11` |
-| **B-13** | Logo, datos fiscales y formato del presupuesto actual | S3 | `CART-309` |
+| **B-13** | Logo, datos fiscales y formato del presupuesto actual. **Parcial (2026-11-08, A22):** llegaron el logo y los datos de contacto; faltan los datos fiscales y el texto de condiciones | S3 | `CART-309` |
 | **B-14** | Archivos `.cdr` de ejemplo, con distinta complejidad | S5 | `CART-501` a `CART-506` |
 | **B-15** | Compromiso del equipo de diseño con la convención de capas | S5 | Todo **F5**, `SUP-05` |
 | **B-16** | Fotos de frentes de locales típicos | S7 | `CART-601`, pruebas de **F6** |

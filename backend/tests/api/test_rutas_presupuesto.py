@@ -1193,3 +1193,32 @@ def test_el_desglose_trae_el_sugerido_y_cuantos_quedan_por_debajo(cliente, tmp_p
     assert item["por_debajo_pct"] == 12
     assert cuerpo["totales"]["por_debajo"] == 1
     assert cliente.get(f"/presupuestos/{presupuesto['id']}/totales").json()["por_debajo"] == 1
+
+
+def test_el_pdf_sale_con_el_logo_y_los_datos_de_la_empresa_si_estan_cargados(cliente, tmp_path, monkeypatch):
+    import json
+
+    from PIL import Image
+
+    from app import config
+
+    carpeta = tmp_path / "empresa-de-prueba"
+    carpeta.mkdir()
+    Image.new("RGBA", (120, 80), (255, 93, 0, 255)).save(carpeta / "logo.png")
+    (carpeta / "datos.json").write_text(
+        json.dumps({"nombre": "Empresa de Prueba", "whatsapp": "+54 9 111 222-3333", "web": "empresa.example"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(config, "DIRECTORIO_EMPRESA", carpeta)
+    presupuesto, lineas = _presupuesto_del_ejemplo(cliente)
+    cliente.patch(f"/lineas-costo/{lineas['Instalación']['id']}/cliente", json={"precio_cliente": "150000"})
+    cliente.patch(f"/presupuestos/{presupuesto['id']}", json={"total_fijado": "1400000"})
+
+    respuesta = cliente.get(f"/presupuestos/{presupuesto['id']}/pdf")
+
+    assert respuesta.status_code == 200, respuesta.text
+    texto = "\n".join(pagina.extract_text() for pagina in PdfReader(io.BytesIO(respuesta.content)).pages)
+    assert "Empresa de Prueba" in texto
+    assert "WhatsApp +54 9 111 222-3333" in texto
+    assert "empresa.example" in texto
+    assert "margen" not in texto.lower()
