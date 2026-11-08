@@ -46,7 +46,7 @@ class Empresa:
 
 
 def carpeta_de_la_empresa() -> Path:
-    return config.DIRECTORIO_DATOS / "empresa"
+    return config.DIRECTORIO_EMPRESA
 
 
 def _leer_datos(archivo: Path) -> dict[str, str]:
@@ -58,7 +58,7 @@ def _leer_datos(archivo: Path) -> dict[str, str]:
         registro().warning("No se pudieron leer los datos de la empresa en %s: el PDF sale sin ellos.", archivo)
         return {}
     if not isinstance(crudo, dict):
-        registro().warning("Los datos de la empresa en %s no son un objeto JSON: el PDF sale sin ellos.", archivo)
+        registro().warning("Los datos de la empresa en %s no tienen la forma esperada (un dato por nombre): el PDF sale sin ellos.", archivo)
         return {}
     datos = {}
     for campo in _CAMPOS:

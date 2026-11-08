@@ -26,6 +26,7 @@ from ..modelos.presupuesto import (
 )
 from ..services.presupuesto.documento import PresupuestoIncompleto, armar_documento, hoy_en_argentina
 from ..services.presupuesto.estados import cambiar_estado, exigir_editable
+from ..services.presupuesto.empresa import cargar_empresa
 from ..services.presupuesto.pdf import generar_pdf
 from ..services.presupuesto.sugerido import multiplicador_de
 from ..services.presupuesto.totales import Cuenta, calcular
@@ -611,7 +612,7 @@ def descargar_pdf(presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
             },
         ) from error
     return Response(
-        generar_pdf(documento),
+        generar_pdf(documento, cargar_empresa()),
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{presupuesto.codigo}.pdf"'},
     )

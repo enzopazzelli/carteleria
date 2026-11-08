@@ -14,3 +14,5 @@ def _carpeta_temporal_de_la_prueba(tmp_path, monkeypatch):
     from app import config
 
     monkeypatch.setattr(config, "DIRECTORIO_TEMPORAL", tmp_path / "tmp-de-la-app")
+    # Ninguna prueba lee el logo ni los datos de contacto reales de la empresa (A22).
+    monkeypatch.setattr(config, "DIRECTORIO_EMPRESA", tmp_path / "sin-empresa")

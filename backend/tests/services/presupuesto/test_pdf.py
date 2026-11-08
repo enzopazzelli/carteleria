@@ -171,3 +171,121 @@ def test_una_palabra_larguisima_no_saca_los_importes_de_la_hoja():
 
     assert inicios, "no se encontró ningún texto dibujado"
     assert max(inicios) < ancho, f"un texto arranca en {max(inicios):.0f} pt y la hoja mide {ancho:.0f}"
+
+
+# --- Con la marca de la empresa (A22) ---------------------------------------
+
+
+def _empresa(**extra):
+    import io as _io
+
+    from PIL import Image
+
+    from app.services.presupuesto.empresa import Empresa
+
+    imagen = Image.new("RGBA", (300, 200), (255, 93, 0, 255))
+    salida = _io.BytesIO()
+    imagen.save(salida, format="PNG")
+    datos = {
+        "nombre": "Anibal Dumit Megacarteles",
+        "direccion": "Andres Chazarreta y Alejandro Aguado · Santiago del Estero · 4200",
+        "whatsapp": "+54 9 385 471-8352",
+        "mail": "anibaldumitmegacarteles@gmail.com",
+        "web": "anibaldumit.com",
+        "instagram": "anibaldumit.mc",
+        "logo": salida.getvalue(),
+        "proporcion_del_logo": 1.5,
+    } | extra
+    return Empresa(**datos)
+
+
+def _imagenes_de_la_hoja(contenido: bytes, hoja: int = 0) -> int:
+    recursos = PdfReader(io.BytesIO(contenido)).pages[hoja]["/Resources"]
+    objetos = recursos.get("/XObject", {})
+    return sum(1 for objeto in objetos.values() if objeto.get_object().get("/Subtype") == "/Image")
+
+
+def test_con_la_empresa_el_pdf_lleva_el_logo_y_el_pie_de_contacto():
+    contenido = pdf.generar_pdf(_documento(), _empresa())
+
+    texto = _texto_del_pdf(contenido)
+    for esperado in (
+        "PRESUPUESTO",
+        "P-2026-0007",
+        "Anibal Dumit Megacarteles",
+        "Andres Chazarreta y Alejandro Aguado · Santiago del Estero · 4200",
+        "WhatsApp +54 9 385 471-8352",
+        "anibaldumitmegacarteles@gmail.com",
+        "anibaldumit.com",
+        "Instagram @anibaldumit.mc",
+        "Página 1 de 1",
+    ):
+        assert esperado in texto, esperado
+    assert _imagenes_de_la_hoja(contenido) == 1
+
+
+def test_sin_la_empresa_no_hay_logo_ni_datos_de_contacto():
+    contenido = pdf.generar_pdf(_documento())
+
+    texto = _texto_del_pdf(contenido)
+    assert "WhatsApp" not in texto and "None" not in texto
+    assert "Farmacia Central" in texto and "Página 1 de 1" in texto
+    assert _imagenes_de_la_hoja(contenido) == 0
+
+
+def test_sin_logo_pero_con_nombre_el_nombre_ocupa_su_lugar():
+    contenido = pdf.generar_pdf(_documento(), _empresa(logo=None, proporcion_del_logo=None))
+
+    assert _imagenes_de_la_hoja(contenido) == 0
+    assert _texto_del_pdf(contenido).count("Anibal Dumit Megacarteles") == 2  # la banda y el pie
+
+
+def test_con_el_cuit_va_junto_al_nombre_en_el_pie():
+    texto = _texto_del_pdf(pdf.generar_pdf(_documento(), _empresa(cuit="20-12345678-9")))
+
+    assert "Anibal Dumit Megacarteles  ·  CUIT 20-12345678-9" in texto
+
+
+def test_las_condiciones_salen_debajo_del_total_y_se_escapan():
+    condiciones = "Pago: 50 % al aprobar.\nEntrega en 15 días <b>hábiles</b>."
+    texto = _texto_del_pdf(pdf.generar_pdf(_documento(), _empresa(condiciones=condiciones)))
+
+    assert "CONDICIONES" in texto
+    assert "Pago: 50 % al aprobar." in texto
+    assert "Entrega en 15 días <b>hábiles</b>." in texto
+    assert texto.index("$ 1.400.000,00") < texto.index("CONDICIONES")
+
+
+def test_sin_condiciones_no_hay_un_bloque_vacio():
+    assert "CONDICIONES" not in _texto_del_pdf(pdf.generar_pdf(_documento(), _empresa()))
+
+
+def test_las_hojas_que_siguen_llevan_el_codigo_y_el_pie_de_contacto():
+    items = [ItemDocumento(f"Renglón número {n}", D("1000")) for n in range(1, 81)]
+    contenido = pdf.generar_pdf(_documento(items=items), _empresa())
+
+    lector = PdfReader(io.BytesIO(contenido))
+    total = len(lector.pages)
+    assert total > 1
+    for numero, pagina in enumerate(lector.pages, start=1):
+        texto = pagina.extract_text()
+        assert "P-2026-0007" in texto, numero
+        assert "WhatsApp +54 9 385 471-8352" in texto, numero
+        assert f"Página {numero} de {total}" in texto, numero
+    # El logo grande es solo de la primera hoja.
+    assert _imagenes_de_la_hoja(contenido, 0) == 1
+    assert _imagenes_de_la_hoja(contenido, 1) == 0
+
+
+def test_un_logo_ancho_se_achica_para_no_pisar_la_banda():
+    ancho = _empresa(proporcion_del_logo=6.0)
+    contenido = pdf.generar_pdf(_documento(), ancho)
+
+    assert contenido.startswith(b"%PDF")
+    assert _imagenes_de_la_hoja(contenido) == 1
+
+
+def test_el_pdf_con_la_empresa_sigue_sin_costos_ni_margenes():
+    texto = _texto_del_pdf(pdf.generar_pdf(_documento(), _empresa())).lower()
+
+    assert "margen" not in texto and "costo" not in texto
