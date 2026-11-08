@@ -24,6 +24,8 @@ from ..modelos.presupuesto import (
     Presupuesto,
     RubroLineaCosto,
 )
+from ..services.catalogo.descripcion import nombre_de_categoria
+from ..services.presupuesto.del_catalogo import agregar_del_catalogo, buscar_articulos, categorias_del_catalogo
 from ..services.presupuesto.documento import PresupuestoIncompleto, armar_documento, hoy_en_argentina
 from ..services.presupuesto.estados import cambiar_estado, exigir_editable
 from ..services.presupuesto.empresa import cargar_empresa
@@ -32,7 +34,10 @@ from ..services.presupuesto.sugerido import multiplicador_de
 from ..services.presupuesto.totales import Cuenta, calcular
 from .dependencias import obtener_sesion
 from .esquemas_presupuesto import (
+    ArticuloDelCatalogoLeer,
+    BusquedaDeArticulosLeer,
     CambioDeEstadoCrear,
+    CategoriaDelCatalogoLeer,
     CambioDeEstadoLeer,
     ClienteActualizar,
     ClienteCrear,
@@ -43,6 +48,7 @@ from .esquemas_presupuesto import (
     LineaCostoCrear,
     LineaCostoLeer,
     LineaCostoOverride,
+    LineaDelCatalogoCrear,
     PresupuestoActualizar,
     PresupuestoCrear,
     PresupuestoLeer,
@@ -229,6 +235,9 @@ def duplicar_presupuesto(
                 texto_cliente=linea.texto_cliente,
                 precio_cliente=linea.precio_cliente,
                 multiplicador=linea.multiplicador,
+                articulo_id=linea.articulo_id,
+                articulo_codigo=linea.articulo_codigo,
+                articulo_proveedor=linea.articulo_proveedor,
             )
         )
     sesion.commit()
@@ -466,6 +475,42 @@ def actualizar_linea_para_el_cliente(
     return linea
 
 
+# --- Líneas del catálogo (A23) ---------------------------------------------
+# La búsqueda y el armado de la línea viven en `services/presupuesto/del_catalogo.py`.
+
+
+@router.get("/articulos-del-catalogo", response_model=BusquedaDeArticulosLeer)
+def buscar_en_el_catalogo(
+    texto: str = "", categoria: str | None = None, sesion: Session = Depends(obtener_sesion)
+) -> BusquedaDeArticulosLeer:
+    """Los artículos de la última planilla que cumplen la búsqueda (hasta 50), con
+    cuántos son en total y las categorías para el filtro."""
+    articulos, total = buscar_articulos(sesion, texto, categoria)
+    return BusquedaDeArticulosLeer(
+        articulos=[ArticuloDelCatalogoLeer.model_validate(a) for a in articulos],
+        total=total,
+        categorias=[
+            CategoriaDelCatalogoLeer(valor=c, nombre=nombre_de_categoria(c)) for c in categorias_del_catalogo(sesion)
+        ],
+    )
+
+
+@router.post(
+    "/presupuestos/{presupuesto_id}/lineas-costo/desde-catalogo",
+    response_model=LineaCostoLeer,
+    status_code=status.HTTP_201_CREATED,
+)
+def agregar_linea_del_catalogo(
+    presupuesto_id: int, datos: LineaDelCatalogoCrear, sesion: Session = Depends(obtener_sesion)
+) -> LineaCosto:
+    """Una línea con un artículo del catálogo: toma de la planilla su texto, su
+    unidad, su costo y su margen para el precio sugerido (A23)."""
+    presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    linea = agregar_del_catalogo(sesion, presupuesto, datos.articulo_id, datos.cantidad, datos.rubro)
+    sesion.commit()
+    return linea
+
+
 # --- Líneas libres (paso 4: `CART-304`/`305`/`306`) -----------------------
 
 
@@ -507,7 +552,12 @@ def actualizar_linea_libre(
     _rechazar_si_es_material(linea, "edita")
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         setattr(linea, campo, valor)
-    linea.valor_calculado = linea.cantidad * linea.precio_unitario
+    # Una línea que vino del catálogo puede no tener precio todavía (A23): sin cantidad o
+    # sin precio no hay valor calculado, y hay que ponerle uno a mano.
+    if linea.cantidad is None or linea.precio_unitario is None:
+        linea.valor_calculado = None
+    else:
+        linea.valor_calculado = linea.cantidad * linea.precio_unitario
     sesion.commit()
     return linea
 

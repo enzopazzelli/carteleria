@@ -22,6 +22,7 @@ import ResumenAnidado from "../../components/ResumenAnidado";
 import type { LineaCosto } from "../../api/presupuestos";
 import AprobacionSeccion from "./AprobacionSeccion";
 import { esEditable } from "./aprobacion";
+import BuscadorDeCatalogo from "./BuscadorDeCatalogo";
 import PresupuestoClienteSeccion from "./PresupuestoClienteSeccion";
 import { avisosDelCosteo } from "./costeo";
 import {
@@ -393,7 +394,14 @@ function SeccionDesglose({ presupuestoId, editable }: { presupuestoId: number; e
                   </tr>
                 ) : (
                   <tr key={linea.id} className="border-b border-line">
-                    <td>{linea.descripcion}</td>
+                    <td>
+                      {linea.descripcion}
+                      {linea.articulo_codigo && (
+                        <span className="ml-2 font-mono text-xs text-ink/50" title="Se agregó del catálogo">
+                          {linea.articulo_codigo}
+                        </span>
+                      )}
+                    </td>
                     <td className="font-mono">{linea.cantidad ?? "—"}</td>
                     <td className="font-mono">
                       {linea.moneda} {Number(linea.valor_override ?? linea.valor_calculado ?? 0).toFixed(2)}
@@ -456,6 +464,8 @@ function SeccionDesglose({ presupuestoId, editable }: { presupuestoId: number; e
           Agregar línea
         </button>
       </div>
+
+      <BuscadorDeCatalogo presupuestoId={presupuestoId} />
 
       <div className="flex gap-4 items-center mb-4 text-sm">
         <label>

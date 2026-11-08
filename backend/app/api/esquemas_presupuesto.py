@@ -147,6 +147,9 @@ class LineaCostoLeer(BaseModel):
     precio_cliente: Decimal | None
     #: El margen de la planilla, como multiplicador del costo (A19, `PAR-61`).
     multiplicador: Decimal | None
+    #: De qué artículo del catálogo salió, si se agregó de ahí (A23).
+    articulo_codigo: str | None = None
+    articulo_proveedor: str | None = None
 
 
 class LineaCostoOverride(BaseModel):
@@ -193,6 +196,43 @@ class LineaCostoCrear(BaseModel):
     cantidad: Decimal = Field(ge=-_CANTIDAD_MAX, le=_CANTIDAD_MAX)
     unidad: str | None = None
     precio_unitario: Decimal = Field(ge=-_IMPORTE_MAX, le=_IMPORTE_MAX)
+
+
+class LineaDelCatalogoCrear(BaseModel):
+    """Una línea que se agrega eligiendo un artículo del catálogo (A23). El
+    texto, la unidad y el precio los pone el servidor, con lo que trae la planilla."""
+
+    articulo_id: int
+    #: Mayor que 0: lo exige el servicio, que dice el motivo.
+    cantidad: Decimal = Field(le=_CANTIDAD_MAX, ge=-_CANTIDAD_MAX)
+    rubro: Literal["INSUMO", "MANO_DE_OBRA", "FLETE", "INSTALACION", "OTRO"] = "INSUMO"
+
+
+class ArticuloDelCatalogoLeer(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    codigo: str
+    proveedor: str
+    descripcion: str
+    categoria: str
+    unidad_venta: str | None
+    #: En pesos, por unidad de venta. `None`: la planilla no trae precio.
+    costo_unidad_venta: Decimal | None
+
+
+class CategoriaDelCatalogoLeer(BaseModel):
+    #: Como la escribe la planilla: es lo que se manda para filtrar.
+    valor: str
+    #: Como se lee: «Bulonería y anclaje», no `BULONERIA/ANCLAJE`.
+    nombre: str
+
+
+class BusquedaDeArticulosLeer(BaseModel):
+    articulos: list[ArticuloDelCatalogoLeer]
+    #: Cuántos cumplen la búsqueda en total, aunque se devuelvan menos.
+    total: int
+    categorias: list[CategoriaDelCatalogoLeer]
 
 
 class LineaCostoActualizar(BaseModel):

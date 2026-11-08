@@ -1,11 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type AccionDeAprobacion,
   actualizarLineaCliente,
   actualizarLineaLibre,
   actualizarMargenEIva,
   actualizarPresupuesto,
+  agregarDelCatalogo,
   aplicarOverride,
+  buscarArticulos,
   cambiarEstado,
   crearCliente,
   crearLineaLibre,
@@ -182,5 +184,24 @@ export function useCambiarEstado(presupuestoId: number) {
         queryClient.invalidateQueries({ queryKey: [queryKey] });
       }
     },
+  });
+}
+
+/** Los artículos del catálogo que cumplen la búsqueda (A23). Solo se pide con el
+ * buscador abierto, y mientras llega la respuesta nueva se sigue viendo la vieja. */
+export function useBuscarEnElCatalogo(texto: string, categoria: string, abierto: boolean) {
+  return useQuery({
+    queryKey: ["articulos-del-catalogo", texto, categoria],
+    queryFn: () => buscarArticulos(texto, categoria),
+    enabled: abierto,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useAgregarDelCatalogo(presupuestoId: number) {
+  const refrescar = useRefrescarPresupuesto(presupuestoId);
+  return useMutation({
+    mutationFn: (datos: { articulo_id: number; cantidad: string; rubro: string }) => agregarDelCatalogo(presupuestoId, datos),
+    onSuccess: refrescar,
   });
 }

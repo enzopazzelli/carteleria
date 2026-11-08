@@ -84,6 +84,9 @@ export interface LineaCosto {
   override_por: string | null;
   texto_cliente: string | null;
   precio_cliente: string | null;
+  /** De qué artículo del catálogo salió, si se agregó de ahí (A23). */
+  articulo_codigo?: string | null;
+  articulo_proveedor?: string | null;
 }
 
 export interface Totales {
@@ -225,4 +228,50 @@ export function cambiarEstado(
 
 export function obtenerHistorial(presupuestoId: number): Promise<CambioDeEstado[]> {
   return apiGet<CambioDeEstado[]>(`/presupuestos/${presupuestoId}/historial`);
+}
+
+// --- Agregar del catálogo (A23) ---------------------------------------------
+
+export interface ArticuloDelCatalogo {
+  id: number;
+  codigo: string;
+  proveedor: string;
+  descripcion: string;
+  categoria: string;
+  /** `M2`, `METROS LINEALES`, `UNIDAD` o `LITROS`, como la planilla. */
+  unidad_venta: string | null;
+  /** En pesos, por unidad de venta. `null`: la planilla no trae precio. */
+  costo_unidad_venta: string | null;
+}
+
+export interface CategoriaDelCatalogo {
+  /** Como la escribe la planilla: es lo que se manda para filtrar. */
+  valor: string;
+  /** Como se lee: «Bulonería y anclaje». */
+  nombre: string;
+}
+
+export interface BusquedaDeArticulos {
+  articulos: ArticuloDelCatalogo[];
+  /** Cuántos cumplen la búsqueda en total, aunque se devuelvan menos. */
+  total: number;
+  categorias: CategoriaDelCatalogo[];
+}
+
+/** Hasta 50 artículos de la última planilla; el texto y la categoría afinan. */
+export function buscarArticulos(texto: string, categoria: string): Promise<BusquedaDeArticulos> {
+  const parametros = new URLSearchParams();
+  if (texto.trim()) parametros.set("texto", texto.trim());
+  if (categoria) parametros.set("categoria", categoria);
+  const consulta = parametros.toString();
+  return apiGet<BusquedaDeArticulos>(`/articulos-del-catalogo${consulta ? `?${consulta}` : ""}`);
+}
+
+/** Agrega al presupuesto una línea con un artículo del catálogo: el servidor
+ * pone el texto, la unidad, el costo y el margen de la planilla. */
+export function agregarDelCatalogo(
+  presupuestoId: number,
+  datos: { articulo_id: number; cantidad: string; rubro: string }
+): Promise<LineaCosto> {
+  return apiPost<LineaCosto>(`/presupuestos/${presupuestoId}/lineas-costo/desde-catalogo`, datos);
 }

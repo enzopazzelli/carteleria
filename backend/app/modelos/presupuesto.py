@@ -203,5 +203,11 @@ class LineaCosto(Base):
     #: un presupuesto armado no cambia solo con la planilla. `None`: la línea
     #: usa el margen general del presupuesto.
     multiplicador: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    #: De qué artículo de la planilla salió la línea, si se agregó del catálogo
+    #: (A23). El código y el proveedor quedan escritos aparte: si la planilla deja
+    #: de traer el artículo y se borra, la línea sigue diciendo de dónde vino.
+    articulo_id: Mapped[int | None] = mapped_column(ForeignKey("articulos.id", ondelete="SET NULL"), default=None)
+    articulo_codigo: Mapped[str | None] = mapped_column(String(40), default=None)
+    articulo_proveedor: Mapped[str | None] = mapped_column(String(120), default=None)
 
     presupuesto: Mapped[Presupuesto] = relationship(back_populates="lineas")

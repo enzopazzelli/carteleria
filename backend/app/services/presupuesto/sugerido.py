@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import config
-from app.modelos.catalogo import Formato
+from app.modelos.catalogo import Articulo, Formato
 
 from ..catalogo.precios import articulo_que_cuenta
 
@@ -59,6 +59,12 @@ def multiplicador_de(sesion: Session, formato: Formato | None) -> Multiplicador:
         chapa = _chapa_de(sesion, formato, codigo)
         a_mano = chapa.proveedor_a_mano if chapa is not None else None
     articulo = articulo_que_cuenta(sesion, codigo, a_mano)
+    return multiplicador_del_articulo(articulo, codigo)
+
+
+def multiplicador_del_articulo(articulo: Articulo | None, codigo: str | None = None) -> Multiplicador:
+    """El margen de la planilla de un artículo (A23: lo usa también una línea
+    agregada del catálogo). La misma regla que para una medida."""
     if articulo is None:
         return Multiplicador(None, None)
     margen = getattr(articulo, config.MARGEN_DEL_PRECIO_SUGERIDO)
@@ -66,6 +72,7 @@ def multiplicador_de(sesion: Session, formato: Formato | None) -> Multiplicador:
         return Multiplicador(None, None)
     if margen <= 1:
         return Multiplicador(
-            None, f"El margen de la planilla de {codigo} (× {_con_coma(margen)}) no se usa: va el margen general."
+            None,
+            f"El margen de la planilla de {codigo or articulo.codigo} (× {_con_coma(margen)}) no se usa: va el margen general.",
         )
     return Multiplicador(margen, None)
