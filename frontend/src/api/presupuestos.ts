@@ -100,6 +100,8 @@ export interface Totales {
   total: string | null;
   total_fijado: string | null;
   advertencias: string[];
+  /** Cuántos productos quedaron por debajo del precio sugerido (A19). */
+  por_debajo: number;
 }
 
 /** Una línea vista desde el precio: lo que va a leer el cliente al lado
@@ -113,6 +115,15 @@ export interface ItemCliente {
   precio_base: string | null;
   a_mano: boolean;
   precio_final: string | null;
+  /** A19. El margen de la planilla, como multiplicador; `null` con sugerido:
+   * salió del margen general. */
+  multiplicador: string | null;
+  /** El costo por el multiplicador, o más el margen general. */
+  sugerido: string | null;
+  /** El precio final dividido por el costo. */
+  ganancia: string | null;
+  /** Cuánto por debajo del sugerido quedó, en %, si alguien lo bajó. */
+  por_debajo_pct: number | null;
 }
 
 export interface Desglose {

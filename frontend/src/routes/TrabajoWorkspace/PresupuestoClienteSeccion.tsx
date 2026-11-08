@@ -15,6 +15,7 @@ import {
   leerImporte,
   mismoImporte,
   mostrarImporte,
+  mostrarMultiplicador,
   mostrarPorcentaje,
 } from "./importes";
 import Mensaje from "../../components/Mensaje/Mensaje";
@@ -227,18 +228,29 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
         </div>
       )}
 
+      {totales.por_debajo > 0 && (
+        <div className="mb-3">
+          <Banner variante="aviso">
+            {totales.por_debajo === 1 ? "1 producto queda" : `${totales.por_debajo} productos quedan`} por debajo del precio
+            sugerido.
+          </Banner>
+        </div>
+      )}
+
       <table className="w-full text-sm mb-4">
         <thead>
           <tr className="text-left border-b border-line">
             <th>Texto para el cliente</th>
             <th className="text-right">Costo</th>
-            <th className="text-right">Precio base</th>
+            <th className="text-right">Sugerido</th>
+            <th className="text-right">Precio</th>
             <th className="text-right">En el presupuesto</th>
+            <th className="text-right">Ganancia</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item) => (
-            <tr key={item.linea_id} className="border-b border-line">
+            <tr key={item.linea_id} className={`border-b border-line ${item.por_debajo_pct !== null ? "bg-bronze/10" : ""}`}>
               <td className="py-1 pr-2">
                 <input
                   key={item.texto}
@@ -249,7 +261,15 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
                 />
               </td>
               <td className="font-mono text-right">{mostrarImporte(item.costo, moneda)}</td>
-              <td className="text-right whitespace-nowrap">
+              <td className="text-right whitespace-nowrap pl-2">
+                <span className="font-mono">{mostrarImporte(item.sugerido, moneda)}</span>
+                {item.sugerido !== null && (
+                  <span className="block text-xs text-ink/60">
+                    {item.multiplicador !== null ? mostrarMultiplicador(item.multiplicador) : "margen general"}
+                  </span>
+                )}
+              </td>
+              <td className="text-right whitespace-nowrap pl-2">
                 <input
                   key={`${item.precio_base}-${item.a_mano}`}
                   className="border border-line rounded px-2 py-1 bg-paper w-32 font-mono text-right"
@@ -265,7 +285,13 @@ export default function PresupuestoClienteSeccion({ presupuestoId }: { presupues
                   <span className="ml-2 text-xs opacity-60">calculado</span>
                 )}
               </td>
-              <td className="font-mono text-right">{mostrarImporte(item.precio_final, moneda)}</td>
+              <td className="text-right whitespace-nowrap pl-2">
+                <span className="font-mono">{mostrarImporte(item.precio_final, moneda)}</span>
+                {item.por_debajo_pct !== null && (
+                  <span className="block text-xs text-bronze">por debajo del sugerido: −{item.por_debajo_pct} %</span>
+                )}
+              </td>
+              <td className="font-mono text-right pl-2">{mostrarMultiplicador(item.ganancia)}</td>
             </tr>
           ))}
         </tbody>

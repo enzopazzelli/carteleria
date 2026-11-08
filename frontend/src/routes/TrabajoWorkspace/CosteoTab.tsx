@@ -446,11 +446,13 @@ function SeccionDesglose({ presupuestoId }: { presupuestoId: number }) {
 
       <div className="flex gap-4 items-center mb-4 text-sm">
         <label>
-          Margen %:{" "}
+          Margen para lo que no tiene margen en la planilla (%):{" "}
           <input
             className="border border-line rounded px-2 py-1 w-20 font-mono bg-paper"
             defaultValue={totales.margen_pct ?? ""}
-            onBlur={(e) => alCambiarPorcentaje("margen_pct", "Margen %", e.target.value)}
+            onBlur={(e) =>
+              alCambiarPorcentaje("margen_pct", "Margen para lo que no tiene margen en la planilla", e.target.value)
+            }
           />
         </label>
         <label>

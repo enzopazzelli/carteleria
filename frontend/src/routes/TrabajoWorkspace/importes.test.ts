@@ -10,6 +10,7 @@ import {
   porcentajeParaGuardar,
   mismoImporte,
   mostrarImporte,
+  mostrarMultiplicador,
   mostrarMedidas,
   mostrarMm,
   mostrarPorcentaje,
@@ -261,5 +262,19 @@ describe("porcentajeParaGuardar", () => {
   it("lo que no es un porcentaje no se manda", () => {
     expect(porcentajeParaGuardar("abc", { conSigno: true })).toBeUndefined();
     expect(porcentajeParaGuardar("21 %")).toBe("21");
+  });
+});
+
+describe("mostrarMultiplicador", () => {
+  it("muestra el margen como en la planilla, con una cifra decimal como mucho", () => {
+    expect(mostrarMultiplicador("3")).toBe("× 3");
+    expect(mostrarMultiplicador("3.00")).toBe("× 3");
+    expect(mostrarMultiplicador("2.64")).toBe("× 2,6");
+    expect(mostrarMultiplicador("1.50")).toBe("× 1,5");
+  });
+
+  it("sin valor, una raya", () => {
+    expect(mostrarMultiplicador(null)).toBe("—");
+    expect(mostrarMultiplicador(undefined)).toBe("—");
   });
 });
