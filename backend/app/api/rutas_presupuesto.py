@@ -16,14 +16,23 @@ from sqlalchemy.orm import Session
 
 from ..costeo import resumen_materiales
 from ..modelos.catalogo import Formato
-from ..modelos.presupuesto import Cliente, LineaCosto, Presupuesto, RubroLineaCosto
+from ..modelos.presupuesto import (
+    CambioDeEstado,
+    Cliente,
+    EstadoPresupuesto,
+    LineaCosto,
+    Presupuesto,
+    RubroLineaCosto,
+)
 from ..services.presupuesto.documento import PresupuestoIncompleto, armar_documento, hoy_en_argentina
-from ..services.presupuesto.estados import exigir_editable
+from ..services.presupuesto.estados import cambiar_estado, exigir_editable
 from ..services.presupuesto.pdf import generar_pdf
 from ..services.presupuesto.sugerido import multiplicador_de
 from ..services.presupuesto.totales import Cuenta, calcular
 from .dependencias import obtener_sesion
 from .esquemas_presupuesto import (
+    CambioDeEstadoCrear,
+    CambioDeEstadoLeer,
     ClienteActualizar,
     ClienteCrear,
     ClienteLeer,
@@ -223,6 +232,60 @@ def duplicar_presupuesto(
         )
     sesion.commit()
     return copia
+
+
+# --- La aprobación (A20: `CART-401` a `CART-404`) ---------------------------
+# Las reglas viven en `services/presupuesto/estados.py`; acá solo se
+# atienden los cuatro pedidos y se guarda.
+
+
+def _pasar_a(
+    presupuesto_id: int, nuevo: EstadoPresupuesto, datos: CambioDeEstadoCrear, sesion: Session
+) -> Presupuesto:
+    presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
+    cambiar_estado(sesion, presupuesto, nuevo, por=datos.por, motivo=datos.motivo)
+    sesion.commit()
+    return presupuesto
+
+
+@router.post("/presupuestos/{presupuesto_id}/mandar-a-aprobar", response_model=PresupuestoLeer)
+def mandar_a_aprobar(
+    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+) -> Presupuesto:
+    """De borrador u observado a pendiente. Se rechaza diciendo qué falta si
+    el presupuesto no está completo."""
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.PENDIENTE_APROBACION, datos, sesion)
+
+
+@router.post("/presupuestos/{presupuesto_id}/aprobar", response_model=PresupuestoLeer)
+def aprobar(
+    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+) -> Presupuesto:
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.APROBADO, datos, sesion)
+
+
+@router.post("/presupuestos/{presupuesto_id}/observar", response_model=PresupuestoLeer)
+def observar(
+    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+) -> Presupuesto:
+    """Devuelve el presupuesto con un motivo (obligatorio) para que se corrija."""
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.OBSERVADO, datos, sesion)
+
+
+@router.post("/presupuestos/{presupuesto_id}/volver-a-borrador", response_model=PresupuestoLeer)
+def volver_a_borrador(
+    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+) -> Presupuesto:
+    """Desbloquea un presupuesto pendiente o aprobado. El motivo es obligatorio."""
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.BORRADOR, datos, sesion)
+
+
+@router.get("/presupuestos/{presupuesto_id}/historial", response_model=list[CambioDeEstadoLeer])
+def historial_de_estados(
+    presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
+) -> list[CambioDeEstado]:
+    """Cada cambio de estado, del más viejo al más nuevo."""
+    return list(_presupuesto_o_404(sesion, presupuesto_id).cambios_de_estado)
 
 
 # --- Líneas de costo (paso 2: `CART-302`) -----------------------------

@@ -20,6 +20,8 @@ ETIQUETAS_DE_CAMPOS = {
     "precio_cliente": "Precio para el cliente",
     "nombre": "Nombre",
     "contacto": "Contacto",
+    "por": "Tu nombre",
+    "motivo": "Motivo",
     # Catálogo
     "ancho_mm": "Ancho (mm)",
     "alto_mm": "Alto (mm)",
