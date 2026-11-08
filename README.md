@@ -76,7 +76,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 - Entraron 288 artículos: los 27 códigos enlazados y 261 nuevos. El catálogo pasó de 23 a 44 materiales y de 30 a 59 formatos.
 - `CHA0013` quedó con la medida a mano, 1250 × 2500, confirmada por Enzo (el 0,7 es el espesor).
 
-**Ya está en la rama `feat/a21-cuenta-de-retazos`** (todavía sin fusionar a `main`):
+**Ya está en `main`:**
 - **La cuenta de los retazos (A21), desde el 2026-11-08.**
   - **Para qué:** que el taller sepa con qué retazos cuenta, en vez de que el sobrante de cada chapa se pierda de vista.
   - **Guardar:** en la tabla de chapas del resumen del anidado, al lado de cada sobrante que llega al mínimo (hoy 250 × 250 mm), un botón «Guardar como retazo». Crea el retazo con esa medida, del mismo material y al precio por m² de su chapa. El mismo sobrante no se guarda dos veces.
@@ -88,8 +88,6 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
   - **Todavía no:** cobrar por lo usado, y proponer un retazo al anidar un trabajo nuevo.
 
   Ver [`docs/historico/A21-cuenta-de-retazos/`](docs/historico/A21-cuenta-de-retazos/diseno.md).
-
-**Ya está en `main`:**
 - **La aprobación del presupuesto (A20), desde el 2026-11-08.**
   - **Para qué:** que quede asentado que el dueño vio un presupuesto y lo dio por bueno, o que lo devolvió con una observación, y quién y cuándo.
   - **Los estados:** borrador, pendiente de aprobación, observado y aprobado. Mandarlo a aprobar exige que esté completo, y dice qué falta si no.

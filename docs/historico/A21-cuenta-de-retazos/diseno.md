@@ -1,6 +1,6 @@
 # A21 — La cuenta de los retazos (propuesta de diseño)
 
-**Estado:** construido el 2026-11-08, en la rama `feat/a21-cuenta-de-retazos`. Enzo aprobó la propuesta ese día. Cómo quedó, en §8. Es lo que A12 dejó para después («llevar la cuenta de los retazos») y lo que A8 dejó afuera («llevar stock de retazos»). Los supuestos de §4 los puso Claude, Enzo los aprobó y están en `REGISTRO.md`.
+**Estado:** construido y en `main` el 2026-11-08 (`58ed14d`). Enzo aprobó la propuesta ese día. Cómo quedó, en §8. Es lo que A12 dejó para después («llevar la cuenta de los retazos») y lo que A8 dejó afuera («llevar stock de retazos»). Los supuestos de §4 los puso Claude, Enzo los aprobó y están en `REGISTRO.md`.
 
 ## 1. Qué problema resuelve
 
