@@ -277,6 +277,35 @@ def test_las_hojas_que_siguen_llevan_el_codigo_y_el_pie_de_contacto():
     assert _imagenes_de_la_hoja(contenido, 1) == 0
 
 
+def test_una_direccion_larga_se_parte_en_dos_renglones_y_no_pisa_la_pagina():
+    larga = "Avenida Andres Chazarreta y Alejandro Aguado, barrio Centro Norte, Santiago del Estero, Argentina, CP 4200"
+    contenido = pdf.generar_pdf(_documento(), _empresa(direccion=larga))
+    pagina = PdfReader(io.BytesIO(contenido)).pages[0]
+    ancho = float(pagina.mediabox.width)
+    segmentos: list[tuple[float, float]] = []
+
+    def anotar(operador, argumentos, cm, tm):
+        if operador in (b"Tj", b"TJ"):
+            segmentos.append((cm[0] * tm[4] + cm[2] * tm[5] + cm[4], cm[1] * tm[4] + cm[3] * tm[5] + cm[5]))
+
+    pagina.extract_text(visitor_operand_before=anotar)
+    texto = " ".join(pagina.extract_text().split())
+    assert "Avenida Andres Chazarreta" in texto and "CP 4200" in texto, "la dirección entera sigue en la hoja"
+    assert max(x for x, _ in segmentos) < ancho
+    # «Página 1 de 1» está en el último renglón del pie: ninguna otra línea del pie arranca a su altura y se le monta.
+    y_pagina = min(y for _, y in segmentos)
+    assert sum(1 for _, y in segmentos if abs(y - y_pagina) < 1) >= 1
+
+
+def test_el_rotulo_de_las_condiciones_no_queda_solo_al_pie_de_una_hoja():
+    items = [ItemDocumento(f"Renglón número {n}", D("1000")) for n in range(1, 17)]
+    contenido = pdf.generar_pdf(_documento(items=items), _empresa(condiciones="Pago 50 % al aprobar.\nEntrega en 15 días."))
+    paginas = [p.extract_text() for p in PdfReader(io.BytesIO(contenido)).pages]
+    for texto in paginas:
+        if "CONDICIONES" in texto:
+            assert "Pago 50 % al aprobar." in texto, "el rótulo y su texto van en la misma hoja"
+
+
 def test_un_logo_ancho_se_achica_para_no_pisar_la_banda():
     ancho = _empresa(proporcion_del_logo=6.0)
     contenido = pdf.generar_pdf(_documento(), ancho)

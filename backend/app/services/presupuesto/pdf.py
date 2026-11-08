@@ -4,7 +4,7 @@ La hoja se arma en código y no con una plantilla HTML: ReportLab es
 Python puro, y no necesita bibliotecas del sistema ni en Windows ni en
 el servidor (`D-16`). Las medidas y los colores son los del diseño
 (`docs/historico/1.3-pdf-del-presupuesto/diseno.md §4`), con la marca de la
-empresa encima (A22, `docs/plan/A22-pdf-con-la-marca/diseno.md`): negro y
+empresa encima (A22, `docs/historico/A22-pdf-con-la-marca/diseno.md`): negro y
 naranja, el logo en la banda de arriba y los datos de contacto al pie.
 
 El logo y los datos llegan en `empresa`. Sin ellos la hoja sale igual, sin
@@ -23,7 +23,7 @@ from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.lib.utils import ImageReader
+from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
@@ -189,22 +189,38 @@ def _dibujar_hoja_siguiente(canv: Canvas, documento: DocumentoCliente, _empresa:
 _INTERLINEA_DEL_PIE = 4.5 * mm
 
 
-def _renglones_del_pie(empresa: Empresa | None) -> list[str]:
-    """El nombre (con el CUIT) y las líneas de contacto; vacío sin empresa."""
+#: Lo que se deja libre a la derecha, en el último renglón, para «Página X de Y».
+_ANCHO_DE_LA_PAGINA = 32 * mm
+
+
+def _renglones_del_pie(empresa: Empresa | None) -> list[tuple[str, bool]]:
+    """El nombre (con el CUIT) y las líneas de contacto, cada una con si va en
+    negrita. Una línea que no entra en el ancho se parte en dos: no se sale del
+    margen ni pisa el número de página. Vacío sin empresa."""
     if empresa is None:
         return []
     titulo = empresa.titulo_del_pie()
-    return ([titulo] if titulo else []) + lineas_del_pie(empresa)
+    lineas = ([(titulo, True)] if titulo else []) + [(linea, False) for linea in lineas_del_pie(empresa)]
+    renglones = []
+    ancho_libre = _ANCHO - _ANCHO_DE_LA_PAGINA
+    for texto, negrita in lineas:
+        fuente = _NEGRITA if negrita else _NORMAL
+        if pdfmetrics.stringWidth(texto, fuente, 8.5) <= ancho_libre:
+            renglones.append((texto, negrita))  # tal cual: el cortador junta los espacios dobles
+            continue
+        for parte in simpleSplit(texto, fuente, 8.5, ancho_libre):
+            renglones.append((parte, negrita))
+    return renglones
 
 
-def _margen_de_abajo(renglones: list[str]) -> float:
+def _margen_de_abajo(renglones: list[tuple[str, bool]]) -> float:
     """Cuánto mide el pie desde el borde de la hoja, para que el texto no lo pise."""
     if not renglones:
         return 20 * mm
     return 8 * mm + _INTERLINEA_DEL_PIE * (len(renglones) - 1) + 5.5 * mm + 8 * mm
 
 
-def _lienzo_con_pie(renglones: list[str]) -> type[Canvas]:
+def _lienzo_con_pie(renglones: list[tuple[str, bool]]) -> type[Canvas]:
     """Escribe el pie en cada hoja: los datos de contacto y «Página X de Y».
     El total de hojas recién se sabe al terminar, así que guarda cada hoja y
     las escribe todas al final."""
@@ -234,9 +250,9 @@ def _lienzo_con_pie(renglones: list[str]) -> type[Canvas]:
                 self.setStrokeColor(_NARANJA)
                 self.setLineWidth(1.4)
                 self.line(_MARGEN_X, y_primero + 5.5 * mm, ancho - _MARGEN_X, y_primero + 5.5 * mm)
-                for i, renglon in enumerate(renglones):
-                    self.setFont(_NEGRITA if i == 0 else _NORMAL, 8.5)
-                    self.setFillColor(_NEGRO if i == 0 else _GRIS_ROTULO)
+                for i, (renglon, negrita) in enumerate(renglones):
+                    self.setFont(_NEGRITA if negrita else _NORMAL, 8.5)
+                    self.setFillColor(_NEGRO if negrita else _GRIS_ROTULO)
                     self.drawString(_MARGEN_X, y_primero - i * _INTERLINEA_DEL_PIE, renglon)
             else:
                 y_ultimo = 10 * mm
@@ -361,7 +377,10 @@ def _condiciones(empresa: Empresa | None) -> list[Flowable]:
     if empresa is None or not empresa.condiciones:
         return []
     texto = escape(empresa.condiciones).replace("\n", "<br/>")
-    return [Spacer(0, 9 * mm), Paragraph("CONDICIONES", _CABECERA), Spacer(0, 1.5 * mm), Paragraph(texto, _CONDICIONES)]
+    # El rótulo no queda solo al pie de una hoja con su texto en la siguiente.
+    return [
+        KeepTogether([Spacer(0, 9 * mm), Paragraph("CONDICIONES", _CABECERA), Spacer(0, 1.5 * mm), Paragraph(texto, _CONDICIONES)])
+    ]
 
 
 def generar_pdf(documento: DocumentoCliente, empresa: Empresa | None = None) -> bytes:
