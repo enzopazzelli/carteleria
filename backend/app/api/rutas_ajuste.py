@@ -572,9 +572,17 @@ def obtener_material_usado(ejecucion_id: int, sesion: Session = Depends(obtener_
         raise HTTPException(status.HTTP_409_CONFLICT, "Este anidado todavía no terminó: no hay material usado para mostrar.")
     plancha = _plancha_de(sesion, ejecucion)
     material = material_usado_de(sesion, ejecucion)
+    guardados = dict(
+        sesion.execute(
+            select(Formato.origen_plancha, Formato.id).where(Formato.origen_ejecucion_id == ejecucion.id)
+        ).all()
+    )
     return MaterialUsadoLeer(
         chapa=MedidaLeer(ancho_mm=round(plancha.ancho_mm), alto_mm=round(plancha.alto_mm)),
-        chapas=[MaterialDeChapaLeer.model_validate(c) for c in material.chapas],
+        chapas=[
+            MaterialDeChapaLeer.model_validate(c).model_copy(update={"retazo_id": guardados.get(c.plancha)})
+            for c in material.chapas
+        ],
         linea=material.linea,
         retazo_minimo_mm=config.RETAZO_MINIMO_MM,
     )

@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { alCambiarLosRetazos } from "./useCatalogo";
 import {
   ajustarColocacion,
   anidar,
   borrarEjecucion,
   deshacerReacomodo,
+  guardarSobrante,
   listarColocaciones,
   listarEjecucionesDeGrupo,
   marcarDefinitiva,
@@ -167,4 +169,18 @@ function alCambiarLasChapas(queryClient: ReturnType<typeof useQueryClient>, ejec
   queryClient.invalidateQueries({ queryKey: ["ejecucion", ejecucionId] });
   queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
   queryClient.invalidateQueries({ queryKey: ["costeo"] });
+}
+
+/** Guarda el sobrante de una chapa como retazo (A21). Cambia la lista de
+ * chapas (que ya figure guardado) y todo lo que muestra retazos. */
+export function useGuardarSobrante(ejecucionId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (plancha: number) => guardarSobrante(ejecucionId, plancha),
+    onSuccess: (retazo) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] }),
+        alCambiarLosRetazos(queryClient, retazo.material_id),
+      ]),
+  });
 }

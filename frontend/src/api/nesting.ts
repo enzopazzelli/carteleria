@@ -1,4 +1,5 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "./client";
+import type { Formato } from "./catalogo";
 import type { Aviso, ErrorDelServidor } from "./mensajes";
 
 /** Cómo va un anidado o una comparación en curso (A7). Lo que el motor
@@ -168,6 +169,8 @@ export interface MaterialDeChapa {
   sobrante: MedidaLeer;
   /** Si el sobrante llega al retazo más chico que se guarda. Si no, la chapa cuenta como entera. */
   es_retazo: boolean;
+  /** El retazo en que ya se guardó este sobrante (A21); `null` si todavía no. */
+  retazo_id: number | null;
 }
 
 export interface MaterialUsado {
@@ -176,6 +179,13 @@ export interface MaterialUsado {
   /** Como lo diría el dueño: «6 chapas enteras + 1220 × 1650 + 1220 × 900». */
   linea: string;
   retazo_minimo_mm: number;
+}
+
+/** Guarda el sobrante de una chapa (cuenta desde 0) como retazo del mismo
+ * material, al precio por m² de su chapa (A21). Si ya estaba guardado, el
+ * servidor responde 409 y esto tira un `ApiError` con el motivo. */
+export function guardarSobrante(ejecucionId: number, plancha: number): Promise<Formato> {
+  return apiPost<Formato>(`/ejecuciones/${ejecucionId}/chapas/${plancha}/guardar-sobrante`);
 }
 
 /** Con las piezas como están, también lo movido en Ajuste (A12). */

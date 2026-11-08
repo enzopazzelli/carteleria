@@ -1300,7 +1300,9 @@ def _retazos_del_catalogo(cliente) -> list[dict]:
 def test_guardar_el_sobrante_crea_un_retazo_con_su_origen_y_aparece_disponible(cliente, tmp_path):
     _trabajo, grupo = _trabajo_con_grupo_listo(cliente, tmp_path)
     ejecucion_id = _anidar_y_esperar(cliente, grupo["id"])
-    sobrante = cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()["chapas"][0]["sobrante"]
+    antes = cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()["chapas"][0]
+    assert antes["retazo_id"] is None
+    sobrante = antes["sobrante"]
 
     respuesta = cliente.post(f"/ejecuciones/{ejecucion_id}/chapas/0/guardar-sobrante")
 
@@ -1315,6 +1317,8 @@ def test_guardar_el_sobrante_crea_un_retazo_con_su_origen_y_aparece_disponible(c
     assert Decimal(retazo["costo_unidad_venta"]) == Decimal("1000")
     guardados = _retazos_del_catalogo(cliente)
     assert [(r["id"], r["estado"], r["trabajos"]) for r in guardados] == [(retazo["id"], "disponible", [])]
+    # La lista de chapas dice que ese sobrante ya está guardado, y en cuál retazo.
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/material-usado").json()["chapas"][0]["retazo_id"] == retazo["id"]
 
 
 def test_el_mismo_sobrante_no_se_guarda_dos_veces(cliente, tmp_path):

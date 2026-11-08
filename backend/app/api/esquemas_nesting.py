@@ -205,6 +205,8 @@ class MaterialDeChapaLeer(BaseModel):
     usado: MedidaLeer
     sobrante: MedidaLeer
     es_retazo: bool
+    #: El retazo en que ya se guardó este sobrante (A21); `None` si todavía no.
+    retazo_id: int | None = None
 
 
 class MaterialUsadoLeer(BaseModel):
