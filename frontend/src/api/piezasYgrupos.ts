@@ -115,21 +115,29 @@ export interface LecturaDxf {
   formas_que_se_pisan: number;
   sin_unir: Lectura;
   unida: Lectura | null;
+  /** Las correcciones de la vez anterior que se aplicaron solas (A24), con el
+   * nombre de forma de este trabajo. Vacío si no se pidió aplicarlas. */
+  correcciones_aplicadas: Correcciones;
+  /** Cuántas de las guardadas nombraban una forma que el dibujo ya no tiene. */
+  correcciones_ignoradas: number;
 }
 
 /** Lee el archivo sin guardar nada: es lo que se dibuja antes de cargar.
  * Con `correcciones`, el servidor fuerza lo marcado y vuelve a decidir
- * lo demás. */
+ * lo demás. Con `aplicarGuardadas` y sin correcciones, aplica las que
+ * quedaron guardadas la última vez que se cargó este mismo archivo (A24). */
 export function leerDxf(
   trabajoId: number,
   archivo: File,
   escalaAMm: string,
   correcciones: Correcciones,
+  aplicarGuardadas = false,
 ): Promise<LecturaDxf> {
   const formData = new FormData();
   formData.append("archivo", archivo);
   formData.append("escala_a_mm", escalaAMm);
   formData.append("correcciones", JSON.stringify(correcciones));
+  formData.append("aplicar_guardadas", aplicarGuardadas ? "true" : "false");
   return apiPostForm(`/trabajos/${trabajoId}/dxf/lectura`, formData);
 }
 

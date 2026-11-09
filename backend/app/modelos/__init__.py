@@ -23,7 +23,15 @@ from .presupuesto import (
     Presupuesto,
     RubroLineaCosto,
 )
-from .trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, GrupoDeCorte, Pieza, Trabajo
+from .trabajo import (
+    Colocacion,
+    CorreccionesDelDibujo,
+    EjecucionNesting,
+    EstadoEjecucion,
+    GrupoDeCorte,
+    Pieza,
+    Trabajo,
+)
 
 __all__ = [
     "Articulo",
@@ -33,6 +41,7 @@ __all__ = [
     "CargaDePlanilla",
     "Cliente",
     "Colocacion",
+    "CorreccionesDelDibujo",
     "CotizacionMoneda",
     "EjecucionNesting",
     "EstadoEjecucion",

@@ -8,6 +8,7 @@ anidado y las colocaciones son el paso siguiente del plan, no esto.
 from __future__ import annotations
 
 import json
+import logging
 import tempfile
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -36,6 +37,7 @@ from ..services.ingesta.analisis import (
     sin_los_huecos_de_lo_que_no_va,
     sugerir_roles,
 )
+from ..services.ingesta.correcciones_guardadas import buscar, con_el_trabajo, guardar, huella_de, sin_el_trabajo
 from ..services.ingesta.dibujo import DETALLE_DEL_DIBUJO, anillo_para_dibujar, tolerancia_del_dibujo
 from ..services.ingesta.dxf import _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT, ArchivoDXFInvalido, parsear_dxf
 from ..services.ingesta.models import PiezaImportada, ResultadoImportacionDXF
@@ -224,6 +226,12 @@ def _correcciones(texto: str | None) -> dict[str, Rol]:
     return correcciones
 
 
+def _en_texto(correcciones: Mapping[str, Rol]) -> dict[str, str]:
+    """Lo inverso de `_correcciones`: `cortar` o `no_va` por forma, que es
+    como se guarda (A24) y como se le devuelve a la pantalla."""
+    return {forma: "no_va" if rol is Rol.NO_VA else "cortar" for forma, rol in correcciones.items()}
+
+
 @dataclass(frozen=True)
 class _Lectura:
     """Una manera de leer un DXF: las piezas que salen, cuáles entran
@@ -302,6 +310,7 @@ def _leer(
     tamano_maximo_agujero_mm: Decimal | None,
     formatos: list[Plancha],
     correcciones: Mapping[str, Rol],
+    ignorar_ajenas: bool = False,
 ) -> _LecturasDeUnDXF:
     """Parsea el archivo y arma sus dos lecturas: tal como viene, y con
     las formas que se pisan unidas (`uniones.py`). Las usan la ruta que
@@ -313,7 +322,13 @@ def _leer(
     en la lectura sin unir); una que no es de este archivo da 400. Lo que
     no va queda afuera de la unión, no es el hueco de ninguna pieza, y
     sus propios agujeros pasan a ser formas. Si lo que no va es una pieza
-    unida, sus huecos no entran en la lectura."""
+    unida, sus huecos no entran en la lectura.
+
+    Con `ignorar_ajenas`, una marca que no es de este archivo no da 400. No
+    hace falta leer de nuevo sin ella: una marca sin forma no cambia nada de
+    la lectura. Es para las correcciones guardadas de otra vez (A24), que
+    pueden nombrar una forma que el lector ya no encuentra; quien llama
+    decide cuáles tuvieron efecto."""
     tamano = _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT if tamano_maximo_agujero_mm is None else tamano_maximo_agujero_mm
     no_van = {id_forma for id_forma, rol in correcciones.items() if rol is Rol.NO_VA}
     try:
@@ -354,7 +369,7 @@ def _leer(
         for id_forma in set(correcciones) - del_archivo - {p.id for p in unidas}
         if "/" not in id_forma or id_forma.split("/")[0] not in del_archivo
     )
-    if ajenas:
+    if ajenas and not ignorar_ajenas:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             f"Algunas formas marcadas no están en este archivo: {', '.join(ajenas)}. Volvé a marcarlas.",
@@ -419,6 +434,7 @@ def leer_dxf(
     escala_a_mm: Decimal = Form(...),
     tamano_maximo_agujero_mm: Decimal | None = Form(None),
     correcciones: str | None = Form(None),
+    aplicar_guardadas: bool = Form(False),
     sesion: Session = Depends(obtener_sesion),
 ) -> LecturaDXFLeer:
     """Cómo se leería este DXF en este trabajo, **sin guardar nada**: ni
@@ -434,18 +450,53 @@ def leer_dxf(
     (`_correcciones`). La pantalla vuelve a pedir la lectura después de
     cada clic, con la lista entera, y manda esa misma lista al cargar.
 
+    Con `aplicar_guardadas` y sin `correcciones` propias, se aplican las que
+    quedaron guardadas la última vez que se cargó este mismo archivo (A24):
+    la respuesta dice cuáles en `correcciones_aplicadas`, con el nombre de
+    forma de este trabajo, y cuántas se ignoraron por no existir ya. Si el
+    pedido trae las suyas, mandan esas.
+
     Sin `async`, como las demás: FastAPI la corre aparte, y un DXF que
     tarda en leerse no traba los otros pedidos (A17)."""
     _trabajo_o_404(sesion, trabajo_id)
     marcadas = _correcciones(correcciones)
+    contenido = archivo.file.read()
+    guardadas: dict[str, Rol] = {}
+    if aplicar_guardadas and not marcadas:
+        de_otra_vez = con_el_trabajo(buscar(sesion, huella_de(contenido)), trabajo_id)
+        guardadas = {
+            forma: _ROL_DE_UNA_CORRECCION[valor] for forma, valor in de_otra_vez.items() if valor in _ROL_DE_UNA_CORRECCION
+        }
+        marcadas = guardadas
+        cuantas_guardadas = len(de_otra_vez)
+    else:
+        cuantas_guardadas = 0
     sufijo = Path(archivo.filename or "trabajo.dxf").suffix or ".dxf"
     with tempfile.TemporaryDirectory(dir=config.carpeta_temporal()) as carpeta:
         # Con el nombre que le da la carga: de ahí salen los `id` de las
         # piezas, y tienen que ser los mismos que van a quedar guardados.
         ruta = Path(carpeta) / f"trabajo-{trabajo_id}{sufijo}"
-        ruta.write_bytes(archivo.file.read())
-        lecturas = _leer(ruta, escala_a_mm, tamano_maximo_agujero_mm, _formatos_del_catalogo(sesion), marcadas)
+        ruta.write_bytes(contenido)
+        lecturas = _leer(
+            ruta,
+            escala_a_mm,
+            tamano_maximo_agujero_mm,
+            _formatos_del_catalogo(sesion),
+            marcadas,
+            ignorar_ajenas=bool(guardadas),
+        )
+    # Una marca guardada tuvo efecto si su forma está en alguna de las dos
+    # lecturas: la pantalla pasa de una a otra sin volver a pedir. Con la
+    # unión apagada el hueco de una pieza unida no se ve, pero la marca vale
+    # cuando se la prende. La que no está en ninguna (una forma que el lector
+    # ya no encuentra, o un hueco que la unión ya no arma) se ignora.
+    existentes = {pieza.id for pieza in lecturas.sin_unir.piezas}
+    if lecturas.unida is not None:
+        existentes |= {pieza.id for pieza in lecturas.unida.piezas}
+    aplicadas = _en_texto({forma: rol for forma, rol in guardadas.items() if forma in existentes})
     return LecturaDXFLeer(
+        correcciones_aplicadas=aplicadas,
+        correcciones_ignoradas=cuantas_guardadas - len(aplicadas),
         contornos_no_cerrados=len(lecturas.resultado.contornos_no_cerrados),
         lineas_duplicadas_descartadas=lecturas.resultado.lineas_duplicadas_descartadas,
         formas_que_se_pisan=lecturas.formas_que_se_pisan,
@@ -538,6 +589,17 @@ def subir_dxf(
     trabajo.archivo_guardado = str(ruta_guardada)
     trabajo.escala_a_mm = escala_a_mm
     sesion.commit()
+
+    # Recién ahora, con la carga hecha: una carga rechazada no toca lo
+    # guardado. Sin marcas borra lo que hubiera (cargar sin correcciones es
+    # olvidar el dibujo). Es una ayuda, no parte del trabajo: si falla, la
+    # carga ya quedó y se avisa en el log.
+    try:
+        guardar(sesion, huella_de(contenido), sin_el_trabajo(_en_texto(marcadas), trabajo_id))
+        sesion.commit()
+    except Exception:  # noqa: BLE001
+        sesion.rollback()
+        logging.getLogger(__name__).exception("No se pudieron guardar las correcciones del dibujo")
 
     return ImportacionDXFLeer(
         trabajo=TrabajoLeer.model_validate(trabajo),

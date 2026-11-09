@@ -28,6 +28,11 @@ interface LecturaPanelProps {
   /** La lista nueva, cada vez que se toca una forma o se saca una
    * corrección. Quien la recibe pide la lectura de nuevo. */
   alCorregir: (correcciones: Correcciones) => void;
+  /** Lo que se aplicó solo de la vez anterior (A24); `null` si no se aplicó
+   * nada. Se ve arriba, con el botón para empezar de cero. */
+  avisoGuardadas: string | null;
+  /** Descarta lo aplicado de la vez anterior y vuelve a leer sin nada marcado. */
+  alEmpezarDeCero: () => void;
   /** Se pidió la lectura de nuevo y todavía no llegó: lo que se ve es
    * la anterior. */
   leyendo: boolean;
@@ -78,6 +83,8 @@ export default function LecturaPanel({
   alCambiarUnir,
   correcciones,
   alCorregir,
+  avisoGuardadas,
+  alEmpezarDeCero,
   leyendo,
   alCargar,
   alCancelar,
@@ -294,6 +301,19 @@ export default function LecturaPanel({
           <button className="underline text-xs ml-1" onClick={() => alCorregir({})}>
             Quitar todas
           </button>
+        </div>
+      )}
+
+      {avisoGuardadas && (
+        <div className="mb-2">
+          <Banner variante="aviso">
+            <div className="flex items-center justify-between gap-2">
+              <span>{avisoGuardadas}</span>
+              <button className={boton} disabled={leyendo} onClick={alEmpezarDeCero}>
+                Empezar de cero
+              </button>
+            </div>
+          </Banner>
         </div>
       )}
 

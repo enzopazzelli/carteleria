@@ -58,11 +58,13 @@ export function useLeerDxf(trabajoId: number) {
       archivo,
       escalaAMm,
       correcciones,
+      aplicarGuardadas,
     }: {
       archivo: File;
       escalaAMm: string;
       correcciones: Correcciones;
-    }) => leerDxf(trabajoId, archivo, escalaAMm, correcciones),
+      aplicarGuardadas?: boolean;
+    }) => leerDxf(trabajoId, archivo, escalaAMm, correcciones, aplicarGuardadas),
   });
 }
 

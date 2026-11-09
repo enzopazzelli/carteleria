@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { escalaParaCargar } from "./cargaDxf";
+import { avisoDeCorreccionesGuardadas, escalaParaCargar, sonLasMismasCorrecciones } from "./cargaDxf";
 
 describe("escalaParaCargar", () => {
   it("acepta un número entero mayor que cero", () => {
@@ -29,4 +29,48 @@ describe("escalaParaCargar", () => {
       expect(escalaParaCargar(texto)).toBeNull();
     },
   );
+});
+
+describe("avisoDeCorreccionesGuardadas", () => {
+  it("no dice nada si no había nada guardado", () => {
+    expect(avisoDeCorreccionesGuardadas(0, 0)).toBeNull();
+  });
+
+  it("cuenta las que se aplicaron, en singular y en plural", () => {
+    expect(avisoDeCorreccionesGuardadas(1, 0)).toBe("Se aplicó 1 corrección de la vez anterior.");
+    expect(avisoDeCorreccionesGuardadas(3, 0)).toBe("Se aplicaron 3 correcciones de la vez anterior.");
+  });
+
+  it("avisa de las que ya no están en el dibujo", () => {
+    expect(avisoDeCorreccionesGuardadas(2, 1)).toBe(
+      "Se aplicaron 2 correcciones de la vez anterior. 1 ya no está en este dibujo y se ignoró.",
+    );
+    expect(avisoDeCorreccionesGuardadas(1, 2)).toBe(
+      "Se aplicó 1 corrección de la vez anterior. 2 ya no están en este dibujo y se ignoraron.",
+    );
+  });
+
+  it("si no se pudo aplicar ninguna, lo dice sin decir que se aplicó algo", () => {
+    expect(avisoDeCorreccionesGuardadas(0, 1)).toBe("1 corrección de la vez anterior ya no está en este dibujo y se ignoró.");
+    expect(avisoDeCorreccionesGuardadas(0, 2)).toBe(
+      "2 correcciones de la vez anterior ya no están en este dibujo y se ignoraron.",
+    );
+  });
+});
+
+describe("sonLasMismasCorrecciones", () => {
+  it("dos listas vacías son la misma", () => {
+    expect(sonLasMismasCorrecciones({}, {})).toBe(true);
+  });
+
+  it("no importa el orden en que se marcaron", () => {
+    expect(sonLasMismasCorrecciones({ a: "no_va", b: "cortar" }, { b: "cortar", a: "no_va" })).toBe(true);
+  });
+
+  it("una marca de más, de menos o con otro valor las hace distintas", () => {
+    expect(sonLasMismasCorrecciones({ a: "no_va" }, { a: "no_va", b: "cortar" })).toBe(false);
+    expect(sonLasMismasCorrecciones({ a: "no_va", b: "cortar" }, { a: "no_va" })).toBe(false);
+    expect(sonLasMismasCorrecciones({ a: "no_va" }, { a: "cortar" })).toBe(false);
+    expect(sonLasMismasCorrecciones({ a: "no_va" }, { b: "no_va" })).toBe(false);
+  });
 });
