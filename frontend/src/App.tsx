@@ -8,6 +8,7 @@ import MiCuenta from "./routes/MiCuenta";
 import Presupuestos from "./routes/Presupuestos";
 import RutaProtegida from "./routes/RutaProtegida";
 import Trabajos from "./routes/Trabajos";
+import Usuarios from "./routes/Usuarios";
 import WorkspaceLayout from "./routes/TrabajoWorkspace/WorkspaceLayout";
 import PiezasTab from "./routes/TrabajoWorkspace/PiezasTab";
 import GruposTab from "./routes/TrabajoWorkspace/GruposTab";
@@ -28,6 +29,8 @@ const router = createBrowserRouter([
         children: [
           { path: "/", element: <Inicio /> },
           { path: "/cuenta", element: <MiCuenta /> },
+          // Solo la ve quien administra usuarios; sin el permiso lleva al inicio.
+          { path: "/usuarios", element: <Usuarios /> },
           { path: "/trabajos", element: <Trabajos /> },
           { path: "/materiales", element: <Materiales /> },
           { path: "/presupuestos", element: <Presupuestos /> },

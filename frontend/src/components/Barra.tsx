@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { administraUsuarios } from "../auth/permisos";
 import { useSesion } from "../auth/SesionContext";
 
 // La barra fija de arriba, en todas las pantallas (A16, diseño §5.1).
@@ -29,6 +30,12 @@ export default function Barra() {
         <NavLink to="/materiales" className={claseDelLugar}>
           Materiales
         </NavLink>
+        {/* Solo para quien administra usuarios (1.1). */}
+        {administraUsuarios(yo) && (
+          <NavLink to="/usuarios" className={claseDelLugar}>
+            Usuarios
+          </NavLink>
+        )}
         {/* A la derecha: quién entró, su cuenta y salir (1.1). */}
         {yo && (
           <div className="ml-auto flex items-center gap-4 text-sm">
