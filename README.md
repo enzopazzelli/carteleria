@@ -61,7 +61,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 - **Vale:** si tiene cambios en curso sobre `sparrow_worker.py` y si ya había probado otro reparto del tiempo.
 
 **Se puede construir ya, sin esperar a nadie**
-- Cambiar cómo decide el lector qué es pieza y qué es agujero (hay tres lecturas que salen mal y quedaron como falla conocida).
+- Cambiar cómo decide el lector qué es pieza y qué es agujero (hay tres lecturas que salen mal y quedaron como falla conocida). **Medido el 2026-11-09 y dejado como está:** con los diseños de ahora, que solo traen el diseño, casi no hay casos; ver `PLAN-MAESTRO.md §7`.
 - Importar varios diseños a la vez desde la pantalla.
 
 **Lo de afuera (etapa 4):** usuarios y login, servidor y dominio, mail real, WhatsApp, copiar la carpeta de la empresa (`backend/local/empresa/`) al servidor, y el envío al cliente con el presupuesto congelado.
