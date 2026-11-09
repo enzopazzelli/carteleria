@@ -359,7 +359,8 @@ cartelería/
 │   ├── alembic/                      Migraciones — `alembic upgrade head`
 │   ├── tests/                        Espeja `app/`, corre con pytest
 │   ├── scripts/                      Herramientas de preparación: catálogo de demo, DXF de
-│   │                                 demo, extractores del xlsx real (nunca se commitea lo que producen)
+│   │                                 demo, extractores del xlsx real (nunca se commitea lo que producen), y
+│   │                                 para probar sin tocar la base real: copiar_base y lectura_del_corpus
 │   ├── requirements.txt / requirements-dev.txt
 │   └── pytest.ini
 │

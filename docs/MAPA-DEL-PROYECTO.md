@@ -4,7 +4,7 @@
 >
 > Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`REGISTRO.md`](REGISTRO.md) · [`BITACORA.md`](BITACORA.md)
 >
-> **Versión:** 3.1 · **Fecha:** 2026-10-23 · Reemplaza la 3.0 (2026-10-05), que todavía decía que el motor no estaba construido
+> **Versión:** 3.2 · **Fecha:** 2026-11-09 · Reemplaza la 3.1 (2026-10-23), que no tenía las pantallas de Materiales y Presupuestos (A18 y A19), la aprobación (A20), los retazos (A21), el PDF con la marca (A22), los materiales del catálogo (A23), recordar las correcciones (A24) ni la regla única del anidado (A25). La 3.1 reemplazó a la 3.0 (2026-10-05), que todavía decía que el motor no estaba construido
 
 ---
 

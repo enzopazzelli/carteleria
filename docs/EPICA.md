@@ -3,7 +3,7 @@
 > **Documento maestro del proyecto.**
 > Consolida los tres documentos de [`../fuentes/`](../fuentes/): la propuesta y la especificación técnica (Enzo) y el proyecto final (Vale).
 >
-> **Versión:** 1.1 · **Fecha:** 2026-08-29 · **Estado:** listo para Sprint 0
+> **Versión:** 1.1 · **Fecha:** 2026-08-29 · **Estado:** documento de origen, escrito antes de empezar. **El estado de hoy está en [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md) y en «En qué estamos» del [`README`](../README.md)**; la bitácora cuenta cómo se llegó.
 
 ## Índice de documentos
 
@@ -97,7 +97,7 @@ La trazabilidad completa de R1–R11 contra features e historias está en [§15]
 | **Tipo** | Épica de producto — desarrollo pro-code a medida |
 | **Duración estimada** | ~21 semanas (~5 meses) |
 | **Equipo** | Enzo + Vale, part-time ~15-20 hs/semana c/u. Desde el 2026-10-05: Enzo todo lo que no es el motor de anidado, Vale el motor ([`CONVENCIONES.md §2`](CONVENCIONES.md)) |
-| **Estado** | Listo para Sprint 0 (relevamiento) |
+| **Estado** | Era «listo para Sprint 0» al escribirse (agosto de 2026). Hoy: ver [`MAPA-DEL-PROYECTO.md`](MAPA-DEL-PROYECTO.md) |
 
 ### Objetivo
 

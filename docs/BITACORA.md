@@ -58,6 +58,41 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-09 — Limpieza del repositorio y de `backend/local`, y los guiones de prueba al repositorio
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+- **El repositorio ya estaba limpio:** `git status` sin nada sin seguir, solo la rama `main` (las de A24 y A25 se borraron al fusionar), sin binarios sueltos entre lo que está en git.
+- **`backend/local/` pasó de 2,5 GB a 327 MB.** Lo que se borró eran copias y restos de las pruebas de A8 a A25, no datos:
+  - las copias de la base `tmp-a8` a `tmp-a19`, `tmp-espejo`, `tmp-simultaneos` (1,4 GB);
+  - los perfiles de Chrome de los recorridos en `herramientas-a15`, `a16`, `a18` y `a19` (572 MB);
+  - la carpeta de temporales de `pytest` en `D:\` (457 MB) y los perfiles de Chrome de la carpeta temporal de Windows (185 MB);
+  - las cachés de Python, `.pytest_cache`, `frontend/dist` y `tsconfig.tsbuildinfo`, que se regeneran solos.
+- **Respaldos de la base real: de 19 a 9.** Quedan los 8 del 8 y 9 de noviembre y el del 8 de octubre `antes-de-borrar-trabajos`, que guarda los DXF de 630 KB (la **versión anterior de `Complejo`**, sin otra copia) y el original de la muestra. Los otros 10 eran instantáneas con trabajos de prueba o DXF idénticos a los de hoy, comparados uno por uno antes de borrar.
+- **Los dos guiones reutilizables pasaron al repositorio** ([PR #29](https://github.com/enzopazzelli/carteleria/pull/29)): `scripts/copiar_base.py` (copia la base y sus DXF a `local/copias/<nombre>` sin tocar el origen) y `scripts/lectura_del_corpus.py` (la foto de cómo se leen los dibujos de prueba, para comparar después de cambiar el lector). Con pruebas, y verificados contra los datos reales. Antes vivían en `backend/local/`, que no se sube a git.
+- **Documentación al día con A24 y A25:** README, mapa, guía de pruebas (sección 6, probar sin tocar la base real) y esta bitácora; el `EPICA.md` ya no dice «listo para Sprint 0» y el mapa tiene su versión 3.2.
+
+### Qué se decidió
+
+- **Qué se limpia:** copias mías y lo que se regenera, sin preguntar; los respaldos y los guiones, con criterio acordado con Enzo; sus archivos (Excel, logos, `modelos/`, la base real, `archivos/`, `empresa/`) no se tocan.
+
+### Qué se perdió, y por qué
+
+- **Un error mío:** la medición pendiente de la tanda 2 de A17 dependía de dos copias (`tmp-a17/complejo` y `tmp-a17/parador`), y la del Parador salía del respaldo del 2026-10-26. Las borré sin revisar antes si algo pendiente las nombraba. Se rehacen casi todo desde la base real con `scripts/copiar_base.py` (`Complejo` sigue en el grupo 1; el Parador es el mismo diseño y el mismo DXF, pero su grupo ahora es el 3 y no el 4). Lo que no vuelve es el estado exacto de la copia vieja. La nota de la medición se actualizó.
+
+### Cambios en el registro
+
+Sin cambios.
+
+### Pendiente
+
+- Decisiones de Enzo que no se tocaron: los logs y HTML viejos sueltos de `backend/local/` (1,6 MB), `herramientas-reunion-2026-10-22` (24 MB), `presentacion*`, sus `servidor-enzo.log` y `vite-enzo.log`, y un `stash` viejo de una rama que ya no existe.
+- Escribir los planes de lo grande (usuarios y servidor, mail y WhatsApp, fotomontaje).
+
+---
+
 ## 2026-11-09 — Medido el arreglo del lector y decidido no construir la importación de varios diseños
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —
