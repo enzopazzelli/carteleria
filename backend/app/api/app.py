@@ -42,6 +42,7 @@ from .rutas_planilla import router as router_planilla
 from .rutas_presupuesto import router as router_presupuesto
 from .rutas_seccionado import router as router_seccionado
 from .rutas_trabajos import router as router_trabajos
+from .rutas_usuarios import router as router_usuarios
 
 
 @asynccontextmanager
@@ -94,6 +95,7 @@ _ROUTERS_PROTEGIDOS = (
     router_inicio,
     router_planilla,
     router_materiales,
+    router_usuarios,
 )
 
 
