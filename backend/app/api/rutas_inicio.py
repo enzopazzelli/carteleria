@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from ..costeo import _ejecucion_para_costear, anidado_vigente
+from ..anidado_que_cuenta import Motivo, anidado_que_cuenta
 from ..modelos.catalogo import Articulo, CargaDePlanilla, Formato, Material
 from ..modelos.presupuesto import LineaCosto, Presupuesto
 from ..modelos.trabajo import Colocacion, EjecucionNesting, GrupoDeCorte, Pieza, Trabajo
@@ -112,23 +112,28 @@ def _con_piezas(grupo: GrupoDeCorte) -> bool:
     return any(not pieza.descartada for pieza in grupo.piezas)
 
 
+#: Los motivos por los que un anidado ya hecho no se cobra porque algo cambió después: «Falta volver a anidar».
+_NO_SE_COBRA_POR_CAMBIOS = {Motivo.PIEZAS_CAMBIARON, Motivo.SIN_PIEZAS, Motivo.CHAPA_CAMBIO}
+
+
 def tarjeta_de(sesion: Session, trabajo: Trabajo, tocado_en: datetime) -> TarjetaLeer:
     a_cortar = [pieza for pieza in trabajo.piezas if not pieza.descartada]
     grupos, chapas = [], []
     for grupo in trabajo.grupos:
-        ejecucion, _avisos = _ejecucion_para_costear(grupo)
+        cuenta = anidado_que_cuenta(sesion, grupo)
+        ejecucion = cuenta.mostrado
         ultima = max(grupo.ejecuciones, key=lambda e: e.id, default=None)
-        # Un anidado vencido no se cobra (A17): no cuenta como terminado ni
-        # suma sus chapas. La miniatura lo sigue pintando.
-        vencido = ejecucion is not None and not anidado_vigente(grupo, ejecucion)
+        # Un anidado que no se cobra (las piezas o la chapa cambiaron, A17 y A25)
+        # no cuenta como terminado ni suma sus chapas. La miniatura lo sigue pintando.
+        vencido = ejecucion is not None and cuenta.motivo in _NO_SE_COBRA_POR_CAMBIOS
         grupos.append(GrupoParaPasos(
             nombre=grupo.nombre,
             con_piezas=_con_piezas(grupo),
-            terminado=ejecucion is not None and not vencido,
+            terminado=cuenta.motivo is None,
             ultimo=ultima.estado if ultima else None,
             vencido=vencido,
         ))
-        if ejecucion is not None and not vencido and _con_piezas(grupo):
+        if cuenta.motivo is None and _con_piezas(grupo):
             chapas.append(f"{_cuantas_chapas(ejecucion.planchas_usadas or 0)} · {_material(sesion, grupo, ejecucion)}")
 
     presupuesto = sesion.scalars(
@@ -175,7 +180,7 @@ def disenio_de_miniatura(sesion: Session, trabajo: Trabajo) -> DisenioDelPdf:
     vencido (A17), porque la miniatura muestra lo que se anidó. Lo de los
     otros va en gris. Sin ninguno, todo en gris."""
     for grupo in trabajo.grupos:
-        ejecucion, _avisos = _ejecucion_para_costear(grupo)
+        ejecucion = anidado_que_cuenta(sesion, grupo).mostrado
         if ejecucion is not None and _con_piezas(grupo):
             return _disenio(sesion, trabajo, grupo, ejecucion)
     return _disenio(sesion, trabajo, None, None)

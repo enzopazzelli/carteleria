@@ -463,7 +463,7 @@ def marcar_definitiva(
     ejecucion_id: int, sesion: Session = Depends(obtener_sesion)
 ) -> EjecucionNesting:
     """A lo sumo una ejecución definitiva por grupo — `app/costeo.py`
-    ya lo asume (`_ejecucion_para_costear`): desmarca cualquier otra
+    ya lo asume (`anidado_que_cuenta`): desmarca cualquier otra
     del mismo grupo antes de marcar esta."""
     ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
     if ejecucion.estado != EstadoEjecucion.LISTA.value:
@@ -487,7 +487,7 @@ def borrar_ejecucion(ejecucion_id: int, sesion: Session = Depends(obtener_sesion
 
     También se puede borrar el definitivo: el costeo pasa a usar el más
     reciente que quede en estado `lista`, con su aviso, o queda pendiente
-    (`costeo._ejecucion_para_costear`). Una línea de presupuesto que salió
+    (`anidado_que_cuenta`). Una línea de presupuesto que salió
     de este anidado conserva sus números y pierde la referencia
     (`LineaCosto.ejecucion_id`, `SET NULL`), igual que al borrar el grupo.
 

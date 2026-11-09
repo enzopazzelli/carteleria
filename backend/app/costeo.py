@@ -20,9 +20,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .mensajes import ErrorPrevisto
-from .modelos import EjecucionNesting, Formato, GrupoDeCorte, Material, Pieza, Trabajo
+from .modelos import Formato, GrupoDeCorte, Material, Pieza, Trabajo
 from .anidado_que_cuenta import Motivo, anidado_que_cuenta
-from .modelos.trabajo import anidado_vigente
 
 _MM_POR_M = Decimal(1000)
 #: La única unidad de venta que hoy se sabe convertir a costo sin
@@ -52,8 +51,8 @@ class LineaMaterial:
     #: `Formato.unidad_venta` tal cual venga — puede no ser "M2" (el
     #: caso en que `costo_estimado` queda en `None` con advertencia).
     unidad_venta: str | None
-    #: Cuál `EjecucionNesting` se usó para este costo (`_ejecucion_para_
-    #: costear`) — `None` si el grupo todavía no tiene ninguna. Expuesto
+    #: Cuál `EjecucionNesting` se usó para este costo (`anidado_que_cuenta`)
+    #: — `None` si el grupo todavía no tiene ninguna. Expuesto
     #: para trazabilidad (`CART-308`: "qué precio se usó, de qué
     #: versión") sin que quien persiste esta línea tenga que reimplementar
     #: la misma búsqueda.
@@ -72,43 +71,6 @@ class ResumenMateriales:
     #: solo número sin una cotización explícita de por medio.
     costo_total_por_moneda: dict[str, Decimal] = field(default_factory=dict)
     advertencias_generales: list[str] = field(default_factory=list)
-
-
-def _ejecucion_para_costear(grupo: GrupoDeCorte) -> tuple[EjecucionNesting | None, list[str]]:
-    """Cuál ejecución de un grupo cuenta para el costeo.
-
-    Prioridad: la marcada `es_definitiva`. Si no hay ninguna marcada, la
-    más reciente en estado `lista` — con advertencia, porque puede ser
-    una prueba que el usuario no llegó a confirmar.
-
-    Con las piezas cambiadas después del elegido, cuenta la más reciente
-    que esté al día, también con advertencia (Enzo, A17). Si ninguna está
-    al día, queda la de siempre: quien la usa mira `anidado_vigente`."""
-    listas = sorted((e for e in grupo.ejecuciones if e.estado == "lista"), key=lambda e: e.id, reverse=True)
-    if not listas:
-        return None, []
-    definitiva = next((e for e in listas if e.es_definitiva), None)
-    # El elegido primero: con meses de pruebas, revisar cada anidado del
-    # historial cuesta (revisión de la tanda 7).
-    if definitiva is not None and anidado_vigente(grupo, definitiva):
-        return definitiva, []
-    al_dia = next((e for e in listas if e is not definitiva and anidado_vigente(grupo, e)), None)
-    if al_dia is None:
-        return (definitiva, []) if definitiva is not None else (listas[0], [_sin_elegir(grupo, "el más reciente")])
-    if definitiva is not None:
-        return al_dia, [
-            f"Grupo «{grupo.nombre}»: el anidado elegido (#{definitiva.id}) es de antes de que cambiaran "
-            f"las piezas; se usó el #{al_dia.id}, el más reciente al día. Confirmá cuál vale antes de cotizar en serio."
-        ]
-    cual = "el más reciente" if al_dia is listas[0] else f"el #{al_dia.id}, el más reciente al día"
-    return al_dia, [_sin_elegir(grupo, cual)]
-
-
-def _sin_elegir(grupo: GrupoDeCorte, cual: str) -> str:
-    return (
-        f"Grupo «{grupo.nombre}»: ningún anidado está elegido para cotizar; "
-        f"se usó {cual}. Confirmá cuál vale antes de cotizar en serio."
-    )
 
 
 def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:

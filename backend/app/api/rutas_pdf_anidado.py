@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..costeo import _ejecucion_para_costear, anidado_vigente
+from ..anidado_que_cuenta import anidado_que_cuenta, aviso_de_no_cobrar
 from ..modelos.catalogo import Formato
 from ..modelos.presupuesto import Presupuesto
 from ..modelos.trabajo import EjecucionNesting, GrupoDeCorte, Pieza, Trabajo
@@ -140,7 +140,7 @@ def _presupuesto(sesion: Session, trabajo: Trabajo) -> str | None:
 def _que_anidado_es(grupo: GrupoDeCorte, ejecucion: EjecucionNesting) -> str:
     """Cuál anidado es el del bloque para el presupuesto. Si hay un elegido
     y el bloque no es ese, es porque el elegido quedó vencido y se cobra
-    este, el más reciente al día (`_ejecucion_para_costear`, Enzo, A17)."""
+    este, el más reciente al día (`anidado_que_cuenta`, Enzo, A17)."""
     if ejecucion.es_definitiva:
         return f"anidado #{ejecucion.id}, elegido para el presupuesto"
     elegido = next((e for e in grupo.ejecuciones if e.es_definitiva and e.estado == "lista"), None)
@@ -156,7 +156,8 @@ def datos_del_pdf(sesion: Session, trabajo: Trabajo, ahora: datetime) -> Trabajo
     nombres = {str(pieza.id): nombre_corto(pieza.id_origen) for pieza in trabajo.piezas}
     bloques, sin_anidar = [], []
     for grupo in trabajo.grupos:
-        ejecucion, _avisos = _ejecucion_para_costear(grupo)
+        cuenta = anidado_que_cuenta(sesion, grupo)
+        ejecucion = cuenta.mostrado
         if ejecucion is None:
             sin_anidar.append(grupo.nombre)
             continue
@@ -171,7 +172,7 @@ def datos_del_pdf(sesion: Session, trabajo: Trabajo, ahora: datetime) -> Trabajo
             linea=material_usado_de(sesion, ejecucion).linea,
             anidado=_que_anidado_es(grupo, ejecucion),
             disenio=_disenio(sesion, trabajo, grupo, ejecucion),
-            vencido=not anidado_vigente(grupo, ejecucion),
+            aviso_de_no_cobrar=aviso_de_no_cobrar(cuenta.motivo),
         ))
     return TrabajoDelPdf(nombre=trabajo.nombre, archivo=trabajo.archivo_origen, generado=ahora,
                          presupuesto=_presupuesto(sesion, trabajo), bloques=bloques, sin_anidar=sin_anidar)
