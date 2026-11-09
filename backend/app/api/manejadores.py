@@ -40,9 +40,8 @@ def _respuesta_inesperada(peticion: Request, error: Exception) -> JSONResponse:
 
 class _AtajarLoInesperado:
     """Un error que nadie previó, convertido en la respuesta de siempre
-    ADENTRO de CORS. El manejador de `Exception` de Starlette corre afuera de
-    todo middleware: su 500 salía sin el encabezado de CORS, el navegador no
-    dejaba leerlo y la pantalla decía «No se pudo conectar con el servidor»."""
+    (`{"detail": {"mensaje", "detalle"}}`) para que la pantalla muestre el mensaje y no
+    «No se pudo conectar con el servidor»."""
 
     def __init__(self, app) -> None:
         self.app = app
@@ -68,8 +67,7 @@ class _AtajarLoInesperado:
 
 
 def registrar_manejadores(app: FastAPI) -> None:
-    """Se llama antes de sumar CORS: así CORS queda afuera de
-    `_AtajarLoInesperado` y también le pone el encabezado al 500."""
+    """Pone los manejadores de errores de la aplicación."""
     app.add_middleware(_AtajarLoInesperado)
 
     @app.exception_handler(ErrorParaElUsuario)

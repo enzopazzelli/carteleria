@@ -8,23 +8,24 @@ Correr localmente (desde `backend/`, con el entorno de
 La base se crea o se actualiza sola al arrancar (`app/arranque.py`); si
 estaba atrasada, antes guarda un respaldo en `local/respaldo-…`.
 
-Sin autenticación (`CART-002` se difiere a propósito): **no se expone
-fuera de `localhost`** hasta que exista.
+Todas las rutas exigen haber entrado (1.1) salvo `POST /acceso/entrar` y `GET /salud`; la prueba
+`tests/test_todas_las_rutas_exigen_sesion.py` lo vigila.
 """
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+import os
 from contextlib import asynccontextmanager
 from datetime import date
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends, FastAPI
 
 from .. import config
 from ..arranque import ActualizacionFallida, BaseMasNueva, poner_la_base_al_dia, vaciar_la_carpeta_temporal
 from ..modelos.base import inicializar
 from ..registro import configurar_registro, registro
 from . import rutas_nesting
+from .autenticacion import usuario_actual
 from .dependencias import obtener_sesion
 from .manejadores import registrar_manejadores
 from .rutas_acceso import router as router_acceso
@@ -77,35 +78,44 @@ async def _ciclo_de_vida(app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-app = FastAPI(
-    title="Cartelería — catálogo y nesting (en construcción)",
-    lifespan=_ciclo_de_vida,
+#: Los routers que exigen haber entrado. Entrar y el estado de salud (`router_acceso`) son la excepción:
+#: viven aparte, y cada ruta de ese router decide por su cuenta si pide sesión.
+_ROUTERS_PROTEGIDOS = (
+    router_catalogo,
+    router_trabajos,
+    router_importacion,
+    router_nesting,
+    router_comparaciones,
+    router_ajuste,
+    router_presupuesto,
+    router_seccionado,
+    router_disenio,
+    router_pdf_anidado,
+    router_inicio,
+    router_planilla,
+    router_materiales,
 )
-registrar_manejadores(app)
 
-# Único origen permitido: el dev server de Vite del frontend interno
-# (docs/historico/frontend-cotizador/diseno.md). No se
-# amplía a "*" ni a una lista: esta API sigue sin autenticación y solo
-# corre en localhost (ver el docstring de este módulo).
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# Entrar y el estado de salud son públicas; el resto exigirá sesión (1.1, tarea 6).
-app.include_router(router_acceso)
-app.include_router(router_catalogo)
-app.include_router(router_trabajos)
-app.include_router(router_importacion)
-app.include_router(router_nesting)
-app.include_router(router_comparaciones)
-app.include_router(router_ajuste)
-app.include_router(router_presupuesto)
-app.include_router(router_seccionado)
-app.include_router(router_disenio)
-app.include_router(router_pdf_anidado)
-app.include_router(router_inicio)
-app.include_router(router_planilla)
-app.include_router(router_materiales)
+def crear_app(entorno: str | None = None) -> FastAPI:
+    """Arma la aplicación. En `produccion` no publica la documentación de la API (`/docs`, `/redoc`,
+    `/openapi.json`). `entorno` sale de `CARTELERIA_ENTORNO` si no se lo pasa.
+
+    No instala CORS: el navegador habla con un solo origen (el proxy, o Vite en desarrollo), así que
+    ninguna otra página tiene que poder leer las respuestas (1.1, `diseno.md §4.4`)."""
+    produccion = (entorno if entorno is not None else os.getenv("CARTELERIA_ENTORNO", "desarrollo")) == "produccion"
+    aplicacion = FastAPI(
+        title="Cartelería — catálogo y nesting (en construcción)",
+        lifespan=_ciclo_de_vida,
+        docs_url=None if produccion else "/docs",
+        redoc_url=None if produccion else "/redoc",
+        openapi_url=None if produccion else "/openapi.json",
+    )
+    registrar_manejadores(aplicacion)
+    aplicacion.include_router(router_acceso)
+    for router in _ROUTERS_PROTEGIDOS:
+        aplicacion.include_router(router, dependencies=[Depends(usuario_actual)])
+    return aplicacion
+
+
+app = crear_app()
