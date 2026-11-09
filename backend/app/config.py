@@ -83,6 +83,12 @@ FAMILIAS_PARA_LEER_EL_DXF = tuple(
     for familia in os.getenv("CARTELERIA_FAMILIAS_PARA_LEER_EL_DXF", "Chapas,Acrílicos,Policarbonato").split(",")
 )
 
+def en_produccion() -> bool:
+    """`CARTELERIA_ENTORNO=produccion`: la cookie de sesión va `Secure` y no hay documentación de la API
+    abierta (1.1). Se lee en cada llamada y no al importar, para poder cambiarlo en las pruebas."""
+    return os.getenv("CARTELERIA_ENTORNO", "desarrollo") == "produccion"
+
+
 #: `PAR-62` a `PAR-66` (`docs/REGISTRO.md §2.7`, 1.1): cuánto dura una sesión sin uso, cuánto una
 #: «mantenida en este dispositivo», el largo mínimo de una contraseña, y cuántos intentos fallidos
 #: seguidos bloquean una cuenta y por cuánto tiempo.
