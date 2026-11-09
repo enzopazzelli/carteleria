@@ -34,6 +34,12 @@ export interface Ejecucion {
   es_definitiva: boolean;
   /** Las piezas de su grupo cambiaron después de este anidado: no se cobra (A17). */
   vencido: boolean;
+  /** Es el anidado que muestra y mira el presupuesto de su grupo (A25), aunque no se cobre. */
+  es_el_que_cuenta: boolean;
+  /** Por qué no se cobra, si ya terminó: `piezas_cambiaron`, `sin_piezas` o `chapa_cambio`; `null` si se cobraría. */
+  no_se_cobra_por: "piezas_cambiaron" | "sin_piezas" | "chapa_cambio" | null;
+  /** El texto para mostrarle a quien mira, con ese motivo. */
+  aviso_de_no_cobrar: string | null;
   creado_en: string;
   /** Solo mientras corre (A7). */
   progreso?: Progreso | null;

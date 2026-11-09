@@ -82,6 +82,34 @@ def test_el_anidado_vencido_lo_avisa_en_la_hoja_del_disenio(cliente, tmp_path):
     assert _VENCIDO in texto.replace("\n", " ")
 
 
+_CHAPA_CAMBIO = "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de presupuestar."
+_SIN_MATERIAL = "Este grupo no tiene material asignado: asignale uno antes de presupuestar."
+
+
+def test_con_la_chapa_cambiada_el_pdf_lo_avisa_con_su_motivo(cliente, tmp_path):
+    """A25: sigue en el PDF, para ver qué se anidó, pero dice por qué no se cobra."""
+    trabajo, grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    assert cliente.patch(f"/formatos/{grupo['formato_id']}", json={"ancho_mm": "1100"}).status_code == 200
+
+    texto = _texto(cliente.get(f"/trabajos/{trabajo['id']}/pdf-anidado").content).replace("\n", " ")
+
+    assert _CHAPA_CAMBIO in texto
+    assert _VENCIDO not in texto
+
+
+def test_un_grupo_sin_material_lo_avisa_en_el_pdf(cliente, tmp_path):
+    from app.modelos.trabajo import GrupoDeCorte
+
+    trabajo, grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    with Session(cliente.motor) as sesion:
+        sesion.get(GrupoDeCorte, grupo["id"]).formato_id = None
+        sesion.commit()
+
+    texto = _texto(cliente.get(f"/trabajos/{trabajo['id']}/pdf-anidado").content).replace("\n", " ")
+
+    assert _SIN_MATERIAL in texto
+
+
 def test_si_se_cobra_otro_que_el_elegido_lo_dice(cliente, tmp_path):
     """El elegido quedó vencido y hay uno más nuevo al día (Enzo, A17,
     opción a): el PDF decía de ese «el más reciente, sin elegir para el

@@ -107,6 +107,36 @@ def test_si_las_piezas_cambiaron_despues_de_anidar_falta_volver_a_anidar(cliente
     assert PALETA_CHAPAS[0] in cliente.get(f"/trabajos/{trabajo['id']}/miniatura").text
 
 
+def test_si_cambio_la_chapa_despues_de_anidar_falta_volver_a_anidar(cliente, tmp_path):
+    """A25: lo mismo que el costeo. Un anidado que ya no es de la chapa de hoy no
+    se cobra: la tarjeta no lo da por terminado ni suma sus chapas, y la
+    miniatura lo sigue pintando."""
+    trabajo, grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    assert cliente.patch(f"/formatos/{grupo['formato_id']}", json={"ancho_mm": "1100"}).status_code == 200
+
+    tarjeta = cliente.get("/tarjetas").json()[0]
+
+    assert (tarjeta["pasos"]["anidado"], tarjeta["frase"], tarjeta["destino"]) == (
+        "pendiente", "Falta volver a anidar G1", "anidado")
+    assert tarjeta["chapas"] == []
+    assert PALETA_CHAPAS[0] in cliente.get(f"/trabajos/{trabajo['id']}/miniatura").text
+
+
+def test_un_grupo_sin_material_no_cuenta_como_terminado(cliente, tmp_path):
+    from app.modelos.trabajo import GrupoDeCorte
+
+    trabajo, grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    with Session(cliente.motor) as sesion:
+        sesion.get(GrupoDeCorte, grupo["id"]).formato_id = None
+        sesion.commit()
+
+    tarjeta = cliente.get("/tarjetas").json()[0]
+
+    assert tarjeta["pasos"]["anidado"] == "pendiente"
+    assert tarjeta["chapas"] == []
+    assert PALETA_CHAPAS[0] in cliente.get(f"/trabajos/{trabajo['id']}/miniatura").text
+
+
 def test_un_trabajo_sin_piezas(cliente):
     cliente.post("/trabajos", json={"nombre": "Vacío"})
 

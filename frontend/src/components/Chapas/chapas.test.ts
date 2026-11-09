@@ -28,10 +28,13 @@ describe("cambioLaCantidadDeChapas", () => {
   });
 });
 
-function ejecucion(id: number, estado: Ejecucion["estado"], esDefinitiva = false, vencido = false): Ejecucion {
+function ejecucion(
+  id: number, estado: Ejecucion["estado"], esDefinitiva = false, vencido = false, cuenta = false,
+): Ejecucion {
   return {
     id, grupo_id: 1, motor: "sparrow", semilla: null, estado, planchas_usadas: 1, aprovechamiento_pct: null,
     milisegundos: null, mensajes: null, error: null, es_definitiva: esDefinitiva, vencido, creado_en: "2026-10-24",
+    es_el_que_cuenta: cuenta, no_se_cobra_por: vencido ? "piezas_cambiaron" : null, aviso_de_no_cobrar: null,
   };
 }
 
@@ -53,9 +56,11 @@ function colocacion(id: number, piezaId: number, plancha: number, cx = 50, cy = 
 }
 
 describe("anidadoParaMostrar", () => {
-  it("prefiere la definitiva lista y si no la primera lista del historial", () => {
-    expect(anidadoParaMostrar([ejecucion(1, "lista"), ejecucion(2, "lista", true)])?.id).toBe(2);
-    expect(anidadoParaMostrar([ejecucion(3, "error"), ejecucion(4, "lista"), ejecucion(5, "lista")])?.id).toBe(4);
+  // La regla vive en el servidor (A25, `anidado_que_cuenta`): acá solo se lee
+  // cuál anidado marcó como el que cuenta.
+  it("da el que el servidor marcó como el que cuenta", () => {
+    expect(anidadoParaMostrar([ejecucion(1, "lista"), ejecucion(2, "lista", true, false, true)])?.id).toBe(2);
+    expect(anidadoParaMostrar([ejecucion(3, "error"), ejecucion(4, "lista", false, false, true), ejecucion(5, "lista")])?.id).toBe(4);
   });
 
   it("no da nada si ninguna está lista", () => {
@@ -63,15 +68,13 @@ describe("anidadoParaMostrar", () => {
     expect(anidadoParaMostrar(undefined)).toBeUndefined();
   });
 
-  // Como el presupuesto (`costeo._ejecucion_para_costear`, Enzo, A17).
-  it("con el definitivo vencido, muestra el más reciente al día", () => {
-    const historial = [ejecucion(9, "lista", false, true), ejecucion(8, "lista"), ejecucion(5, "lista", true, true)];
-    expect(anidadoParaMostrar(historial)?.id).toBe(8);
+  it("no elige por su cuenta: sin ninguna marcada no da nada, aunque haya una definitiva", () => {
+    expect(anidadoParaMostrar([ejecucion(9, "lista"), ejecucion(5, "lista", true)])).toBeUndefined();
   });
 
-  it("si ninguno está al día, muestra el de siempre", () => {
-    expect(anidadoParaMostrar([ejecucion(8, "lista", false, true), ejecucion(5, "lista", true, true)])?.id).toBe(5);
-    expect(anidadoParaMostrar([ejecucion(8, "lista", false, true), ejecucion(5, "lista", false, true)])?.id).toBe(8);
+  it("muestra el marcado aunque no se cobre", () => {
+    const historial = [ejecucion(8, "lista"), ejecucion(5, "lista", true, true, true)];
+    expect(anidadoParaMostrar(historial)?.id).toBe(5);
   });
 });
 

@@ -30,12 +30,12 @@ class GrupoParaPasos:
     nombre: str
     #: Tiene alguna pieza que se corta.
     con_piezas: bool
-    #: Tiene un anidado que cuenta (`costeo._ejecucion_para_costear`).
+    #: Tiene un anidado que cuenta (`anidado_que_cuenta`).
     terminado: bool
     #: El estado del anidado más reciente; `None` si nunca se anidó.
     ultimo: str | None
     #: Tiene un anidado terminado, pero sus piezas cambiaron después y no
-    #: se cobra (A17, `costeo.anidado_vigente`).
+    #: se cobra (A17 y A25, `anidado_que_cuenta`).
     vencido: bool = False
 
 

@@ -19,7 +19,6 @@ from app.services.nesting.hojas_pdf import (
 from app.services.nesting.pdf_anidado import (
     _PUNTOS_NUMERO,
     _PUNTOS_NUMERO_MINIMO,
-    AVISO_DE_VENCIDO,
     GRIS_OTRO,
     PALETA_CHAPAS,
     ROJO_FALTA,
@@ -35,7 +34,7 @@ def _rectangulo(ancho, alto, x=0.0, y=0.0):
 
 
 def _trabajo(n_chapas, *, nombre="Prueba", sin_anidar=(), con_veta=False, falta=(), sin_lugar=(),
-             disenio_vacio=False, copias=1, presupuesto=None) -> TrabajoDelPdf:
+             disenio_vacio=False, copias=1, presupuesto=None, aviso_de_no_cobrar=None) -> TrabajoDelPdf:
     chapas = [
         ChapaDelPdf(indice=i, piezas=[PiezaEnChapa("497", _rectangulo(300, 200, 100, 100))],
                     usado="1220 × 400", sobrante="1220 × 2040", es_retazo=True)
@@ -53,7 +52,7 @@ def _trabajo(n_chapas, *, nombre="Prueba", sin_anidar=(), con_veta=False, falta=
     bloque = BloqueDelPdf(
         material="Chapa negra cal. 22", grupo="G1", chapa_ancho_mm=1220, chapa_alto_mm=2440, con_veta=con_veta,
         chapas=chapas, linea=f"{n_chapas} chapas enteras", anidado="anidado #9, elegido para el presupuesto",
-        disenio=disenio,
+        disenio=disenio, aviso_de_no_cobrar=aviso_de_no_cobrar,
     )
     return TrabajoDelPdf(nombre=nombre, archivo="prueba.dxf", generado=datetime(2026, 10, 25, 11, 0),
                          presupuesto=presupuesto, bloques=[bloque], sin_anidar=list(sin_anidar))
@@ -138,6 +137,11 @@ def test_el_numero_entra_a_lo_ancho_de_la_pieza():
     assert _PUNTOS_NUMERO_MINIMO < _puntos_para(pieza, 20, "39/unida") < _puntos_para(pieza, 20, "497")
 
 
-def test_el_aviso_del_anidado_vencido_es_el_de_chapas():
-    fuente = (RAIZ / "frontend/src/components/Chapas/chapas.ts").read_text(encoding="utf-8")
-    assert f'AVISO_DE_VENCIDO =\n  "{AVISO_DE_VENCIDO}"' in fuente
+def test_el_bloque_escribe_el_aviso_de_no_cobrar_que_trae_y_si_no_hay_no_escribe_nada():
+    aviso = "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de presupuestar."
+
+    con_aviso = _texto(dibujar_pdf(_trabajo(n_chapas=1, aviso_de_no_cobrar=aviso))).replace("\n", " ")
+    sin_aviso = _texto(dibujar_pdf(_trabajo(n_chapas=1))).replace("\n", " ")
+
+    assert aviso in con_aviso
+    assert "anidá de nuevo" not in sin_aviso

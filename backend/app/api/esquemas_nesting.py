@@ -80,6 +80,15 @@ class EjecucionLeer(BaseModel):
     es_definitiva: bool
     #: Las piezas de su grupo cambiaron después de este anidado (A17): no se cobra.
     vencido: bool = False
+    #: Es el anidado que muestra y mira el presupuesto de su grupo (A25,
+    #: `anidado_que_cuenta`), aunque no se cobre. Lo llena la ruta; solo los
+    #: anidados terminados.
+    es_el_que_cuenta: bool = False
+    #: Por qué este anidado no se cobra (el valor de `Motivo`: `piezas_cambiaron`,
+    #: `sin_piezas` o `chapa_cambio`); `None` si se cobraría o si no terminó.
+    no_se_cobra_por: str | None = None
+    #: El texto para mostrarle a quien mira, con ese motivo.
+    aviso_de_no_cobrar: str | None = None
     creado_en: datetime
     actualizado_en: datetime
     #: Mientras corre (A7): lo que anotó la corrida en la memoria del
