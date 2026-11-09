@@ -69,7 +69,9 @@ Un trabajo, en la rama `feat/a24-recordar-correcciones`, con su diseño y su pla
 - **Guardar:** al cargar un dibujo con correcciones (esta forma se corta, esta no va), se guardan en una tabla nueva, por la huella del contenido del archivo y no por su nombre.
 - **Aplicar:** al abrir la lectura de un archivo que ya se cargó con correcciones, aparecen solas, también en otro trabajo. Un aviso dice cuántas se aplicaron, y un botón, «Empezar de cero», las descarta.
 - **Olvidar:** cargar un dibujo sin ninguna corrección borra lo guardado de ese archivo.
-- **Probado:** pruebas nuevas de la tabla, del servicio y de la API (783 pasan en `api`, `ingesta` y `modelos`) y de la pantalla (350 pasan); el lector no cambió (`lectura_del_corpus.py comparar` dio «sin diferencias» en los 9 dibujos de prueba); y un recorrido en Chrome sin ventana con `Complejo.dxf` contra una copia de la base: marcar en un trabajo, verlo aplicado en otro, «Empezar de cero» y olvidar.
+- **Probado:** pruebas nuevas de la tabla, del servicio y de la API (toda la suite de backend pasa: 1389) y de la pantalla (353 pasan); el lector no cambió (`lectura_del_corpus.py comparar` dio «sin diferencias» en los 9 dibujos de prueba); y un recorrido en Chrome sin ventana con `Complejo.dxf` contra una copia de la base: marcar en un trabajo, verlo aplicado en otro, «Empezar de cero» y olvidar.
+
+- **Revisión de la rama** (2026-11-09, revisión de código con tres arreglos): una marca de un hueco o de una pieza unida que la unión ya no arma contaba como aplicada y el aviso decía de más (ahora cuenta como aplicada solo la marca cuya forma está en alguna de las dos lecturas); una marca sin forma obligaba a leer el dibujo dos veces y podía dar un 400 en la segunda lectura (ahora se lee una sola vez, porque una marca sin forma no cambia nada); y «Empezar de cero» podía borrar lo marcado a mano después de aplicar (ahora el aviso y el botón se ven solo mientras la lista sea exactamente la guardada). Cada arreglo trae su prueba, y el recorrido en el navegador sumó ese caso.
 
 ### Qué se decidió
 

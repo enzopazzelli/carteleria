@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { avisoDeCorreccionesGuardadas, escalaParaCargar } from "./cargaDxf";
+import { avisoDeCorreccionesGuardadas, escalaParaCargar, sonLasMismasCorrecciones } from "./cargaDxf";
 
 describe("escalaParaCargar", () => {
   it("acepta un número entero mayor que cero", () => {
@@ -55,5 +55,22 @@ describe("avisoDeCorreccionesGuardadas", () => {
     expect(avisoDeCorreccionesGuardadas(0, 2)).toBe(
       "2 correcciones de la vez anterior ya no están en este dibujo y se ignoraron.",
     );
+  });
+});
+
+describe("sonLasMismasCorrecciones", () => {
+  it("dos listas vacías son la misma", () => {
+    expect(sonLasMismasCorrecciones({}, {})).toBe(true);
+  });
+
+  it("no importa el orden en que se marcaron", () => {
+    expect(sonLasMismasCorrecciones({ a: "no_va", b: "cortar" }, { b: "cortar", a: "no_va" })).toBe(true);
+  });
+
+  it("una marca de más, de menos o con otro valor las hace distintas", () => {
+    expect(sonLasMismasCorrecciones({ a: "no_va" }, { a: "no_va", b: "cortar" })).toBe(false);
+    expect(sonLasMismasCorrecciones({ a: "no_va", b: "cortar" }, { a: "no_va" })).toBe(false);
+    expect(sonLasMismasCorrecciones({ a: "no_va" }, { a: "cortar" })).toBe(false);
+    expect(sonLasMismasCorrecciones({ a: "no_va" }, { b: "no_va" })).toBe(false);
   });
 });

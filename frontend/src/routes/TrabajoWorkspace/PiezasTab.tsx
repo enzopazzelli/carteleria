@@ -15,7 +15,7 @@ import { separarDescartadas, textoDelPliegue } from "./descartadas";
 import { mostrarMm } from "./importes";
 import { crearTurnos } from "../../components/Seccionado/turnos";
 import type { Correcciones, LecturaDxf, Pieza } from "../../api/piezasYgrupos";
-import { avisoDeCorreccionesGuardadas, escalaParaCargar } from "./cargaDxf";
+import { avisoDeCorreccionesGuardadas, escalaParaCargar, sonLasMismasCorrecciones } from "./cargaDxf";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
@@ -86,9 +86,13 @@ function PiezasDelTrabajo() {
   // lo aplica va un paso adelante de `lectura.correcciones`, que es lo
   // que se está viendo, y lo que se carga.
   const [correcciones, setCorrecciones] = useState<Correcciones>({});
-  // Lo que se le dijo a quien abrió la lectura sobre las correcciones de la
-  // vez anterior que se aplicaron solas (A24); `null` si no había ninguna.
-  const [avisoGuardadas, setAvisoGuardadas] = useState<string | null>(null);
+  // Las correcciones de la vez anterior que se aplicaron solas al abrir la
+  // lectura (A24), con lo que se le dijo a quien la abrió; `null` si no había
+  // ninguna. El aviso y su botón se ven solo mientras la lista siga siendo
+  // esa: si se marca algo a mano, «Empezar de cero» borraría también eso.
+  const [guardadas, setGuardadas] = useState<{ aviso: string; aplicadas: Correcciones } | null>(null);
+  const avisoGuardadas =
+    guardadas && sonLasMismasCorrecciones(correcciones, guardadas.aplicadas) ? guardadas.aviso : null;
   // Cada clic pide la lectura de nuevo: solo vale la última respuesta.
   const [pedidos] = useState(crearTurnos);
   const lecturaVigente = esLaLecturaDe(lectura, archivoActual, escala) ? lectura : null;
@@ -123,9 +127,11 @@ function PiezasDelTrabajo() {
       const vigentes = aplicarGuardadas ? datos.correcciones_aplicadas : pedidas;
       setCorrecciones(vigentes);
       if (aplicarGuardadas) {
-        setAvisoGuardadas(
-          avisoDeCorreccionesGuardadas(Object.keys(datos.correcciones_aplicadas).length, datos.correcciones_ignoradas),
+        const aviso = avisoDeCorreccionesGuardadas(
+          Object.keys(datos.correcciones_aplicadas).length,
+          datos.correcciones_ignoradas,
         );
+        setGuardadas(aviso === null ? null : { aviso, aplicadas: datos.correcciones_aplicadas });
       }
       setLectura({ datos, archivo, escala: escalaPedida, correcciones: vigentes });
     } catch (e) {
@@ -139,7 +145,7 @@ function PiezasDelTrabajo() {
     if (!archivoActual || escala === null) return;
     setAvisos([]);
     setLectura(null);
-    setAvisoGuardadas(null);
+    setGuardadas(null);
     // La unión no viene de antes: se decide mirando este dibujo. Las
     // correcciones sí, si este mismo archivo ya se cargó con ellas.
     setUnir(false);
@@ -150,7 +156,7 @@ function PiezasDelTrabajo() {
    * ninguna. Si después se carga así, el archivo queda sin correcciones. */
   function alEmpezarDeCero() {
     if (!lecturaVigente) return;
-    setAvisoGuardadas(null);
+    setGuardadas(null);
     void leer(lecturaVigente.archivo, lecturaVigente.escala, {}, lecturaVigente.correcciones);
   }
 
@@ -165,7 +171,7 @@ function PiezasDelTrabajo() {
     pedidos.anular();
     setLectura(null);
     setCorrecciones({});
-    setAvisoGuardadas(null);
+    setGuardadas(null);
   }
 
   async function alCargar() {

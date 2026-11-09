@@ -1,5 +1,7 @@
 // Cuentas puras de la carga de un DXF en la pestaña Piezas.
 
+import type { Correcciones } from "../../api/piezasYgrupos";
+
 /**
  * La escala tal como hay que mandarla al servidor, o `null` si lo
  * escrito no es un número mayor que cero. Acepta coma o punto decimal:
@@ -44,4 +46,10 @@ export function avisoDeCorreccionesGuardadas(aplicadas: number, ignoradas: numbe
     );
   }
   return partes.join(" ");
+}
+
+/** Si dos listas de correcciones marcan lo mismo, sin importar el orden. */
+export function sonLasMismasCorrecciones(a: Correcciones, b: Correcciones): boolean {
+  const claves = Object.keys(a);
+  return claves.length === Object.keys(b).length && claves.every((forma) => a[forma] === b[forma]);
 }
