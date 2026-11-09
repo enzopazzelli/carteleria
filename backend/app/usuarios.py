@@ -13,11 +13,13 @@ from __future__ import annotations
 import argparse
 import getpass
 import sys
+from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import config
+from .arranque import ActualizacionFallida, BaseMasNueva, poner_la_base_al_dia
 from .mensajes import ErrorPrevisto
 from .modelos import Usuario
 from .modelos.base import crear_motor
@@ -93,8 +95,21 @@ def _armar_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _poner_la_base_al_dia() -> None:
+    """Lo mismo que hace la app al arrancar: si la base viene de una versión vieja (sin la tabla de usuarios,
+    por ejemplo), la actualiza guardando antes un respaldo. Así el comando no depende de haber arrancado la app."""
+    respaldo = poner_la_base_al_dia(config.url_de_base(), config.DIRECTORIO_DATOS, date.today())
+    if respaldo is not None:
+        print(f"La base estaba atrasada y se actualizó. El respaldo quedó en {respaldo}.")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _armar_parser().parse_args(argv)
+    try:
+        _poner_la_base_al_dia()
+    except (BaseMasNueva, ActualizacionFallida) as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
     motor = crear_motor(config.url_de_base())
     try:
         with Session(motor) as sesion:
