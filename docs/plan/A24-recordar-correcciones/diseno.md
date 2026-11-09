@@ -1,6 +1,6 @@
 # A24 · Recordar las correcciones de la lectura — diseño
 
-> **Estado:** 📝 borrador para que Enzo lo apruebe. Todavía no se tocó código.
+> **Estado:** ✅ aprobado por Enzo el 2026-11-09. Construido en la rama `feat/a24-recordar-correcciones` (ver [`plan.md`](plan.md)); **todavía sin fusionar a `main`**, a la espera de su revisión.
 >
 > **De dónde sale.** [2.1b](../../historico/2.1b-corregir-la-lectura/diseno.md) dejó corregir la lectura del dibujo con clics, pero dejó afuera recordar esas correcciones: volver a cargar el mismo dibujo empieza de cero. Está en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md) como lo primero de «se puede construir ya».
 >
