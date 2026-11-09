@@ -15,7 +15,7 @@ import { separarDescartadas, textoDelPliegue } from "./descartadas";
 import { mostrarMm } from "./importes";
 import { crearTurnos } from "../../components/Seccionado/turnos";
 import type { Correcciones, LecturaDxf, Pieza } from "../../api/piezasYgrupos";
-import { escalaParaCargar } from "./cargaDxf";
+import { avisoDeCorreccionesGuardadas, escalaParaCargar } from "./cargaDxf";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
@@ -86,6 +86,9 @@ function PiezasDelTrabajo() {
   // lo aplica va un paso adelante de `lectura.correcciones`, que es lo
   // que se está viendo, y lo que se carga.
   const [correcciones, setCorrecciones] = useState<Correcciones>({});
+  // Lo que se le dijo a quien abrió la lectura sobre las correcciones de la
+  // vez anterior que se aplicaron solas (A24); `null` si no había ninguna.
+  const [avisoGuardadas, setAvisoGuardadas] = useState<string | null>(null);
   // Cada clic pide la lectura de nuevo: solo vale la última respuesta.
   const [pedidos] = useState(crearTurnos);
   const lecturaVigente = esLaLecturaDe(lectura, archivoActual, escala) ? lectura : null;
@@ -94,15 +97,37 @@ function PiezasDelTrabajo() {
 
   /** Pide la lectura con las correcciones `pedidas`. `aLaVista` son las
    * de la lectura que se está viendo: si el pedido falla, se sigue viendo
-   * esa, y la lista vuelve a ser la suya. */
-  async function leer(archivo: File, escalaPedida: string, pedidas: Correcciones, aLaVista: Correcciones) {
+   * esa, y la lista vuelve a ser la suya.
+   *
+   * Con `aplicarGuardadas` (solo al abrir la lectura de un archivo) el
+   * servidor aplica las de la vez anterior: las correcciones de la lectura
+   * pasan a ser las que devuelve, que son las que se van a cargar. */
+  async function leer(
+    archivo: File,
+    escalaPedida: string,
+    pedidas: Correcciones,
+    aLaVista: Correcciones,
+    aplicarGuardadas = false,
+  ) {
     const turno = pedidos.tomar();
     setError(null);
     setCorrecciones(pedidas);
     try {
-      const datos = await leerDxf.mutateAsync({ archivo, escalaAMm: escalaPedida, correcciones: pedidas });
+      const datos = await leerDxf.mutateAsync({
+        archivo,
+        escalaAMm: escalaPedida,
+        correcciones: pedidas,
+        aplicarGuardadas,
+      });
       if (!pedidos.vigente(turno)) return;
-      setLectura({ datos, archivo, escala: escalaPedida, correcciones: pedidas });
+      const vigentes = aplicarGuardadas ? datos.correcciones_aplicadas : pedidas;
+      setCorrecciones(vigentes);
+      if (aplicarGuardadas) {
+        setAvisoGuardadas(
+          avisoDeCorreccionesGuardadas(Object.keys(datos.correcciones_aplicadas).length, datos.correcciones_ignoradas),
+        );
+      }
+      setLectura({ datos, archivo, escala: escalaPedida, correcciones: vigentes });
     } catch (e) {
       if (!pedidos.vigente(turno)) return;
       setCorrecciones(aLaVista);
@@ -114,10 +139,19 @@ function PiezasDelTrabajo() {
     if (!archivoActual || escala === null) return;
     setAvisos([]);
     setLectura(null);
-    // Ni la unión ni las correcciones vienen de antes: se deciden
-    // mirando este dibujo.
+    setAvisoGuardadas(null);
+    // La unión no viene de antes: se decide mirando este dibujo. Las
+    // correcciones sí, si este mismo archivo ya se cargó con ellas.
     setUnir(false);
-    void leer(archivoActual, escala, {}, {});
+    void leer(archivoActual, escala, {}, {}, true);
+  }
+
+  /** Descarta las correcciones de la vez anterior y vuelve a leer sin
+   * ninguna. Si después se carga así, el archivo queda sin correcciones. */
+  function alEmpezarDeCero() {
+    if (!lecturaVigente) return;
+    setAvisoGuardadas(null);
+    void leer(lecturaVigente.archivo, lecturaVigente.escala, {}, lecturaVigente.correcciones);
   }
 
   function alCorregir(nuevas: Correcciones) {
@@ -131,6 +165,7 @@ function PiezasDelTrabajo() {
     pedidos.anular();
     setLectura(null);
     setCorrecciones({});
+    setAvisoGuardadas(null);
   }
 
   async function alCargar() {
@@ -330,6 +365,8 @@ function PiezasDelTrabajo() {
           alCambiarUnir={setUnir}
           correcciones={correcciones}
           alCorregir={alCorregir}
+          avisoGuardadas={avisoGuardadas}
+          alEmpezarDeCero={alEmpezarDeCero}
           leyendo={leerDxf.isPending}
           alCargar={() => void alCargar()}
           alCancelar={cerrarLectura}

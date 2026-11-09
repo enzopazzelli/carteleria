@@ -13,3 +13,35 @@ export function escalaParaCargar(texto: string): string | null {
   if (!/^\d+(\.\d+)?$/.test(limpio) || Number(limpio) <= 0) return null;
   return String(Number(limpio));
 }
+
+/**
+ * Lo que se le dice a quien abre la lectura de un dibujo que ya cargó antes
+ * con correcciones (A24): cuántas se aplicaron solas y, si el dibujo ya no
+ * tiene la forma de alguna, cuántas se dejaron afuera. `null` si no había
+ * nada guardado.
+ */
+export function avisoDeCorreccionesGuardadas(aplicadas: number, ignoradas: number): string | null {
+  if (aplicadas === 0 && ignoradas === 0) return null;
+  const partes: string[] = [];
+  if (aplicadas > 0) {
+    partes.push(
+      aplicadas === 1
+        ? "Se aplicó 1 corrección de la vez anterior."
+        : `Se aplicaron ${aplicadas} correcciones de la vez anterior.`,
+    );
+  }
+  if (ignoradas > 0) {
+    const cuantas =
+      aplicadas > 0
+        ? String(ignoradas)
+        : ignoradas === 1
+          ? "1 corrección de la vez anterior"
+          : `${ignoradas} correcciones de la vez anterior`;
+    partes.push(
+      ignoradas === 1
+        ? `${cuantas} ya no está en este dibujo y se ignoró.`
+        : `${cuantas} ya no están en este dibujo y se ignoraron.`,
+    );
+  }
+  return partes.join(" ");
+}

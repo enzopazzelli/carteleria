@@ -42,6 +42,17 @@ describe("leerDxf", () => {
 
     expect(correccionesDe(pedidoDe(falso).campos)).toEqual({});
   });
+
+  it("pide aplicar las correcciones guardadas solo cuando se le dice", async () => {
+    const sin = fetchQueResponde();
+    await leerDxf(7, archivo, "100", {});
+    expect(pedidoDe(sin).campos.get("aplicar_guardadas")).toBe("false");
+    vi.unstubAllGlobals();
+
+    const con = fetchQueResponde();
+    await leerDxf(7, archivo, "100", {}, true);
+    expect(pedidoDe(con).campos.get("aplicar_guardadas")).toBe("true");
+  });
 });
 
 describe("subirDxf", () => {
