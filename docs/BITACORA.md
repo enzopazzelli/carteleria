@@ -64,7 +64,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Qué se hizo
 
-Un trabajo, en la rama `feat/a25-regla-unica-del-anidado`, con su diseño y su plan en [`docs/plan/A25-regla-unica-del-anidado/`](plan/A25-regla-unica-del-anidado/diseno.md). **Sin fusionar a `main`**: falta que Enzo lo revise y lo apruebe.
+Un trabajo, con su diseño y su plan en [`historico/A25-regla-unica-del-anidado/`](historico/A25-regla-unica-del-anidado/diseno.md). En `main` desde el 2026-11-09 ([PR #28](https://github.com/enzopazzelli/carteleria/pull/28), lo fusioné yo a pedido de Enzo, con el CI de GitHub en verde).
 
 - **Una sola decisión en el servidor** (`app/anidado_que_cuenta.py`): dado un grupo, dice cuál anidado se muestra, si se cobra y, si no, por qué (sin material, sin anidado, sin piezas, las piezas cambiaron, la chapa cambió). Reúne la elección de cuál anidado (antes en el costeo), si sigue al día con las piezas y la comparación con la chapa.
 - **El costeo, la tarjeta del inicio y el PDF la llaman.** Se borró la regla vieja del costeo y las cuentas de «vencido» que cada uno armaba por su lado.
@@ -85,8 +85,8 @@ Sin cambios: no hay parámetros ni supuestos numéricos nuevos. No hay migració
 
 ### Pendiente
 
-- **Enzo:** revisar la rama y aprobarla.
 - Siguen en «se puede construir ya»: cambiar cómo decide el lector qué es pieza y qué es agujero, e importar varios diseños a la vez.
+- Sin nada que aplicar en la base real: A25 no tiene migración.
 
 ---
 

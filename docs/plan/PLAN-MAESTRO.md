@@ -302,7 +302,7 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 6. **La importación de varios diseños en pantalla** (`/importaciones/dxf/...`): no une ni deja corregir, cada trabajo tendría de fondo el archivo entero, y sus mensajes se revisaron sin miniaturas.
 7. **En espera por decisión de Enzo** (2026-10-22): los colores de referencia por pieza y leer el `.cdr` (la última fila de la tabla de arriba).
 8. **Lo de afuera** (etapa 4): el servidor real, el mail real, WhatsApp, y el logo y los datos fiscales en el PDF.
-9. ~~Una sola regla de qué anidado cuenta para el presupuesto, y por qué no~~ **Hecha el 2026-11-09 (A25), en la rama `feat/a25-regla-unica-del-anidado` a la espera de que Enzo la apruebe y se fusione:** [`A25-regla-unica-del-anidado/`](A25-regla-unica-del-anidado/diseno.md). El costeo, la tarjeta del inicio, el PDF y Chapas preguntan a un solo módulo del servidor; el caso «la chapa cambió después de anidar» se trata igual en los cuatro.
+9. ~~Una sola regla de qué anidado cuenta para el presupuesto, y por qué no~~ **Hecha el 2026-11-09 (A25):** [`historico/A25-regla-unica-del-anidado/`](../historico/A25-regla-unica-del-anidado/diseno.md). El costeo, la tarjeta del inicio, el PDF y Chapas preguntan a un solo módulo del servidor (`app/anidado_que_cuenta.py`); el caso «la chapa cambió después de anidar» se trata igual en los cuatro, y una prueba guardiana impide que la regla se vuelva a repartir.
 
 **Resueltos por el camino**, antes de A17. Estaban al pie de las tablas de pendientes:
 

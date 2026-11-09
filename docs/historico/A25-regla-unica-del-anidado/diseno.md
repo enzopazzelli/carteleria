@@ -1,6 +1,6 @@
 # A25 · Una sola regla de qué anidado cuenta para el presupuesto — diseño
 
-> **Estado:** ✅ aprobado por Enzo el 2026-11-09. Construido en la rama `feat/a25-regla-unica-del-anidado` (ver [`plan.md`](plan.md)); **todavía sin fusionar a `main`**, a la espera de su revisión.
+> **Estado:** **cerrado el 2026-11-09.** Construido ese día y en `main` desde entonces ([PR #28](https://github.com/enzopazzelli/carteleria/pull/28); lo fusioné yo a pedido de Enzo). Lo que el código precisó del diseño está en [`plan.md`](plan.md). Esta carpeta pasó de `docs/plan/` a `docs/historico/`, y lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md).
 >
 > **De dónde sale.** [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md), «Lo grande, después de A17», punto 9: hoy «qué anidado cuenta para el presupuesto» se decide en cuatro lugares (el costeo, la tarjeta del inicio, el PDF y Chapas), y solo el costeo mira si cambió la chapa del grupo después de anidar.
 >
