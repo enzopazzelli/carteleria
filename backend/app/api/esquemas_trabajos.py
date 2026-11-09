@@ -117,6 +117,12 @@ class LecturaDXFLeer(BaseModel):
     sin_unir: LecturaLeer
     #: Solo si hay formas que se pisan.
     unida: LecturaLeer | None
+    #: Las correcciones de la vez anterior que se aplicaron (A24), con el
+    #: nombre de forma de este trabajo → `cortar` o `no_va`. Vacío si no se
+    #: pidió aplicarlas, si el pedido traía las suyas o si no hay ninguna.
+    correcciones_aplicadas: dict[str, str] = {}
+    #: Cuántas de las guardadas nombraban una forma que ya no está.
+    correcciones_ignoradas: int = 0
 
 
 # --- Grupos de corte (`CART-211`) -----------------------------------------
