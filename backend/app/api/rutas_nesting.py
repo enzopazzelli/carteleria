@@ -25,6 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import progreso
+from ..anidado_que_cuenta import anidado_que_cuenta, aviso_de_no_cobrar, por_que_no_se_cobra
 from ..cola import cola_de_trabajos
 from ..costeo import resumen_materiales
 from ..mensajes import ErrorPrevisto, aviso_desde, error_para_guardar
@@ -400,15 +401,36 @@ def anidar(
     return ejecucion
 
 
+def _leidas_con_lo_que_cuenta(
+    sesion: Session, grupo: GrupoDeCorte, ejecuciones: list[EjecucionNesting]
+) -> list[EjecucionLeer]:
+    """Los anidados de un grupo como los publica la API, con lo que dice la
+    regla única (A25): cuál es el que cuenta para el presupuesto y, de cada uno
+    ya terminado, por qué no se cobraría. La regla se consulta una vez por grupo."""
+    cuenta = anidado_que_cuenta(sesion, grupo)
+    leidas = []
+    for ejecucion in ejecuciones:
+        leida = EjecucionLeer.model_validate(ejecucion)
+        if ejecucion.estado == EstadoEjecucion.LISTA.value:
+            motivo = por_que_no_se_cobra(sesion, grupo, ejecucion)
+            leida = leida.model_copy(update={
+                "es_el_que_cuenta": ejecucion is cuenta.mostrado,
+                "no_se_cobra_por": motivo.value if motivo else None,
+                "aviso_de_no_cobrar": aviso_de_no_cobrar(motivo),
+            })
+        leidas.append(leida)
+    return leidas
+
+
 @router.get("/ejecuciones/{ejecucion_id}", response_model=EjecucionLeer)
 def obtener_ejecucion(ejecucion_id: int, sesion: Session = Depends(obtener_sesion)) -> EjecucionLeer:
     """Con `progreso` mientras corre (A7). Una corrida terminada no lo
     trae, aunque la memoria todavía no lo haya olvidado: entre guardar el
     resultado y olvidar el progreso hay un instante."""
     ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
-    leida = EjecucionLeer.model_validate(ejecucion)
     if ejecucion.estado not in (EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value):
-        return leida
+        return _leidas_con_lo_que_cuenta(sesion, ejecucion.grupo, [ejecucion])[0]
+    leida = EjecucionLeer.model_validate(ejecucion)
     avance = progreso.leer(("ejecucion", ejecucion.id))
     return leida.model_copy(update={"progreso": ProgresoLeer(**avance) if avance else None})
 
@@ -423,17 +445,17 @@ def listar_colocaciones(
 
 
 @router.get("/grupos/{grupo_id}/ejecuciones", response_model=list[EjecucionLeer])
-def listar_ejecuciones(grupo_id: int, sesion: Session = Depends(obtener_sesion)) -> list[EjecucionNesting]:
+def listar_ejecuciones(grupo_id: int, sesion: Session = Depends(obtener_sesion)) -> list[EjecucionLeer]:
     """Historial de anidados de un grupo — comparar aprovechamiento y
     planchas entre corridas (motor, parámetros) antes de marcar una
     definitiva. La más reciente primero."""
-    _grupo_o_404(sesion, grupo_id)
+    grupo = _grupo_o_404(sesion, grupo_id)
     consulta = (
         select(EjecucionNesting)
         .where(EjecucionNesting.grupo_id == grupo_id)
         .order_by(EjecucionNesting.id.desc())
     )
-    return list(sesion.execute(consulta).scalars().all())
+    return _leidas_con_lo_que_cuenta(sesion, grupo, list(sesion.execute(consulta).scalars().all()))
 
 
 @router.post("/ejecuciones/{ejecucion_id}/cancelar", response_model=EjecucionLeer)
@@ -461,7 +483,7 @@ def cancelar_ejecucion(
 @router.post("/ejecuciones/{ejecucion_id}/marcar-definitiva", response_model=EjecucionLeer)
 def marcar_definitiva(
     ejecucion_id: int, sesion: Session = Depends(obtener_sesion)
-) -> EjecucionNesting:
+) -> EjecucionLeer:
     """A lo sumo una ejecución definitiva por grupo — `app/costeo.py`
     ya lo asume (`anidado_que_cuenta`): desmarca cualquier otra
     del mismo grupo antes de marcar esta."""
@@ -475,7 +497,7 @@ def marcar_definitiva(
             otra.es_definitiva = False
     ejecucion.es_definitiva = True
     sesion.commit()
-    return ejecucion
+    return _leidas_con_lo_que_cuenta(sesion, ejecucion.grupo, [ejecucion])[0]
 
 
 @router.delete("/ejecuciones/{ejecucion_id}", status_code=status.HTTP_204_NO_CONTENT)

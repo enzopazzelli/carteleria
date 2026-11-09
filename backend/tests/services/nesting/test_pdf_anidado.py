@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 from pypdf import PdfReader
 
-from app.anidado_que_cuenta import AVISO_DE_NO_COBRAR, Motivo
 from app.services.nesting.hojas_pdf import (
     BloqueDelPdf,
     ChapaDelPdf,
@@ -146,9 +145,3 @@ def test_el_bloque_escribe_el_aviso_de_no_cobrar_que_trae_y_si_no_hay_no_escribe
 
     assert aviso in con_aviso
     assert "anidá de nuevo" not in sin_aviso
-
-
-def test_el_aviso_de_piezas_cambiadas_es_el_de_chapas():
-    # Hasta que el frontend lo lea de la API (A25, tarea 5) el texto está en los dos lados.
-    fuente = (RAIZ / "frontend/src/components/Chapas/chapas.ts").read_text(encoding="utf-8")
-    assert f'AVISO_DE_VENCIDO =\n  "{AVISO_DE_NO_COBRAR[Motivo.PIEZAS_CAMBIARON]}"' in fuente

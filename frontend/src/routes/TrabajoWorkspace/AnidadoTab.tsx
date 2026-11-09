@@ -416,8 +416,8 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
                   </button>
                 )}
                 {ejecucion.es_definitiva && <span className="text-xs text-bronze">definitiva</span>}
-                {ejecucion.vencido && (
-                  <span className="text-xs text-conflict ml-2" title="Las piezas del grupo cambiaron después de este anidado: no se cobra.">
+                {ejecucion.no_se_cobra_por !== null && (
+                  <span className="text-xs text-conflict ml-2" title={ejecucion.aviso_de_no_cobrar ?? "No se cobra."}>
                     vencido
                   </span>
                 )}
