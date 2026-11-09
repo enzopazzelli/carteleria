@@ -25,28 +25,38 @@ describe("esEditable y botonesDe", () => {
   it("borrador y observado se editan y solo ofrecen mandar a aprobar", () => {
     for (const estado of ["BORRADOR", "OBSERVADO"]) {
       expect(esEditable(estado)).toBe(true);
-      expect(botonesDe(estado).map((b) => b.accion)).toEqual(["mandar-a-aprobar"]);
+      expect(botonesDe(estado, true).map((b) => b.accion)).toEqual(["mandar-a-aprobar"]);
     }
   });
 
   it("pendiente está bloqueado y ofrece aprobar, observar o volver a borrador", () => {
     expect(esEditable("PENDIENTE_APROBACION")).toBe(false);
-    expect(botonesDe("PENDIENTE_APROBACION").map((b) => b.accion)).toEqual(["aprobar", "observar", "volver-a-borrador"]);
+    expect(botonesDe("PENDIENTE_APROBACION", true).map((b) => b.accion)).toEqual([
+      "aprobar",
+      "observar",
+      "volver-a-borrador",
+    ]);
   });
 
   it("aprobado está bloqueado y solo se puede volver a borrador", () => {
     expect(esEditable("APROBADO")).toBe(false);
-    expect(botonesDe("APROBADO").map((b) => b.accion)).toEqual(["volver-a-borrador"]);
+    expect(botonesDe("APROBADO", true).map((b) => b.accion)).toEqual(["volver-a-borrador"]);
   });
 
   it("observar y volver a borrador piden motivo; los demás no", () => {
-    const piden = ["PENDIENTE_APROBACION", "APROBADO"].flatMap(botonesDe).filter((b) => b.pideMotivo);
+    const piden = ["PENDIENTE_APROBACION", "APROBADO"].flatMap((e) => botonesDe(e, true)).filter((b) => b.pideMotivo);
     expect(piden.map((b) => b.accion).sort()).toEqual(["observar", "volver-a-borrador", "volver-a-borrador"]);
-    expect(botonesDe("BORRADOR")[0].pideMotivo).toBe(false);
+    expect(botonesDe("BORRADOR", true)[0].pideMotivo).toBe(false);
   });
 
   it("un estado que no conoce no ofrece nada", () => {
-    expect(botonesDe("ENVIADO")).toEqual([]);
+    expect(botonesDe("ENVIADO", true)).toEqual([]);
+  });
+
+  it("sin el permiso de aprobar no se ofrecen Aprobar ni Observar, pero sí el resto (1.1)", () => {
+    expect(botonesDe("PENDIENTE_APROBACION", false).map((b) => b.accion)).toEqual(["volver-a-borrador"]);
+    expect(botonesDe("BORRADOR", false).map((b) => b.accion)).toEqual(["mandar-a-aprobar"]);
+    expect(botonesDe("APROBADO", false).map((b) => b.accion)).toEqual(["volver-a-borrador"]);
   });
 });
 

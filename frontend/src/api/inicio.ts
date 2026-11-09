@@ -1,4 +1,4 @@
-import { apiDelete, apiGet } from "./client";
+import { API_BASE, apiDelete, apiGet } from "./client";
 
 // La página de inicio (A16): el servidor arma cada tarjeta entera
 // (`backend/app/api/rutas_inicio.py`). Los importes y las fechas viajan como texto.
@@ -66,7 +66,7 @@ export function obtenerResumenDelInicio(): Promise<ResumenDelInicio> {
 /** La miniatura del diseño pintado. Lleva cuándo se tocó el trabajo: si la
  * dirección no cambia, el navegador muestra la que tenía guardada. */
 export function urlMiniatura(trabajoId: number, tocadoEn: string): string {
-  return `http://localhost:8000/trabajos/${trabajoId}/miniatura?v=${encodeURIComponent(tocadoEn)}`;
+  return `${API_BASE}/trabajos/${trabajoId}/miniatura?v=${encodeURIComponent(tocadoEn)}`;
 }
 
 /** Si se está anidando, el servidor no lo deja y responde 409 con el porqué. */

@@ -95,8 +95,7 @@ export function useCrearLineaLibre(presupuestoId: number) {
 export function useAplicarOverride(presupuestoId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ lineaId, valor, overridePor }: { lineaId: number; valor: string | null; overridePor: string }) =>
-      aplicarOverride(lineaId, valor, overridePor),
+    mutationFn: ({ lineaId, valor }: { lineaId: number; valor: string | null }) => aplicarOverride(lineaId, valor),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lineas-costo", presupuestoId] });
       queryClient.invalidateQueries({ queryKey: ["desglose", presupuestoId] });
@@ -174,8 +173,8 @@ export function useCambiarEstado(presupuestoId: number) {
   const refrescar = useRefrescarPresupuesto(presupuestoId);
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ accion, por, motivo }: { accion: AccionDeAprobacion; por: string; motivo?: string | null }) =>
-      cambiarEstado(presupuestoId, accion, { por, motivo }),
+    mutationFn: ({ accion, motivo }: { accion: AccionDeAprobacion; motivo?: string | null }) =>
+      cambiarEstado(presupuestoId, accion, { motivo }),
     onSuccess: () => {
       refrescar();
       queryClient.invalidateQueries({ queryKey: ["historial", presupuestoId] });

@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPatch, apiPost } from "./client";
+import { API_BASE, apiDelete, apiGet, apiPatch, apiPost } from "./client";
 import type { Formato } from "./catalogo";
 import type { Aviso, ErrorDelServidor } from "./mensajes";
 
@@ -135,7 +135,7 @@ export function deshacerReacomodo(ejecucionId: number): Promise<MovidaDeChapa> {
 }
 
 export function urlPlano(ejecucionId: number, plancha: number): string {
-  return `http://localhost:8000/ejecuciones/${ejecucionId}/plano?plancha=${plancha}`;
+  return `${API_BASE}/ejecuciones/${ejecucionId}/plano?plancha=${plancha}`;
 }
 
 /** El plano de una chapa sin nombres de piezas, para su miniatura (A9).
@@ -147,12 +147,12 @@ export function urlPlanoMiniatura(ejecucionId: number, plancha: number, version?
 }
 
 export function urlDxf(ejecucionId: number, plancha: number): string {
-  return `http://localhost:8000/ejecuciones/${ejecucionId}/dxf?plancha=${plancha}`;
+  return `${API_BASE}/ejecuciones/${ejecucionId}/dxf?plancha=${plancha}`;
 }
 
 /** El PDF del diseño anidado del trabajo entero, para imprimir en A4 (A15). */
 export function urlPdfAnidado(trabajoId: number): string {
-  return `http://localhost:8000/trabajos/${trabajoId}/pdf-anidado`;
+  return `${API_BASE}/trabajos/${trabajoId}/pdf-anidado`;
 }
 
 export function cancelarEjecucion(id: number): Promise<Ejecucion> {

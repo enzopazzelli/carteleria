@@ -3,14 +3,14 @@ import type { AccionDeAprobacion } from "../../api/presupuestos";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 import { fechaDeTarjeta } from "../../components/Tarjeta/formato";
+import { useSesion } from "../../auth/SesionContext";
+import { puedeAprobar } from "../../auth/permisos";
 import { useCambiarEstado, useHistorial } from "../../hooks/usePresupuestos";
 import {
   aprobacionVigente,
   botonesDe,
-  guardarNombre,
   motivoDeLaObservacion,
   nombreDeEstado,
-  nombreGuardado,
   renglonDelHistorial,
 } from "./aprobacion";
 
@@ -26,13 +26,14 @@ const AVISO_DE_ESTADO: Record<string, string> = {
 export default function AprobacionSeccion({ presupuestoId, estado }: { presupuestoId: number; estado: string }) {
   const { data: historial = [] } = useHistorial(presupuestoId);
   const cambiar = useCambiarEstado(presupuestoId);
-  const [nombre, setNombre] = useState(nombreGuardado);
+  // Quién lo hace sale de la sesión, no se escribe (1.1).
+  const { yo } = useSesion();
   // El paso que espera un motivo antes de confirmarse, y lo que se lleva escrito.
   const [pidiendo, setPidiendo] = useState<AccionDeAprobacion | null>(null);
   const [motivo, setMotivo] = useState("");
   const [error, setError] = useState<QueMostrar | null>(null);
 
-  const botones = botonesDe(estado);
+  const botones = botonesDe(estado, puedeAprobar(yo));
   const observacion = estado === "OBSERVADO" ? motivoDeLaObservacion(historial) : null;
   const aprobacion = estado === "APROBADO" ? aprobacionVigente(historial) : null;
   const ahora = new Date();
@@ -40,8 +41,7 @@ export default function AprobacionSeccion({ presupuestoId, estado }: { presupues
   async function dar(accion: AccionDeAprobacion, conMotivo: string | null) {
     setError(null);
     try {
-      await cambiar.mutateAsync({ accion, por: nombre, motivo: conMotivo });
-      guardarNombre(nombre.trim());
+      await cambiar.mutateAsync({ accion, motivo: conMotivo });
       setPidiendo(null);
       setMotivo("");
     } catch (e) {
@@ -77,15 +77,6 @@ export default function AprobacionSeccion({ presupuestoId, estado }: { presupues
 
       {botones.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <label className="text-sm">
-            Tu nombre:{" "}
-            <input
-              className="border border-line rounded px-2 py-1 bg-paper w-40"
-              value={nombre}
-              maxLength={120}
-              onChange={(e) => setNombre(e.target.value)}
-            />
-          </label>
           {botones.map((boton) => (
             <button
               key={boton.accion}
