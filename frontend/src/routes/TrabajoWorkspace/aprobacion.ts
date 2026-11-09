@@ -26,14 +26,15 @@ const APROBAR: BotonDeAprobacion = { accion: "aprobar", etiqueta: "Aprobar", pid
 const OBSERVAR: BotonDeAprobacion = { accion: "observar", etiqueta: "Observar", pideMotivo: true, principal: false };
 const VOLVER: BotonDeAprobacion = { accion: "volver-a-borrador", etiqueta: "Volver a borrador", pideMotivo: true, principal: false };
 
-/** Los pasos que se ofrecen desde cada estado. */
-export function botonesDe(estado: string): BotonDeAprobacion[] {
+/** Los pasos que se ofrecen desde cada estado. Aprobar y observar solo los ve quien tiene el permiso (1.1);
+ * el servidor lo exige igual. */
+export function botonesDe(estado: string, puedeAprobar: boolean): BotonDeAprobacion[] {
   switch (estado) {
     case "BORRADOR":
     case "OBSERVADO":
       return [MANDAR];
     case "PENDIENTE_APROBACION":
-      return [APROBAR, OBSERVAR, VOLVER];
+      return puedeAprobar ? [APROBAR, OBSERVAR, VOLVER] : [VOLVER];
     case "APROBADO":
       return [VOLVER];
     default:
@@ -62,24 +63,4 @@ export function renglonDelHistorial(cambio: CambioDeEstado, ahora: Date): string
     `${nombreDeEstado(cambio.estado_anterior)} → ${nombreDeEstado(cambio.estado_nuevo)}`,
     cambio.por,
   ].join(" · ");
-}
-
-const CLAVE_DEL_NOMBRE = "carteleria.quien-aprueba";
-
-/** El nombre que se escribió la última vez, para no repetirlo en cada paso.
- * El almacenamiento del navegador puede no estar: sin él, se escribe cada vez. */
-export function nombreGuardado(): string {
-  try {
-    return window.localStorage.getItem(CLAVE_DEL_NOMBRE) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-export function guardarNombre(nombre: string): void {
-  try {
-    window.localStorage.setItem(CLAVE_DEL_NOMBRE, nombre);
-  } catch {
-    // Sin almacenamiento, se escribe cada vez.
-  }
 }

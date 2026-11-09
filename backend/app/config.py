@@ -83,6 +83,28 @@ FAMILIAS_PARA_LEER_EL_DXF = tuple(
     for familia in os.getenv("CARTELERIA_FAMILIAS_PARA_LEER_EL_DXF", "Chapas,Acrílicos,Policarbonato").split(",")
 )
 
+#: Donde el contenedor de copias deja `ultimo_backup.json` cuando una copia salió bien, y donde `/salud`
+#: lo lee (1.1). En desarrollo no hay copias: sin esa carpeta no es un problema.
+DIRECTORIO_ESTADO = Path(os.getenv("CARTELERIA_ESTADO", DIRECTORIO_DATOS / "estado"))
+#: `PAR-69` (`docs/REGISTRO.md`): pasadas tantas horas sin una copia buena, `/salud` dice «backup atrasado».
+BACKUP_HORAS_MAXIMAS = int(os.getenv("CARTELERIA_BACKUP_HORAS_MAXIMAS", "26"))
+
+
+def en_produccion() -> bool:
+    """`CARTELERIA_ENTORNO=produccion`: la cookie de sesión va `Secure` y no hay documentación de la API
+    abierta (1.1). Se lee en cada llamada y no al importar, para poder cambiarlo en las pruebas."""
+    return os.getenv("CARTELERIA_ENTORNO", "desarrollo") == "produccion"
+
+
+#: `PAR-62` a `PAR-66` (`docs/REGISTRO.md §2.7`, 1.1): cuánto dura una sesión sin uso, cuánto una
+#: «mantenida en este dispositivo», el largo mínimo de una contraseña, y cuántos intentos fallidos
+#: seguidos bloquean una cuenta y por cuánto tiempo.
+SESION_HORAS_SIN_USO = int(os.getenv("CARTELERIA_SESION_HORAS", "12"))
+SESION_DIAS_MANTENIDA = int(os.getenv("CARTELERIA_SESION_DIAS_MANTENIDA", "30"))
+CONTRASENA_LARGO_MINIMO = int(os.getenv("CARTELERIA_CONTRASENA_LARGO_MINIMO", "10"))
+INTENTOS_ANTES_DE_BLOQUEAR = int(os.getenv("CARTELERIA_INTENTOS_ANTES_DE_BLOQUEAR", "5"))
+MINUTOS_DE_BLOQUEO = int(os.getenv("CARTELERIA_MINUTOS_DE_BLOQUEO", "15"))
+
 #: `PAR-61` (`docs/REGISTRO.md`): qué margen de venta de la hoja `COTIZADOR`
 #: usa el precio sugerido de un material, como la columna de `Articulo` que lo
 #: guarda. Es un multiplicador del costo: × 3 es el costo por 3 (A19).

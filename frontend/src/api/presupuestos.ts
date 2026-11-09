@@ -161,11 +161,9 @@ export function eliminarLineaLibre(lineaId: number): Promise<void> {
   return apiDelete(`/lineas-costo/${lineaId}`);
 }
 
-export function aplicarOverride(lineaId: number, valorOverride: string | null, overridePor: string): Promise<LineaCosto> {
-  return apiPatch<LineaCosto>(`/lineas-costo/${lineaId}/override`, {
-    valor_override: valorOverride,
-    override_por: valorOverride === null ? null : overridePor,
-  });
+/** Quién cargó el valor a mano lo sabe el servidor por la sesión (1.1). */
+export function aplicarOverride(lineaId: number, valorOverride: string | null): Promise<LineaCosto> {
+  return apiPatch<LineaCosto>(`/lineas-costo/${lineaId}/override`, { valor_override: valorOverride });
 }
 
 export function actualizarMargenEIva(
@@ -211,17 +209,19 @@ export interface CambioDeEstado {
   id: number;
   estado_anterior: string;
   estado_nuevo: string;
+  /** El nombre de la persona **en ese momento**: si después le cambian el nombre, no cambia. */
   por: string;
+  usuario_id?: number | null;
   motivo: string | null;
   creado_en: string;
 }
 
-/** Un paso de la aprobación. Las reglas las decide el servidor: si el paso no
- * corresponde o falta algo, responde con el motivo y esto tira un `ApiError`. */
+/** Un paso de la aprobación. Quién lo hace lo sabe el servidor por la sesión (1.1). Las reglas también
+ * las decide él: si el paso no corresponde o falta algo, responde con el motivo y esto tira un `ApiError`. */
 export function cambiarEstado(
   presupuestoId: number,
   accion: AccionDeAprobacion,
-  datos: { por: string; motivo?: string | null }
+  datos: { motivo?: string | null }
 ): Promise<Presupuesto> {
   return apiPost<Presupuesto>(`/presupuestos/${presupuestoId}/${accion}`, datos);
 }

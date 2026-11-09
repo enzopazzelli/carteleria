@@ -86,10 +86,10 @@ def test_un_campo_sin_etiqueta_da_un_mensaje_general(cliente):
     assert respuesta.json()["detail"]["mensaje"] == "Uno de los datos no tiene la forma esperada."
 
 
-def test_un_error_inesperado_sale_con_permiso_para_que_la_pantalla_lo_lea():
-    """El 500 de un error que nadie previó tiene que traer el encabezado de
-    CORS: sin él el navegador no deja leer la respuesta y la pantalla dice
-    «No se pudo conectar» en lugar del mensaje (recorrido de A9)."""
+def test_un_error_inesperado_sale_con_el_mensaje_de_siempre():
+    """El 500 de un error que nadie previó llega a la pantalla con el mismo
+    formato que cualquier otro error, no como una página en blanco (A9). Ya no
+    hay CORS (1.1): el navegador habla con un solo origen."""
     from app.api.app import app
     from app.api.dependencias import obtener_sesion
 
@@ -98,13 +98,10 @@ def test_un_error_inesperado_sale_con_permiso_para_que_la_pantalla_lo_lea():
 
     app.dependency_overrides[obtener_sesion] = rota
     try:
-        respuesta = TestClient(app, raise_server_exceptions=False).get(
-            "/trabajos", headers={"Origin": "http://localhost:5173"}
-        )
+        respuesta = TestClient(app, raise_server_exceptions=False).get("/trabajos")
     finally:
         app.dependency_overrides.pop(obtener_sesion, None)
 
     assert respuesta.status_code == 500
-    assert respuesta.headers.get("access-control-allow-origin") == "http://localhost:5173"
     assert respuesta.json()["detail"]["mensaje"] == MENSAJE_INESPERADO
     assert "RuntimeError: bum" in respuesta.json()["detail"]["detalle"]

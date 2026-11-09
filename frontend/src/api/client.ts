@@ -1,6 +1,24 @@
 import type { ChapaNombrada } from "./mensajes";
 
-const BASE_URL = "http://localhost:8000";
+/** Todo pedido va al mismo origen que la pantalla, bajo `/api`: en desarrollo lo reenvía Vite al servidor
+ * (sacando el prefijo) y en producción lo hace el proxy. Así la cookie de sesión viaja sola y no hace falta
+ * permitir pedidos de otros orígenes (1.1). */
+export const API_BASE = "/api";
+
+/** Va en todo pedido: una página ajena no puede agregarlo sin permiso del servidor, y el servidor lo exige
+ * en cada pedido que cambia algo (defensa contra pedidos falsificados, 1.1). */
+export const ENCABEZADO_DE_PEDIDO = "X-Cartel-Pedido";
+
+let alPerder: (() => void) | null = null;
+
+/** Registra a quién avisar cuando el servidor dice que ya no hay sesión (401), para volver a «Entrar».
+ * Con `null` se deja de avisar. */
+export function alPerderLaSesion(callback: (() => void) | null): void {
+  alPerder = callback;
+}
+
+/** El único pedido donde un 401 no significa «se perdió la sesión»: es la contraseña mala. */
+const RUTA_DE_ENTRAR = "/acceso/entrar";
 
 /** Lo que se muestra cuando el pedido no llega al servidor (A9). */
 export const SIN_CONEXION = "No se pudo conectar con el servidor: revisá que esté prendido.";
@@ -53,13 +71,19 @@ export function errorDesdeCuerpo(status: number, cuerpo: unknown): ApiError {
   });
 }
 
-/** `fetch`, pero un pedido que no llega es un `ApiError` en castellano. */
-async function pedir(path: string, init?: RequestInit): Promise<Response> {
+/** `fetch`, pero un pedido que no llega es un `ApiError` en castellano, y todo pedido lleva el encabezado propio. */
+async function pedir(path: string, init: RequestInit = {}): Promise<Response> {
+  let respuesta: Response;
   try {
-    return await fetch(`${BASE_URL}${path}`, init);
+    respuesta = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      headers: { ...(init.headers as Record<string, string> | undefined), [ENCABEZADO_DE_PEDIDO]: "1" },
+    });
   } catch {
     throw new ApiError(0, SIN_CONEXION);
   }
+  if (respuesta.status === 401 && path !== RUTA_DE_ENTRAR) alPerder?.();
+  return respuesta;
 }
 
 async function manejarRespuesta<T>(respuesta: Response): Promise<T> {

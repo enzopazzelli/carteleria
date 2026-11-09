@@ -10,6 +10,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ..modelos.catalogo import Moneda
+from .esquemas_acceso import QuienLeer
 from .etiquetas import ETIQUETAS_DE_CAMPOS
 
 # --- Topes -----------------------------------------------------------------
@@ -99,14 +100,16 @@ class PresupuestoLeer(BaseModel):
     total_fijado: Decimal | None
     creado_en: datetime
     actualizado_en: datetime
+    #: `None` en los de antes de tener usuarios (1.1).
+    creado_por: QuienLeer | None = None
 
 
 class CambioDeEstadoCrear(BaseModel):
-    """Lo que pide cada paso de la aprobación (A20). `por` es el nombre de
-    quien lo hace, a mano mientras no haya usuarios; el motivo es obligatorio
-    al observar y al volver a borrador (lo exige el servicio)."""
+    """Lo que pide cada paso de la aprobación (A20). Quién lo hace sale de la sesión (1.1): `por`
+    sigue aceptándose para no romper a quien todavía lo manda, pero **se ignora**. El motivo es
+    obligatorio al observar y al volver a borrador (lo exige el servicio)."""
 
-    por: str = Field(max_length=120)
+    por: str | None = Field(default=None, max_length=120)
     motivo: str | None = Field(default=None, max_length=1000)
 
 
@@ -116,7 +119,9 @@ class CambioDeEstadoLeer(BaseModel):
     id: int
     estado_anterior: str
     estado_nuevo: str
+    #: El nombre **de ese momento**: si después le cambian el nombre a la persona, no cambia.
     por: str
+    usuario_id: int | None = None
     motivo: str | None
     creado_en: datetime
 
@@ -155,16 +160,11 @@ class LineaCostoLeer(BaseModel):
 class LineaCostoOverride(BaseModel):
     """`CART-303`. `valor_override: null` revierte al valor calculado y
     limpia `override_por`/`override_en` — no hace falta un endpoint
-    aparte para "volver al calculado"."""
+    aparte para "volver al calculado". Quién lo cargó sale de la sesión
+    (1.1): `override_por` se acepta por compatibilidad y se ignora."""
 
     valor_override: Decimal | None = Field(ge=-_IMPORTE_MAX, le=_IMPORTE_MAX)
     override_por: str | None = None
-
-    @model_validator(mode="after")
-    def _override_por_es_obligatorio_si_hay_override(self) -> LineaCostoOverride:
-        if self.valor_override is not None and not self.override_por:
-            raise ValueError("Falta quién cargó el valor a mano.")
-        return self
 
 
 class LineaClienteActualizar(BaseModel):

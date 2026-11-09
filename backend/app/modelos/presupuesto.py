@@ -6,6 +6,7 @@ from __future__ import annotations
 import enum
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -13,6 +14,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 from .catalogo import Moneda
 from .tipos import Milimetros
+
+if TYPE_CHECKING:
+    from .usuario import Usuario
 
 
 class EstadoPresupuesto(str, enum.Enum):
@@ -95,7 +99,12 @@ class Presupuesto(Base):
     #: los ítems más IVA. Con un valor, todos los ítems se ajustan para
     #: sumar ese total; lo que se escribió a mano en cada línea no se pisa.
     total_fijado: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    #: Quién lo creó (1.1). `None` en los de antes de tener usuarios, y si la persona se borra.
+    creado_por_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id", ondelete="SET NULL"), default=None
+    )
 
+    creado_por: Mapped[Usuario | None] = relationship("Usuario", foreign_keys=[creado_por_id])
     cliente: Mapped[Cliente] = relationship(back_populates="presupuestos")
     lineas: Mapped[list[LineaCosto]] = relationship(
         back_populates="presupuesto", cascade="all, delete-orphan"
@@ -126,6 +135,11 @@ class CambioDeEstado(Base):
     estado_anterior: Mapped[str] = mapped_column(String(20))
     estado_nuevo: Mapped[str] = mapped_column(String(20))
     por: Mapped[str] = mapped_column(String(120))
+    #: Quién fue, con su usuario (1.1). `por` queda como el nombre **de ese momento**: si después
+    #: le cambian el nombre a la persona, el historial viejo no cambia. `None` en lo anterior.
+    usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id", ondelete="SET NULL"), default=None
+    )
     motivo: Mapped[str | None] = mapped_column(Text(), default=None)
 
     presupuesto: Mapped[Presupuesto] = relationship(back_populates="cambios_de_estado")

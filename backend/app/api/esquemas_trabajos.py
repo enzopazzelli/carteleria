@@ -10,6 +10,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 from ..services.nesting.models import RotacionPermitida
+from .esquemas_acceso import QuienLeer
 
 # --- Trabajos ------------------------------------------------------------
 
@@ -27,6 +28,8 @@ class TrabajoLeer(BaseModel):
     escala_a_mm: Decimal | None
     creado_en: datetime
     actualizado_en: datetime
+    #: `None` en los de antes de tener usuarios (1.1).
+    creado_por: QuienLeer | None = None
 
 
 # --- Piezas ----------------------------------------------------------------

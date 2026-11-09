@@ -18,12 +18,16 @@ from __future__ import annotations
 import enum
 from collections import Counter
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .tipos import Milimetros
+
+if TYPE_CHECKING:
+    from .usuario import Usuario
 
 
 class EstadoEjecucion(str, enum.Enum):
@@ -54,7 +58,12 @@ class Trabajo(Base):
     #: Sin default a propósito, igual que en `parsear_dxf`: adivinar la
     #: escala da un resultado catastróficamente equivocado y nada avisa.
     escala_a_mm: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    #: Quién lo creó (1.1). `None` en los de antes de tener usuarios, y si la persona se borra.
+    creado_por_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id", ondelete="SET NULL"), default=None
+    )
 
+    creado_por: Mapped[Usuario | None] = relationship("Usuario", foreign_keys=[creado_por_id])
     piezas: Mapped[list[Pieza]] = relationship(
         back_populates="trabajo", cascade="all, delete-orphan"
     )

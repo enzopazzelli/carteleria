@@ -313,7 +313,6 @@ function SeccionDesglose({ presupuestoId, editable }: { presupuestoId: number; e
       await override.mutateAsync({
         lineaId,
         valor: valor === "" ? null : valor,
-        overridePor: "Enzo",
       });
     } catch (e) {
       setError(falla(e, "No se pudo guardar el valor a mano."));
