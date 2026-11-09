@@ -41,6 +41,51 @@ def _el(motor, usuario: str) -> Usuario:
         return sesion.scalars(select(Usuario).where(Usuario.usuario == usuario)).one()
 
 
+@pytest.fixture
+def base_de_antes_de_los_usuarios(tmp_path, monkeypatch):
+    """Una base como la que tenía quien actualizó: en la versión anterior a los usuarios, sin su tabla."""
+    from alembic import command
+
+    from app import arranque, config
+
+    url = f"sqlite:///{tmp_path / 'vieja' / 'carteleria.db'}"
+    (tmp_path / "vieja").mkdir()
+    monkeypatch.setenv("DATABASE_URL", url)
+    monkeypatch.setattr(config, "DIRECTORIO_DATOS", tmp_path / "vieja")
+    command.upgrade(arranque._config(url), "f2c8a4d6e913")
+    return tmp_path / "vieja"
+
+
+def test_con_una_base_sin_la_tabla_de_usuarios_el_comando_la_pone_al_dia_y_crea_la_persona(
+    base_de_antes_de_los_usuarios, capsys
+):
+    # Pasó al actualizar: el comando falló con «no such table: usuarios» porque la migración
+    # solo se aplicaba al arrancar la app.
+    codigo = usuarios.main(["crear", "enzo", "--nombre", "Enzo", "--administrador", "--generar"])
+
+    salida = capsys.readouterr()
+    assert codigo == 0, salida.err
+    assert "se actualizó" in salida.out
+    assert any(p.name.startswith("respaldo-") for p in base_de_antes_de_los_usuarios.iterdir())
+    temporal = next(l.split(": ", 1)[1] for l in salida.out.splitlines() if l.startswith("Contraseña temporal: "))
+    motor = crear_motor(f"sqlite:///{base_de_antes_de_los_usuarios / 'carteleria.db'}")
+    try:
+        assert _entrar(motor, "enzo", temporal)[0].usuario == "enzo"
+    finally:
+        motor.dispose()
+
+
+def test_con_una_base_ya_al_dia_no_avisa_ni_hace_respaldos(motor, tmp_path, monkeypatch, capsys):
+    from app import config
+
+    monkeypatch.setattr(config, "DIRECTORIO_DATOS", tmp_path)
+
+    usuarios.main(["listar"])
+
+    assert "se actualizó" not in capsys.readouterr().out
+    assert not any(p.name.startswith("respaldo-") for p in tmp_path.iterdir())
+
+
 def test_crear_con_generar_imprime_la_contrasena_una_vez_y_con_ella_se_entra(motor, capsys):
     codigo = usuarios.main(["crear", "enzo", "--nombre", "Enzo", "--administrador", "--puede-aprobar", "--generar"])
 
