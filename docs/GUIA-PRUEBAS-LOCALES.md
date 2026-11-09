@@ -206,10 +206,10 @@ El PDF usa Source Sans 3, guardada en `backend/app/services/presupuesto/fuentes/
 Cuando hay que ver una pantalla o probar un cambio con datos de verdad, **no** se levanta contra la base real (`backend/local/carteleria.db`): se trabaja sobre una copia.
 
 1. **Mirar quién usa los puertos antes de levantar nada:** `curl -m 3 localhost:8000/trabajos` y `curl -m 3 localhost:5173/`. Si contestan, ya hay una app levantada, casi seguro la tuya: no la cierres ni le mandes pedidos. En Windows en castellano `netstat` dice «ESCUCHANDO», no «LISTENING», y un `grep LISTEN` no encuentra nada.
-2. **Copiar la base y sus DXF.** Con el respaldo de SQLite (`Connection.backup`), no copiando el archivo a mano: así no se pierde lo que está en el `-wal`. Las rutas de los DXF de cada trabajo son absolutas: hay que reescribirlas para que apunten a la copia, o borrar un trabajo en la copia borraría el DXF verdadero. Un guion local lo hace (`backend/local/herramientas-a17/copiar_base.py <nombre>`); `backend/local/` no se sube a git, así que cada persona tiene los suyos.
-3. **Levantar contra la copia:** desde `backend/`, `CARTELERIA_DATOS=<carpeta de la copia> python -m uvicorn app.api.app:app --port 8000`, y desde `frontend/`, `npm run dev`. Al arrancar, el backend aplica a la copia las migraciones que falten, con su propio respaldo.
+2. **Copiar la base y sus DXF:** desde `backend/`, `python scripts/copiar_base.py <nombre>` (con `--desde local/respaldo-…` para copiar un respaldo en lugar de la base real). Deja la copia en `local/copias/<nombre>/`. Usa el respaldo de SQLite, no copiar el archivo: así no se pierde lo que está en el `-wal`. Y reescribe las rutas de los DXF de cada trabajo, que son absolutas: sin eso, borrar un trabajo en la copia borraría el DXF verdadero. La base de origen se abre solo para leer, y el guion se niega a pisarla o a borrar una carpeta que no sea una copia.
+3. **Levantar contra la copia:** desde `backend/`, `CARTELERIA_DATOS=local/copias/<nombre> python -m uvicorn app.api.app:app --port 8000` (el guion de copiar lo imprime), y desde `frontend/`, `npm run dev`. Al arrancar, el backend aplica a la copia las migraciones que falten, con su propio respaldo.
 4. **Comprobar que la pantalla muestra lo de la copia** antes de tocar nada.
-5. **Al terminar:** cerrar solo los procesos propios (por su hora de inicio y su línea de comandos, no «lo que escuche en el 8000») y borrar la copia.
+5. **Al terminar:** cerrar solo los procesos propios (por su hora de inicio y su línea de comandos, no «lo que escuche en el 8000») y borrar `local/copias/<nombre>/`.
 6. **Antes de aplicar una migración a la base real,** respaldarla. La app también lo hace sola: deja una carpeta `respaldo-<fecha>-antes-de-<versión>/` en `backend/local/`.
 
 ### Las pruebas automáticas de A24 y A25
@@ -223,5 +223,5 @@ python -m pytest -q tests/test_anidado_que_cuenta.py tests/test_regla_unica_del_
 ```
 
 - Si el disco C: se queda sin espacio, las pruebas fallan con «database or disk is full»: correrlas con `--basetemp=<carpeta en otro disco>`.
-- **Todo cambio del lector del DXF** se compara con los 9 dibujos de prueba antes y después (`backend/local/herramientas-a17/lectura_del_corpus.py comparar`, que dice «sin diferencias» o lista lo que cambió). Esos dibujos son en parte de un formato viejo, con la cotización y las chapas dibujadas adentro: no dar peso a lo que cambie solo ese texto.
+- **Todo cambio del lector del DXF** se compara con los 9 dibujos de prueba antes y después. Desde `backend/`: `python -X utf8 scripts/lectura_del_corpus.py guardar` saca la foto, y `... comparar` dice «sin diferencias» o lista lo que cambió. Los dibujos no están en el repo (son de clientes): se buscan en `--modelos`, en la variable `CARTELERIA_MODELOS` o en `modelos/` en la raíz del repo, y los que falten se saltean. La foto queda en `local/lectura-del-corpus.json`. Esos dibujos son en parte de un formato viejo, con la cotización y las chapas dibujadas adentro: no dar peso a lo que cambie solo ese texto.
 
