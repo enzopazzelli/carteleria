@@ -5,9 +5,11 @@ shapely==2.1.2
 
 # API y persistencia (docs/historico/PLAN-SLICE-VERTICAL.md).
 # La base es SQLite en local y PostgreSQL en producción: se cambia con
-# DATABASE_URL, no hay driver de PostgreSQL acá todavía porque no hace
-# falta para desarrollar. Cuando exista el VPS se suma `psycopg[binary]`.
+# DATABASE_URL. El driver de PostgreSQL (`psycopg`) se instala siempre, aunque
+# en local no se use: así lo que corre el CI y Docker es lo mismo que lo de
+# todos los días (1.1, docs/plan/1.1-servidor-y-login/plan.md).
 fastapi==0.120.0
+psycopg[binary]==3.2.9
 uvicorn==0.38.0
 sqlalchemy==2.0.41
 alembic==1.19.2

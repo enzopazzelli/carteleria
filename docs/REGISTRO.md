@@ -80,6 +80,7 @@ Cosas que damos por ciertas sin haberlas confirmado. Un supuesto que se cae pued
 | **SUP-39** | El precio de una línea del catálogo se copia al agregarla y no cambia solo cuando cambia la planilla (`historico/A23-materiales-en-el-presupuesto/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: igual que los materiales del anidado (A19) | Un presupuesto armado con precios viejos sigue con ellos aunque la planilla suba |
 | **SUP-40** | Un artículo sin margen de venta en la planilla (66 de 288) usa el margen general del presupuesto (`historico/A23-materiales-en-el-presupuesto/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: es lo que ya pasa con lo que no tiene margen | Si el margen general está vacío, el artículo queda sin precio sugerido y hay que ponerle un precio a mano |
 | **SUP-41** | Con dos proveedores para un mismo código, la línea toma el que cuenta (el último que cambió de precio, o el marcado con «Usar este») (`historico/A23-materiales-en-el-presupuesto/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: es la regla de A18 | Se cotiza con un proveedor distinto del que se le compra a la empresa en ese momento |
+| **SUP-42** | Hasta tres personas usan el sistema a la vez, y como mucho tres anidados corren juntos (`plan/1.1-servidor-y-login/diseno.md` §2) | 🟢 | Enzo, 2026-11-09 | El servidor quedaría corto: con más de tres a la vez hay que alquilar uno con más procesadores, y con muchos más, separar el cálculo de anidados en otro servidor |
 
 > **SUP-04 y SUP-08 son los dos que más pueden doler.** El primero reordena el roadmap; el segundo invalida los cálculos del motor. Los dos se responden en el encuentro 2 del relevamiento ([§6](#6-guion-de-relevamiento)).
 
@@ -151,6 +152,19 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 | **PAR-58** | Tope de tramos del seccionado: una chapa con la que la pieza saldría en más tramos no se acepta, y un aviso pide una más grande. Antes de buscar, una sola grilla que dé más del doble ya frena | 50 | tramos | Sistema | Config | `historico/A17-pulir-lo-suelto/diseno.md §4.4.5` | 🟡 provisorio — propuesta del diseño de A17 (2026-10-26). En `backend/app/config.py` (`TOPE_DE_TRAMOS`, variable `CARTELERIA_TOPE_TRAMOS`) |
 | **PAR-59** | Cuánto se puede apartar el área de la medida leída de la descripción de los m² que dice la planilla (factor de conversión) antes de mandar el artículo a «Hay que mirarlo» | 5 | % | Sistema | Config | `historico/A18-pantalla-de-materiales/diseno.md §5.2` | 🟡 provisorio — propuesta del diseño de A18 (2026-10-30). En la planilla real, la planilla redondea hasta 1,5 % (MDF de 1,83 × 3,66: 6,70 m² contra 6,6); una medida mal leída, como la de `CHA0013`, se aparta 72 % |
 | **PAR-60** | Familias cuyas medidas usa la lectura del DXF: para reconocer hojas, sugerir la escala y decidir qué no entra en ninguna chapa. Las demás (MDF, ACM, PVC, Polyfan, Metalex…) se venden pero no cambian cómo se lee un dibujo | Chapas, Acrílicos, Policarbonato | familias | Sistema | Config | `historico/A18-pantalla-de-materiales/plan.md`, «Desvíos» | ✅ decidido por Enzo el 2026-11-06, al ver que MDF de 1830 × 2750 y 1830 × 3660 y ACM de 5000 × 1500 hacían «entrar» a tableros de presentación y descartaban sus letras |
+
+### 2.7 Usuarios, sesión y servidor
+
+| ID | Parámetro | Default provisorio | Unidad | Ámbito | Dónde vive | Historia | Estado |
+|---|---|---|---|---|---|---|---|
+| **PAR-62** | Cuánto dura una sesión sin uso: pasado este tiempo sin actividad, hay que volver a entrar | 12 | horas | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
+| **PAR-63** | Cuánto dura una sesión abierta con «mantener la sesión abierta en este dispositivo» (pensada para el celular del dueño) | 30 | días | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
+| **PAR-64** | Largo mínimo de una contraseña | 10 | caracteres | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
+| **PAR-65** | Intentos fallidos seguidos de entrar con un usuario antes de bloquear su cuenta | 5 | intentos | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
+| **PAR-66** | Cuánto dura el bloqueo de una cuenta después de esos intentos | 15 | minutos | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
+| **PAR-67** | Cuántos días de copias diarias se guardan en el almacenamiento aparte del servidor | 30 | días | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.11 | 🟢 decidido por Enzo el 2026-11-09 |
+| **PAR-68** | A qué hora se hace la copia diaria | 03:00 | hora de Argentina | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.11 | 🟡 provisorio — propuesto el 2026-11-09. Una hora en que nadie usa el sistema |
+| **PAR-69** | Cuántas horas sin una copia buena antes de que el estado de salud diga «backup atrasado» | 26 | horas | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.11 | 🟡 provisorio — propuesto el 2026-11-09. Un día más dos horas de margen |
 
 ### 2.4 Parámetros del dashboard
 
@@ -264,7 +278,7 @@ Qué necesitamos, de quién, y qué se frena si no llega.
 | **T-03** | Cuenta de SendGrid o equivalente | S3 |
 | **T-04** | Cuenta de Replicate con crédito | S7 |
 | **T-05** | Repositorio Git creado y acceso para ambos | S1 |
-| **T-06** | Definición de dónde se alojan los backups | S4 |
+| **T-06** | Definición de dónde se alojan los backups | S4. **Qué se hace, decidido el 2026-11-09:** a un almacenamiento en la nube aparte del servidor (`PAR-67`); falta elegir cuál, en la fase B de 1.1 |
 
 ---
 
@@ -378,7 +392,7 @@ Desde el 2026-10-05, «Se cierra en» nombra el paso de [`plan/PLAN-MAESTRO.md`]
 | **D-05** | Proveedor de IA para el retoque del fotomontaje | Prueba de calidad y costo por imagen | 3.2 | Replicate |
 | **D-06** | Estructura del modelo de agregados del dashboard | `P-19` + `CART-801` | 3.1 | — |
 | **D-07** | ¿El presupuesto vencido se reajusta por inflación o solo se marca vencido? | Conversación con el dueño | 2.4 | `SUP-13` = solo se marca vencido |
-| **D-08** | Política de retención y backup de archivos generados | Volumen estimado tras H1 | 1.1 | Backup diario completo |
+| **D-08** | Política de retención y backup de archivos generados | Volumen estimado tras H1 | 1.1 | **Decidida por Enzo el 2026-11-09, en el diseño de 1.1 (se cierra al construirla):** una copia diaria, cifrada, de la base y de los archivos generados, a un almacenamiento en la nube aparte del servidor, 30 días (`PAR-67`) |
 | **D-10** | ¿Cómo se arma `costo_unidad_venta` a partir de `%COSTO1`, `%COSTO2` y los 4 márgenes de venta de `COTIZADOR`? | Conversación con administración | 2.2 | Se importa tal cual el valor que la planilla ya trae calculado (`backend/app/modelos/catalogo.py`), no se recalcula |
 | **D-09** | ¿F8 se queda solo-lectura sobre agregados (`ADR-06`) o crece para absorber también las pantallas de escritura del dashboard actual (control de taller, movimientos de stock, aprobación de cotizaciones, edición de permisos)? | Revisión de alcance con el cliente y con Vale, ver `docs/cliente/DASHBOARD-VISTAS.md §3` | Antes de 3.1 | Prototipo de UI muestra las 9 vistas completas para validar diseño; `ADR-06` sigue vigente para lo que se construya en serio |
 | **D-11** | ¿La pantalla de Piezas del frontend del cotizador acepta `.cdr` directo (vía `libcdr`, ver `SPIKE-CDR.md`) o exige un `.dxf` ya exportado a mano desde Corel? | `SUP-05`/`B-15` (compromiso del equipo de diseño con una convención de capas) — `B-08`/`SPIKE-CDR.md` ya prueban que `libcdr` lee el archivo end-to-end, pero no resuelven si conserva capas, que es lo que de verdad falta | Encuentro 3 de relevamiento (diseño), después de `SUP-05` | El frontend exige `.dxf`; un `.cdr` se rechaza con mensaje explícito ("exportá el DXF desde Corel primero"), no se intenta parsear |
