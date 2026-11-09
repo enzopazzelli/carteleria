@@ -1,6 +1,6 @@
 # A24 · Recordar las correcciones de la lectura — diseño
 
-> **Estado:** ✅ aprobado por Enzo el 2026-11-09. Construido en la rama `feat/a24-recordar-correcciones` (ver [`plan.md`](plan.md)); **todavía sin fusionar a `main`**, a la espera de su revisión.
+> **Estado:** **cerrado el 2026-11-09.** Construido ese día y en `main` desde entonces ([PR #27](https://github.com/enzopazzelli/carteleria/pull/27); lo fusioné yo a pedido de Enzo). Lo que el código precisó del diseño está en [`plan.md`](plan.md): las formas se guardan sin el prefijo del trabajo (§3.2). La revisión de código cambió tres cosas, anotadas en la bitácora del 2026-11-09. Esta carpeta pasó de `docs/plan/` a `docs/historico/`, y lo que quedó pendiente se sigue en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md).
 >
 > **De dónde sale.** [2.1b](../../historico/2.1b-corregir-la-lectura/diseno.md) dejó corregir la lectura del dibujo con clics, pero dejó afuera recordar esas correcciones: volver a cargar el mismo dibujo empieza de cero. Está en [`PLAN-MAESTRO.md §7`](../../plan/PLAN-MAESTRO.md) como lo primero de «se puede construir ya».
 >

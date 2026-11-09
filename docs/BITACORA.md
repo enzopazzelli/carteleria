@@ -64,7 +64,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Qué se hizo
 
-Un trabajo, en la rama `feat/a24-recordar-correcciones`, con su diseño y su plan en [`docs/plan/A24-recordar-correcciones/`](plan/A24-recordar-correcciones/diseno.md). **Sin fusionar a `main`**: falta que Enzo lo revise y lo apruebe.
+Un trabajo, con su diseño y su plan en [`historico/A24-recordar-correcciones/`](historico/A24-recordar-correcciones/diseno.md). En `main` desde el 2026-11-09 ([PR #27](https://github.com/enzopazzelli/carteleria/pull/27), lo fusioné yo a pedido de Enzo).
 
 - **Guardar:** al cargar un dibujo con correcciones (esta forma se corta, esta no va), se guardan en una tabla nueva, por la huella del contenido del archivo y no por su nombre.
 - **Aplicar:** al abrir la lectura de un archivo que ya se cargó con correcciones, aparecen solas, también en otro trabajo. Un aviso dice cuántas se aplicaron, y un botón, «Empezar de cero», las descarta.
@@ -85,7 +85,8 @@ Sin cambios: no hay parámetros ni supuestos numéricos nuevos.
 
 ### Pendiente
 
-- **Enzo:** revisar la rama y aprobarla. Antes de fusionarla, respaldar la base real: la migración (`f2c8a4d6e913`) se aplica sola al arrancar la app.
+- **Hecho en la base real, el 2026-11-09:** la migración `f2c8a4d6e913`, con un respaldo manual (`respaldo-2026-11-09-antes-de-f2c8a4d6e913`, idéntico al original: 630 filas en 17 tablas) y el automático de la app (`…-2`). La tabla nueva quedó vacía y los 2 trabajos, intactos.
+- **El CI del PR** falló dos veces por una incidencia de GitHub Actions («Incident with Actions», `major_outage`): el workflow no llegó a arrancar. Disparado a mano sobre la misma rama (`6598a08`), el trabajo `backend` dio verde. Se fusionó con esa evidencia, avisándole a Enzo.
 - La unión de formas no se recuerda (se decide cada vez, mirando el dibujo).
 - Siguen en «se puede construir ya»: una sola regla de qué anidado cuenta para el presupuesto, cambiar cómo decide el lector qué es pieza y qué es agujero, e importar varios diseños a la vez.
 
