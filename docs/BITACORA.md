@@ -58,6 +58,35 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-09 — Medido el arreglo del lector y decidido no construir la importación de varios diseños
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+- **Se midió el arreglo del «agujero adentro de dos formas que se pisan»** (la primera de las tres fallas conocidas del lector), con dos reglas, contra los 9 dibujos de prueba, con imágenes de hoy contra la candidata (`backend/local/herramientas-lector-2026-11-09/`, fuera de git):
+  - **Contar la cadena más larga de formas que se contienen** arregla el centro de una «D» pero rompe el hueco de una «A» (`Corporeas`) y suma 12 formas diminutas en `strat`.
+  - **Contar como un solo nivel las formas que se pisan sin contenerse** arregla los 6 tornillos de `strat` y el centro de la «D» sin romper la «A»; queda 1 forma diminuta nueva en `strat`. Es un cambio de una línea en el clasificador.
+  - `Complejo` y otros 5 dibujos se leen idéntico con las dos reglas. La única diferencia grande es el texto del cuadro de la cotización de `Muestra Vectores` (+152 piezas).
+- **Se anotó** en el plan maestro (§7) y en el README.
+
+### Qué se decidió
+
+- **No tocar el lector** (Enzo): los archivos de muestra son de un formato viejo, de cuando los diseñadores anidaban en Corel y escribían en el mismo archivo la cotización, las chapas horizontales y otras referencias. Desde que se pidió que solo manden el diseño, casi no hay casos.
+- **La importación de varios diseños no se construye** (Enzo): el propósito de la app es cargar **un diseño por trabajo**, y los grupos de chapas dentro del trabajo cubren los materiales distintos. Un archivo con dos diseños, como el de Parador (con el de un consultorio odontológico), se resuelve marcando «no va» el que sobra. Queda el camino por la API (`/importaciones/dxf/...`), sin pantalla.
+- **Un dato mío que resultó falso:** antes de medir dije que el tornillo se veía en `Complejo`. No: se lee idéntico.
+
+### Cambios en el registro
+
+Sin cambios.
+
+### Pendiente
+
+- Ya no queda nada para construir sin esperar a nadie. Lo que sigue es de tu lado (`CHA0016` y `POL0006`, medir una hoja del PDF, el código repetido de la planilla, probar A24 con la base real), del dueño (el × 6, cobrar por lo usado, el retazo más chico, CUIT y condiciones), de otros (el aro de `Complejo`, la veta, Vale) o de más adelante (usuarios, servidor, mail, WhatsApp, fotomontaje).
+- Las otras dos fallas del lector (el hueco pegado al borde y la franja enganchada) no se midieron y quedan marcadas como estaban.
+
+---
+
 ## 2026-11-09 — Una sola regla de qué anidado cuenta para el presupuesto (A25)
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —

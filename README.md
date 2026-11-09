@@ -78,6 +78,21 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 - `CHA0013` quedó con la medida a mano, 1250 × 2500, confirmada por Enzo (el 0,7 es el espesor).
 
 **Ya está en `main`:**
+- **Una sola regla de qué anidado cuenta para el presupuesto (A25), desde el 2026-11-09.**
+  - **Para qué:** que el costeo, la tarjeta del inicio, el PDF y Chapas digan lo mismo de un grupo. Antes cada uno lo decidía por su cuenta, y solo el costeo notaba si la chapa cambiaba después de anidar.
+  - **Cómo funciona:** un solo módulo del servidor (`app/anidado_que_cuenta.py`) dice cuál anidado del grupo se muestra, si se cobra y, si no, por qué: no tiene material, no hay anidado, no tiene piezas, las piezas cambiaron o la chapa cambió. Se muestra aunque no se cobre: la miniatura, el PDF y Chapas lo siguen dibujando, con su aviso.
+  - **Lo que se nota:** si le cambiás la chapa a un grupo ya anidado, la tarjeta del inicio dice «Falta volver a anidar», el PDF lleva el aviso en rojo, y Chapas y Anidado dicen el motivo («La chapa cambió después de este anidado: no se cobra»). Un grupo sin material tampoco se da por terminado.
+  - **Una guardiana** (`tests/test_regla_unica_del_anidado.py`) falla, con el archivo y la línea, si otro módulo vuelve a decidirlo por su cuenta.
+  - **Todavía no:** limpiar un detalle de antes, que se conserva: con la chapa cambiada el costeo da dos avisos seguidos («el material o formato cambió…» y «todavía no tiene un anidado terminado»).
+
+  Ver [`docs/historico/A25-regla-unica-del-anidado/`](docs/historico/A25-regla-unica-del-anidado/diseno.md).
+- **Recordar las correcciones de la lectura (A24), desde el 2026-11-09.**
+  - **Para qué:** que lo que marcaste sobre un dibujo (esta forma se corta, esta no va) no se pierda si volvés a cargar el mismo archivo.
+  - **Cómo funciona:** al apretar «Cargar» se guardan las correcciones, por la huella del contenido del archivo y no por su nombre. Al abrir «Ver cómo se lee» con el mismo archivo, aunque sea en otro trabajo, el dibujo aparece ya corregido, con un aviso («Se aplicó 1 corrección de la vez anterior») y un botón «Empezar de cero». Si marcás algo a mano, el aviso se esconde. Cargar sin ninguna corrección borra lo guardado de ese archivo.
+  - **Lo que no recuerda:** la unión de formas («Unir las formas que se pisan»), que se decide cada vez; y un dibujo cambiado, aunque sea en un milímetro, no recibe nada.
+  - **En la base:** una tabla nueva (migración `f2c8a4d6e913`, aplicada en la base real el 2026-11-09, con respaldo).
+
+  Ver [`docs/historico/A24-recordar-correcciones/`](docs/historico/A24-recordar-correcciones/diseno.md).
 - **Agregar materiales del catálogo al presupuesto (A23), desde el 2026-11-08.**
   - **Para qué:** un cartel lleva más que la chapa que se anida: corrugado, vinilos, pintura, tornillos, iluminación, y también diseño, montaje y traslado. Antes se escribían a mano, con descripción, cantidad y precio.
   - **Cómo se usa:** en el Costeo, en «Líneas por rubro», el botón **«Agregar del catálogo»** abre un buscador de los 288 artículos de la planilla: por texto, sin distinguir tildes ni mayúsculas, y con un filtro por categoría. Se elige el artículo, se escribe la cantidad (en m², metros, unidades o litros, según el artículo) y se agrega.
@@ -170,10 +185,10 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 
 Plataforma a medida para una empresa de cartelería de gran formato en chapa. Automatiza el armado de presupuestos, calcula cómo anidar las piezas sobre la plancha para desperdiciar lo menos posible, gestiona el circuito de autorización del dueño y envía el presupuesto al cliente con el fotomontaje del cartel sobre el frente del local.
 
-**Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**: lectura del DXF, anidado con Sparrow, costeo y PDF del presupuesto · faltan el login, la aprobación y el envío — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) y, arriba, «En qué estamos»
+**Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**: lectura del DXF, anidado con Sparrow, costeo y PDF del presupuesto · faltan el login, el aviso al dueño y el envío al cliente — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) y, arriba, «En qué estamos»
 **Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md)
 **Equipo:** Enzo (todo lo que no es el motor) · Vale (motor de anidado)
-**Última actualización:** 2026-11-07 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
+**Última actualización:** 2026-11-09 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 
@@ -248,6 +263,8 @@ Abrí **exactamente** `http://localhost:5173` (no `127.0.0.1`, no otro puerto): 
 | 11 | **Costeo** | Escribí tu nombre y apretá «Mandar a aprobar»; después «Aprobar» u «Observar» (con un motivo) | El estado cambia y queda el historial. Un presupuesto pendiente o aprobado queda bloqueado hasta que lo vuelvas a borrador |
 | 12 | **Costeo** | «Descargar PDF» | El PDF del cliente, sin costos ni márgenes. Con la marca de la empresa si existe `backend/local/empresa/` (ver abajo); sin esa carpeta, sale sin logo ni pie |
 | 13 | **Inicio** | Volvé con «Inicio» en la barra | La tarjeta del trabajo, con la miniatura pintada por chapa, los cuatro pasos en verde y el presupuesto. En «Trabajos» están todas, con un buscador; el «⋯» de una tarjeta borra el trabajo, con confirmación |
+| 14 | **Piezas** | Cargá un DXF marcando una forma como «no va» y apretá «Cargar»; en otro trabajo elegí el mismo archivo y apretá «Ver cómo se lee» | El dibujo aparece con esa forma ya marcada y el aviso «Se aplicó 1 corrección de la vez anterior», con «Empezar de cero». Si tocás otra forma, el aviso se esconde |
+| 15 | **Grupos** | Con un grupo ya anidado, cambiale la chapa al grupo (en Grupos, o en Costeo con «Cambiar material o comparar formatos») y volvé a **Inicio** | La tarjeta dice «Falta volver a anidar»; Chapas y el resumen de Anidado dicen «La chapa cambió después de este anidado: no se cobra»; el PDF lo avisa en rojo; el costeo no lo cobra |
 
 ### Qué tener en cuenta (no son errores)
 
