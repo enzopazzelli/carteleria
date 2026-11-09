@@ -23,6 +23,7 @@ from .presupuesto import (
     Presupuesto,
     RubroLineaCosto,
 )
+from .usuario import SesionDeUsuario, Usuario
 from .trabajo import (
     Colocacion,
     CorreccionesDelDibujo,
@@ -55,5 +56,7 @@ __all__ = [
     "Pieza",
     "Presupuesto",
     "RubroLineaCosto",
+    "SesionDeUsuario",
     "Trabajo",
+    "Usuario",
 ]

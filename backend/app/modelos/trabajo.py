@@ -54,6 +54,10 @@ class Trabajo(Base):
     #: Sin default a propósito, igual que en `parsear_dxf`: adivinar la
     #: escala da un resultado catastróficamente equivocado y nada avisa.
     escala_a_mm: Mapped[Decimal | None] = mapped_column(Milimetros(), default=None)
+    #: Quién lo creó (1.1). `None` en los de antes de tener usuarios, y si la persona se borra.
+    creado_por_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id", ondelete="SET NULL"), default=None
+    )
 
     piezas: Mapped[list[Pieza]] = relationship(
         back_populates="trabajo", cascade="all, delete-orphan"
