@@ -27,6 +27,7 @@ from ..registro import configurar_registro, registro
 from . import rutas_nesting
 from .dependencias import obtener_sesion
 from .manejadores import registrar_manejadores
+from .rutas_acceso import router as router_acceso
 from .rutas_ajuste import router as router_ajuste
 from .rutas_catalogo import router as router_catalogo
 from .rutas_comparaciones import router as router_comparaciones
@@ -93,6 +94,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Entrar y el estado de salud son públicas; el resto exigirá sesión (1.1, tarea 6).
+app.include_router(router_acceso)
 app.include_router(router_catalogo)
 app.include_router(router_trabajos)
 app.include_router(router_importacion)

@@ -83,6 +83,13 @@ FAMILIAS_PARA_LEER_EL_DXF = tuple(
     for familia in os.getenv("CARTELERIA_FAMILIAS_PARA_LEER_EL_DXF", "Chapas,Acrílicos,Policarbonato").split(",")
 )
 
+#: Donde el contenedor de copias deja `ultimo_backup.json` cuando una copia salió bien, y donde `/salud`
+#: lo lee (1.1). En desarrollo no hay copias: sin esa carpeta no es un problema.
+DIRECTORIO_ESTADO = Path(os.getenv("CARTELERIA_ESTADO", DIRECTORIO_DATOS / "estado"))
+#: `PAR-69` (`docs/REGISTRO.md`): pasadas tantas horas sin una copia buena, `/salud` dice «backup atrasado».
+BACKUP_HORAS_MAXIMAS = int(os.getenv("CARTELERIA_BACKUP_HORAS_MAXIMAS", "26"))
+
+
 def en_produccion() -> bool:
     """`CARTELERIA_ENTORNO=produccion`: la cookie de sesión va `Secure` y no hay documentación de la API
     abierta (1.1). Se lee en cada llamada y no al importar, para poder cambiarlo en las pruebas."""
