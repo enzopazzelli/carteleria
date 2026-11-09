@@ -37,7 +37,7 @@ export default function Entrar() {
   return (
     <main className="min-h-screen bg-paper text-ink flex items-center justify-center px-4">
       <form onSubmit={alEnviar} className="w-full max-w-sm border border-line rounded p-6 space-y-4">
-        <h1 className="text-xl font-semibold">Cotizador</h1>
+        <h1 className="font-display italic font-extrabold uppercase tracking-wide text-2xl">Cotizador</h1>
         <p className="text-sm text-ink/70">Entrá con tu usuario y tu contraseña.</p>
 
         {(error || errorDeConexion) && <Mensaje variante="error" que={(error ?? errorDeConexion)!} />}
@@ -69,7 +69,7 @@ export default function Entrar() {
         </label>
         <button
           type="submit"
-          className="w-full bg-cut text-paper rounded px-3 py-2 text-sm disabled:opacity-50"
+          className="w-full bg-cut text-negro rounded px-3 py-2 text-sm disabled:opacity-50"
           disabled={entrando || cargando || !usuario.trim() || !contrasena}
         >
           Entrar

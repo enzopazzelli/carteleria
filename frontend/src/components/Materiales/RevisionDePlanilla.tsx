@@ -183,10 +183,10 @@ export default function RevisionDePlanilla({ revision, alCancelar, alTerminar }:
               <td className={CELDA}>{c.proveedor}</td>
               <td className={`${NUMERO} text-ink/60`}>{pesos(c.antes)}</td>
               <td className={NUMERO}>{pesos(c.ahora)}</td>
-              <td className={`${NUMERO} ${cambio === null ? "" : cambio.sube ? "text-conflict" : "text-cut"}`}>{cambio?.texto ?? "—"}</td>
+              <td className={`${NUMERO} ${cambio === null ? "" : cambio.sube ? "text-conflict" : "text-cuttext"}`}>{cambio?.texto ?? "—"}</td>
               <td className={`${CELDA} text-xs`}>
                 {c.pasa_a_contar && (
-                  <span className="inline-block rounded border border-cut/40 bg-cut/10 px-1 text-cut">pasa a ser el de por defecto</span>
+                  <span className="inline-block rounded border border-cut/40 bg-cut/10 px-1 text-cuttext">pasa a ser el de por defecto</span>
                 )}
                 {c.en_dolares && <span className="ml-1 text-ink/60">{cambioElDolar ? "en USD: cambió el dólar" : "en USD"}</span>}
               </td>
@@ -303,7 +303,7 @@ export default function RevisionDePlanilla({ revision, alCancelar, alTerminar }:
           </button>
           <button
             type="button"
-            className="bg-cut text-paper rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+            className="bg-cut text-negro rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50"
             onClick={() => void alAplicar()}
             disabled={aplicar.isPending}
           >

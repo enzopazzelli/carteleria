@@ -349,7 +349,7 @@ export default function LecturaPanel({
 
       <div className="flex gap-2">
         <button
-          className="bg-cut text-paper rounded px-3 py-1 text-sm disabled:opacity-50"
+          className="bg-cut text-negro rounded px-3 py-1 text-sm disabled:opacity-50"
           disabled={cargando || leyendo || !sePuedeCargar(leida)}
           onClick={alCargar}
         >

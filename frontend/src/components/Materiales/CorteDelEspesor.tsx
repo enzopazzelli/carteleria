@@ -113,7 +113,7 @@ export default function CorteDelEspesor({ espesor, todos }: CorteDelEspesorProps
         </label>
         <button
           type="button"
-          className="bg-cut text-paper rounded px-3 py-1 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          className="bg-cut text-negro rounded px-3 py-1 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
           disabled={guardar.isPending || sinCambios(campos, corte)}
           onClick={() => void alGuardar([espesor])}
         >

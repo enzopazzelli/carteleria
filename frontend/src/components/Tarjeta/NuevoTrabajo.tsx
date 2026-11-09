@@ -37,7 +37,7 @@ export default function NuevoTrabajo() {
       />
       <button
         type="submit"
-        className="bg-cut text-paper rounded px-4 py-2 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cut"
+        className="bg-cut text-negro rounded px-4 py-2 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cut"
         disabled={crearTrabajo.isPending || !nombre.trim()}
       >
         Crear y cargar el DXF

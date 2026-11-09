@@ -78,7 +78,7 @@ export default function MiCuenta() {
           Repetí la contraseña nueva
           <input className={CAMPO} type="password" value={repetida} autoComplete="new-password" onChange={(e) => setRepetida(e.target.value)} />
         </label>
-        <button type="submit" className="bg-cut text-paper rounded px-3 py-1 text-sm disabled:opacity-50" disabled={guardando}>
+        <button type="submit" className="bg-cut text-negro rounded px-3 py-1 text-sm disabled:opacity-50" disabled={guardando}>
           Cambiar la contraseña
         </button>
       </form>

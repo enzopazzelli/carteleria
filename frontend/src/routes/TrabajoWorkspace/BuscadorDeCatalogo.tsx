@@ -121,7 +121,7 @@ export default function BuscadorDeCatalogo({ presupuestoId }: { presupuestoId: n
         </button>
       </div>
 
-      {agregado && <p className="text-sm text-cut mb-2">{agregado}</p>}
+      {agregado && <p className="text-sm text-cuttext mb-2">{agregado}</p>}
       {error && (
         <div className="mb-2">
           <Mensaje variante="error" que={error} />
@@ -175,7 +175,7 @@ export default function BuscadorDeCatalogo({ presupuestoId }: { presupuestoId: n
           </label>
           <button
             type="button"
-            className="bg-cut text-paper rounded px-3 py-1 disabled:opacity-50"
+            className="bg-cut text-negro rounded px-3 py-1 disabled:opacity-50"
             disabled={agregar.isPending}
             onClick={() => void alAgregar()}
           >

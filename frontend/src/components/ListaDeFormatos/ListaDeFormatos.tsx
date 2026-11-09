@@ -46,7 +46,7 @@ export default function ListaDeFormatos({
   const todasVisiblesTildadas = visibles.length > 0 && visibles.every((f) => tildados.includes(f.formato.id));
   const algunaVisibleTildada = visibles.some((f) => tildados.includes(f.formato.id));
   const boton = (activo: boolean) =>
-    `border rounded px-2 py-0.5 text-xs ${activo ? "bg-cut text-paper border-cut" : "border-line hover:bg-line/40"}`;
+    `border rounded px-2 py-0.5 text-xs ${activo ? "bg-cut text-negro border-cut" : "border-line hover:bg-line/40"}`;
 
   async function alAgregarRetazo(formato: Formato) {
     setError(null);

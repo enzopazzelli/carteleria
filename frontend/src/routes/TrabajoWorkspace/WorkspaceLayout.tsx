@@ -41,7 +41,7 @@ export default function WorkspaceLayout() {
               key={etapa.path}
               to={`/trabajos/${id}/${etapa.path}`}
               className={({ isActive }) =>
-                `rounded px-3 py-2 text-sm ${isActive ? "bg-cut text-paper" : "hover:bg-line/40"}`
+                `rounded px-3 py-2 text-sm ${isActive ? "bg-cut text-negro" : "hover:bg-line/40"}`
               }
             >
               <span className="mr-2">{tieneDatos[etapa.path] ? "●" : "○"}</span>

@@ -348,7 +348,7 @@ function PiezasDelTrabajo() {
         {archivoActual && !lecturaVigente && (
           <div className="mt-2">
             <button
-              className="bg-cut text-paper rounded px-3 py-1 text-sm disabled:opacity-50"
+              className="bg-cut text-negro rounded px-3 py-1 text-sm disabled:opacity-50"
               disabled={escala === null || leerDxf.isPending}
               onClick={alVerLectura}
             >

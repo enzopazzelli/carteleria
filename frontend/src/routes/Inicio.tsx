@@ -43,7 +43,7 @@ function UltimosPresupuestos({ resumen }: { resumen: ResumenDelInicio }) {
         ))}
       </ul>
       <p className="text-xs text-ink/60 mt-2">{cuantos(resumen.total_presupuestos, "presupuesto", "presupuestos")} en total</p>
-      <Link to="/presupuestos" className="inline-block mt-2 text-sm underline hover:text-cut">
+      <Link to="/presupuestos" className="inline-block mt-2 text-sm underline hover:text-cuttext">
         Ver todos
       </Link>
       {error && (
@@ -56,7 +56,7 @@ function UltimosPresupuestos({ resumen }: { resumen: ResumenDelInicio }) {
 }
 
 const VER_MATERIALES = (
-  <Link to="/materiales" className="inline-block mt-3 text-sm underline hover:text-cut">
+  <Link to="/materiales" className="inline-block mt-3 text-sm underline hover:text-cuttext">
     Ver materiales
   </Link>
 );
@@ -123,7 +123,7 @@ export default function Inicio() {
           ))}
         </div>
         {(tarjetas.data?.length ?? 0) > TARJETAS_EN_EL_INICIO && (
-          <Link to="/trabajos" className="inline-block mt-4 text-sm underline hover:text-cut">
+          <Link to="/trabajos" className="inline-block mt-4 text-sm underline hover:text-cuttext">
             Ver todos los trabajos
           </Link>
         )}

@@ -233,7 +233,7 @@ function GruposDelTrabajo() {
           value={nombreNuevoGrupo}
           onChange={(e) => setNombreNuevoGrupo(e.target.value)}
         />
-        <button className="bg-cut text-paper rounded px-4 py-2" onClick={alCrearGrupo}>
+        <button className="bg-cut text-negro rounded px-4 py-2" onClick={alCrearGrupo}>
           Nuevo grupo
         </button>
       </div>
@@ -277,7 +277,7 @@ function GruposDelTrabajo() {
               ))}
             </select>
             <button
-              className="bg-cut text-paper rounded px-3 py-1 disabled:opacity-50"
+              className="bg-cut text-negro rounded px-3 py-1 disabled:opacity-50"
               disabled={!grupoDestino || seleccionadas.size === 0 || asignarPieza.isPending}
               onClick={alMoverSeleccionadas}
             >
@@ -394,7 +394,7 @@ function GruposDelTrabajo() {
                 />
               )}
               <button
-                className="bg-cut text-paper rounded px-3 py-1 text-sm mb-3"
+                className="bg-cut text-negro rounded px-3 py-1 text-sm mb-3"
                 disabled={candidatos.length < 2 || comparando || cargando || !!errorCatalogo}
                 onClick={() => alComparar(grupo.id)}
               >

@@ -183,7 +183,7 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
           Chapa: <strong>{elegida ? etiqueta(elegida) : "ninguna elegida"}</strong>
         </span>
         <button
-          className="bg-cut text-paper rounded px-3 py-1 disabled:opacity-50"
+          className="bg-cut text-negro rounded px-3 py-1 disabled:opacity-50"
           disabled={formatoId === null || calculando}
           onClick={() => void pedir()}
         >
@@ -281,7 +281,7 @@ export default function SeccionarPanel({ pieza, formatoInicial, onCerrar }: Secc
             Cortes: {propuesta.cortes.map((c) => `${Math.round(c.largo_mm)} mm`).join(", ") || "ninguno"}
           </p>
           <button
-            className="bg-cut text-paper rounded px-3 py-1 mt-2 disabled:opacity-50"
+            className="bg-cut text-negro rounded px-3 py-1 mt-2 disabled:opacity-50"
             disabled={aplicar.isPending || calculando}
             onClick={() => void alAplicar()}
           >

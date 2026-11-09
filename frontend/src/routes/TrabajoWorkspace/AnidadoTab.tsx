@@ -130,7 +130,7 @@ function ParametrosCorteForm({
         </select>
       </label>
       <button
-        className="bg-cut text-paper rounded px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bg-cut text-negro rounded px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={!hayCambiosSinAplicar}
         onClick={() => onCambio(valores)}
       >
@@ -293,7 +293,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
             />
             Aprovechar huecos
           </label>
-          <button className="bg-cut text-paper rounded px-3 py-1 text-sm" disabled={anidar.isPending || !!activa || (ejecucionEnCurso !== null && (!enCurso || !ESTADOS_TERMINALES.has(enCurso.estado)))} onClick={alAnidar}>
+          <button className="bg-cut text-negro rounded px-3 py-1 text-sm" disabled={anidar.isPending || !!activa || (ejecucionEnCurso !== null && (!enCurso || !ESTADOS_TERMINALES.has(enCurso.estado)))} onClick={alAnidar}>
             Anidar
           </button>
         </div>

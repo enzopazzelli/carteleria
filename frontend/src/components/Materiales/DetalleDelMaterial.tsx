@@ -23,7 +23,7 @@ function Marca({ texto }: { texto: string }) {
 }
 
 const TONO_DEL_ESTADO = {
-  libre: "text-cut font-medium",
+  libre: "text-cuttext font-medium",
   "en-uso": "text-bronze",
   usado: "text-ink/60",
   quitado: "text-ink/50",
@@ -177,7 +177,7 @@ function RenglonesDeLaMedida({
         <td className={celda}>
           {formato.es_retazo && <EnQueAnda retazo={formato} />}
           {!formato.es_retazo && (queCuenta?.proveedor ?? "—")}
-          {sePuedeElegir && <span className="ml-1.5 text-xs text-cut font-medium">el que cuenta</span>}
+          {sePuedeElegir && <span className="ml-1.5 text-xs text-cuttext font-medium">el que cuenta</span>}
           {sePuedeElegir && m.proveedor_a_mano !== null && (
             <button
               type="button"

@@ -108,7 +108,7 @@ function AltaDePersona({
       </div>
       <p className="text-sm text-ink/70">El sistema genera una contraseña temporal y te la muestra una sola vez.</p>
       <div className="flex gap-2">
-        <button type="submit" className="bg-cut text-paper rounded px-3 py-1 text-sm disabled:opacity-50" disabled={crear.isPending}>
+        <button type="submit" className="bg-cut text-negro rounded px-3 py-1 text-sm disabled:opacity-50" disabled={crear.isPending}>
           Dar de alta
         </button>
         <button type="button" className={BOTON} onClick={alCancelar}>
@@ -163,7 +163,7 @@ function EdicionDeFila({
         <input type="checkbox" checked={administra} onChange={(e) => setAdministra(e.target.checked)} />
         Administra
       </label>
-      <button type="button" className="bg-cut text-paper rounded px-3 py-1 text-sm disabled:opacity-50" disabled={actualizar.isPending} onClick={() => void guardar()}>
+      <button type="button" className="bg-cut text-negro rounded px-3 py-1 text-sm disabled:opacity-50" disabled={actualizar.isPending} onClick={() => void guardar()}>
         Guardar
       </button>
       <button type="button" className={BOTON} onClick={alTerminar}>
@@ -219,7 +219,7 @@ export default function Usuarios() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">Usuarios</h1>
         {!dandoDeAlta && (
-          <button type="button" className="bg-cut text-paper rounded px-3 py-1 text-sm" onClick={() => setDandoDeAlta(true)}>
+          <button type="button" className="bg-cut text-negro rounded px-3 py-1 text-sm" onClick={() => setDandoDeAlta(true)}>
             Dar de alta
           </button>
         )}
