@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from .mensajes import ErrorPrevisto
 from .modelos import EjecucionNesting, Formato, GrupoDeCorte, Material, Pieza, Trabajo
+from .anidado_que_cuenta import Motivo, anidado_que_cuenta
 from .modelos.trabajo import anidado_vigente
 
 _MM_POR_M = Decimal(1000)
@@ -126,35 +127,30 @@ def _linea_de_grupo(grupo: GrupoDeCorte) -> LineaMaterial:
         formato = sesion.get(Formato, grupo.formato_id) if sesion else None
         material = formato.material if formato else None
 
-    ejecucion, advertencias_ejecucion = (
-        _ejecucion_para_costear(grupo) if grupo.formato_id is not None else (None, [])
-    )
-    vencido = ejecucion is not None and not anidado_vigente(grupo, ejecucion)
-    if vencido:
+    # Qué anidado cuenta y por qué no lo decide `anidado_que_cuenta`; acá solo
+    # se traduce el motivo a los avisos de siempre y a si hay con qué calcular.
+    cuenta = anidado_que_cuenta(Session.object_session(grupo), grupo)
+    ejecucion = None
+    if cuenta.motivo is Motivo.SIN_MATERIAL:
+        pass  # ya se avisó arriba
+    elif cuenta.motivo in (Motivo.PIEZAS_CAMBIARON, Motivo.SIN_PIEZAS):
         # El anidado que quedaba no es lo que hoy se corta: no se cobra (A17).
-        con_piezas = any(not pieza.descartada for pieza in grupo.piezas)
-        advertencias_ejecucion = [
-            f"Grupo «{grupo.nombre}»: las piezas cambiaron después del anidado. Anidá de nuevo antes de presupuestar."
-            if con_piezas
-            else f"Grupo «{grupo.nombre}»: se quedó sin piezas, así que no se cobra su anidado viejo."
-        ]
-        ejecucion = None
-    advertencias.extend(advertencias_ejecucion)
-
-    snapshot = (ejecucion.parametros or {}).get("formato") if ejecucion else None
-    if snapshot and formato and (
-        snapshot.get("id") != formato.id
-        or Decimal(str(snapshot["ancho_mm"])) != formato.ancho_mm
-        or Decimal(str(snapshot["alto_mm"])) != formato.alto_mm
-    ):
         advertencias.append(
-            f"Grupo «{grupo.nombre}»: el material o formato cambió después del anidado. "
-            "Calculá un nuevo anidado antes de presupuestar."
+            f"Grupo «{grupo.nombre}»: las piezas cambiaron después del anidado. Anidá de nuevo antes de presupuestar."
+            if cuenta.motivo is Motivo.PIEZAS_CAMBIARON
+            else f"Grupo «{grupo.nombre}»: se quedó sin piezas, así que no se cobra su anidado viejo."
         )
-        ejecucion = None
-
-    if grupo.formato_id is not None and ejecucion is None and not vencido:
-        advertencias.append(f"Grupo «{grupo.nombre}»: todavía no tiene un anidado terminado.")
+    else:
+        advertencias.extend(cuenta.avisos)
+        if cuenta.motivo is None:
+            ejecucion = cuenta.mostrado
+        else:
+            if cuenta.motivo is Motivo.CHAPA_CAMBIO:
+                advertencias.append(
+                    f"Grupo «{grupo.nombre}»: el material o formato cambió después del anidado. "
+                    "Calculá un nuevo anidado antes de presupuestar."
+                )
+            advertencias.append(f"Grupo «{grupo.nombre}»: todavía no tiene un anidado terminado.")
 
     area_total_m2 = None
     costo_estimado = None
