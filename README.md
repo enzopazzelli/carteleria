@@ -188,7 +188,7 @@ Plataforma a medida para una empresa de cartelería de gran formato en chapa. Au
 **Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**: lectura del DXF, anidado con Sparrow, costeo y PDF del presupuesto · faltan el login, el aviso al dueño y el envío al cliente — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) y, arriba, «En qué estamos»
 **Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md)
 **Equipo:** Enzo (todo lo que no es el motor) · Vale (motor de anidado)
-**Última actualización:** 2026-11-09 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
+**Versión etiquetada:** `v2026.11.09` (el estado de este día, con fecha y no con número de versión: todavía no hay un criterio de numeración) · **Última actualización:** 2026-11-09 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
 
 ---
 

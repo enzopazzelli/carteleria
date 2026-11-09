@@ -73,6 +73,7 @@ Qué queda abierto y cuál es el próximo paso.
 - **Respaldos de la base real: de 19 a 9.** Quedan los 8 del 8 y 9 de noviembre y el del 8 de octubre `antes-de-borrar-trabajos`, que guarda los DXF de 630 KB (la **versión anterior de `Complejo`**, sin otra copia) y el original de la muestra. Los otros 10 eran instantáneas con trabajos de prueba o DXF idénticos a los de hoy, comparados uno por uno antes de borrar.
 - **Los dos guiones reutilizables pasaron al repositorio** ([PR #29](https://github.com/enzopazzelli/carteleria/pull/29)): `scripts/copiar_base.py` (copia la base y sus DXF a `local/copias/<nombre>` sin tocar el origen) y `scripts/lectura_del_corpus.py` (la foto de cómo se leen los dibujos de prueba, para comparar después de cambiar el lector). Con pruebas, y verificados contra los datos reales. Antes vivían en `backend/local/`, que no se sube a git.
 - **Documentación al día con A24 y A25:** README, mapa, guía de pruebas (sección 6, probar sin tocar la base real) y esta bitácora; el `EPICA.md` ya no dice «listo para Sprint 0» y el mapa tiene su versión 3.2.
+- **La versión de hoy quedó etiquetada en git:** `v2026.11.09`, con fecha y no con número de versión porque todavía no hay un criterio de numeración. Ver qué trae: `git show v2026.11.09`.
 
 ### Qué se decidió
 
