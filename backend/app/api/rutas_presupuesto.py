@@ -32,6 +32,7 @@ from ..services.presupuesto.empresa import cargar_empresa
 from ..services.presupuesto.pdf import generar_pdf
 from ..services.presupuesto.sugerido import multiplicador_de
 from ..services.presupuesto.totales import Cuenta, calcular
+from .autenticacion import UsuarioActual, exigir_permiso, usuario_actual
 from .dependencias import obtener_sesion
 from .esquemas_presupuesto import (
     ArticuloDelCatalogoLeer,
@@ -138,7 +139,9 @@ def eliminar_cliente(cliente_id: int, sesion: Session = Depends(obtener_sesion))
 
 @router.post("/presupuestos", response_model=PresupuestoLeer, status_code=status.HTTP_201_CREATED)
 def crear_presupuesto(
-    datos: PresupuestoCrear, sesion: Session = Depends(obtener_sesion)
+    datos: PresupuestoCrear,
+    sesion: Session = Depends(obtener_sesion),
+    actual: UsuarioActual = Depends(usuario_actual),
 ) -> Presupuesto:
     _cliente_o_404(sesion, datos.cliente_id)
     if datos.trabajo_id is not None:
@@ -149,6 +152,7 @@ def crear_presupuesto(
         trabajo_id=datos.trabajo_id,
         validez_dias=datos.validez_dias,
         moneda=datos.moneda,
+        creado_por_id=actual.id,
     )
     sesion.add(presupuesto)
     sesion.commit()
@@ -191,7 +195,9 @@ def actualizar_presupuesto(
     status_code=status.HTTP_201_CREATED,
 )
 def duplicar_presupuesto(
-    presupuesto_id: int, sesion: Session = Depends(obtener_sesion)
+    presupuesto_id: int,
+    sesion: Session = Depends(obtener_sesion),
+    actual: UsuarioActual = Depends(usuario_actual),
 ) -> Presupuesto:
     """Copia cliente/trabajo/validez/moneda/márgenes en un `BORRADOR`
     nuevo, con código propio (`CART-301`) — incluidas las líneas de
@@ -212,6 +218,7 @@ def duplicar_presupuesto(
         margen_pct=original.margen_pct,
         iva_pct=original.iva_pct,
         total_fijado=original.total_fijado,
+        creado_por_id=actual.id,  # la copia la creó quien la duplicó, no quien armó el original
     )
     sesion.add(copia)
     sesion.flush()  # necesita copia.id para las líneas
@@ -250,44 +257,62 @@ def duplicar_presupuesto(
 
 
 def _pasar_a(
-    presupuesto_id: int, nuevo: EstadoPresupuesto, datos: CambioDeEstadoCrear, sesion: Session
+    presupuesto_id: int,
+    nuevo: EstadoPresupuesto,
+    datos: CambioDeEstadoCrear,
+    sesion: Session,
+    actual: UsuarioActual,
 ) -> Presupuesto:
+    """Quién lo hace sale de la sesión, **nunca** del cuerpo del pedido (`datos.por` se ignora)."""
     presupuesto = _presupuesto_o_404(sesion, presupuesto_id)
-    cambiar_estado(sesion, presupuesto, nuevo, por=datos.por, motivo=datos.motivo)
+    cambiar_estado(sesion, presupuesto, nuevo, por=actual.nombre, motivo=datos.motivo, usuario_id=actual.id)
     sesion.commit()
     return presupuesto
 
 
 @router.post("/presupuestos/{presupuesto_id}/mandar-a-aprobar", response_model=PresupuestoLeer)
 def mandar_a_aprobar(
-    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+    presupuesto_id: int,
+    datos: CambioDeEstadoCrear,
+    sesion: Session = Depends(obtener_sesion),
+    actual: UsuarioActual = Depends(usuario_actual),
 ) -> Presupuesto:
     """De borrador u observado a pendiente. Se rechaza diciendo qué falta si
     el presupuesto no está completo."""
-    return _pasar_a(presupuesto_id, EstadoPresupuesto.PENDIENTE_APROBACION, datos, sesion)
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.PENDIENTE_APROBACION, datos, sesion, actual)
 
 
 @router.post("/presupuestos/{presupuesto_id}/aprobar", response_model=PresupuestoLeer)
 def aprobar(
-    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+    presupuesto_id: int,
+    datos: CambioDeEstadoCrear,
+    sesion: Session = Depends(obtener_sesion),
+    actual: UsuarioActual = Depends(exigir_permiso("puede_aprobar")),
 ) -> Presupuesto:
-    return _pasar_a(presupuesto_id, EstadoPresupuesto.APROBADO, datos, sesion)
+    """Solo con el permiso `puede_aprobar`. Puede aprobar uno que armó la misma persona (decisión de Enzo)."""
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.APROBADO, datos, sesion, actual)
 
 
 @router.post("/presupuestos/{presupuesto_id}/observar", response_model=PresupuestoLeer)
 def observar(
-    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+    presupuesto_id: int,
+    datos: CambioDeEstadoCrear,
+    sesion: Session = Depends(obtener_sesion),
+    actual: UsuarioActual = Depends(exigir_permiso("puede_aprobar")),
 ) -> Presupuesto:
-    """Devuelve el presupuesto con un motivo (obligatorio) para que se corrija."""
-    return _pasar_a(presupuesto_id, EstadoPresupuesto.OBSERVADO, datos, sesion)
+    """Devuelve el presupuesto con un motivo (obligatorio) para que se corrija. Solo con `puede_aprobar`."""
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.OBSERVADO, datos, sesion, actual)
 
 
 @router.post("/presupuestos/{presupuesto_id}/volver-a-borrador", response_model=PresupuestoLeer)
 def volver_a_borrador(
-    presupuesto_id: int, datos: CambioDeEstadoCrear, sesion: Session = Depends(obtener_sesion)
+    presupuesto_id: int,
+    datos: CambioDeEstadoCrear,
+    sesion: Session = Depends(obtener_sesion),
+    actual: UsuarioActual = Depends(usuario_actual),
 ) -> Presupuesto:
     """Desbloquea un presupuesto pendiente o aprobado. El motivo es obligatorio."""
-    return _pasar_a(presupuesto_id, EstadoPresupuesto.BORRADOR, datos, sesion)
+    return _pasar_a(presupuesto_id, EstadoPresupuesto.BORRADOR, datos, sesion, actual)
 
 
 @router.get("/presupuestos/{presupuesto_id}/historial", response_model=list[CambioDeEstadoLeer])
@@ -441,7 +466,10 @@ def _rechazar_si_es_material(linea: LineaCosto, accion: str) -> None:
 
 @router.patch("/lineas-costo/{linea_id}/override", response_model=LineaCostoLeer)
 def aplicar_override(
-    linea_id: int, datos: LineaCostoOverride, sesion: Session = Depends(obtener_sesion)
+    linea_id: int,
+    datos: LineaCostoOverride,
+    sesion: Session = Depends(obtener_sesion),
+    actual: UsuarioActual = Depends(usuario_actual),
 ) -> LineaCosto:
     """Corregir a mano el valor de una línea, con quién y cuándo
     (`ADR-07`, `CART-303`) — de cualquier rubro, incluido `MATERIAL`:
@@ -454,7 +482,7 @@ def aplicar_override(
         linea.override_por = None
         linea.override_en = None
     else:
-        linea.override_por = datos.override_por
+        linea.override_por = actual.nombre  # quien tiene la sesión, no lo que diga el cuerpo
         linea.override_en = datetime.now(timezone.utc)
     sesion.commit()
     return linea

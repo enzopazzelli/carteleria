@@ -62,6 +62,7 @@ from .esquemas_trabajos import (
     TrabajoCrear,
     TrabajoLeer,
 )
+from .autenticacion import UsuarioActual, usuario_actual
 from .rutas_catalogo import _formato_o_404, _formatos_del_catalogo
 
 router = APIRouter(tags=["trabajos"])
@@ -85,8 +86,12 @@ def _grupo_o_404(sesion: Session, grupo_id: int) -> GrupoDeCorte:
 
 
 @router.post("/trabajos", response_model=TrabajoLeer, status_code=status.HTTP_201_CREATED)
-def crear_trabajo(datos: TrabajoCrear, sesion: Session = Depends(obtener_sesion)) -> Trabajo:
-    trabajo = Trabajo(nombre=datos.nombre)
+def crear_trabajo(
+    datos: TrabajoCrear,
+    sesion: Session = Depends(obtener_sesion),
+    actual: UsuarioActual = Depends(usuario_actual),
+) -> Trabajo:
+    trabajo = Trabajo(nombre=datos.nombre, creado_por_id=actual.id)
     sesion.add(trabajo)
     sesion.commit()
     return trabajo

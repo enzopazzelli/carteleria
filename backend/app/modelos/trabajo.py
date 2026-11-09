@@ -18,12 +18,16 @@ from __future__ import annotations
 import enum
 from collections import Counter
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .tipos import Milimetros
+
+if TYPE_CHECKING:
+    from .usuario import Usuario
 
 
 class EstadoEjecucion(str, enum.Enum):
@@ -59,6 +63,7 @@ class Trabajo(Base):
         ForeignKey("usuarios.id", ondelete="SET NULL"), default=None
     )
 
+    creado_por: Mapped[Usuario | None] = relationship("Usuario", foreign_keys=[creado_por_id])
     piezas: Mapped[list[Pieza]] = relationship(
         back_populates="trabajo", cascade="all, delete-orphan"
     )

@@ -10,6 +10,37 @@ def mensaje_de(respuesta) -> str:
     return respuesta.json()["detail"]["mensaje"]
 
 
+CONTRASENA_DE_PRUEBA = "una contrasena larga"
+
+
+def crear_usuario_de_prueba(motor, usuario: str, *, puede_aprobar=False, administra_usuarios=False) -> str:
+    """Da de alta a una persona de verdad en la base de la prueba y devuelve su contraseña (1.1).
+    Quien la use tiene que haber puesto una huella barata (`contrasenas._HASHER`)."""
+    from sqlalchemy.orm import Session
+
+    from app.services.usuarios import servicio
+
+    with Session(motor) as sesion:
+        servicio.crear_usuario(
+            sesion,
+            usuario=usuario,
+            nombre=usuario.capitalize(),
+            contrasena=CONTRASENA_DE_PRUEBA,
+            puede_aprobar=puede_aprobar,
+            administra_usuarios=administra_usuarios,
+        )
+    return CONTRASENA_DE_PRUEBA
+
+
+def iniciar_sesion(cliente, usuario: str, contrasena: str) -> None:
+    """Entra por `/acceso/entrar`; deja la cookie y el encabezado propio puestos en el cliente."""
+    from app.api.autenticacion import ENCABEZADO_DE_PEDIDO
+
+    respuesta = cliente.post("/acceso/entrar", json={"usuario": usuario, "contrasena": contrasena})
+    assert respuesta.status_code == 200, respuesta.text
+    cliente.headers[ENCABEZADO_DE_PEDIDO] = "1"
+
+
 def segundos_que_tarda_otro_pedido(cliente, pedir_el_lento, modulo, nombre: str, monkeypatch) -> float:
     """Cuánto tarda `GET /trabajos` en contestar mientras `pedir_el_lento`
     está adentro de `modulo.nombre` (la lectura del DXF), que espera hasta

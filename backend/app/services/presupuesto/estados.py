@@ -70,11 +70,12 @@ def cambiar_estado(
     *,
     por: str,
     motivo: str | None = None,
+    usuario_id: int | None = None,
 ) -> CambioDeEstado:
     """Pasa el presupuesto a `nuevo` y deja la fila del historial.
 
     - Un paso que no existe se rechaza (409).
-    - Hace falta decir quién lo hace, y un motivo al observar o al volver a
+    - Hace falta decir quién lo hace (`por`, el nombre de ese momento; `usuario_id`, la persona), y un motivo al observar o al volver a
       borrador (400).
     - Para mandarlo a aprobar tiene que estar completo: se rechaza diciendo
       exactamente qué falta (409).
@@ -108,7 +109,7 @@ def cambiar_estado(
             )
 
     cambio = CambioDeEstado(
-        estado_anterior=actual.value, estado_nuevo=nuevo.value, por=por, motivo=motivo
+        estado_anterior=actual.value, estado_nuevo=nuevo.value, por=por, usuario_id=usuario_id, motivo=motivo
     )
     presupuesto.cambios_de_estado.append(cambio)
     presupuesto.estado = nuevo.value

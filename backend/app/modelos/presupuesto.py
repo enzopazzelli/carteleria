@@ -6,6 +6,7 @@ from __future__ import annotations
 import enum
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -13,6 +14,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 from .catalogo import Moneda
 from .tipos import Milimetros
+
+if TYPE_CHECKING:
+    from .usuario import Usuario
 
 
 class EstadoPresupuesto(str, enum.Enum):
@@ -100,6 +104,7 @@ class Presupuesto(Base):
         ForeignKey("usuarios.id", ondelete="SET NULL"), default=None
     )
 
+    creado_por: Mapped[Usuario | None] = relationship("Usuario", foreign_keys=[creado_por_id])
     cliente: Mapped[Cliente] = relationship(back_populates="presupuestos")
     lineas: Mapped[list[LineaCosto]] = relationship(
         back_populates="presupuesto", cascade="all, delete-orphan"

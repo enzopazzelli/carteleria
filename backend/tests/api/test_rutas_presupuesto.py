@@ -362,20 +362,22 @@ def test_override_guarda_quien_y_cuando(cliente, tmp_path):
     assert respuesta.status_code == 200, respuesta.text
     cuerpo = respuesta.json()
     assert Decimal(cuerpo["valor_override"]) == Decimal("4500")
-    assert cuerpo["override_por"] == "Aníbal"
+    # Figura quien tiene la sesión (acá, el usuario del arnés), no lo que diga el cuerpo (1.1).
+    assert cuerpo["override_por"] == "Prueba"
     assert cuerpo["override_en"] is not None
     # El valor calculado original no se toca.
     assert Decimal(cuerpo["valor_calculado"]) == Decimal("5000")
 
 
-def test_override_sin_override_por_da_422(cliente, tmp_path):
+def test_override_sin_override_por_ya_no_da_422_porque_quien_es_sale_de_la_sesion(cliente, tmp_path):
     trabajo, _grupo = _trabajo_con_grupo_anidado_y_costeado(cliente, tmp_path)
     presupuesto = _crear_presupuesto(cliente, trabajo_id=trabajo["id"])
     linea = cliente.post(f"/presupuestos/{presupuesto['id']}/recalcular-materiales").json()[0]
 
     respuesta = cliente.patch(f"/lineas-costo/{linea['id']}/override", json={"valor_override": "4500"})
 
-    assert respuesta.status_code == 422
+    assert respuesta.status_code == 200
+    assert respuesta.json()["override_por"] == "Prueba"
 
 
 def test_revertir_override_limpia_todo(cliente, tmp_path):
@@ -581,7 +583,7 @@ def test_duplicar_presupuesto_copia_las_lineas_de_costo(cliente, tmp_path):
     material_copiado = next(l for l in lineas_copia if l["rubro"] == "MATERIAL")
     assert material_copiado["id"] != material["id"], "fila propia, no la misma"
     assert Decimal(material_copiado["valor_override"]) == Decimal("4500"), "el override se copia también"
-    assert material_copiado["override_por"] == "Aníbal"
+    assert material_copiado["override_por"] == "Prueba", "figura quien lo cargó, y la copia lo conserva"
     flete_copiado = next(l for l in lineas_copia if l["rubro"] == "FLETE")
     assert Decimal(flete_copiado["valor_calculado"]) == Decimal("3000")
     # Las líneas del original no se tocaron.

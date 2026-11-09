@@ -4,6 +4,15 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 
+class QuienLeer(BaseModel):
+    """Quién hizo algo (creó un trabajo o un presupuesto). Solo lo que se muestra: nada de permisos."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+
+
 class EntrarCrear(BaseModel):
     usuario: str
     contrasena: str
