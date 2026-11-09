@@ -63,6 +63,23 @@ class Trabajo(Base):
     )
 
 
+class CorreccionesDelDibujo(Base):
+    """Lo que alguien marcó sobre un dibujo, para aplicarlo solo cuando vuelve
+    a cargarse el mismo archivo (A24, `docs/plan/A24-recordar-correcciones/`).
+
+    El archivo se reconoce por la huella de su contenido, no por el nombre. Las
+    formas se guardan **sin el prefijo del trabajo** (`17`, no `trabajo-5-17`):
+    el mismo archivo en otro trabajo da otro prefijo."""
+
+    __tablename__ = "correcciones_del_dibujo"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    #: SHA-256 en hexadecimal de los bytes del archivo subido.
+    huella: Mapped[str] = mapped_column(String(64), unique=True)
+    #: Nombre de forma (sin el prefijo del trabajo) → `cortar` o `no_va`.
+    correcciones: Mapped[dict[str, str]] = mapped_column(JSON)
+
+
 class GrupoDeCorte(Base):
     """Un subconjunto de piezas de un trabajo, destinado a UN material.
 
