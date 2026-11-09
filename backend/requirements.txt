@@ -10,6 +10,8 @@ shapely==2.1.2
 # todos los días (1.1, docs/plan/1.1-servidor-y-login/plan.md).
 fastapi==0.120.0
 psycopg[binary]==3.2.9
+# Las contraseñas de los usuarios se guardan como una huella `argon2id`, no como texto (1.1).
+argon2-cffi==23.1.0
 uvicorn==0.38.0
 sqlalchemy==2.0.41
 alembic==1.19.2

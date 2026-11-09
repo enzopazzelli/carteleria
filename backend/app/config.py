@@ -83,6 +83,15 @@ FAMILIAS_PARA_LEER_EL_DXF = tuple(
     for familia in os.getenv("CARTELERIA_FAMILIAS_PARA_LEER_EL_DXF", "Chapas,Acrílicos,Policarbonato").split(",")
 )
 
+#: `PAR-62` a `PAR-66` (`docs/REGISTRO.md §2.7`, 1.1): cuánto dura una sesión sin uso, cuánto una
+#: «mantenida en este dispositivo», el largo mínimo de una contraseña, y cuántos intentos fallidos
+#: seguidos bloquean una cuenta y por cuánto tiempo.
+SESION_HORAS_SIN_USO = int(os.getenv("CARTELERIA_SESION_HORAS", "12"))
+SESION_DIAS_MANTENIDA = int(os.getenv("CARTELERIA_SESION_DIAS_MANTENIDA", "30"))
+CONTRASENA_LARGO_MINIMO = int(os.getenv("CARTELERIA_CONTRASENA_LARGO_MINIMO", "10"))
+INTENTOS_ANTES_DE_BLOQUEAR = int(os.getenv("CARTELERIA_INTENTOS_ANTES_DE_BLOQUEAR", "5"))
+MINUTOS_DE_BLOQUEO = int(os.getenv("CARTELERIA_MINUTOS_DE_BLOQUEO", "15"))
+
 #: `PAR-61` (`docs/REGISTRO.md`): qué margen de venta de la hoja `COTIZADOR`
 #: usa el precio sugerido de un material, como la columna de `Articulo` que lo
 #: guarda. Es un multiplicador del costo: × 3 es el costo por 3 (A19).
