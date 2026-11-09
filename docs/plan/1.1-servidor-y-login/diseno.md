@@ -176,7 +176,7 @@ La fase A deja todo andando en Docker. La B lo pone en internet:
 
 - **Automáticas:** contraseñas y huellas; entrar y salir; sesiones, bloqueo e inactividad; 401 y 403 en cada ruta con permiso; la guardiana de rutas; no poder quitarse el último administrador; la aprobación con usuario real. Las pruebas existentes pasan con el usuario de prueba, **sin cambiarles las afirmaciones**.
 - **CI con PostgreSQL:** las migraciones y las pruebas de modelos, usuarios y permisos.
-- **Recorrido en Chrome** en Docker en una computadora: crear usuarios desde la pantalla, entrar como diseñador y como dueño, aprobar, ver el historial.
+- **Recorrido en Chrome** (sin Docker, con SQLite) para las pantallas: crear usuarios, entrar como diseñador y como dueño, aprobar, ver el historial. **Lo de Docker se verifica en el CI** (la pila levanta sana, la base no está expuesta, el 401, el recorrido por HTTP, las copias y su restauración), porque en la computadora de Enzo no hay espacio para instalar Docker; el recorrido con las pantallas se repite en el servidor real.
 - **Backup:** restaurar en una máquina limpia, con los datos a la vista.
 - **Fase B:** la lista del §5, con el celular.
 

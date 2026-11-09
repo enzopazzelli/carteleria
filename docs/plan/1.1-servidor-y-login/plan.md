@@ -16,7 +16,7 @@
 |---|---|---|---|
 | **A1. PostgreSQL en el CI** | 1 | El CI prueba las migraciones y el modelo contra PostgreSQL | Sí |
 | **A2. Usuarios y login** | 2 a 10 | El sistema pide entrar; hay permisos, quién hizo cada cosa y la pantalla de usuarios | Sí, pero **junto con su pantalla**: el servidor y la pantalla se cambian a la vez |
-| **A3. Docker, copias y datos** | 11 a 14 | Todo levanta con un comando, con copias diarias y el catálogo llevado a PostgreSQL | Después de A2 |
+| **A3. Docker, copias y datos** | 11 a 14 | Todo levanta con un comando, con copias diarias y el catálogo llevado a PostgreSQL. **Se verifica en el CI**, no en la máquina de Enzo | Después de A2 |
 | **B. El servidor alquilado** | B1 a B7 | El sistema en internet, con dominio y HTTPS | Después de A3 |
 
 ## Restricciones globales
@@ -29,7 +29,7 @@
 - **Dependencias fijadas a una versión exacta:** `argon2-cffi==23.1.0` y `psycopg[binary]==3.2.9`.
 - Commits **sin** línea `Co-Authored-By`. Una rama por entrega: `feat/1.1-postgres-en-el-ci`, `feat/1.1-usuarios-y-login`, `feat/1.1-docker-y-copias`.
 - Pruebas del backend con `--basetemp` en D: (`python -m pytest <ruta> -q --basetemp=D:/temp-pruebas/<algo>`; crear antes `D:\temp-pruebas`).
-- **No hay Docker ni `psql` en esta máquina.** Lo de PostgreSQL se verifica en el CI de GitHub; lo de Docker, después de instalar Docker Desktop (Tarea 0).
+- **No hay Docker ni `psql` en esta máquina, y por ahora no se instalan** (Enzo, 2026-11-09: C: con unos 10 GB libres y D: con unos 21; ver la Tarea 0). **PostgreSQL y Docker se verifican en el CI de GitHub**, que corre en Linux con Docker. Las tareas 1 a 10 no necesitan Docker: se desarrollan con SQLite, como hasta hoy.
 - La base real (`backend/local/carteleria.db`) no se toca a mano. Se actualiza sola al arrancar la app, con su respaldo; **Enzo avisa antes de arrancarla con la migración nueva**.
 - Todo recorrido en un navegador se hace sobre una copia de la base (`python scripts/copiar_base.py <nombre>`, ver `docs/GUIA-PRUEBAS-LOCALES.md §6`), mirando antes que los puertos estén libres.
 
@@ -65,11 +65,10 @@ Lo que el diseño implica y ninguna tarea prueba por sí sola; cada línea tiene
 
 ---
 
-### Tarea 0: Preparar la máquina (sin código)
+### Tarea 0: Preparar la máquina (solo `D:\temp-pruebas`; Docker, opcional)
 
-- [ ] **Paso 1:** instalar Docker Desktop en la computadora de Enzo (en Windows pide WSL 2). Comprobar con `docker --version` y `docker run --rm hello-world`.
-- [ ] **Paso 2:** crear `D:\temp-pruebas` para las pruebas del backend.
-- [ ] **Paso 3:** Enzo confirma que puede correr Docker. Sin esto, la Tarea 11 en adelante no se puede verificar.
+- [ ] **Paso 1:** crear `D:\temp-pruebas` para las pruebas del backend.
+- [ ] **Paso 2 (opcional, solo si Enzo quiere ver la pila corriendo en su máquina):** instalar Docker Desktop **en D:**, con `--installation-dir=D:\Docker` y `--wsl-default-data-root=D:\DockerData` (o moviendo después el disco en *Settings → Resources → Advanced → Disk image location*). Limitar WSL a unos 4 GB de memoria (`.wslconfig`): la máquina tiene 11,7 GB. No instalar Docker adentro de la Ubuntu de WSL que ya existe, que parece ser la del otro trabajo. **Estimación, sin medir:** unos 3 a 6 GB de imágenes, más el programa, y el disco virtual no se achica solo. Sin este paso, todo lo de Docker se verifica en el CI y en la fase B.
 
 ---
 
@@ -331,7 +330,8 @@ Lo que el diseño implica y ninguna tarea prueba por sí sola; cada línea tiene
 ### Tarea 11: Todo con Docker
 
 **Files:**
-- Create: `backend/Dockerfile`, `proxy/Dockerfile`, `proxy/Caddyfile`, `docker-compose.yml`, `.env.example`, `.dockerignore`, `backend/scripts/migrar.py`, `docs/GUIA-SERVIDOR.md`
+- Create: `backend/Dockerfile`, `proxy/Dockerfile`, `proxy/Caddyfile`, `docker-compose.yml`, `.env.example`, `.dockerignore`, `backend/scripts/migrar.py`, `docker/probar_pila.sh`, `docs/GUIA-SERVIDOR.md`
+- Modify: `.github/workflows/ci.yml` (un tercer trabajo, `docker`)
 - Modify: `backend/app/arranque.py`, `.gitignore` (`.env`)
 - Test: `backend/tests/test_arranque.py` (sumar), `backend/tests/test_docker_sin_secretos.py`
 
@@ -350,7 +350,7 @@ Lo que el diseño implica y ninguna tarea prueba por sí sola; cada línea tiene
 - [ ] **Paso 2: correrlas y ver que fallan.**
 - [ ] **Paso 3: implementar** el cambio de `arranque.py`, `migrar.py`, los Dockerfile, el Caddyfile, el compose y el `.env.example`, y empezar `docs/GUIA-SERVIDOR.md` (levantar, ver el estado, crear el primer usuario, actualizar, volver atrás).
 - [ ] **Paso 4: correr** las pruebas nuevas y `tests/test_arranque.py` entero.
-- [ ] **Paso 5: verificar en Docker, en la máquina de Enzo** (Tarea 0): `docker compose build`; con un `.env` copiado de `.env.example` y una clave puesta, `docker compose up -d`; `docker compose ps` con todo **sano**; `curl http://localhost:8080/api/salud` da 200; **`docker compose port db 5432` no devuelve nada** (la base no está publicada); `curl http://localhost:8080/api/trabajos` da 401; la pantalla carga en `http://localhost:8080`; `docker compose exec api python -m app.usuarios crear …` crea el primer usuario y se puede entrar desde el navegador. **Mirar las capturas.** `docker compose down` al terminar (sin `-v`, para no borrar los volúmenes de prueba que se quieran conservar).
+- [ ] **Paso 5: verificar en el CI.** `docker/probar_pila.sh` arma un `.env` con claves **al azar** a partir de `.env.example` (nada se versiona), y comprueba, en este orden: `docker compose build`; `up -d` y que **todo quede sano** dentro de un plazo; `GET /api/salud` da 200; **`docker compose port db 5432` no devuelve nada** (la base no está publicada); `GET /api/trabajos` sin sesión da 401; la pantalla carga en `/` y trae el HTML de la aplicación; `docker compose exec api python -m app.usuarios crear … --generar` crea el primer usuario; entrar con `curl` y su cookie da 200 en `/api/acceso/yo`; un `POST` sin el encabezado `X-Cartel-Pedido` da 403; `down -v`. El trabajo `docker` del CI corre ese script y, si algo falla, muestra `docker compose logs`. **Se espera iterar contra el CI** (subir, esperar, corregir): no hay Docker local.
 - [ ] **Paso 6: commit** `feat(1.1): todo corre con Docker, sin contraseñas en el repositorio`.
 
 ### Tarea 12: Las copias de seguridad
@@ -367,10 +367,10 @@ Lo que el diseño implica y ninguna tarea prueba por sí sola; cada línea tiene
 - Variables: `RESTIC_REPOSITORY`, `RESTIC_PASSWORD` (cifra las copias), las credenciales del almacenamiento compatible con S3, `BACKUP_DIAS`, `BACKUP_HORA`.
 - `docker-compose.prueba.yml`: un servicio MinIO (almacenamiento compatible con S3) para **probar sin una cuenta real**.
 
-- [ ] **Paso 1: la prueba, que es un recorrido real:** con `docker compose -f docker-compose.yml -f docker-compose.prueba.yml up -d`, cargar un par de datos (el usuario, un cliente), correr `docker compose exec respaldo respaldar.sh` y comprobar que el repositorio en MinIO tiene una copia, que `ultimo_backup.json` existe y que `GET /api/salud` dice `backup.atrasado: false`.
+- [ ] **Paso 1: la prueba, que es un recorrido real, dentro de `docker/probar_pila.sh copias` (corre en el CI):** con `docker compose -f docker-compose.yml -f docker-compose.prueba.yml up -d`, cargar un par de datos (el usuario, un cliente), correr `docker compose exec respaldo respaldar.sh` y comprobar que el repositorio en MinIO tiene una copia, que `ultimo_backup.json` existe y que `GET /api/salud` dice `backup.atrasado: false`.
 - [ ] **Paso 2: probar que falla bien:** cambiar a propósito la clave del almacenamiento, correr `respaldar.sh`: **sale con error y no actualiza `ultimo_backup.json`**; con el archivo de estado viejo, `/api/salud` dice `atrasado: true` pasadas `PAR-69` horas.
 - [ ] **Paso 3: la política de días:** crear copias con fechas distintas (o bajar `BACKUP_DIAS` a 1 para la prueba) y comprobar que `forget --prune` borra las viejas y deja las del plazo.
-- [ ] **Paso 4: restaurar de verdad,** que es lo que importa: con `docker compose down -v` (borra los datos de prueba), levantar una pila **nueva** vacía, correr `restaurar.sh`, volcar con `pg_restore` y copiar los archivos, y comprobar que **el usuario y el cliente están** y que se puede entrar. Escribir el procedimiento, tal como se hizo, en `docs/GUIA-SERVIDOR.md`.
+- [ ] **Paso 4: restaurar de verdad,** que es lo que importa (también en el CI): con `docker compose down -v` (borra los datos de prueba), levantar una pila **nueva** vacía, correr `restaurar.sh`, volcar con `pg_restore` y copiar los archivos, y comprobar que **el usuario y el cliente están** y que se puede entrar. Escribir el procedimiento, tal como se hizo, en `docs/GUIA-SERVIDOR.md`.
 - [ ] **Paso 5: commit** `feat(1.1): copias diarias cifradas a un almacenamiento aparte, con restauración probada`.
 
 ### Tarea 13: Llevar el catálogo y los clientes
@@ -380,7 +380,7 @@ Lo que el diseño implica y ninguna tarea prueba por sí sola; cada línea tiene
 - Test: `backend/tests/test_scripts.py` (sumar), `backend/tests/postgres/test_llevar_catalogo_en_postgres.py`
 
 **Interfaces:**
-- Produce: `llevar_catalogo(origen_url: str, destino_url: str, *, reemplazar: bool = False) -> dict[str, int]` (cuántas filas pasaron de cada tabla) y `main(argv)`: `python scripts/llevar_catalogo.py --desde sqlite:///... --hacia postgresql+psycopg://... [--reemplazar]`.
+- Produce: `llevar_catalogo(origen_url: str, destino_url: str | None, *, reemplazar: bool = False, simular: bool = False) -> dict[str, int]` (cuántas filas pasaron, o pasarían, de cada tabla) y `main(argv)`: `python scripts/llevar_catalogo.py --desde sqlite:///... --hacia postgresql+psycopg://... [--reemplazar]` o `--simular` (sin `--hacia`): **lee el origen y dice cuánto pasaría de cada tabla, sin escribir nada**. Sirve para comprobar, con la base real de Enzo y sin PostgreSQL, que los números son los esperados.
 - **Qué pasa** (en este orden, por las claves foráneas): `materiales`, `parametros_corte`, `formatos`, `articulos`, `cargas_de_planilla`, `cambios_de_precio`, `cotizaciones_moneda`, `clientes`. **De `formatos` solo las filas sin `origen_ejecucion_id`**: los retazos guardados desde el sobrante de un anidado no viajan. **No pasa** ninguna otra tabla (trabajos, piezas, grupos, anidados, presupuestos, historial, correcciones, usuarios).
 - **Conserva los `id`** (las referencias entre tablas dependen de ellos). Con PostgreSQL, al terminar **ajusta cada secuencia** al `max(id)`.
 - **No toca el origen** (lo abre solo para leer). Si el destino ya tiene filas en alguna de esas tablas, **se niega** salvo con `--reemplazar`, que primero las vacía.
@@ -391,12 +391,13 @@ Lo que el diseño implica y ninguna tarea prueba por sí sola; cada línea tiene
   - ningún trabajo, presupuesto ni usuario del origen aparece en el destino;
   - el origen queda **idéntico** (mismos conteos y mismas filas);
   - con el destino ya cargado, se niega y no cambia nada; con `reemplazar=True`, deja solo lo del origen;
-  - correrlo dos veces con `--reemplazar` da lo mismo.
+  - correrlo dos veces con `--reemplazar` da lo mismo;
+  - **`simular`** devuelve los mismos conteos que una corrida real y **no crea ni una fila** en el destino (ni exige que exista).
 - [ ] **Paso 2: la prueba de PostgreSQL** (en el trabajo `postgres` del CI): después de llevar el catálogo, **crear un material nuevo desde el modelo no choca con ninguno de los llevados** (**Review Focus 5**), y lo mismo con un cliente y un formato.
 - [ ] **Paso 3: correrlas y ver que fallan.**
 - [ ] **Paso 4: implementar.** Copiar en lotes; usar el modelo (`Base.metadata`) y no SQL escrito a mano.
 - [ ] **Paso 5: correr** las pruebas de SQLite y, en el CI, las de PostgreSQL.
-- [ ] **Paso 6: probarlo con datos reales** contra una **copia** de la base de Enzo y un PostgreSQL de Docker: `copiar_base.py llevar`, y después `llevar_catalogo.py --desde <la copia> --hacia <el PostgreSQL de Docker>`. Comprobar los conteos (44 materiales, 59 medidas, 288 artículos) y que la pantalla de Materiales muestra lo mismo en Docker.
+- [ ] **Paso 6: probarlo con datos reales, sin Docker:** `python scripts/llevar_catalogo.py --desde sqlite:///<copia de la base de Enzo> --simular` (sobre una **copia**, `copiar_base.py llevar`). Comprobar los conteos (44 materiales, 59 medidas, 288 artículos, y los clientes). **La primera corrida real contra PostgreSQL es en el servidor, en B5.**
 - [ ] **Paso 7: commit** `feat(1.1): llevar el catálogo y los clientes a PostgreSQL`.
 
 ### Tarea 14: Recorrido completo, documentos y cierre de la fase A
@@ -405,7 +406,7 @@ Lo que el diseño implica y ninguna tarea prueba por sí sola; cada línea tiene
 - Modify: `README.md`, `docs/MAPA-DEL-PROYECTO.md`, `docs/GUIA-SERVIDOR.md`, `docs/GUIA-PRUEBAS-LOCALES.md`, `docs/BITACORA.md`, `docs/REGISTRO.md` (cerrar `D-08` y mover `PAR-62` a `PAR-69` de «provisorio» a lo que corresponda), `docs/plan/PLAN-MAESTRO.md`
 
 - [ ] **Paso 1: la suite completa del backend y del frontend**, y el CI en verde con los dos trabajos.
-- [ ] **Paso 2: el recorrido completo en Docker,** en la máquina de Enzo, con Chrome sin ventana contra `http://localhost:8080`: el primer usuario por el comando; entrar; crear un diseñador desde la pantalla; el diseñador sube un DXF y arma un presupuesto; lo manda a aprobar; **no ve «Aprobar»**; el dueño aprueba; el historial dice los dos nombres; cerrar sesión; **intentos fallidos hasta el bloqueo**; una copia y su restauración. **Mirar las capturas.**
+- [ ] **Paso 2: el recorrido completo, por HTTP, en el CI** (`docker/probar_pila.sh recorrido`): el primer usuario por el comando; entrar; crear un diseñador por la API de usuarios; el diseñador arma un presupuesto y lo manda a aprobar; **`aprobar` le da 403**; el dueño aprueba; el historial dice los dos nombres; cerrar sesión; **intentos fallidos hasta el bloqueo**; una copia y su restauración. **El recorrido con Chrome, mirando las pantallas, se hizo en la Tarea 10 (con SQLite) y se repite en el servidor real en B7.**
 - [ ] **Paso 3: documentos.** El README («En qué estamos» y el recorrido), el mapa, la guía de pruebas, `GUIA-SERVIDOR.md` completa (levantar, actualizar, volver atrás, copias y restauración, usuarios y emergencias, qué mirar en `/salud`), el registro y la bitácora.
 - [ ] **Paso 4: PR de la entrega A3,** esperar el CI y el visto bueno de Enzo. Al fusionar, la carpeta se queda en `docs/plan/` hasta cerrar también la fase B.
 
@@ -449,7 +450,7 @@ Es operación más que código: cada paso termina con algo que se mira. Los paso
 
 ### B7: La prueba final, desde el celular
 
-- [ ] Entrar desde el celular del dueño, ver el inicio, abrir un presupuesto. Entrar como diseñador y verificar que no puede aprobar. Apuntar un monitor gratuito de disponibilidad a `https://<dominio>/api/salud`.
+- [ ] Entrar desde el celular del dueño, ver el inicio, abrir un presupuesto. Entrar como diseñador y verificar que no puede aprobar. **Repetir el recorrido de Chrome sin ventana de la Tarea 10 contra la dirección real** (se corre desde la computadora de Enzo, sin Docker) y mirar las capturas. Apuntar un monitor gratuito de disponibilidad a `https://<dominio>/api/salud`.
 - [ ] **Documentos:** cerrar `T-01`, `T-02` y `T-06` en el registro; actualizar el README y la bitácora; pasar la carpeta a `docs/historico/`.
 
 ---
@@ -459,4 +460,4 @@ Es operación más que código: cada paso termina con algo que se mira. Los paso
 - **Cobertura del diseño:** §4.1 y §4.2 → Tareas 2, 3 y 4; §4.3 → Tarea 6; §4.4 → Tarea 7; §4.5 y §4.6 → Tareas 8 y 10; §4.7 → arnés de la Tarea 4; §4.8 y §4.9 → Tareas 9 y 11; §4.10 → Tareas 1 y 11; §4.11 → Tarea 12; §4.12 → Tarea 13; §5 → Fase B.
 - **Nombres consistentes:** `Usuario`, `SesionDeUsuario`, `UsuarioActual`, `usuario_actual`, `exigir_permiso`, `COOKIE_DE_SESION`, `ENCABEZADO_DE_PEDIDO`, `crear_app`, `iniciar_sesion`, `llevar_catalogo`, `BaseDesactualizada`.
 - **Lo que queda a criterio de quien implemente:** el diseño visual de las pantallas, los textos exactos de los errores no listados, y cómo se divide un archivo si `servicio.py` crece.
-- **Riesgo conocido:** las 18 migraciones se escribieron para SQLite; no se sabe cuántas fallan en PostgreSQL hasta correr el CI (Tarea 1). Si son muchas, esa tarea crece y conviene tratarla como una entrega propia.
+- **Riesgos conocidos:** las 18 migraciones se escribieron para SQLite; no se sabe cuántas fallan en PostgreSQL hasta correr el CI (Tarea 1). Si son muchas, esa tarea crece y conviene tratarla como una entrega propia. Y sin Docker local, **la entrega A3 se itera contra el CI**: cada vuelta cuesta unos minutos.
