@@ -221,3 +221,91 @@ def test_otro_archivo_no_recibe_lo_guardado_de_este(cliente, dibujo, tmp_path):
 
     assert respuesta.status_code == 200, respuesta.text
     assert respuesta.json()["correcciones_aplicadas"] == {}
+
+
+def _octogono(msp, x, y, lado):
+    c = lado / 5
+    puntos = [
+        (x + c, y), (x + lado - c, y), (x + lado, y + c), (x + lado, y + lado - c),
+        (x + lado - c, y + lado), (x + c, y + lado), (x, y + lado - c), (x, y + c),
+    ]  # fmt: skip
+    msp.add_lwpolyline(puntos, close=True)
+
+
+@pytest.fixture
+def dibujo_con_union(tmp_path) -> bytes:
+    """Dos franjas (un octógono con otro adentro) que se pisan: el lector las
+    puede unir en una pieza, que tiene sus huecos."""
+    documento = ezdxf.new()
+    msp = documento.modelspace()
+    for x, y, lado in [(0, 0, 1200), (1050, 100, 1000)]:
+        _octogono(msp, x, y, lado)
+        _octogono(msp, x + 100, y + 100, lado - 200)
+    ruta = tmp_path / "union.dxf"
+    documento.saveas(ruta)
+    return ruta.read_bytes()
+
+
+def _guardar_a_mano(cliente, contenido, correcciones):
+    with Session(cliente.motor) as sesion:
+        sesion.add(CorreccionesDelDibujo(huella=huella_de(contenido), correcciones=correcciones))
+        sesion.commit()
+
+
+def test_una_marca_de_un_hueco_que_ya_no_existe_no_cuenta_como_aplicada(cliente, dibujo):
+    # El hueco de una pieza unida solo existe si la unión lo arma: acá no hay
+    # ninguna, y la marca no tiene qué marcar aunque la forma base sí esté.
+    trabajo = _trabajo(cliente)
+    formas = _nombres(cliente, trabajo, dibujo)
+    _guardar_a_mano(cliente, dibujo, {_el_numero(formas[1]): "no_va", f"{_el_numero(formas[1])}/hueco1": "no_va"})
+
+    respuesta = _leer(cliente, trabajo, dibujo, aplicar_guardadas=True)
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["correcciones_aplicadas"] == {formas[1]: "no_va"}
+    assert cuerpo["correcciones_ignoradas"] == 1
+
+
+def test_una_marca_de_la_pieza_unida_se_aplica_aunque_la_union_empiece_apagada(cliente, dibujo_con_union):
+    # Con «Unir» apagado esa forma no se ve, pero la marca vale: al prenderlo
+    # aparece marcada. Por eso cuenta como aplicada, y no se pierde.
+    trabajo = _trabajo(cliente)
+    primera = _leer(cliente, trabajo, dibujo_con_union)
+    assert primera.status_code == 200, primera.text
+    unida = next(f["id_origen"] for f in primera.json()["unida"]["formas"] if f["id_origen"].endswith("/unida"))
+    _guardar_a_mano(cliente, dibujo_con_union, {_el_numero(unida): "no_va"})
+
+    respuesta = _leer(cliente, trabajo, dibujo_con_union, aplicar_guardadas=True)
+
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert cuerpo["correcciones_aplicadas"] == {unida: "no_va"}
+    assert cuerpo["correcciones_ignoradas"] == 0
+    marcada = next(f for f in cuerpo["unida"]["formas"] if f["id_origen"] == unida)
+    assert (marcada["estado"], marcada["corregida"]) == ("no_va", True)
+
+
+def test_con_marcas_sin_forma_el_dibujo_se_lee_una_sola_vez(cliente, dibujo_con_union, monkeypatch):
+    from app.api import rutas_trabajos
+
+    trabajo = _trabajo(cliente)
+    primera = _leer(cliente, trabajo, dibujo_con_union)
+    unida = next(f["id_origen"] for f in primera.json()["unida"]["formas"] if f["id_origen"].endswith("/unida"))
+    _guardar_a_mano(cliente, dibujo_con_union, {_el_numero(unida): "no_va", "99": "no_va", "98": "cortar"})
+
+    lecturas = []
+    original = rutas_trabajos.parsear_dxf
+
+    def contando(*args, **kwargs):
+        lecturas.append(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(rutas_trabajos, "parsear_dxf", contando)
+
+    respuesta = _leer(cliente, trabajo, dibujo_con_union, aplicar_guardadas=True)
+
+    assert respuesta.status_code == 200, respuesta.text
+    assert respuesta.json()["correcciones_aplicadas"] == {unida: "no_va"}
+    assert respuesta.json()["correcciones_ignoradas"] == 2
+    assert len(lecturas) == 1

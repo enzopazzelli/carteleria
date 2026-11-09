@@ -11,7 +11,7 @@ import json
 import logging
 import tempfile
 from collections.abc import Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 
@@ -266,9 +266,6 @@ class _LecturasDeUnDXF:
     unida: _Lectura | None
     #: Cuántas líneas reemplaza la unión.
     formas_que_se_pisan: int
-    #: Marcas que nombraban una forma que el archivo no tiene y se dejaron
-    #: afuera (solo con `ignorar_ajenas`).
-    ajenas_ignoradas: frozenset[str] = frozenset()
 
     def elegida(self, unir: bool) -> _Lectura:
         return self.unida if unir and self.unida is not None else self.sin_unir
@@ -327,10 +324,11 @@ def _leer(
     sus propios agujeros pasan a ser formas. Si lo que no va es una pieza
     unida, sus huecos no entran en la lectura.
 
-    Con `ignorar_ajenas`, una marca que no es de este archivo no da 400: se
-    lee de nuevo sin ella y `ajenas_ignoradas` dice cuántas fueron. Es para
-    las correcciones guardadas de otra vez (A24), que pueden nombrar una
-    forma que el lector ya no encuentra."""
+    Con `ignorar_ajenas`, una marca que no es de este archivo no da 400. No
+    hace falta leer de nuevo sin ella: una marca sin forma no cambia nada de
+    la lectura. Es para las correcciones guardadas de otra vez (A24), que
+    pueden nombrar una forma que el lector ya no encuentra; quien llama
+    decide cuáles tuvieron efecto."""
     tamano = _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT if tamano_maximo_agujero_mm is None else tamano_maximo_agujero_mm
     no_van = {id_forma for id_forma, rol in correcciones.items() if rol is Rol.NO_VA}
     try:
@@ -371,11 +369,7 @@ def _leer(
         for id_forma in set(correcciones) - del_archivo - {p.id for p in unidas}
         if "/" not in id_forma or id_forma.split("/")[0] not in del_archivo
     )
-    if ajenas and ignorar_ajenas:
-        sin_las_ajenas = {id_forma: rol for id_forma, rol in correcciones.items() if id_forma not in ajenas}
-        lecturas = _leer(ruta, escala_a_mm, tamano_maximo_agujero_mm, formatos, sin_las_ajenas)
-        return replace(lecturas, ajenas_ignoradas=frozenset(ajenas))
-    if ajenas:
+    if ajenas and not ignorar_ajenas:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             f"Algunas formas marcadas no están en este archivo: {', '.join(ajenas)}. Volvé a marcarlas.",
@@ -491,7 +485,15 @@ def leer_dxf(
             marcadas,
             ignorar_ajenas=bool(guardadas),
         )
-    aplicadas = _en_texto({forma: rol for forma, rol in guardadas.items() if forma not in lecturas.ajenas_ignoradas})
+    # Una marca guardada tuvo efecto si su forma está en alguna de las dos
+    # lecturas: la pantalla pasa de una a otra sin volver a pedir. Con la
+    # unión apagada el hueco de una pieza unida no se ve, pero la marca vale
+    # cuando se la prende. La que no está en ninguna (una forma que el lector
+    # ya no encuentra, o un hueco que la unión ya no arma) se ignora.
+    existentes = {pieza.id for pieza in lecturas.sin_unir.piezas}
+    if lecturas.unida is not None:
+        existentes |= {pieza.id for pieza in lecturas.unida.piezas}
+    aplicadas = _en_texto({forma: rol for forma, rol in guardadas.items() if forma in existentes})
     return LecturaDXFLeer(
         correcciones_aplicadas=aplicadas,
         correcciones_ignoradas=cuantas_guardadas - len(aplicadas),
