@@ -390,6 +390,47 @@ def test_descartar_una_pieza_despues_de_anidar_vence_el_anidado(sesion):
     _sin_costo_por(resumen_materiales(sesion, trabajo.id).lineas[0], _CAMBIARON)
 
 
+def _con_el_snapshot_de_la_chapa(sesion, grupo, formato):
+    """Lo que guarda una corrida de la chapa con que se anidó (`parametros["formato"]`)."""
+    for ejecucion in grupo.ejecuciones:
+        ejecucion.parametros = {
+            "formato": {"id": formato.id, "ancho_mm": str(formato.ancho_mm), "alto_mm": str(formato.alto_mm)}
+        }
+    sesion.commit()
+
+
+def test_cambiar_la_chapa_despues_de_anidar_no_se_cobra_y_avisa(sesion):
+    """A25: lo que hace hoy el costeo, antes de moverlo a la regla única. Con
+    la chapa cambiada no cobra, y da los dos avisos, en este orden."""
+    _, formato = _material_con_formato(sesion)
+    trabajo, grupo = _trabajo_con_grupo(sesion, formato)
+    _con_el_snapshot_de_la_chapa(sesion, grupo, formato)
+    formato.ancho_mm = Decimal("1250")
+    sesion.commit()
+
+    linea = resumen_materiales(sesion, trabajo.id).lineas[0]
+
+    assert linea.costo_estimado is None
+    assert linea.area_total_m2 is None
+    assert linea.advertencias == [
+        "Grupo «Grupo 1»: el material o formato cambió después del anidado. "
+        "Calculá un nuevo anidado antes de presupuestar.",
+        "Grupo «Grupo 1»: todavía no tiene un anidado terminado.",
+    ]
+
+
+def test_con_la_misma_chapa_el_snapshot_no_vence_nada(sesion):
+    _, formato = _material_con_formato(sesion)
+    trabajo, grupo = _trabajo_con_grupo(sesion, formato)
+    _con_el_snapshot_de_la_chapa(sesion, grupo, formato)
+
+    linea = resumen_materiales(sesion, trabajo.id).lineas[0]
+
+    assert linea.costo_estimado is not None
+    assert linea.area_total_m2 is not None
+    assert not any("cambió" in aviso or "todavía no tiene" in aviso for aviso in linea.advertencias)
+
+
 def test_seccionar_una_pieza_despues_de_anidar_vence_el_anidado(sesion):
     """Seccionar descarta la original y suma sus tramos al grupo."""
     _, formato = _material_con_formato(sesion)
