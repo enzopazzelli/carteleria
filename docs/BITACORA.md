@@ -58,6 +58,38 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-09 — Una sola regla de qué anidado cuenta para el presupuesto (A25)
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+
+Un trabajo, en la rama `feat/a25-regla-unica-del-anidado`, con su diseño y su plan en [`docs/plan/A25-regla-unica-del-anidado/`](plan/A25-regla-unica-del-anidado/diseno.md). **Sin fusionar a `main`**: falta que Enzo lo revise y lo apruebe.
+
+- **Una sola decisión en el servidor** (`app/anidado_que_cuenta.py`): dado un grupo, dice cuál anidado se muestra, si se cobra y, si no, por qué (sin material, sin anidado, sin piezas, las piezas cambiaron, la chapa cambió). Reúne la elección de cuál anidado (antes en el costeo), si sigue al día con las piezas y la comparación con la chapa.
+- **El costeo, la tarjeta del inicio y el PDF la llaman.** Se borró la regla vieja del costeo y las cuentas de «vencido» que cada uno armaba por su lado.
+- **La API de anidados** suma `es_el_que_cuenta`, `no_se_cobra_por` y `aviso_de_no_cobrar`; el frontend dejó de elegir y de tener el texto del aviso: lo lee del servidor.
+- **Lo único que se ve distinto:** si se cambia la chapa de un grupo ya anidado, el inicio dice «Falta volver a anidar», el PDF lleva el aviso en rojo y Chapas y Anidado dicen el motivo real. Antes solo el costeo lo notaba. Un grupo sin material tampoco se da por terminado.
+- **Una guardiana** (`tests/test_regla_unica_del_anidado.py`) falla, con el archivo y la línea, si otro módulo vuelve a decidir por su cuenta si un anidado está al día o a comparar la chapa.
+- **Probado:** pruebas nuevas del módulo (17), de la API (8), del inicio, del PDF y de la guardiana; los textos y números del costeo no cambiaron (sus pruebas pasan sin tocarlas); y un recorrido en Chrome sin ventana contra una copia de la base, antes y después de cambiar la chapa: el inicio, Chapas, Anidado, el costeo y el PDF dicen lo mismo, con el mismo motivo.
+
+### Qué se decidió
+
+- **Que el inicio y el PDF traten la chapa cambiada como el costeo** (Enzo, 2026-11-09).
+- Decididas por Claude, aprobadas con el diseño: la regla vive en un módulo propio y no dentro del costeo; no queda ningún alias de la función vieja; la API conserva `vencido` con su significado de siempre y suma campos; «sin material» es un motivo más y no un error.
+- **Lo que se dejó como estaba:** con la chapa cambiada el costeo da dos avisos seguidos («el material o formato cambió…» y «todavía no tiene un anidado terminado»). Es de antes y ninguna prueba lo cubría; ahora está fijado por una. Limpiarlo es otro pedido.
+
+### Cambios en el registro
+
+Sin cambios: no hay parámetros ni supuestos numéricos nuevos. No hay migración ni se escribe en la base.
+
+### Pendiente
+
+- **Enzo:** revisar la rama y aprobarla.
+- Siguen en «se puede construir ya»: cambiar cómo decide el lector qué es pieza y qué es agujero, e importar varios diseños a la vez.
+
+---
+
 ## 2026-11-09 — Recordar las correcciones de la lectura del dibujo (A24)
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —
