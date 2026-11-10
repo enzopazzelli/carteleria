@@ -44,7 +44,7 @@ export default function FilaDePresupuesto({ presupuesto, ahora, alFallarElPdf }:
   return (
     <li className="py-2 flex items-start gap-3">
       {ruta ? (
-        <Link to={ruta} className="flex-1 min-w-0 hover:text-cut focus-visible:outline focus-visible:outline-2 focus-visible:outline-cut">
+        <Link to={ruta} className="flex-1 min-w-0 hover:text-cuttext focus-visible:outline focus-visible:outline-2 focus-visible:outline-cut">
           {renglones}
         </Link>
       ) : (

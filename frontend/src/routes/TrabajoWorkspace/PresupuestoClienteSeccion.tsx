@@ -357,7 +357,7 @@ export default function PresupuestoClienteSeccion({
       )}
 
       <button
-        className="bg-cut text-paper rounded px-4 py-2 text-sm disabled:opacity-50"
+        className="bg-cut text-negro rounded px-4 py-2 text-sm disabled:opacity-50"
         disabled={faltantes.length > 0 || descargando}
         // Si el campo perdiera el foco al apretar, su guardado borra el aviso
         // de error de arriba, el botón sube y al soltar ya no está bajo el

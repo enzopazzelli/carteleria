@@ -17,7 +17,7 @@ const PASOS = [
 ] as const;
 
 const COLOR: Record<EstadoPaso, string> = {
-  hecho: "bg-cut",
+  hecho: "bg-ok",
   a_medias: "bg-bronze",
   error: "bg-conflict",
   pendiente: "bg-line",

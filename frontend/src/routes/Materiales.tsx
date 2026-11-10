@@ -124,7 +124,7 @@ export default function Materiales() {
             </span>
             <button
               type="button"
-              className="bg-cut text-paper rounded px-3 py-1.5 font-medium disabled:opacity-50 disabled:cursor-wait"
+              className="bg-cut text-negro rounded px-3 py-1.5 font-medium disabled:opacity-50 disabled:cursor-wait"
               disabled={revisar.isPending}
               onClick={() => elegirArchivo.current?.click()}
             >
@@ -147,7 +147,7 @@ export default function Materiales() {
       </div>
 
       {listo && (
-        <p role="status" className="mb-4 rounded border border-cut/40 bg-cut/10 px-3 py-2 text-sm text-cut">
+        <p role="status" className="mb-4 rounded border border-cut/40 bg-cut/10 px-3 py-2 text-sm text-cuttext">
           {listo}
         </p>
       )}

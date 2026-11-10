@@ -81,7 +81,7 @@ export default function AprobacionSeccion({ presupuestoId, estado }: { presupues
             <button
               key={boton.accion}
               className={`rounded px-3 py-1 text-sm disabled:opacity-50 ${
-                boton.principal ? "bg-cut text-paper" : "border border-line"
+                boton.principal ? "bg-cut text-negro" : "border border-line"
               }`}
               disabled={cambiar.isPending}
               onClick={() => {
@@ -114,7 +114,7 @@ export default function AprobacionSeccion({ presupuestoId, estado }: { presupues
             />
           </label>
           <button
-            className="bg-cut text-paper rounded px-3 py-1 text-sm disabled:opacity-50"
+            className="bg-cut text-negro rounded px-3 py-1 text-sm disabled:opacity-50"
             disabled={cambiar.isPending}
             onClick={() => void dar(pidiendo, motivo)}
           >

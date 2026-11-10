@@ -17,7 +17,7 @@ interface ListaDeCategoriasProps {
 
 const ITEM = "w-full flex items-baseline justify-between gap-2 py-1 pr-3 text-left text-sm border-l-4";
 const elegido = (si: boolean) =>
-  si ? `${ITEM} pl-5 border-cut bg-cut/10 text-cut font-medium` : `${ITEM} pl-5 border-transparent text-ink/80 hover:bg-line/30`;
+  si ? `${ITEM} pl-5 border-cut bg-cut/10 text-cuttext font-medium` : `${ITEM} pl-5 border-transparent text-ink/80 hover:bg-line/30`;
 
 const medidasDe = (material: MaterialDelCatalogo) => material.espesores.reduce((total, espesor) => total + espesor.medidas.length, 0);
 

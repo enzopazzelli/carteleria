@@ -1,7 +1,7 @@
 const COLOR: Record<string, string> = {
   encolada: "bg-line text-ink",
   corriendo: "bg-bronze text-paper",
-  lista: "bg-cut text-paper",
+  lista: "bg-ok text-paper",
   cancelada: "bg-line text-ink",
   error: "bg-conflict text-paper",
 };

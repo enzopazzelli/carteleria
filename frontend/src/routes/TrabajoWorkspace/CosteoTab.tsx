@@ -141,7 +141,7 @@ export default function CosteoTab() {
             />
           )}
           <button
-            className="bg-cut text-paper rounded px-4 py-2 disabled:opacity-50"
+            className="bg-cut text-negro rounded px-4 py-2 disabled:opacity-50"
             disabled={!clienteSeleccion || (clienteSeleccion === "nuevo" && !nombreCliente.trim())}
             onClick={alCrearOpcion}
           >
@@ -156,7 +156,7 @@ export default function CosteoTab() {
             <button
               key={p.id}
               className={`rounded px-3 py-1 text-sm border border-line ${
-                presupuestoActivo?.id === p.id ? "bg-cut text-paper" : ""
+                presupuestoActivo?.id === p.id ? "bg-cut text-negro" : ""
               }`}
               onClick={() => setPresupuestoActivoId(p.id)}
             >
@@ -459,7 +459,7 @@ function SeccionDesglose({ presupuestoId, editable }: { presupuestoId: number; e
           value={nuevaLinea.precio_unitario}
           onChange={(e) => setNuevaLinea((n) => ({ ...n, precio_unitario: e.target.value }))}
         />
-        <button className="bg-cut text-paper rounded px-3 py-1 text-sm" onClick={alCrearLinea}>
+        <button className="bg-cut text-negro rounded px-3 py-1 text-sm" onClick={alCrearLinea}>
           Agregar línea
         </button>
       </div>
