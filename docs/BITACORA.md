@@ -68,7 +68,8 @@ Qué queda abierto y cuál es el próximo paso.
 - `scripts/limpiar_base.py`: limpia la base SQLite de desarrollo con cuatro opciones (trabajos; trabajos y clientes; de fábrica; sesiones), con respaldo, vista previa y confirmación escribiendo `BORRAR`. Nunca toca los usuarios.
 - `docs/MANUAL-USUARIOS.md`, el manual para el dueño.
 - PR #34 fusionado (`9ea3ffa`) **con el CI de GitHub caído** (Actions en `major_outage`: el job de backend quedó colgado y el relanzado dio `startup_failure`). El job de Postgres pasó y las 1573 pruebas del backend pasan en la máquina de Enzo.
-- README reordenado: el título y lo vigente primero, «Para Vale» más abajo y el historial de entregas en `docs/historico/ENTREGAS-HECHAS.md`. Mapa del proyecto en la 3.3, con el login y el diagrama corregido; notas de CART-002 y CART-003 en el backlog.
+- **README reescrito (2026-11-11), con explicaciones llanas y cuatro diagramas** (el camino de un trabajo, cómo está armado, los estados del presupuesto y la hoja de ruta), un índice «Por dónde empiezo» y la tecnología al día (ReportLab, Sparrow). El recorrido de prueba pasó a `docs/GUIA-PROBAR-EL-SISTEMA.md`. Los diagramas se validaron con la biblioteca Mermaid.
+- Antes de eso, el README se había reordenado: el título y lo vigente primero, «Para Vale» más abajo y el historial de entregas en `docs/historico/ENTREGAS-HECHAS.md`. Mapa del proyecto en la 3.3, con el login y el diagrama corregido; notas de CART-002 y CART-003 en el backlog.
 
 ### Qué se decidió
 - El menú de usuarios habla con la app y no con la base, para que sirva igual contra la local y contra la desplegada (la base de producción no publica ningún puerto). El comando `python -m app.usuarios` queda para emergencias en el servidor.
