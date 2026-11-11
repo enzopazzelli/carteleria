@@ -51,7 +51,6 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 - Si tiene cambios en curso sobre `sparrow_worker.py` y si ya había probado otro reparto del tiempo.
 
 **Se puede construir ya, sin esperar a nadie**
-- **La exportación a DXF con las dos cosas (pedido de Enzo, 2026-11-11):** el diseño entero importado y los paneles resultantes. Hoy el PDF ya trae la hoja del diseño y las chapas, pero el DXF (`exportacion_dxf.py`) escribe una chapa por archivo y no incluye el diseño entero. Por verificar: que el PDF muestre el diseño completo, también el de piezas seccionadas.
 - **Entrega A3 del servidor** (Docker, copias de seguridad y llevar el catálogo a PostgreSQL): tareas 11 a 14 de [`docs/plan/1.1-servidor-y-login/plan.md`](docs/plan/1.1-servidor-y-login/plan.md). No hay Docker en la máquina de Enzo: se verifica en el CI de GitHub.
 - Lo demás se midió o se decidió el 2026-11-09 (Enzo):
   - **Cambiar cómo decide el lector qué es pieza y qué es agujero:** medido y dejado como está. Con los diseños de ahora, que solo traen el diseño, casi no hay casos; ver `PLAN-MAESTRO.md §7`.
