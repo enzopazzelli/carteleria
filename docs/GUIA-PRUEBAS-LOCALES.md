@@ -211,6 +211,7 @@ Cuando hay que ver una pantalla o probar un cambio con datos de verdad, **no** s
 4. **Comprobar que la pantalla muestra lo de la copia** antes de tocar nada.
 5. **Al terminar:** cerrar solo los procesos propios (por su hora de inicio y su línea de comandos, no «lo que escuche en el 8000») y borrar `local/copias/<nombre>/`.
 6. **Antes de aplicar una migración a la base real,** respaldarla. La app también lo hace sola: deja una carpeta `respaldo-<fecha>-antes-de-<versión>/` en `backend/local/`.
+7. **Para dejar la base (o una copia) sin trabajos, sin clientes o de fábrica:** `python scripts/limpiar_base.py` desde `backend/`, con la app cerrada. Pide el ok escribiendo `BORRAR`, hace su propio respaldo y nunca toca los usuarios. Las opciones, en [`MANUAL-USUARIOS.md §4`](MANUAL-USUARIOS.md).
 
 ### Las pruebas automáticas de A24 y A25
 
