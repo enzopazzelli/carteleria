@@ -28,7 +28,7 @@ Más adelante: mandarle el presupuesto al cliente con el fotomontaje del cartel 
 | Escribir código | [`CONVENCIONES.md`](docs/CONVENCIONES.md) y la [guía de lectura](#guía-de-lectura) |
 | Buscar un documento | [Índice de documentos](#índice-de-documentos) |
 
-**En este README:** [Qué hace el sistema](#qué-hace-el-sistema) · [Cómo está armado](#cómo-está-armado) · [El presupuesto y sus estados](#el-presupuesto-y-sus-estados) · [En qué estamos](#en-qué-estamos) · [Para Vale](#para-vale-lo-que-a17-cambió-en-el-motor-2026-10-29) · [Probar el sistema](#probar-el-sistema-en-tu-computadora) · [Dónde está cada cosa](#dónde-está-cada-cosa) · [Hoja de ruta](#hoja-de-ruta) · [Guía de lectura](#guía-de-lectura) · [Índice de documentos](#índice-de-documentos) · [Reglas](#las-tres-reglas-que-no-se-negocian) · [Equipo](#equipo-y-división-del-trabajo) · [Tecnología](#tecnología) · [Glosario](#glosario) · [Contribuir](#contribuir)
+**En este README:** [Qué hace el sistema](#qué-hace-el-sistema) · [Cómo está armado](#cómo-está-armado) · [El presupuesto y sus estados](#el-presupuesto-y-sus-estados) · [En qué estamos](#en-qué-estamos) · [Lo que A17 cambió en el motor](#lo-que-a17-cambió-en-el-motor-2026-10-29) · [Probar el sistema](#probar-el-sistema-en-tu-computadora) · [Dónde está cada cosa](#dónde-está-cada-cosa) · [Hoja de ruta](#hoja-de-ruta) · [Guía de lectura](#guía-de-lectura) · [Índice de documentos](#índice-de-documentos) · [Reglas](#las-tres-reglas-que-no-se-negocian) · [Equipo](#equipo-y-división-del-trabajo) · [Tecnología](#tecnología) · [Glosario](#glosario) · [Contribuir](#contribuir)
 
 ---
 
@@ -151,7 +151,6 @@ Una sola regla del servidor decide qué anidado cuenta para el presupuesto: el c
 | **Mail real y aviso al dueño; envío al cliente** con el presupuesto congelado | Cerrar la aprobación | Después del servidor |
 | **WhatsApp** | Avisos por ese canal | Etapa 4 |
 | **Medir la segunda tanda de A17** (unos 75 minutos con la máquina libre) | Decidir cómo repartir el tiempo del anidado | Enzo, solo cuando la pida |
-| **Vale:** ¿tiene cambios en curso sobre `sparrow_worker.py`? | Medir sin pisarse | Vale |
 
 **En espera por decisión de Enzo (2026-10-22):** colores de referencia por pieza y leer archivos `.cdr`.
 
@@ -167,9 +166,9 @@ Una sola regla del servidor decide qué anidado cuenta para el presupuesto: el c
 
 ---
 
-## Para Vale: lo que A17 cambió en el motor (2026-10-29)
+## Lo que A17 cambió en el motor (2026-10-29)
 
-El sprint para cerrar lo chico que quedó suelto (A17) terminó el 2026-10-29: [`docs/historico/A17-pulir-lo-suelto/`](docs/historico/A17-pulir-lo-suelto/diseno.md). Cómo quedó cada tanda está en §8 de su diseño. Lo que toca tu carril, todo en `main`:
+El sprint para cerrar lo chico que quedó suelto (A17) terminó el 2026-10-29: [`docs/historico/A17-pulir-lo-suelto/`](docs/historico/A17-pulir-lo-suelto/diseno.md). Cómo quedó cada tanda está en §8 de su diseño. Lo que tocó en el motor, todo en `main`:
 - **`sparrow_worker.py`:**
   - la etapa de vaciar chapas mide cuánto tarda de verdad cada consulta y no empieza una que no termina a tiempo (tanda 1);
   - el tiempo repartido en varias vueltas cortas (`repartir_tiempo`), uno de los dos caminos para que Complejo dé 7 chapas más seguido. Está **apagado** hasta medirlo (tanda 2).
@@ -181,10 +180,6 @@ El sprint para cerrar lo chico que quedó suelto (A17) terminó el 2026-10-29: [
 - **`huecos_primero.py`** (tanda 2): `meter_en_huecos` puede probar otros órdenes de piezas en cada hueco. Por defecto, el de siempre.
 - **`services/nesting/reacomodar.py`**, nuevo (tanda 3): al pasar una pieza a otra chapa en la pestaña Chapas, si no entra en lo libre, esa chapa se reacomoda con Sparrow, con «Deshacer».
 - **`services/seccionado/grilla.py`:** la segunda pasada prueba los ángulos del medio, en vez de repetir los ya probados (tanda 1), y cada tramo lleva un color distinto del de sus vecinos (tanda 4).
-
-**La pregunta para vos sigue abierta:** ¿tenés cambios en curso sobre `sparrow_worker.py`? ¿Ya habías probado otro reparto del tiempo entre las vueltas y el vaciado de chapas? Si alguna respuesta es sí, avisale a Enzo antes de medir la tanda 2.
-
-**Al arrancar el servidor**, la base se actualiza sola. Antes, guarda un respaldo en `backend/local/respaldo-<fecha>-antes-de-<versión>/`.
 
 ---
 
@@ -498,7 +493,7 @@ El glosario completo está en [`docs/EPICA.md §16`](docs/EPICA.md).
 
 Leé [`docs/CONVENCIONES.md`](docs/CONVENCIONES.md) completo antes del primer commit. El resumen:
 
-- Una rama por historia (`feat/CART-202-motor-bin-packing`), con máximo 3 días de vida.
+- Se trabaja sobre `main`, y hoy no hay ramas abiertas. Un cambio de código va en una rama corta que se fusiona por PR y se borra al fusionar; la documentación puede ir directo a `main`.
 - Commits en Conventional Commits, en español, **sin trailers de atribución a herramientas**.
 - Una migración por PR, generada justo antes de abrirlo.
 - Sin números mágicos: todo valor nuevo por defecto tiene su `PAR-xx` en `REGISTRO.md`.

@@ -277,14 +277,13 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 
 | Qué | A quién o qué se espera |
 |---|---|
-| Si Vale tiene cambios en curso sobre `sparrow_worker.py`, y si ya había probado otro reparto | Vale |
 | Medir un trabajo con muchas más piezas | Un trabajo grande con los grupos armados: `Muestra Vectores` no los tiene |
 | Con Complejo, el paso de huecos tarda 4,5 s en ver que no entra nada; un trabajo con muchos más huecos chicos podría pasarse | Que aparezca un caso |
 | Los ángulos de las piezas grandes se prueban de a 1°: una que solo entra entre dos grados enteros no lo aprovecha | Que aparezca un caso |
 | Si la excepción del rectángulo vale también para la forma de adentro: una pieza irregular que no entra en ninguna chapa no descarta un hueco rectangular que tampoco entra | Que aparezca un caso |
 | Elegir qué grupo de formas se une (hoy la casilla vale para el archivo entero) | Que aparezca un diseño que lo pida |
 
-**Descartado el 2026-11-11 (Enzo): no se puede saber desde su lado y ensuciaba la lista.** El aro soldado del diseñador (`SUP-17`), la veta y los tramos girados (`P-04`, `B-04`, `P-30`: las chapas son uniformes), imprimir y medir una hoja del PDF, el retazo más chico que se guarda (`PAR-56`) y los valores que el sistema asumió y esperaban la confirmación del dueño. Los IDs siguen abiertos en `REGISTRO.md`, pero ya no frenan nada ni se piden.
+**Descartado el 2026-11-11 (Enzo): no se puede saber desde su lado y ensuciaba la lista.** El aro soldado del diseñador (`SUP-17`), la veta y los tramos girados (`P-04`, `B-04`, `P-30`: las chapas son uniformes), imprimir y medir una hoja del PDF, el retazo más chico que se guarda (`PAR-56`) los valores que el sistema asumió y esperaban la confirmación del dueño, y la pregunta a Vale sobre `sparrow_worker.py` (no respondió y no se vuelve a pedir). Los IDs siguen abiertos en `REGISTRO.md`, pero ya no frenan nada ni se piden.
 | Marcar de a muchas formas con un recuadro: al sacar una placa con tornillos hay que sacar cada tornillo | Que haga falta |
 | Las mediciones de la tanda 2 de A17: los dos caminos para Complejo en 7 chapas (también decide cómo repartir el tiempo entre las pasadas y vaciar chapas), el orden de los huecos y repetir con varias corridas las de A11, A12, A13 y 2.1a. El código está en `main`, apagado | Enzo: la máquina libre unos 75 minutos. No se corren sin que lo pida |
 

@@ -74,6 +74,7 @@ Qué queda abierto y cuál es el próximo paso.
 ### Qué se decidió
 - El menú de usuarios habla con la app y no con la base, para que sirva igual contra la local y contra la desplegada (la base de producción no publica ningún puerto). El comando `python -m app.usuarios` queda para emergencias en el servidor.
 - «Borrar» un usuario es darlo de baja: el historial de quién aprobó o cambió qué tiene que seguir diciendo quién fue.
+- Se sacó la pregunta a Vale sobre `sparrow_worker.py` (no respondió): ya no figura en el README ni en el plan maestro.
 - Se sacó de los pendientes lo que Enzo no puede saber desde desarrollo: las dos medidas del catálogo sin precio, el código repetido de la planilla, imprimir y medir una hoja del PDF, las dudas del dueño, el aro soldado del diseñador y la veta del taller (las chapas son uniformes).
 - El pedido de «el diseño entero en el PDF y el DXF con diseño y paneles» fue un malentendido: el sistema ya hace lo que Enzo necesita (la hoja del diseño completo en el PDF, y un DXF por chapa para la máquina).
 
