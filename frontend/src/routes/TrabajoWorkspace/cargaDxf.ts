@@ -1,6 +1,6 @@
 // Cuentas puras de la carga de un DXF en la pestaña Piezas.
 
-import type { Correcciones } from "../../api/piezasYgrupos";
+import type { Correcciones, MedidaDxf } from "../../api/piezasYgrupos";
 
 /**
  * La escala tal como hay que mandarla al servidor, o `null` si lo
@@ -14,6 +14,28 @@ export function escalaParaCargar(texto: string): string | null {
   const limpio = texto.trim().replace(",", ".");
   if (!/^\d+(\.\d+)?$/.test(limpio) || Number(limpio) <= 0) return null;
   return String(Number(limpio));
+}
+
+const enArgentina = (valor: number, decimales: number) =>
+  valor.toLocaleString("es-AR", { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+
+/** Los milímetros con un decimal si son pocos (un cartel de 46 mm tiene que verse como tal), enteros si son muchos. */
+const milimetros = (valor: number) => enArgentina(valor, valor < 100 ? 1 : 0);
+
+/**
+ * La referencia que se muestra junto a la escala: cuánto mediría el dibujo con esa escala, en milímetros y en
+ * metros, para compararlo con lo que quien carga sabe del cartel. `null` si la escala no es válida o todavía
+ * no se midió el dibujo (o no tiene ninguna forma cerrada).
+ */
+export function referenciaDeEscala(medida: MedidaDxf | null, textoDeLaEscala: string): string | null {
+  const escala = escalaParaCargar(textoDeLaEscala);
+  if (escala === null || medida === null || medida.ancho === null || medida.alto === null) return null;
+  const ancho = Number(medida.ancho) * Number(escala);
+  const alto = Number(medida.alto) * Number(escala);
+  return (
+    `Con esta escala, el dibujo mide ${milimetros(ancho)} × ${milimetros(alto)} mm ` +
+    `(${enArgentina(ancho / 1000, 2)} × ${enArgentina(alto / 1000, 2)} m).`
+  );
 }
 
 /**

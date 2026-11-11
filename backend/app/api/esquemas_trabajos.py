@@ -110,6 +110,15 @@ class LecturaLeer(BaseModel):
     advertencias: list[str]
 
 
+class MedidaDXFLeer(BaseModel):
+    """Cuánto ocupa un dibujo **en sus propias unidades**, sin escala. La pantalla lo multiplica por la escala
+    que escribe quien carga y muestra «con esta escala, el dibujo mide … mm»: una referencia para saber si la
+    escala es la que corresponde. `None` si el archivo no tiene ninguna forma cerrada."""
+
+    ancho: Decimal | None
+    alto: Decimal | None
+
+
 class LecturaDXFLeer(BaseModel):
     """Cómo se leería un DXF, sin haber guardado nada."""
 

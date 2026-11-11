@@ -10,6 +10,7 @@
 
 
 **Ya está en `main`:**
+- **Una referencia para la escala, desde el 2026-11-11.** Al elegir el DXF, debajo de la cajita de escala aparece «Con esta escala, el dibujo mide 4.610 × 7.760 mm (4,61 × 7,76 m)», que se recalcula mientras se escribe, y una explicación fija de qué es la escala (1 si el dibujo está en milímetros, 10 en centímetros, 1000 en metros). El servidor mide el dibujo en sus propias unidades con `POST /dxf/medida`; la pantalla multiplica. No hay alarmas: es solo la referencia. Sin migración.
 - **Una sola regla de qué anidado cuenta para el presupuesto (A25), desde el 2026-11-09.**
   - **Para qué:** que el costeo, la tarjeta del inicio, el PDF y Chapas digan lo mismo de un grupo. Antes cada uno lo decidía por su cuenta, y solo el costeo notaba si la chapa cambiaba después de anidar.
   - **Cómo funciona:** un solo módulo del servidor (`app/anidado_que_cuenta.py`) dice cuál anidado del grupo se muestra, si se cobra y, si no, por qué: no tiene material, no hay anidado, no tiene piezas, las piezas cambiaron o la chapa cambió. Se muestra aunque no se cobre: la miniatura, el PDF y Chapas lo siguen dibujando, con su aviso.

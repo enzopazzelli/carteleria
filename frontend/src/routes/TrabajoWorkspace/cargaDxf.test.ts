@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { avisoDeCorreccionesGuardadas, escalaParaCargar, sonLasMismasCorrecciones } from "./cargaDxf";
+import { avisoDeCorreccionesGuardadas, escalaParaCargar, referenciaDeEscala, sonLasMismasCorrecciones } from "./cargaDxf";
 
 describe("escalaParaCargar", () => {
   it("acepta un número entero mayor que cero", () => {
@@ -72,5 +72,34 @@ describe("sonLasMismasCorrecciones", () => {
     expect(sonLasMismasCorrecciones({ a: "no_va", b: "cortar" }, { a: "no_va" })).toBe(false);
     expect(sonLasMismasCorrecciones({ a: "no_va" }, { a: "cortar" })).toBe(false);
     expect(sonLasMismasCorrecciones({ a: "no_va" }, { b: "no_va" })).toBe(false);
+  });
+});
+
+describe("referenciaDeEscala", () => {
+  const complejo = { ancho: "46.1", alto: "77.6" }; // el dibujo, en sus propias unidades
+
+  it("con la escala que corresponde, dice cuánto mide el cartel en milímetros y en metros", () => {
+    expect(referenciaDeEscala(complejo, "100")).toBe("Con esta escala, el dibujo mide 4.610 × 7.760 mm (4,61 × 7,76 m).");
+  });
+
+  it("con una escala chica deja ver que algo no cierra: un cartel de 46 mm", () => {
+    expect(referenciaDeEscala(complejo, "1")).toBe("Con esta escala, el dibujo mide 46,1 × 77,6 mm (0,05 × 0,08 m).");
+  });
+
+  it("acepta la coma decimal, como la caja de la escala", () => {
+    expect(referenciaDeEscala({ ancho: "1000", alto: "500" }, "0,5")).toBe(
+      "Con esta escala, el dibujo mide 500 × 250 mm (0,50 × 0,25 m).",
+    );
+  });
+
+  it("no dice nada si la escala no es un número válido", () => {
+    expect(referenciaDeEscala(complejo, "")).toBeNull();
+    expect(referenciaDeEscala(complejo, "abc")).toBeNull();
+    expect(referenciaDeEscala(complejo, "0")).toBeNull();
+  });
+
+  it("no dice nada si todavía no se midió el dibujo o no tiene ninguna forma", () => {
+    expect(referenciaDeEscala(null, "100")).toBeNull();
+    expect(referenciaDeEscala({ ancho: null, alto: null }, "100")).toBeNull();
   });
 });

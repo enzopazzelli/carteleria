@@ -1,6 +1,6 @@
 import { Fragment, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { useASeccionar, usePiezas, useSubirDxf, useLeerDxf, useDescartarPieza, useDeshacerSeccionado } from "../../hooks/usePiezas";
+import { useASeccionar, usePiezas, useSubirDxf, useLeerDxf, useMedirDxf, useDescartarPieza, useDeshacerSeccionado } from "../../hooks/usePiezas";
 import { useGrupos } from "../../hooks/useGrupos";
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
 import PiezaMiniPreview from "../../components/PiezaMiniPreview";
@@ -14,8 +14,8 @@ import { originalesASeccionar } from "../../components/Seccionado/geometria";
 import { separarDescartadas, textoDelPliegue } from "./descartadas";
 import { mostrarMm } from "./importes";
 import { crearTurnos } from "../../components/Seccionado/turnos";
-import type { Correcciones, LecturaDxf, Pieza } from "../../api/piezasYgrupos";
-import { avisoDeCorreccionesGuardadas, escalaParaCargar, sonLasMismasCorrecciones } from "./cargaDxf";
+import type { Correcciones, LecturaDxf, MedidaDxf, Pieza } from "../../api/piezasYgrupos";
+import { avisoDeCorreccionesGuardadas, escalaParaCargar, referenciaDeEscala, sonLasMismasCorrecciones } from "./cargaDxf";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
@@ -71,6 +71,11 @@ function PiezasDelTrabajo() {
   // explorador.
   const [archivoActual, setArchivoActual] = useState<File | null>(null);
   const escala = escalaParaCargar(escalaAMm);
+  // Cuánto ocupa el dibujo elegido en sus propias unidades: con eso, la referencia junto a la escala
+  // («con esta escala, el dibujo mide …») se recalcula mientras se escribe, sin volver a pedir nada.
+  const medirDxf = useMedirDxf();
+  const [medida, setMedida] = useState<MedidaDxf | null>(null);
+  const referencia = referenciaDeEscala(medida, escalaAMm);
   // Cómo leyó el servidor el archivo, con qué archivo, escala y
   // correcciones se pidió. Nada se guarda hasta «Cargar»; si después
   // cambia el archivo o la escala, esta lectura queda vieja y el panel
@@ -213,6 +218,10 @@ function PiezasDelTrabajo() {
 
     setError(null);
     setArchivoActual(archivo);
+    // Si no se puede medir no pasa nada: la referencia no aparece, y el error de verdad, si lo hay,
+    // lo da «Ver cómo se lee».
+    setMedida(null);
+    medirDxf.mutate(archivo, { onSuccess: setMedida });
   }
 
   async function alDescartarPieza(piezaId: number, descartada: boolean) {
@@ -345,6 +354,12 @@ function PiezasDelTrabajo() {
           </button>
           <span className="text-sm">{archivoActual ? archivoActual.name : "Ningún archivo elegido"}</span>
         </div>
+        <p className="text-sm text-ink/70 mt-1">
+          La escala es cuántos milímetros vale cada unidad del dibujo: 1 si está hecho en milímetros, 10 si está en
+          centímetros, 1000 si está en metros.
+        </p>
+        {archivoActual && medirDxf.isPending && <p className="text-sm text-ink/70 mt-1">Midiendo el dibujo…</p>}
+        {referencia && <p className="text-sm mt-1">{referencia}</p>}
         {archivoActual && !lecturaVigente && (
           <div className="mt-2">
             <button
