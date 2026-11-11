@@ -1,21 +1,11 @@
-## 👋 Para Vale: lo que A17 cambió en el motor — 2026-10-29
+# Sistema de Cotización, Nesting y Aprobación para Cartelería
 
-El sprint para cerrar lo chico que quedó suelto (A17) terminó el 2026-10-29: [`docs/historico/A17-pulir-lo-suelto/`](docs/historico/A17-pulir-lo-suelto/diseno.md). Cómo quedó cada tanda está en §8 de su diseño. Lo que toca tu carril, todo en `main`:
-- **`sparrow_worker.py`:**
-  - la etapa de vaciar chapas mide cuánto tarda de verdad cada consulta y no empieza una que no termina a tiempo (tanda 1);
-  - el tiempo repartido en varias vueltas cortas (`repartir_tiempo`), uno de los dos caminos para que Complejo dé 7 chapas más seguido. Está **apagado** hasta medirlo (tanda 2).
-- **`sparrow.py`:**
-  - la carpeta temporal va al lado de los datos;
-  - «entra en la chapa» usa los mismos giros que el anidado: con giro libre, cualquier ángulo;
-  - el registro dice de qué anidado es lo que escribió Sparrow (las tres, tanda 1);
-  - el otro camino, dos búsquedas a la vez dentro del mismo anidado (`busquedas_a_la_vez`), también **apagado** (tanda 2).
-- **`huecos_primero.py`** (tanda 2): `meter_en_huecos` puede probar otros órdenes de piezas en cada hueco. Por defecto, el de siempre.
-- **`services/nesting/reacomodar.py`**, nuevo (tanda 3): al pasar una pieza a otra chapa en la pestaña Chapas, si no entra en lo libre, esa chapa se reacomoda con Sparrow, con «Deshacer».
-- **`services/seccionado/grilla.py`:** la segunda pasada prueba los ángulos del medio, en vez de repetir los ya probados (tanda 1), y cada tramo lleva un color distinto del de sus vecinos (tanda 4).
+Plataforma a medida para una empresa de cartelería de gran formato en chapa. Automatiza el armado de presupuestos, calcula cómo anidar las piezas sobre la plancha para desperdiciar lo menos posible, gestiona el circuito de autorización del dueño y envía el presupuesto al cliente con el fotomontaje del cartel sobre el frente del local.
 
-**La pregunta para vos sigue abierta:** ¿tenés cambios en curso sobre `sparrow_worker.py`? ¿Ya habías probado otro reparto del tiempo entre las vueltas y el vaciado de chapas? Si alguna respuesta es sí, avisale a Enzo antes de medir la tanda 2.
-
-**Al arrancar el servidor**, la base se actualiza sola. Antes, guarda un respaldo en `backend/local/respaldo-<fecha>-antes-de-<versión>/`.
+**Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**: lectura del DXF, anidado con Sparrow, costeo y PDF del presupuesto · hay login y permisos de usuario; faltan el servidor, el aviso al dueño y el envío al cliente — ver «En qué estamos» más abajo y [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md)
+**Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md)
+**Equipo:** Enzo (todo lo que no es el motor) · Vale (motor de anidado)
+**Versión etiquetada:** `v2026.11.09` (el estado de este día, con fecha y no con número de versión: todavía no hay un criterio de numeración) · **Última actualización:** 2026-11-11 — ver «En qué estamos» más abajo
 
 ---
 
@@ -62,124 +52,28 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 
 **Lo que dejó anotado la revisión de A20,** para decidir cuando haga falta: editar un cliente cambia el PDF de un presupuesto ya aprobado; dos personas aprobando u observando a la vez el mismo presupuesto; y las piezas y el anidado siguen editables con el presupuesto aprobado. Ver [`docs/historico/A20-aprobacion-del-presupuesto/`](docs/historico/A20-aprobacion-del-presupuesto/diseno.md).
 
-**Hecho el 2026-11-09, en la base real:** la migración de A24 (la tabla de correcciones del dibujo), con respaldo manual y automático antes. La tabla quedó vacía y los 2 trabajos, intactos.
+**Lo ya hecho, entrega por entrega (A10 a A25, con fechas y migraciones aplicadas),** en [`docs/ENTREGAS-HECHAS.md`](docs/ENTREGAS-HECHAS.md). **Lo que espera a alguien y lo grande que viene después,** en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md).
 
-**Hecho el 2026-11-08, en la base real:** las migraciones de A20, de A21 y de A23 y la primera carga de la planilla, con respaldos antes de cada una en `backend/local/`.
-- Entraron 288 artículos: los 27 códigos enlazados y 261 nuevos. El catálogo pasó de 23 a 44 materiales y de 30 a 59 formatos.
-- `CHA0013` quedó con la medida a mano, 1250 × 2500, confirmada por Enzo (el 0,7 es el espesor).
+---
 
-**Ya está en `main`:**
-- **Una sola regla de qué anidado cuenta para el presupuesto (A25), desde el 2026-11-09.**
-  - **Para qué:** que el costeo, la tarjeta del inicio, el PDF y Chapas digan lo mismo de un grupo. Antes cada uno lo decidía por su cuenta, y solo el costeo notaba si la chapa cambiaba después de anidar.
-  - **Cómo funciona:** un solo módulo del servidor (`app/anidado_que_cuenta.py`) dice cuál anidado del grupo se muestra, si se cobra y, si no, por qué: no tiene material, no hay anidado, no tiene piezas, las piezas cambiaron o la chapa cambió. Se muestra aunque no se cobre: la miniatura, el PDF y Chapas lo siguen dibujando, con su aviso.
-  - **Lo que se nota:** si le cambiás la chapa a un grupo ya anidado, la tarjeta del inicio dice «Falta volver a anidar», el PDF lleva el aviso en rojo, y Chapas y Anidado dicen el motivo («La chapa cambió después de este anidado: no se cobra»). Un grupo sin material tampoco se da por terminado.
-  - **Una guardiana** (`tests/test_regla_unica_del_anidado.py`) falla, con el archivo y la línea, si otro módulo vuelve a decidirlo por su cuenta.
-  - **Todavía no:** limpiar un detalle de antes, que se conserva: con la chapa cambiada el costeo da dos avisos seguidos («el material o formato cambió…» y «todavía no tiene un anidado terminado»).
+## 👋 Para Vale: lo que A17 cambió en el motor — 2026-10-29
 
-  Ver [`docs/historico/A25-regla-unica-del-anidado/`](docs/historico/A25-regla-unica-del-anidado/diseno.md).
-- **Recordar las correcciones de la lectura (A24), desde el 2026-11-09.**
-  - **Para qué:** que lo que marcaste sobre un dibujo (esta forma se corta, esta no va) no se pierda si volvés a cargar el mismo archivo.
-  - **Cómo funciona:** al apretar «Cargar» se guardan las correcciones, por la huella del contenido del archivo y no por su nombre. Al abrir «Ver cómo se lee» con el mismo archivo, aunque sea en otro trabajo, el dibujo aparece ya corregido, con un aviso («Se aplicó 1 corrección de la vez anterior») y un botón «Empezar de cero». Si marcás algo a mano, el aviso se esconde. Cargar sin ninguna corrección borra lo guardado de ese archivo.
-  - **Lo que no recuerda:** la unión de formas («Unir las formas que se pisan»), que se decide cada vez; y un dibujo cambiado, aunque sea en un milímetro, no recibe nada.
-  - **En la base:** una tabla nueva (migración `f2c8a4d6e913`, aplicada en la base real el 2026-11-09, con respaldo).
+El sprint para cerrar lo chico que quedó suelto (A17) terminó el 2026-10-29: [`docs/historico/A17-pulir-lo-suelto/`](docs/historico/A17-pulir-lo-suelto/diseno.md). Cómo quedó cada tanda está en §8 de su diseño. Lo que toca tu carril, todo en `main`:
+- **`sparrow_worker.py`:**
+  - la etapa de vaciar chapas mide cuánto tarda de verdad cada consulta y no empieza una que no termina a tiempo (tanda 1);
+  - el tiempo repartido en varias vueltas cortas (`repartir_tiempo`), uno de los dos caminos para que Complejo dé 7 chapas más seguido. Está **apagado** hasta medirlo (tanda 2).
+- **`sparrow.py`:**
+  - la carpeta temporal va al lado de los datos;
+  - «entra en la chapa» usa los mismos giros que el anidado: con giro libre, cualquier ángulo;
+  - el registro dice de qué anidado es lo que escribió Sparrow (las tres, tanda 1);
+  - el otro camino, dos búsquedas a la vez dentro del mismo anidado (`busquedas_a_la_vez`), también **apagado** (tanda 2).
+- **`huecos_primero.py`** (tanda 2): `meter_en_huecos` puede probar otros órdenes de piezas en cada hueco. Por defecto, el de siempre.
+- **`services/nesting/reacomodar.py`**, nuevo (tanda 3): al pasar una pieza a otra chapa en la pestaña Chapas, si no entra en lo libre, esa chapa se reacomoda con Sparrow, con «Deshacer».
+- **`services/seccionado/grilla.py`:** la segunda pasada prueba los ángulos del medio, en vez de repetir los ya probados (tanda 1), y cada tramo lleva un color distinto del de sus vecinos (tanda 4).
 
-  Ver [`docs/historico/A24-recordar-correcciones/`](docs/historico/A24-recordar-correcciones/diseno.md).
-- **Agregar materiales del catálogo al presupuesto (A23), desde el 2026-11-08.**
-  - **Para qué:** un cartel lleva más que la chapa que se anida: corrugado, vinilos, pintura, tornillos, iluminación, y también diseño, montaje y traslado. Antes se escribían a mano, con descripción, cantidad y precio.
-  - **Cómo se usa:** en el Costeo, en «Líneas por rubro», el botón **«Agregar del catálogo»** abre un buscador de los 288 artículos de la planilla: por texto, sin distinguir tildes ni mayúsculas, y con un filtro por categoría. Se elige el artículo, se escribe la cantidad (en m², metros, unidades o litros, según el artículo) y se agrega.
-  - **Qué toma de la planilla:** el texto, la unidad, el costo y el margen de venta, así que la línea tiene **precio sugerido** y se marca si se baja. Un artículo sin margen usa el margen general. Un artículo sin precio se agrega, pero la línea queda sin costo hasta que se le ponga un valor a mano.
-  - **Lo que no cambia solo:** el precio se copia al agregar; si la planilla cambia después, el presupuesto armado queda como estaba.
-  - **Todavía no:** actualizar los precios de un presupuesto armado, y agrupar renglones chicos en el PDF.
+**La pregunta para vos sigue abierta:** ¿tenés cambios en curso sobre `sparrow_worker.py`? ¿Ya habías probado otro reparto del tiempo entre las vueltas y el vaciado de chapas? Si alguna respuesta es sí, avisale a Enzo antes de medir la tanda 2.
 
-  Ver [`docs/historico/A23-materiales-en-el-presupuesto/`](docs/historico/A23-materiales-en-el-presupuesto/diseno.md).
-- **El PDF del presupuesto con la marca de la empresa (A22), desde el 2026-11-08.**
-  - **Para qué:** que quien recibe el presupuesto vea de quién es y cómo contactarlos.
-  - **Cómo se ve:** el logo a la izquierda, una banda negra inclinada con «PRESUPUESTO» en naranja y el código, el recuadro del cliente con una marca naranja, el detalle con una línea naranja y el total en un recuadro negro. El pie lleva el nombre, la dirección, el WhatsApp, el mail, la web y el Instagram, en cada hoja. De la segunda hoja en adelante, una banda finita con el código.
-  - **De dónde salen el logo y los datos:** de `backend/local/empresa/` (`logo.png` y `datos.json`), **fuera de git**: el repositorio es público. Si falta la carpeta, el PDF sale igual, sin logo ni pie. Para cambiar un dato, se edita `datos.json`.
-  - **Todavía no:** los datos fiscales y las condiciones de pago (el PDF ya los imprime cuando se carguen en `datos.json`), y el fotomontaje del cartel sobre la foto del local (3.2).
-
-  Ver [`docs/historico/A22-pdf-con-la-marca/`](docs/historico/A22-pdf-con-la-marca/diseno.md).
-- **La cuenta de los retazos (A21), desde el 2026-11-08.**
-  - **Para qué:** que el taller sepa con qué retazos cuenta, en vez de que el sobrante de cada chapa se pierda de vista.
-  - **Guardar:** en la tabla de chapas del resumen del anidado, al lado de cada sobrante que llega al mínimo (hoy 250 × 250 mm), un botón «Guardar como retazo». Crea el retazo con esa medida, del mismo material y al precio por m² de su chapa. El mismo sobrante no se guarda dos veces.
-  - **En Materiales:** arriba de las medidas de cada material, «Retazos: 1 retazo disponible · 2,22 m²». Cada retazo dice de dónde salió («Sobrante de Parador, chapa 2» o «a mano») y en qué anda:
-    - **disponible:** ningún trabajo lo usa;
-    - **en uso:** lo usa un trabajo cuyo presupuesto no está aprobado (sigue pudiéndose elegir);
-    - **usado:** lo usa un trabajo con el presupuesto aprobado. Si el presupuesto vuelve a borrador, se libera solo.
-  - **En el inicio:** el número de retazos cuenta solo los disponibles.
-  - **Todavía no:** cobrar por lo usado, y proponer un retazo al anidar un trabajo nuevo.
-
-  Ver [`docs/historico/A21-cuenta-de-retazos/`](docs/historico/A21-cuenta-de-retazos/diseno.md).
-- **La aprobación del presupuesto (A20), desde el 2026-11-08.**
-  - **Para qué:** que quede asentado que el dueño vio un presupuesto y lo dio por bueno, o que lo devolvió con una observación, y quién y cuándo.
-  - **Los estados:** borrador, pendiente de aprobación, observado y aprobado. Mandarlo a aprobar exige que esté completo, y dice qué falta si no.
-  - **En el Costeo:** una franja con el estado, los botones de cada paso, tu nombre (se recuerda) y el historial. Un presupuesto pendiente o aprobado queda bloqueado; para tocarlo hay que volverlo a borrador, con un motivo. El PDF se baja igual.
-  - **Todavía no:** el aviso por mail con link para aprobar desde el celular, y el envío al cliente. Hace falta tener servidor y buzón.
-
-  Ver [`docs/historico/A20-aprobacion-del-presupuesto/`](docs/historico/A20-aprobacion-del-presupuesto/diseno.md).
-- **Los presupuestos con precio sugerido (A19), desde el 2026-11-07.**
-  - **Para qué:** que el presupuesto salga con la ganancia que corresponde aunque lo arme alguien que no sabe, y que una baja se note. El dueño lo pidió porque los empleados cobraban mucho menos de lo que podían.
-  - **El precio sugerido:** cada material toma el primer margen de la planilla, que es un multiplicador del costo (la chapa × 3, el MDF × 5); lo que no tiene margen usa el margen general del presupuesto. El margen se guarda al «Recalcular materiales».
-  - **En el Costeo:** al lado de cada producto, el sugerido, el precio (que se cambia a mano) y la ganancia. Un producto por debajo del sugerido va en amarillo, con cuánto, y arriba hay un aviso.
-  - **«Presupuestos»** se prende en la barra: la lista de todos, con buscador, marca los que tienen productos por debajo, abre su Costeo y baja su PDF. El cliente no ve nada de esto.
-  - **Queda para el dueño** cuándo se usa el segundo margen de la planilla (× 6, `P-36`).
-
-  Ver [`docs/historico/A19-presupuestos-y-precio-sugerido/`](docs/historico/A19-presupuestos-y-precio-sugerido/diseno.md).
-- **La pantalla de Materiales con la planilla de precios (A18), desde el 2026-11-07.**
-  - **De dónde salen los precios:** los materiales y sus precios salen de la planilla de la empresa (`CARTELERIA 2026.xlsx`, hoja `COTIZADOR`, la misma de AppSheet).
-  - **Cómo se actualizan:** en Materiales, «Actualizar desde la planilla» la sube y muestra una revisión antes de aplicar: qué precios cambian, qué entra, qué ya no está y qué hay que mirar.
-  - **La pantalla, en dos columnas:** a la izquierda, un buscador y las categorías; a la derecha, el material elegido, con si se anida, el corte de cada espesor, las medidas con su proveedor, su costo por m² y sus retazos.
-  - **Dos proveedores para un código:** cuenta el último al que le cambió el precio, o el marcado con «Usar este». En el trabajo no se elige proveedor.
-  - **La lectura del DXF** sigue mirando solo las medidas de Chapas, Acrílicos y Policarbonato (`PAR-60`).
-  - **Para Vale:** en Anidado, el motor, la semilla, la búsqueda, el tiempo, la simplificación y «Vaciar chapas» pasaron a un desplegable «Opciones avanzadas», cerrado. Si alguna no es la de siempre, dice «cambiadas». Lo que se manda al motor no cambió.
-
-  Ver [`docs/historico/A18-pantalla-de-materiales/`](docs/historico/A18-pantalla-de-materiales/diseno.md).
-- **Pulir lo que quedó suelto (A17), cerrado el 2026-10-29.** Un sprint de 41 tareas en 7 tandas para cerrar los pendientes chicos de las tablas del plan maestro. Lo que más se nota:
-  - la base se pone al día sola al arrancar;
-  - en Chapas, si una pieza no entra en otra chapa, esa chapa se reacomoda, con «Deshacer»;
-  - cuando una pestaña no pudo cargar, un aviso con «Reintentar»;
-  - en Piezas, las descartadas van plegadas;
-  - un anidado cuyas piezas cambiaron después ya no se cobra, y lo dicen el Costeo, el inicio, Anidado, Chapas y el PDF.
-
-  Ver [`docs/historico/A17-pulir-lo-suelto/`](docs/historico/A17-pulir-lo-suelto/diseno.md).
-- **La página de inicio (A16), desde el 2026-10-26.** Una barra fija arriba en todas las pantallas: Inicio · Trabajos, y Presupuestos y Materiales apagados hasta que tengan su pantalla. El inicio va en dos columnas. A la izquierda, las tarjetas de los 6 trabajos tocados más recientemente: cada una con la miniatura del diseño pintado por chapa, en qué paso quedó y qué sigue («Falta anidar Calibre 22», «Falta el presupuesto»), las chapas y el material, y el presupuesto. Tocarla lleva a ese paso. A la derecha, «Nuevo trabajo», los últimos presupuestos (cada uno abre su Costeo y baja su PDF) y cuántos materiales hay. La sección Trabajos muestra todas las tarjetas con un buscador, y un trabajo se borra desde el «⋯» de su tarjeta, con confirmación; mientras se anida, no se puede borrar. Ver [`docs/historico/A16-pagina-de-inicio/`](docs/historico/A16-pagina-de-inicio/diseno.md).
-- **El diseño anidado en PDF (A15), desde el 2026-10-25.** Un PDF por trabajo, para imprimir en A4 y en color, que se baja desde la pestaña Chapas o desde el resumen del anidado. Por cada material trae una hoja con el diseño entero pintado del color de cada chapa, a todo el ancho, con lo usado y el sobrante de cada chapa abajo; después, las chapas juntas, hasta 4 por hoja, todas a escala 1:20, con una grilla cada 10 cm y el número de cada pieza, para reconocer lo cortado y marcar a mano. Una barra de 50 cm al pie deja comprobar con una regla que la hoja salió en tamaño real. Ver [`docs/historico/A15-disenio-anidado-en-pdf/`](docs/historico/A15-disenio-anidado-en-pdf/diseno.md).
-- **Las chapas en conjunto y el diseño inicial (A14), desde el 2026-10-24.** La pestaña **Chapas** reemplaza a Ajuste: muestra todas las chapas del anidado juntas, con el diseño inicial arriba pintado del color de cada chapa y lo que falta en rojo; pasar el mouse por una pieza o una chapa la ilumina en los dos lados. Una pieza se arrastra a otra chapa o a una chapa nueva y el sistema le busca lugar; con doble clic una chapa se abre grande para retocarla. En Grupos, en Piezas y en los mensajes, cada pieza nombrada lleva su forma y su lugar en el diseño. Ver [`docs/historico/A14-chapas-en-conjunto/`](docs/historico/A14-chapas-en-conjunto/diseno.md).
-- **Llenar mejor los huecos (A13), desde el 2026-10-23.** Cada pieza se busca por casillas adentro de los huecos, contra la pared y probando muchos más giros, incluida dada vuelta. Con el parador entran 30 piezas en los huecos en lugar de 20, y el sobrante crece de 1220 × 509 a 1220 × 761 sin gastar más chapa. Ver [`docs/historico/A13-llenar-mejor-los-huecos/`](docs/historico/A13-llenar-mejor-los-huecos/diseno.md).
-- **El plano y Ajuste se ven derechos, desde el 2026-10-23.** Se veían de cabeza respecto del DXF (la «A» como una «∀»); el DXF para la máquina siempre estuvo bien. Con eso, el sobrante arriba queda arriba también en el archivo.
-- **El material usado en ancho × alto (A12), desde el 2026-10-23.** El resumen del anidado dice lo usado como lo diría el dueño, «6 chapas enteras + 1220 × 1650 + 1220 × 900», con una tabla de lo usado y el sobrante de cada chapa; una chapa es «entera» si lo que sobra no llega al retazo más chico que se guarda (250 × 250 mm, a confirmar con el dueño). En Anidado se elige si el sobrante queda arriba, como bloque de todo el ancho (por defecto), o al costado. Con el parador sobra arriba un retazo de 1220 × 527. Ver [`docs/historico/A12-material-usado-y-sobrante/`](docs/historico/A12-material-usado-y-sobrante/diseno.md).
-- **Varios anidados a la vez, confirmado el 2026-10-23.** Tres a la vez terminan bien, cada uno dentro de su tiempo máximo, con la barra de avance y el servidor respondiendo. Con la máquina compartida cada uno busca menos, pero en la medición no salió peor: tres Complejo juntos dieron 7, 8 y 7 chapas (uno solo, 8). Detalle en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md).
-- **El giro de las piezas grandes (A11), desde el 2026-10-23.** Con «Girar a cualquier ángulo», Complejo fallaba: Sparrow inclinaba los tramos del aro y quedaban más anchos que la chapa, y la comparación terminaba enseguida con el mismo error. Ahora cada pieza que no entra a cualquier ángulo gira solo en los ángulos con los que entra entera, y el resultado la nombra en un aviso; las demás siguen girando libre. Complejo da 8 chapas, con y sin giro libre. Ver [`docs/historico/A11-giro-de-las-piezas-grandes/`](docs/historico/A11-giro-de-las-piezas-grandes/diseno.md).
-- **Aprovechar huecos primero (A10).** Las piezas chicas se meten en los huecos de las grandes *antes* de acomodar, y solo se acomoda lo que queda afuera. Con el parador, lo ocupado de la chapa bajó de 1103 a 930 mm, y ese paso tarda segundos: la pasada vieja tardaba 236 s y no ganaba nada.
-- Con eso vinieron:
-  - la barra de avance dice en qué anda, se puede cancelar y todo entra en el tiempo máximo;
-  - en Ajuste, una pieza se mueve con lo que tiene adentro;
-  - en el DXF, lo de adentro va primero;
-  - un anidado que quedó colgado al cerrar el programa pasa a error al arrancar.
-- Ver [`docs/historico/A10-huecos-primero/`](docs/historico/A10-huecos-primero/diseno.md).
-- Cómo probar Sparrow (semilla, tiempo, simplificación, cancelar): [`docs/GUIA-SPARROW-PRUEBAS.md`](docs/GUIA-SPARROW-PRUEBAS.md).
-
-**Lo que sigue: todo lo planeado, de la reunión y de antes.** Lo del motor ya está, y también llenar mejor los huecos, las chapas en conjunto (A14), el diseño anidado en PDF (A15), la página de inicio con las tarjetas (A16), lo chico que quedó suelto (A17), la pantalla de Materiales (A18), los presupuestos con el precio sugerido (A19) y la aprobación del presupuesto (A20). Lo que queda está en el cuadro y en las listas de arriba; en espera, por decisión de Enzo:
-
-| Qué | Cómo está hoy | Qué se busca | Estado |
-|---|---|---|---|
-| **Colores de referencia por pieza** | Los DXF que llegan no traen color | Elegir un color por pieza (la «O» de Complejo en rojo) y que se vea en el plano, en Chapas y en el PDF, para reconocerla anidada | En espera (Enzo, 2026-10-22) |
-| **Entrada `.cdr`** | Solo se lee DXF | Leer el archivo de CorelDRAW directo. Ya hay un estudio que funcionó con LibreOffice, sin CorelDRAW: [`docs/historico/SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | En espera (Enzo, 2026-10-22) |
-
-**Lo que espera a alguien** está en la lista de arriba y, con más detalle, en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Esperando a alguien».
-
-**Lo grande que viene después**, en «Lo grande, después de A17», en el mismo lugar.
-
-**El orden de corte ya no es pregunta para el taller:** se da por bueno que la máquina corta en el orden del archivo, con lo de adentro de un hueco primero (`SUP-18` en el [registro](docs/REGISTRO.md)).
-
-# Sistema de Cotización, Nesting y Aprobación para Cartelería
-
-Plataforma a medida para una empresa de cartelería de gran formato en chapa. Automatiza el armado de presupuestos, calcula cómo anidar las piezas sobre la plancha para desperdiciar lo menos posible, gestiona el circuito de autorización del dueño y envía el presupuesto al cliente con el fotomontaje del cartel sobre el frente del local.
-
-**Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**: lectura del DXF, anidado con Sparrow, costeo y PDF del presupuesto · faltan el login, el aviso al dueño y el envío al cliente — ver [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md) y, arriba, «En qué estamos»
-**Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md)
-**Equipo:** Enzo (todo lo que no es el motor) · Vale (motor de anidado)
-**Versión etiquetada:** `v2026.11.09` (el estado de este día, con fecha y no con número de versión: todavía no hay un criterio de numeración) · **Última actualización:** 2026-11-09 — ver arriba «En qué estamos» y [`docs/BITACORA.md`](docs/BITACORA.md)
+**Al arrancar el servidor**, la base se actualiza sola. Antes, guarda un respaldo en `backend/local/respaldo-<fecha>-antes-de-<versión>/`.
 
 ---
 
@@ -298,15 +192,6 @@ Los tests automáticos: `cd backend` → `.venv\Scripts\python -m pytest -q`; `c
 ### Qué nos sirve que anotes
 
 Cualquier cosa que te confunda (aunque funcione), el DXF con el que algo no se vio bien (sin mandar datos del cliente por fuera), y en qué paso pasó. Si algo no anda, copiá el texto del error tal cual.
-
----
-
-## 🆕 Novedad (2026-10-05)
-
-- **Hay un plan maestro:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md). Enzo construye todo lo que no es el motor de anidado, en cuatro etapas; el motor es el carril de Vale y se conecta por un enchufe que se define primero en papel (E1).
-- **`rectpack` sale del producto.** Queda en el código como motor de prueba. Hasta que llegue el motor, el costo de material figura como pendiente.
-- **Lo de afuera va al final.** Servidor, mail, WhatsApp y logo no frenan nada: se usan reemplazos locales y se conectan en la etapa 4.
-- **`docs/` se ordenó por estado:** `plan/`, `motor/`, `cliente/` e `historico/`. La regla está en [`docs/CONVENCIONES.md §8 bis`](docs/CONVENCIONES.md).
 
 ---
 
@@ -430,6 +315,7 @@ Lo que vale siempre. Se edita.
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
 | [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división del trabajo, Git y commits, migraciones, código, **dónde va cada documento** (§8 bis) | Cuando acordamos una regla nueva |
 | [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | Las correcciones a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
+| [`ENTREGAS-HECHAS.md`](docs/ENTREGAS-HECHAS.md) | Lo que ya está en `main`, entrega por entrega (A10 a A25), con fechas y migraciones aplicadas en la base real. Es historia | Al cerrar cada entrega |
 | [`MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md) | **Manual para el dueño:** cómo entrar y cambiar la contraseña, cómo administrar usuarios (pantalla y menú de la terminal) y cómo limpiar la base de desarrollo | Cuando cambian los permisos o los menús |
 | [`GUIA-PRUEBAS-LOCALES.md`](docs/GUIA-PRUEBAS-LOCALES.md) | Cómo probar con datos reales del cliente: el xlsx de AppSheet y los DXF de `modelos/`. Nunca se commitea lo que producen | Cuando cambian los datos reales disponibles |
 
