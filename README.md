@@ -5,7 +5,7 @@ Plataforma a medida para una empresa de cartelería de gran formato en chapa. Au
 **Estado:** 🚧 En desarrollo · el cotizador funciona de punta a punta **en local**: lectura del DXF, anidado con Sparrow, costeo y PDF del presupuesto · hay login y permisos de usuario; faltan el servidor, el aviso al dueño y el envío al cliente — ver «En qué estamos» más abajo y [`docs/MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md)
 **Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md)
 **Equipo:** Enzo (todo lo que no es el motor) · Vale (motor de anidado)
-**Versión etiquetada:** `v2026.11.09` (el estado de este día, con fecha y no con número de versión: todavía no hay un criterio de numeración) · **Última actualización:** 2026-11-11 — ver «En qué estamos» más abajo
+**Versión etiquetada:** `v2026.11.09` (el estado de este día, con fecha y no con número de versión: todavía no hay un criterio de numeración) · **Última actualización:** 2026-11-11 — ver «En qué estamos» más abajo y la [`bitácora`](docs/BITACORA.md)
 
 ---
 
@@ -52,7 +52,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
 
 **Lo que dejó anotado la revisión de A20,** para decidir cuando haga falta: editar un cliente cambia el PDF de un presupuesto ya aprobado; dos personas aprobando u observando a la vez el mismo presupuesto; y las piezas y el anidado siguen editables con el presupuesto aprobado. Ver [`docs/historico/A20-aprobacion-del-presupuesto/`](docs/historico/A20-aprobacion-del-presupuesto/diseno.md).
 
-**Lo ya hecho, entrega por entrega (A10 a A25, con fechas y migraciones aplicadas),** en [`docs/ENTREGAS-HECHAS.md`](docs/ENTREGAS-HECHAS.md). **Lo que espera a alguien y lo grande que viene después,** en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md).
+**Lo ya hecho, entrega por entrega (A10 a A25, con fechas y migraciones aplicadas),** en [`docs/historico/ENTREGAS-HECHAS.md`](docs/historico/ENTREGAS-HECHAS.md). **Lo que espera a alguien y lo grande que viene después,** en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md).
 
 ---
 
@@ -315,7 +315,6 @@ Lo que vale siempre. Se edita.
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
 | [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división del trabajo, Git y commits, migraciones, código, **dónde va cada documento** (§8 bis) | Cuando acordamos una regla nueva |
 | [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | Las correcciones a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
-| [`ENTREGAS-HECHAS.md`](docs/ENTREGAS-HECHAS.md) | Lo que ya está en `main`, entrega por entrega (A10 a A25), con fechas y migraciones aplicadas en la base real. Es historia | Al cerrar cada entrega |
 | [`MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md) | **Manual para el dueño:** cómo entrar y cambiar la contraseña, cómo administrar usuarios (pantalla y menú de la terminal) y cómo limpiar la base de desarrollo | Cuando cambian los permisos o los menús |
 | [`GUIA-PRUEBAS-LOCALES.md`](docs/GUIA-PRUEBAS-LOCALES.md) | Cómo probar con datos reales del cliente: el xlsx de AppSheet y los DXF de `modelos/`. Nunca se commitea lo que producen | Cuando cambian los datos reales disponibles |
 
@@ -360,6 +359,7 @@ Lo que vale siempre. Se edita.
 | [`PLAN-MOTOR-NESTING-DEEPNEST.md`](docs/historico/PLAN-MOTOR-NESTING-DEEPNEST.md) | Deepnest como motor único en un microservicio Node. Se ejecutó el spike; el rumbo siguió en `motor/` |
 | [`PLAN-MOTOR-NESTING-PYTHON-NATIVO.md`](docs/historico/PLAN-MOTOR-NESTING-PYTHON-NATIVO.md) | Alternativa sin servicios externos, sobre `shapely` y `rectpack`. Se ejecutó el anidado en huecos |
 | [`FACTIBILIDAD-NESTING-WEB.md`](docs/historico/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores en el navegador |
+| [`ENTREGAS-HECHAS.md`](docs/historico/ENTREGAS-HECHAS.md) | Lo que ya está en `main`, entrega por entrega (A10 a A25), con fechas y migraciones aplicadas en la base real |
 | [`SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | ¿Se puede leer `.cdr` sin CorelDRAW? Sí, con dos límites conocidos. Lo cita `D-11` |
 
 ### `fuentes/` — documentos originales

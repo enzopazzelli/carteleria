@@ -76,6 +76,8 @@ Entonces existe un .env.example con todas las variables necesarias y sin valores
 
 ### CART-002 — Autenticación, roles y permisos
 
+> **Hecho el 2026-11-09** (1.1, entrega A2: [`plan/1.1-servidor-y-login/`](plan/1.1-servidor-y-login/diseno.md)): sesión con cookie, dos permisos («puede aprobar» y «administra usuarios») y bloqueo tras 5 intentos fallidos. Sin aprobación multinivel ni por monto (`SUP-06`).
+
 **Como** administrador **quiero** que cada usuario tenga un rol con permisos definidos **para** que un diseñador no pueda aprobar sus propios presupuestos.
 
 ```gherkin
@@ -103,6 +105,8 @@ Entonces la acción se permite sin importar su rol base
 ---
 
 ### CART-003 — ABM de usuarios
+
+> **Hecho el 2026-11-09** (1.1, entrega A2): la pantalla de Usuarios (alta, edición, baja y alta, restablecer contraseña) y, desde el 2026-11-11, un menú en la terminal. Cómo se usan, en [`MANUAL-USUARIOS.md`](MANUAL-USUARIOS.md).
 
 **Como** administrador **quiero** dar de alta, editar y desactivar usuarios **para** controlar quién accede al sistema.
 

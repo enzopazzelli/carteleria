@@ -4,13 +4,13 @@
 >
 > Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`REGISTRO.md`](REGISTRO.md) · [`BITACORA.md`](BITACORA.md)
 >
-> **Versión:** 3.2 · **Fecha:** 2026-11-09 · Reemplaza la 3.1 (2026-10-23), que no tenía las pantallas de Materiales y Presupuestos (A18 y A19), la aprobación (A20), los retazos (A21), el PDF con la marca (A22), los materiales del catálogo (A23), recordar las correcciones (A24) ni la regla única del anidado (A25). La 3.1 reemplazó a la 3.0 (2026-10-05), que todavía decía que el motor no estaba construido
+> **Versión:** 3.3 · **Fecha:** 2026-11-11 · Reemplaza la 3.2 (2026-11-09), que decía «sin usuarios» y dibujaba como inexistentes el PDF del diseño anidado y la aprobación. La 3.2 reemplazó a la 3.1 (2026-10-23), que no tenía las pantallas de Materiales y Presupuestos (A18 y A19), la aprobación (A20), los retazos (A21), el PDF con la marca (A22), los materiales del catálogo (A23), recordar las correcciones (A24) ni la regla única del anidado (A25). La 3.1 reemplazó a la 3.0 (2026-10-05), que todavía decía que el motor no estaba construido
 
 ---
 
 ## En una frase
 
-**El cotizador funciona de punta a punta en local, por API y en pantalla, hasta el PDF del presupuesto; la aprobación del presupuesto ya existe (A20), sin usuarios; el presupuesto lleva artículos del catálogo (A23) y sale en PDF con la marca de la empresa (A22); las correcciones de la lectura del dibujo se recuerdan al volver a cargar el mismo archivo (A24); una sola regla decide qué anidado cuenta para el presupuesto (A25); faltan el login, el aviso al dueño y el envío al cliente.** El motor de anidado es **Sparrow**, en el producto desde octubre: contornos reales, giro libre, piezas en los huecos de otras, seccionado de lo que no entra, y el material usado en ancho × alto con el sobrante arriba. El rectangular queda de prueba.
+**El cotizador funciona de punta a punta en local, por API y en pantalla, hasta el PDF del presupuesto; la aprobación del presupuesto ya existe (A20) y hay usuarios con login y permisos (1.1); el presupuesto lleva artículos del catálogo (A23) y sale en PDF con la marca de la empresa (A22); las correcciones de la lectura del dibujo se recuerdan al volver a cargar el mismo archivo (A24); una sola regla decide qué anidado cuenta para el presupuesto (A25); faltan el servidor, el aviso al dueño y el envío al cliente.** El motor de anidado es **Sparrow**, en el producto desde octubre: contornos reales, giro libre, piezas en los huecos de otras, seccionado de lo que no entra, y el material usado en ancho × alto con el sobrante arriba. El rectangular queda de prueba.
 
 ---
 
@@ -25,9 +25,9 @@ La columna «Sigue en» es el paso del plan maestro que lo completa.
 | **Trabajos y grupos** | Trabajos, piezas y grupos de corte, cada grupo con su material (`CART-211`) | — | — |
 | **Anidado** | Sparrow por defecto, en un proceso aparte, con barra de avance, cancelar y tiempo máximo (A7); varios a la vez. Giro a cualquier ángulo, y las piezas casi del tamaño de la chapa solo en los ángulos con los que entran (A11). Piezas chicas adentro de los huecos de las grandes antes de acomodar (A10), buscadas por casillas contra la pared (A13). Vaciar chapas (A6) y seccionar lo que no entra (A5). El sobrante arriba, como bloque, o al costado (A12). Ajuste con validación, plano y DXF de corte con la misma orientación, comparar chapas en segundo plano, aprovechamiento con área real y el material usado en ancho × alto Una sola regla del servidor decide qué anidado cuenta para el presupuesto y por qué no (A25): el costeo, el inicio, el PDF y Chapas dicen lo mismo, también cuando cambia la chapa. | Cobrar por lo usado de cada chapa (depende del dueño) y proponer un retazo al anidar un trabajo nuevo | Plan maestro §7 |
 | **Cotizador** | Presupuesto con cliente, líneas por rubro, override con trazabilidad, líneas libres y líneas elegidas del catálogo de la planilla (A23), margen, IVA, total y precio sugerido con el margen de la planilla (A19), desglose y duplicar como otra opción, texto y precio por ítem para el cliente, total fijado y PDF con la marca de la empresa (A22) (`CART-301` a `CART-309`) | Mano de obra por etapa, documento interno, juntar renglones chicos en el PDF, crear presupuestos fuera de un trabajo | 1.2, 2.3 |
-| **Frontend** | Una barra fija (Inicio, Trabajos, Presupuestos y Materiales); la página de inicio con las tarjetas de los trabajos; un espacio de trabajo con cinco pestañas: Piezas (con la lectura del DXF con imagen y la corrección a mano), Grupos (con la lista de materiales y la comparación de chapas), Anidado, Chapas (todas las chapas juntas, mover piezas entre ellas y guardar el sobrante como retazo) y Costeo (con la aprobación, el precio sugerido y el catálogo); la pantalla de Materiales con la planilla de precios; y la lista de todos los presupuestos | Login | 1.1, plan maestro §7 |
-| **Fundaciones** | SQLite en local y PostgreSQL por configuración, migraciones de Alembic, tests del backend en CI | Servidor, login, roles, usuarios, clientes con email, auditoría, backups | 1.1, 2.5 |
-| **Aprobación y envío** | Los estados borrador, pendiente, observado y aprobado, el historial y el bloqueo de edición (A20), sin usuarios: el nombre se escribe a mano | El aviso por mail con link firmado, el envío al cliente, vencimientos y anulación (`CART-403` a `CART-408`) | 1.4, 1.5, 2.4 |
+| **Frontend** | Una barra fija (Inicio, Trabajos, Presupuestos y Materiales); la página de inicio con las tarjetas de los trabajos; un espacio de trabajo con cinco pestañas: Piezas (con la lectura del DXF con imagen y la corrección a mano), Grupos (con la lista de materiales y la comparación de chapas), Anidado, Chapas (todas las chapas juntas, mover piezas entre ellas y guardar el sobrante como retazo) y Costeo (con la aprobación, el precio sugerido y el catálogo); la pantalla de Materiales con la planilla de precios; la lista de todos los presupuestos, la entrada con usuario y contraseña, «Mi cuenta» y la pantalla de Usuarios | Ocultar los lugares de la barra a quien entró con contraseña temporal (no lo deja ir, pero los muestra) | Plan maestro §7 |
+| **Fundaciones** | SQLite en local y PostgreSQL por configuración, migraciones de Alembic, tests del backend en CI; usuarios con sesión, dos permisos («puede aprobar» y «administra usuarios»), bloqueo tras 5 intentos y, para administrarlos, la pantalla de Usuarios y un menú en la terminal (1.1, entrega A2); y un script para limpiar la base de desarrollo | Docker, copias de seguridad y el catálogo en PostgreSQL (entrega A3), el servidor y el dominio, clientes con email, auditoría general | 1.1, 2.5 |
+| **Aprobación y envío** | Los estados borrador, pendiente, observado y aprobado, el historial y el bloqueo de edición (A20), con usuarios: quien aprueba es quien tiene la sesión y necesita el permiso «puede aprobar» | El aviso por mail con link firmado, el envío al cliente, vencimientos y anulación (`CART-403` a `CART-408`) | 1.4, 1.5, 2.4 |
 | **Dashboard** | Prototipo de las 9 vistas con datos de muestra (`prototipo-dashboard/`) | Todo lo real (`CART-801` a `CART-808`) | 3.1 |
 | **Fotomontaje** | Nada | Todo (`CART-601` a `CART-607`) | 3.2 |
 | **Motor** | Sparrow (`spyrrow`) integrado al producto: ver la fila de Anidado. Deepnest sigue sin interfaz en `nesting-engine/`, medido en Belgrano (A1 y A2 de `motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`) | Los pendientes de cada paso del motor (plan maestro §7) | Plan maestro §7 |
@@ -50,25 +50,25 @@ flowchart LR
         COLOC --> COSTEO["Costeo y material usado"]
         COSTEO --> PRESUP["Presupuesto, líneas,<br/>override, totales"]
         PRESUP --> PDF["PDF del presupuesto"]
+        PRESUP --> APROB["Aprobación,<br/>con usuarios"]
+        PLANO --> PDFT["PDF del diseño anidado"]
     end
 
     subgraph falta ["NO EXISTE"]
         direction TB
-        PDFT["PDF del diseño<br/>para el taller"]
-        APROB["Aprobación del dueño"]
+        AVISO["Aviso al dueño<br/>por mail"]
         ENVIO["Envío al cliente"]
     end
 
-    PLANO -.-> PDFT
-    PDF -.-> APROB -.-> ENVIO
+    APROB -.-> AVISO -.-> ENVIO
 
     classDef ok fill:#cfe8d5,stroke:#3d7a52,color:#14351f
     classDef no fill:#eeeeee,stroke:#999,color:#555
-    class DXF,ANA,PIEZAS,GRUPOS,MOTOR,COLOC,AJUSTE,PLANO,COSTEO,PRESUP,PDF ok
-    class PDFT,APROB,ENVIO no
+    class DXF,ANA,PIEZAS,GRUPOS,MOTOR,COLOC,AJUSTE,PLANO,COSTEO,PRESUP,PDF,APROB,PDFT ok
+    class AVISO,ENVIO no
 ```
 
-**Dos cortes, y cada uno tiene su plan.** La aprobación y el envío los cierra la etapa 1 del plan maestro (1.4 y 1.5). El PDF del diseño anidado para el taller es el próximo de la lista del plan maestro §7. El motor ya no es un corte: Sparrow está en el producto.
+**Un solo corte: el aviso y el envío.** La aprobación ya existe, con usuarios; falta avisarle al dueño por mail y mandarle el presupuesto al cliente, que dependen del servidor y de un buzón de mail (1.5 y la etapa 4 del plan maestro). El PDF del diseño anidado ya está (A15) y el motor ya no es un corte: Sparrow está en el producto.
 
 ---
 
@@ -81,8 +81,9 @@ flowchart LR
 | Alta de WhatsApp Business (`B-12`) | Nada hasta 4.3: mientras tanto, solo mail | La empresa |
 | En qué forma llega el motor (`D-14`) | Nada: E1 se escribe con el valor por defecto | Vale lo confirma |
 | Qué hacer con los diseños que el motor no toca (`D-13`) | El costo de material de la mayoría de los diseños reales | Se decide en 2.1 |
-| Margen de borde y corte hasta el borde (`P-03`, `P-28`); cómo se parte un diseño que no entra en una chapa (`P-21`, `P-22`) | El motor | El taller y el diseñador, carril del motor |
-| Kerf, margen y veta reales (`B-03`, `B-04`) | Todo lo que se corte | El taller |
+| Kerf y margen de borde reales (`B-03`) | Nada: se usan los valores provisorios, con aviso | El taller |
+
+**Descartado el 2026-11-11 (Enzo):** la veta del material (`P-04`, `B-04`, `P-30`: las chapas son uniformes), el aro soldado del diseñador (`SUP-17`) y lo que esperaba la confirmación del dueño. Ya no se piden ni frenan nada.
 
 Lo que depende de afuera no frena las etapas 1 a 3: se conecta en la etapa 4 (`PLAN-MAESTRO.md §3`, regla 4). El estado de cada ID está en [`REGISTRO.md §7`](REGISTRO.md).
 

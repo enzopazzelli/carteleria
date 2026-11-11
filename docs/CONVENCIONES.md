@@ -377,7 +377,7 @@ Además de lo anterior: medir las métricas del hito (`PAR-32` a `PAR-37`), demo
 
 | Carpeta | Qué va | Se sigue |
 |---|---|---|
-| `docs/` (raíz) | Solo los documentos de referencia: `MAPA-DEL-PROYECTO`, `REGISTRO`, `EPICA`, `BACKLOG`, `BITACORA`, `CONVENCIONES`, `DECISIONES-Y-BLOQUEANTES`, `GUIA-PRUEBAS-LOCALES` | Sí |
+| `docs/` (raíz) | Solo los documentos de referencia: `MAPA-DEL-PROYECTO`, `REGISTRO`, `EPICA`, `BACKLOG`, `BITACORA`, `CONVENCIONES`, `DECISIONES-Y-BLOQUEANTES`, `GUIA-PRUEBAS-LOCALES`, `MANUAL-USUARIOS` | Sí |
 | `docs/plan/` | `PLAN-MAESTRO.md` y una carpeta por sub-proyecto en curso, con su número del plan maestro (`docs/plan/1.1-servidor-y-login/`). Adentro, `diseno.md` y `plan.md` | Sí: es lo que sigue |
 | `docs/motor/` | El motor de anidado: contrato, mediciones, plan del carril | Sí, en el carril del motor |
 | `docs/cliente/` | Lo que dijo y entregó la empresa, y lo que se le presentó: relevamientos, propuesta, presentaciones | Como fuente |

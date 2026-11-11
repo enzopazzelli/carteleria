@@ -26,6 +26,12 @@ Esto vale para los tres planos del proyecto:
 
 ---
 
+### Descartados como pedido (Enzo, 2026-11-11)
+
+Siguen abiertos en las tablas de abajo, pero **ya no se piden ni frenan nada**: Enzo no puede saberlos desde desarrollo o no aplican. Son `SUP-17` (el aro soldado del diseñador), `P-04`, `B-04` y `P-30` (la veta: las chapas son uniformes), `PAR-56` (el retazo más chico que se guarda) y los valores que esperaban la confirmación del dueño. No se reabren salvo que alguien lo pida.
+
+---
+
 ## 1. Supuestos — `SUP-xx`
 
 Cosas que damos por ciertas sin haberlas confirmado. Un supuesto que se cae puede reordenar el roadmap, así que cada uno declara **qué se rompe si es falso**.

@@ -58,6 +58,35 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-11 — Menú de usuarios, script para limpiar la base, manual y documentación al día
+
+**Quién:** Enzo · **Carril:** B · **Sprint:** —
+
+### Qué se hizo
+- La contraseña definitiva de `enzo` quedó puesta en la base real, con respaldo previo en `backend/local/respaldo-2026-11-11-antes-de-contrasena/`. Tiene 9 caracteres y el mínimo de la app es 10: entra, pero «Mi cuenta» no deja volver a elegirla.
+- `scripts/administrar_usuarios.py`: menú en la terminal que habla con la app por HTTP (crear, editar, restablecer contraseña, dar de baja y de alta; los dados de baja, en una opción aparte). Solo pasa quien administra usuarios.
+- `scripts/limpiar_base.py`: limpia la base SQLite de desarrollo con cuatro opciones (trabajos; trabajos y clientes; de fábrica; sesiones), con respaldo, vista previa y confirmación escribiendo `BORRAR`. Nunca toca los usuarios.
+- `docs/MANUAL-USUARIOS.md`, el manual para el dueño.
+- PR #34 fusionado (`9ea3ffa`) **con el CI de GitHub caído** (Actions en `major_outage`: el job de backend quedó colgado y el relanzado dio `startup_failure`). El job de Postgres pasó y las 1573 pruebas del backend pasan en la máquina de Enzo.
+- README reordenado: el título y lo vigente primero, «Para Vale» más abajo y el historial de entregas en `docs/historico/ENTREGAS-HECHAS.md`. Mapa del proyecto en la 3.3, con el login y el diagrama corregido; notas de CART-002 y CART-003 en el backlog.
+
+### Qué se decidió
+- El menú de usuarios habla con la app y no con la base, para que sirva igual contra la local y contra la desplegada (la base de producción no publica ningún puerto). El comando `python -m app.usuarios` queda para emergencias en el servidor.
+- «Borrar» un usuario es darlo de baja: el historial de quién aprobó o cambió qué tiene que seguir diciendo quién fue.
+- Se sacó de los pendientes lo que Enzo no puede saber desde desarrollo: las dos medidas del catálogo sin precio, el código repetido de la planilla, imprimir y medir una hoja del PDF, las dudas del dueño, el aro soldado del diseñador y la veta del taller (las chapas son uniformes).
+- El pedido de «el diseño entero en el PDF y el DXF con diseño y paneles» fue un malentendido: el sistema ya hace lo que Enzo necesita (la hoja del diseño completo en el PDF, y un DXF por chapa para la máquina).
+
+### Cambios en el registro
+Sin cambios de estado. Se anotó en `REGISTRO.md` que `SUP-17`, `P-04`, `B-04`, `P-30`, `PAR-56` y los valores del dueño **ya no se piden**; siguen abiertos.
+
+### Pendiente
+- Relanzar el CI sobre `main` (`gh workflow run CI --ref main`) cuando GitHub Actions se recupere.
+- La entrega A3 de 1.1: Docker, copias de seguridad y el catálogo en PostgreSQL (se verifica en el CI).
+- La medición de la segunda tanda de A17, solo cuando Enzo la pida (unos 75 minutos con la máquina libre).
+- El stash viejo (`sdd-task7-stray-task8-wip`) sigue sin decidirse: no se aplicó ni se borró.
+
+---
+
 ## 2026-11-09 — Limpieza del repositorio y de `backend/local`, y los guiones de prueba al repositorio
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —
