@@ -83,7 +83,7 @@ Sin cambios de estado. Se anotó en `REGISTRO.md` que `SUP-17`, `P-04`, `B-04`, 
 - Relanzar el CI sobre `main` (`gh workflow run CI --ref main`) cuando GitHub Actions se recupere.
 - La entrega A3 de 1.1: Docker, copias de seguridad y el catálogo en PostgreSQL (se verifica en el CI).
 - La medición de la segunda tanda de A17, solo cuando Enzo la pida (unos 75 minutos con la máquina libre).
-- El stash viejo (`sdd-task7-stray-task8-wip`) sigue sin decidirse: no se aplicó ni se borró.
+- ~~El stash viejo~~ **Borrado por decisión de Enzo (2026-11-11):** eran seis archivos del frontend a medio hacer de la pestaña de Piezas, de una sesión vieja. Si hiciera falta recuperarlo mientras git no limpie objetos sueltos: `git stash apply 9d3eb78c450ebe35ea0be2205486717527740786`.
 
 ---
 
