@@ -19,7 +19,7 @@ El sprint para cerrar lo chico que quedó suelto (A17) terminó el 2026-10-29: [
 
 ---
 
-## 🧭 En qué estamos — 2026-11-09
+## 🧭 En qué estamos — 2026-11-11
 
 Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md), en «Lo que sigue, desde la reunión del 2026-10-22».
 
@@ -27,45 +27,37 @@ Para tener a mano lo que se busca ahora y lo que sigue. El detalle vive en el [`
 - que el motor de anidado sea confiable con diseños reales y aproveche mejor la chapa. **Sparrow es el motor principal**; el rectangular queda de prueba;
 - después, que la salida le sirva al taller: el material usado en Ancho × Alto, y el diseño anidado también en PDF, además del DXF para la máquina.
 
-Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18) y Presupuestos, con el precio sugerido (A19). Y la aprobación del presupuesto (A20), sin usuarios todavía.
+Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18) y Presupuestos, con el precio sugerido (A19). Y la aprobación del presupuesto (A20) y, desde el 2026-11-09, los usuarios con login y permisos (1.1).
 
 ### Cuadro de situación: qué había, qué hay y qué falta
 
 | Área | Qué había | Qué hay hoy | Qué falta | Cómo va a ser |
 |---|---|---|---|---|
-| **Aprobación del presupuesto** | Un presupuesto solo existía en borrador: nada decía si alguien lo había visto, ni quién. | Cuatro estados (borrador, pendiente, observado y aprobado) y el historial de quién cambió qué y cuándo. Lo pendiente y lo aprobado no se edita; para tocarlo hay que volverlo a borrador, con un motivo. El nombre de quien aprueba se escribe a mano. | Usuarios con el permiso «puede aprobar», el aviso al dueño y el envío al cliente. | El diseñador manda a aprobar. Al dueño le llega un mail con un link, lo abre en el celular sin iniciar sesión y aprueba o lo devuelve con una observación. Al aprobar, el PDF sale al cliente y el presupuesto queda congelado con los precios de ese día. |
+| **Aprobación del presupuesto** | Un presupuesto solo existía en borrador: nada decía si alguien lo había visto, ni quién. | Cuatro estados (borrador, pendiente, observado y aprobado) y el historial de quién cambió qué y cuándo. Lo pendiente y lo aprobado no se edita; para tocarlo hay que volverlo a borrador, con un motivo. Quien aprueba es quien tiene la sesión abierta y necesita el permiso «puede aprobar». | El aviso al dueño y el envío al cliente. | El diseñador manda a aprobar. Al dueño le llega un mail con un link, lo abre en el celular sin iniciar sesión y aprueba o lo devuelve con una observación. Al aprobar, el PDF sale al cliente y el presupuesto queda congelado con los precios de ese día. |
 | **Materiales y precios** | 23 materiales cargados por la API, sin los precios de la planilla de la empresa. | La pantalla de Materiales y la planilla ya cargada en la base real: 44 materiales, 59 medidas y 288 artículos. Cada vez que la planilla cambie, se sube y se revisa antes de aplicar. | Decidir qué hacer con dos medidas del catálogo que la planilla no trae y que siguen con un precio de prueba (`CHA0016`, chapa negra cal. 14 de 1220 × 2440, y `POL0006`, policarbonato cristal de 0,5 mm), y conectar con el sistema del taller que hace el otro equipo. | La planilla de la empresa sigue siendo la fuente: se sube, se miran los cambios y se aplican. Cuando el otro sistema esté listo, los materiales se consultarían de ahí. |
 | **Precio del presupuesto** | Se calculaba el costo. El precio dependía de quién armara el presupuesto, y los empleados cobraban mucho menos de lo que podían. | El precio sugerido con el margen de la planilla, y lo que queda por debajo se marca en amarillo. La lista de todos los presupuestos y el PDF para el cliente, que no muestra costos ni márgenes. Y el PDF con la marca de la empresa: su logo, los colores negro y naranja, y los datos de contacto al pie. Y agregar al presupuesto cualquier artículo de la planilla (corrugado, vinilos, pintura, tornillos, diseño, montaje), eligiéndolo de un buscador, con su precio sugerido. | Que el dueño diga cuándo se usa el segundo margen (× 6); los datos fiscales (CUIT, razón social) y las condiciones de pago en el PDF; juntar los renglones chicos en el PDF, y cobrar por lo que realmente se usa de la chapa. | El sistema sugiere y marca; quien arma o el dueño decide. El PDF sale con el formato de la empresa, y el precio de una chapa se basa en lo usado y no en la chapa entera. |
 | **Anidado y chapas** | Un anidado que fallaba con diseños grandes (como Complejo) y de a un trabajo por vez. | Sparrow como motor principal: varios anidados a la vez, piezas chicas en los huecos de las grandes, giro libre, el material usado en ancho × alto, todas las chapas juntas con mover piezas entre ellas, y el diseño anidado en PDF. Y la cuenta de los retazos: el sobrante de una chapa se guarda con un botón, el retazo dice de dónde salió y en qué anda (disponible, en uso o usado), y Materiales suma cuántos hay. **Una sola regla de qué anidado cuenta para el presupuesto (A25):** el costeo, la tarjeta del inicio, el PDF y Chapas dicen lo mismo, con el mismo motivo; si se cambia la chapa de un grupo ya anidado, ninguno lo da por terminado ni lo cobra. | Cobrar por lo usado (depende del dueño), proponer un retazo al anidar un trabajo nuevo, medir la segunda tanda de A17 e imprimir una hoja del PDF para comprobar la escala. | Al anidar, el sistema podría proponer un retazo que sirva antes de gastar una chapa entera. |
 | **Lectura del dibujo (DXF)** | No se veía cómo había leído el dibujo el sistema antes de cargarlo. | Una imagen de la lectura antes de cargar, corregirla con clics, y seccionar solas las piezas que no entran en una chapa. **Recordar las correcciones (A24):** se guardan al cargar y, si el mismo archivo vuelve a cargarse, la lectura aparece ya corregida, con un aviso y un botón «Empezar de cero». | Nada que construir por ahora: mejorar cómo decide qué es pieza y qué es agujero se midió y se dejó como está, y importar varios diseños a la vez no se construye (un diseño por trabajo, los grupos de chapas cubren los materiales). En espera: colores por pieza y leer `.cdr`. | Se carga el dibujo, se ve cómo lo leyó, se corrige y se sigue; y la próxima vez que llegue el mismo diseño ya no hay que corregirlo de nuevo. |
-| **Usuarios, servidor y avisos** | Todo corre en una sola computadora, sin usuarios ni login. | Igual: una sola máquina, sin usuarios. La base se respalda sola antes de actualizarse. | Usuarios con contraseña, servidor y dominio reales con HTTPS y copias de seguridad, mail real y aviso por WhatsApp. | Un servidor al que se entra desde el celular, con usuarios (diseñador y dueño), mails reales y aviso por WhatsApp. Es lo que termina de cerrar la aprobación. |
+| **Usuarios, servidor y avisos** | Todo corría en una sola computadora, sin usuarios ni login. | **Usuarios con login (1.1):** la app pide entrar; hay dos permisos («puede aprobar» y «administra usuarios»), una pantalla de Usuarios, «Mi cuenta» para cambiar la contraseña y bloqueo tras 5 intentos fallidos. Además, un menú en la terminal para administrar usuarios y otro para limpiar la base de desarrollo ([manual](docs/MANUAL-USUARIOS.md)). La base se respalda sola antes de actualizarse. | Docker con copias diarias y el catálogo en PostgreSQL (se verifica en el CI); servidor y dominio reales con HTTPS; mail real y aviso por WhatsApp. | Un servidor al que se entra desde el celular, con usuarios (diseñador y dueño), mails reales y aviso por WhatsApp. Es lo que termina de cerrar la aprobación. |
 
 ### Lo que queda, según quién lo mueve
 
 **Lo tuyo (Enzo), ahora**
-- Decidir qué hacer con `CHA0016` (chapa negra cal. 14 de 1220 × 2440) y `POL0006` (policarbonato cristal de 0,5 mm): son medidas de tu catálogo que la planilla no trae, con un precio de prueba, y ningún trabajo las usa. Si ya no se venden, se quitan; si se venden, la empresa las agrega a la planilla.
-- Imprimir una hoja del PDF de chapas y medirla con regla: la barra de referencia debería medir 25 mm, y una chapa de 1220 × 2440, 61 × 122 mm.
-- Mirar el código repetido de la planilla: `CAB0004` de LUNA SUD está dos veces (filas 44 y 221, las dos sin precio) y el sistema toma el de más abajo. Hay que verlo en AppSheet.
-- Medir la segunda tanda de A17 (unos 75 minutos con la máquina libre), solo si la pedís.
+- Medir la segunda tanda de A17 (unos 75 minutos con la máquina libre), para más adelante.
 
-**Espera al dueño**
-- Cuándo se usa el segundo margen de la planilla (× 6) en el precio sugerido.
-- Cómo cobrar por lo usado de cada chapa.
-- El retazo más chico que se guarda (hoy se asume 250 × 250 mm).
-- Los datos fiscales (razón social, CUIT) y el texto de condiciones del presupuesto (forma de pago, plazo de entrega): se cargan en `backend/local/empresa/datos.json` y el PDF ya los imprime.
-- Los valores que el sistema asumió y hay que confirmar: la validez del presupuesto (15 días), el margen general, quién aprueba y por qué canal.
+**Descartado el 2026-11-11 (Enzo):** no se puede saber desde su lado y ensuciaba la lista. Las dos medidas de catálogo sin precio (`CHA0016`, `POL0006`), el código repetido `CAB0004`, imprimir y medir una hoja del PDF, las dudas del dueño (segundo margen × 6, cobrar por lo usado, retazo mínimo, datos fiscales, validez, quién aprueba), el aro soldado del diseñador y la veta del taller (las chapas son uniformes). Lo único que sigue es lo de Vale.
 
-**Espera al diseñador, al taller y a Vale**
-- **Diseñador:** mandar el aro de `Complejo` exportado soldado (una sola forma, no capas encimadas) para validar el seccionado con un caso real.
-- **Taller:** hacia dónde corre la veta en la chapa, y si los tramos de una pieza seccionada pueden quedar girados respecto del dibujo.
-- **Vale:** si tiene cambios en curso sobre `sparrow_worker.py` y si ya había probado otro reparto del tiempo.
+**Espera a Vale**
+- Si tiene cambios en curso sobre `sparrow_worker.py` y si ya había probado otro reparto del tiempo.
 
 **Se puede construir ya, sin esperar a nadie**
-- Por ahora, nada. Lo que quedaba se midió o se decidió el 2026-11-09 (Enzo):
+- **La exportación a DXF con las dos cosas (pedido de Enzo, 2026-11-11):** el diseño entero importado y los paneles resultantes. Hoy el PDF ya trae la hoja del diseño y las chapas, pero el DXF (`exportacion_dxf.py`) escribe una chapa por archivo y no incluye el diseño entero. Por verificar: que el PDF muestre el diseño completo, también el de piezas seccionadas.
+- **Entrega A3 del servidor** (Docker, copias de seguridad y llevar el catálogo a PostgreSQL): tareas 11 a 14 de [`docs/plan/1.1-servidor-y-login/plan.md`](docs/plan/1.1-servidor-y-login/plan.md). No hay Docker en la máquina de Enzo: se verifica en el CI de GitHub.
+- Lo demás se midió o se decidió el 2026-11-09 (Enzo):
   - **Cambiar cómo decide el lector qué es pieza y qué es agujero:** medido y dejado como está. Con los diseños de ahora, que solo traen el diseño, casi no hay casos; ver `PLAN-MAESTRO.md §7`.
   - **Importar varios diseños a la vez desde la pantalla:** no se construye. El propósito de la app es cargar **un diseño por trabajo**, y dentro del trabajo los grupos de chapas cubren los materiales distintos. Si llega un archivo con más de un diseño (como el de Parador, que trae también el de un consultorio odontológico), se saca el que sobra marcándolo «no va» en «Ver cómo se lee». Queda el camino por la API (`/importaciones/dxf/...`), sin pantalla.
 
-**Lo de afuera (etapa 4):** usuarios y login, servidor y dominio, mail real, WhatsApp, copiar la carpeta de la empresa (`backend/local/empresa/`) al servidor, y el envío al cliente con el presupuesto congelado.
+**Lo de afuera (etapa 4):** servidor y dominio, mail real, WhatsApp, copiar la carpeta de la empresa (`backend/local/empresa/`) al servidor, y el envío al cliente con el presupuesto congelado.
 
 **En espera por tu decisión (2026-10-22):** los colores de referencia por pieza y leer archivos `.cdr`.
 
@@ -123,7 +115,7 @@ Las dos cosas ya están, y también las pantallas que faltaban: Materiales (A18)
   - **Para qué:** que quede asentado que el dueño vio un presupuesto y lo dio por bueno, o que lo devolvió con una observación, y quién y cuándo.
   - **Los estados:** borrador, pendiente de aprobación, observado y aprobado. Mandarlo a aprobar exige que esté completo, y dice qué falta si no.
   - **En el Costeo:** una franja con el estado, los botones de cada paso, tu nombre (se recuerda) y el historial. Un presupuesto pendiente o aprobado queda bloqueado; para tocarlo hay que volverlo a borrador, con un motivo. El PDF se baja igual.
-  - **Todavía no:** el aviso por mail con link para aprobar desde el celular, y el envío al cliente. Hace falta tener usuarios, servidor y buzón.
+  - **Todavía no:** el aviso por mail con link para aprobar desde el celular, y el envío al cliente. Hace falta tener servidor y buzón.
 
   Ver [`docs/historico/A20-aprobacion-del-presupuesto/`](docs/historico/A20-aprobacion-del-presupuesto/diseno.md).
 - **Los presupuestos con precio sugerido (A19), desde el 2026-11-07.**
@@ -224,6 +216,14 @@ python -m venv .venv
 
 La base se crea o se actualiza sola al arrancar; si estaba atrasada, antes guarda un respaldo en `backend/local/respaldo-…`.
 
+**Una sola vez, el primer usuario** (sin él la pantalla no deja entrar). Con el backend ya arrancado una vez:
+
+```
+.venv\Scripts\python -m app.usuarios crear enzo --nombre "Enzo" --administrador --puede-aprobar --generar
+```
+
+Imprime una contraseña temporal; al entrar, la pantalla te pide elegir una propia (al menos 10 caracteres). Después, las demás personas se crean desde la pantalla **Usuarios** o con el menú de la terminal: [`docs/MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md).
+
 Usamos `.venv\Scripts\python` en vez de "activar" el entorno: evita el bloqueo de scripts de PowerShell y que se mezcle con otro Python. Cuando termine de arrancar, `http://localhost:8000/docs` tiene que mostrar la documentación de la API.
 
 ### 3. Datos de demostración (terminal 2, con el backend corriendo)
@@ -260,7 +260,7 @@ Abrí **exactamente** `http://localhost:5173` (no `127.0.0.1`, no otro puerto): 
 | 8 | **Costeo** | Elegí «+ Cliente nuevo…» → "Crear primera opción de presupuesto" → "Recalcular materiales" → agregá líneas (mano de obra, flete…) | El desglose por rubro, con margen, IVA y total |
 | 9 | **Anidado** | Con el anidado listo, mirá la tabla de chapas del resumen y apretá «Guardar como retazo» al lado de un sobrante | El botón pasa a «guardado como retazo». En **Materiales**, el material muestra «Retazos: 1 retazo disponible · … m²» y de dónde salió |
 | 10 | **Costeo** | «Agregar del catálogo», buscá «corrug», elegí el artículo, escribí una cantidad y «Agregar». Hace falta la planilla cargada: en Materiales, «Actualizar desde la planilla» | La línea con su costo y, en «Presupuesto para el cliente», el precio sugerido con el margen de la planilla |
-| 11 | **Costeo** | Escribí tu nombre y apretá «Mandar a aprobar»; después «Aprobar» u «Observar» (con un motivo) | El estado cambia y queda el historial. Un presupuesto pendiente o aprobado queda bloqueado hasta que lo vuelvas a borrador |
+| 11 | **Costeo** | Apretá «Mandar a aprobar»; después «Aprobar» u «Observar» (con un motivo). Aprobar pide el permiso «puede aprobar»; el nombre sale de tu sesión | El estado cambia y queda el historial. Un presupuesto pendiente o aprobado queda bloqueado hasta que lo vuelvas a borrador |
 | 12 | **Costeo** | «Descargar PDF» | El PDF del cliente, sin costos ni márgenes. Con la marca de la empresa si existe `backend/local/empresa/` (ver abajo); sin esa carpeta, sale sin logo ni pie |
 | 13 | **Inicio** | Volvé con «Inicio» en la barra | La tarjeta del trabajo, con la miniatura pintada por chapa, los cuatro pasos en verde y el presupuesto. En «Trabajos» están todas, con un buscador; el «⋯» de una tarjeta borra el trabajo, con confirmación |
 | 14 | **Piezas** | Cargá un DXF marcando una forma como «no va» y apretá «Cargar»; en otro trabajo elegí el mismo archivo y apretá «Ver cómo se lee» | El dibujo aparece con esa forma ya marcada y el aviso «Se aplicó 1 corrección de la vez anterior», con «Empezar de cero». Si tocás otra forma, el aviso se esconde |
@@ -271,9 +271,9 @@ Abrí **exactamente** `http://localhost:5173` (no `127.0.0.1`, no otro puerto): 
 - **Los precios de la demo son inventados.** Cualquier costo marcado "(simulado)" no es un dato real.
 - **Kerf, margen y separación son provisorios** (2 / 10 / 5 mm): todavía no se confirmaron con el taller.
 - **El anidado acomoda el rectángulo que envuelve a cada pieza**, no su forma real: con piezas curvas o muy irregulares va a dejar huecos. "Aprovechar huecos" intenta meter piezas chicas adentro de los agujeros de otras.
-- **Todavía no hay** login, aviso por mail ni envío al cliente: la aprobación se hace a mano, escribiendo el nombre de quien aprueba.
+- **Todavía no hay** aviso por mail ni envío al cliente: la aprobación se hace dentro de la app, con tu usuario. El login ya existe (ver el primer usuario, en el paso 2).
 - **El logo y los datos de contacto del PDF** viven en `backend/local/empresa/` (`logo.png` y `datos.json`), fuera de git. Sin esa carpeta el PDF sale igual, sin logo ni pie. El formato, en [`docs/GUIA-PRUEBAS-LOCALES.md §5`](docs/GUIA-PRUEBAS-LOCALES.md).
-- Todo lo que cargues se guarda en `backend/local/` (no se sube a Git). **Para empezar de cero:** frená el backend, borrá `backend/local/carteleria.db` y la carpeta `backend/local/archivos`, arrancá el backend de nuevo (crea la base vacía) y repetí el paso 3.
+- Todo lo que cargues se guarda en `backend/local/` (no se sube a Git). **Para empezar de cero:** frená el backend y corré `python scripts/limpiar_base.py` desde `backend/`: ofrece borrar solo los trabajos, trabajos y clientes, o dejar todo de fábrica, siempre con respaldo y conservando los usuarios ([manual](docs/MANUAL-USUARIOS.md)). Después repetí el paso 3 si borraste el catálogo.
 
 ### Probar con tus propios DXF
 
@@ -360,7 +360,8 @@ cartelería/
 │   ├── tests/                        Espeja `app/`, corre con pytest
 │   ├── scripts/                      Herramientas de preparación: catálogo de demo, DXF de
 │   │                                 demo, extractores del xlsx real (nunca se commitea lo que producen), y
-│   │                                 para probar sin tocar la base real: copiar_base y lectura_del_corpus
+│   │                                 para probar sin tocar la base real: copiar_base y lectura_del_corpus;
+│   │                                 y administrar_usuarios (menú) y limpiar_base (ver MANUAL-USUARIOS)
 │   ├── requirements.txt / requirements-dev.txt
 │   └── pytest.ini
 │
@@ -430,6 +431,7 @@ Lo que vale siempre. Se edita.
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
 | [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división del trabajo, Git y commits, migraciones, código, **dónde va cada documento** (§8 bis) | Cuando acordamos una regla nueva |
 | [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | Las correcciones a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
+| [`MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md) | **Manual para el dueño:** cómo entrar y cambiar la contraseña, cómo administrar usuarios (pantalla y menú de la terminal) y cómo limpiar la base de desarrollo | Cuando cambian los permisos o los menús |
 | [`GUIA-PRUEBAS-LOCALES.md`](docs/GUIA-PRUEBAS-LOCALES.md) | Cómo probar con datos reales del cliente: el xlsx de AppSheet y los DXF de `modelos/`. Nunca se commitea lo que producen | Cuando cambian los datos reales disponibles |
 
 ### `docs/plan/` — lo que sigue
@@ -560,7 +562,7 @@ cd backend
 uvicorn app.api.app:app --reload   # crea o actualiza backend/local/carteleria.db
 ```
 
-Documentación interactiva en `http://localhost:8000/docs`. Los 5 pasos de `PLAN-SLICE-VERTICAL.md` ya están: ABM de catálogo (`CART-102`/`CART-105`), trabajos con subida y parseo de DXF (`CART-503`), grupos de corte (`CART-211`), anidado real en cola (`POST /grupos/{id}/anidar` con `rectpack` — Deepnest no está conectado a la API todavía) con costeo (`GET /trabajos/{id}/costeo`), y ajuste manual + exportación (`PATCH /colocaciones/{id}` para mover/rotar, `GET /ejecuciones/{id}/plano` y `.../dxf`) — sin autenticación (`CART-002` se difiere) y por eso **no se expone fuera de `localhost`**. El paso 6 (el frontend) también está: para probarlo en tu máquina, ver [Probar el sistema en tu computadora](#-probar-el-sistema-en-tu-computadora). De [`PLAN-SLICE-COTIZADOR.md`](docs/historico/PLAN-SLICE-COTIZADOR.md) (F3) los 6 pasos ya están: clientes y presupuestos en `BORRADOR` (`CART-301`), costo de material generado desde el anidado (`CART-302`), override manual con trazabilidad (`PATCH /lineas-costo/{id}/override`, `CART-303`), líneas libres de insumos/mano de obra/flete/instalación (`CART-304`-`306`), margen/IVA/total con redondeo único (`GET /presupuestos/{id}/totales`, `CART-307`) y el desglose completo (`GET /presupuestos/{id}/desglose`, `CART-308`). El PDF para el cliente (`CART-309`) también está, dibujado con ReportLab (`GET /presupuestos/{id}/pdf`, [`historico/1.3-pdf-del-presupuesto/`](docs/historico/1.3-pdf-del-presupuesto/diseno.md)); falta el documento interno (`CART-310`).
+Documentación interactiva en `http://localhost:8000/docs`. Los 5 pasos de `PLAN-SLICE-VERTICAL.md` ya están: ABM de catálogo (`CART-102`/`CART-105`), trabajos con subida y parseo de DXF (`CART-503`), grupos de corte (`CART-211`), anidado real en cola (`POST /grupos/{id}/anidar` con `rectpack` — Deepnest no está conectado a la API todavía) con costeo (`GET /trabajos/{id}/costeo`), y ajuste manual + exportación (`PATCH /colocaciones/{id}` para mover/rotar, `GET /ejecuciones/{id}/plano` y `.../dxf`) — con login por usuario y contraseña (1.1) pero sin HTTPS ni servidor todavía, y por eso **no se expone fuera de `localhost`**. El paso 6 (el frontend) también está: para probarlo en tu máquina, ver [Probar el sistema en tu computadora](#-probar-el-sistema-en-tu-computadora). De [`PLAN-SLICE-COTIZADOR.md`](docs/historico/PLAN-SLICE-COTIZADOR.md) (F3) los 6 pasos ya están: clientes y presupuestos en `BORRADOR` (`CART-301`), costo de material generado desde el anidado (`CART-302`), override manual con trazabilidad (`PATCH /lineas-costo/{id}/override`, `CART-303`), líneas libres de insumos/mano de obra/flete/instalación (`CART-304`-`306`), margen/IVA/total con redondeo único (`GET /presupuestos/{id}/totales`, `CART-307`) y el desglose completo (`GET /presupuestos/{id}/desglose`, `CART-308`). El PDF para el cliente (`CART-309`) también está, dibujado con ReportLab (`GET /presupuestos/{id}/pdf`, [`historico/1.3-pdf-del-presupuesto/`](docs/historico/1.3-pdf-del-presupuesto/diseno.md)); falta el documento interno (`CART-310`).
 
 No hay Docker todavía — eso es la versión de producción de F0 (`CART-001`), que sigue sin empezar; el modo local de arriba corre sin instalar nada pesado y el cambio a PostgreSQL/Docker es de configuración, no de código.
 
