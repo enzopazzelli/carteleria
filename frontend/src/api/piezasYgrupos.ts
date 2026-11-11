@@ -141,6 +141,20 @@ export function leerDxf(
   return apiPostForm(`/trabajos/${trabajoId}/dxf/lectura`, formData);
 }
 
+/** Cuánto ocupa un dibujo en sus propias unidades, sin escala (`null` si no tiene ninguna forma cerrada).
+ * Es la base de la referencia que se muestra junto a la escala: se multiplica en la pantalla. */
+export interface MedidaDxf {
+  ancho: string | null;
+  alto: string | null;
+}
+
+/** Mide el archivo sin guardar nada y sin depender de un trabajo. */
+export function medirDxf(archivo: File): Promise<MedidaDxf> {
+  const formData = new FormData();
+  formData.append("archivo", archivo);
+  return apiPostForm("/dxf/medida", formData);
+}
+
 export function descartarPieza(piezaId: number, descartada: boolean): Promise<Pieza> {
   return apiPatch<Pieza>(`/piezas/${piezaId}`, { descartada });
 }

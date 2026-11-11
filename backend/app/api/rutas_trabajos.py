@@ -57,6 +57,7 @@ from .esquemas_trabajos import (
     ImportacionDXFLeer,
     LecturaDXFLeer,
     LecturaLeer,
+    MedidaDXFLeer,
     PiezaActualizar,
     PiezaLeer,
     TrabajoCrear,
@@ -430,6 +431,31 @@ def _para_dibujar(lectura: _Lectura) -> LecturaLeer:
         no_van=len(lectura.no_van),
         advertencias=lectura.advertencias,
     )
+
+
+@router.post("/dxf/medida", response_model=MedidaDXFLeer)
+def medir_dxf(archivo: UploadFile = File(...)) -> MedidaDXFLeer:
+    """Cuánto ocupa el dibujo en sus propias unidades: la caja que envuelve todas las formas cerradas que el
+    lector encuentra. No guarda nada y no depende de un trabajo.
+
+    Se lee con escala 1, o sea, tal como vienen las unidades del archivo: la caja crece en proporción con la
+    escala, así que la pantalla la multiplica por lo que escribe quien carga sin volver a pedir nada. Lo que sí
+    cambia con la escala son las tolerancias del lector (qué cuenta como forma cerrada), pero no el tamaño del
+    dibujo entero. Sin `async`: un DXF grande no traba los otros pedidos (A17)."""
+    contenido = archivo.file.read()
+    sufijo = Path(archivo.filename or "dibujo.dxf").suffix or ".dxf"
+    with tempfile.TemporaryDirectory(dir=config.carpeta_temporal()) as carpeta:
+        ruta = Path(carpeta) / f"medida{sufijo}"
+        ruta.write_bytes(contenido)
+        try:
+            resultado = parsear_dxf(ruta, Decimal(1), _TAMANO_MAXIMO_AGUJERO_MM_DEFAULT)
+        except ArchivoDXFInvalido as error:
+            raise ErrorParaElUsuario(str(error), detalle=error.detalle) from error
+    puntos = [punto for pieza in resultado.piezas for punto in pieza.contorno_mm]
+    if not puntos:
+        return MedidaDXFLeer(ancho=None, alto=None)
+    xs, ys = [x for x, _ in puntos], [y for _, y in puntos]
+    return MedidaDXFLeer(ancho=max(xs) - min(xs), alto=max(ys) - min(ys))
 
 
 @router.post("/trabajos/{trabajo_id}/dxf/lectura", response_model=LecturaDXFLeer)

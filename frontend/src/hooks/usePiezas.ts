@@ -6,6 +6,7 @@ import {
   leerDxf,
   listarASeccionar,
   listarPiezas,
+  medirDxf,
   subirDxf,
   type Correcciones,
   type PedidoAplicarSeccionado,
@@ -66,6 +67,11 @@ export function useLeerDxf(trabajoId: number) {
       aplicarGuardadas?: boolean;
     }) => leerDxf(trabajoId, archivo, escalaAMm, correcciones, aplicarGuardadas),
   });
+}
+
+/** Mide el dibujo apenas se elige, para mostrar cuánto ocuparía con la escala escrita. No guarda nada. */
+export function useMedirDxf() {
+  return useMutation({ mutationFn: (archivo: File) => medirDxf(archivo) });
 }
 
 export function useDescartarPieza(trabajoId: number) {

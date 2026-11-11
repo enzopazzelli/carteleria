@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { leerDxf, subirDxf } from "./piezasYgrupos";
+import { leerDxf, medirDxf, subirDxf } from "./piezasYgrupos";
 
 const archivo = new File(["0"], "logo.dxf");
 
@@ -65,5 +65,18 @@ describe("subirDxf", () => {
     expect(url).toMatch(/\/trabajos\/7\/dxf$/);
     expect(campos.get("unir")).toBe("true");
     expect(correccionesDe(campos)).toEqual({ "logo-497": "no_va" });
+  });
+});
+
+describe("medirDxf", () => {
+  it("manda solo el archivo a /dxf/medida, sin trabajo ni escala", async () => {
+    const falso = fetchQueResponde();
+
+    await medirDxf(archivo);
+
+    const { url, campos } = pedidoDe(falso);
+    expect(url).toMatch(/\/dxf\/medida$/);
+    expect(campos.get("archivo")).toBeInstanceOf(File);
+    expect([...campos.keys()]).toEqual(["archivo"]);
   });
 });
