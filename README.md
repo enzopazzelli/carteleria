@@ -22,6 +22,8 @@ Más adelante: mandarle el presupuesto al cliente con el fotomontaje del cartel 
 | Saber cómo está armado por dentro | [Cómo está armado](#cómo-está-armado) |
 | Saber en qué estamos y qué falta | [En qué estamos](#en-qué-estamos) |
 | Probarlo en mi computadora | [Probar el sistema](#probar-el-sistema-en-tu-computadora) y la [guía completa](docs/GUIA-PROBAR-EL-SISTEMA.md) |
+| Aprender a usar el sistema, paso a paso | [`GUIA-DEL-USUARIO.html`](docs/guias/GUIA-DEL-USUARIO.html) |
+| Sumarme al desarrollo (arquitectura, convenciones, recetas) | [`GUIA-DEL-DESARROLLO.html`](docs/guias/GUIA-DEL-DESARROLLO.html) |
 | Administrar usuarios o limpiar la base de pruebas | [`MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md) |
 | Ver el orden de lo que se va a construir | [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) |
 | Saber qué pasó en los últimos días | [`BITACORA.md`](docs/BITACORA.md) |
@@ -359,6 +361,8 @@ Lo que vale siempre. Se edita.
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
 | [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división del trabajo, Git y commits, migraciones, código, **dónde va cada documento** (§8 bis) | Cuando acordamos una regla nueva |
 | [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | Las correcciones a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
+| [`guias/GUIA-DEL-USUARIO.html`](docs/guias/GUIA-DEL-USUARIO.html) | **Guía completa para quien usa el sistema:** el recorrido de un cartel, cada pantalla, estados del presupuesto, problemas comunes y glosario. Con la marca; se abre en el navegador | Cuando cambia una pantalla o un permiso |
+| [`guias/GUIA-DEL-DESARROLLO.html`](docs/guias/GUIA-DEL-DESARROLLO.html) | **Guía completa para desarrolladores:** arquitectura, puesta en marcha, dominio, pruebas y CI, Git, recetas y prácticas que sirven en otros proyectos | Cuando cambia la arquitectura o una convención |
 | [`MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md) | **Manual para el dueño:** cómo entrar y cambiar la contraseña, cómo administrar usuarios (pantalla y menú de la terminal) y cómo limpiar la base de desarrollo | Cuando cambian los permisos o los menús |
 | [`GUIA-PROBAR-EL-SISTEMA.md`](docs/GUIA-PROBAR-EL-SISTEMA.md) | El recorrido paso a paso por las pantallas, cómo probar con tus propios DXF y qué tener en cuenta | Cuando cambia una pantalla del recorrido |
 | [`GUIA-PRUEBAS-LOCALES.md`](docs/GUIA-PRUEBAS-LOCALES.md) | Cómo probar con datos reales del cliente: el xlsx de AppSheet y los DXF de `modelos/`. Nunca se commitea lo que producen | Cuando cambian los datos reales disponibles |

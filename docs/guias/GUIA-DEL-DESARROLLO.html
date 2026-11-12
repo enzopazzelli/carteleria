@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guía para desarrolladores — Cotizador</title>
+<meta name="description" content="Arquitectura, puesta en marcha, convenciones y recetas del proyecto Cotizador de cartelería.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@1,700;1,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --negro: #0d0d0d;
+  --naranja: #ff5d00;
+  --naranja-texto: #b83a00;
+  --naranja-suave: #fff1e8;
+  --fondo: #f4f4f2;
+  --superficie: #ffffff;
+  --borde: #dcdcd8;
+  --texto: #1a1a1a;
+  --apoyo: #5f5f5f;
+  --ok: #1f7a3d;
+  --ok-suave: #e6f3ea;
+  --ambar: #8a6100;
+  --ambar-suave: #fbf1d9;
+  --rojo: #c8102e;
+  --rojo-suave: #fbe7ea;
+  --azul-suave: #e8eef5;
+  --radio: 8px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font: 16px/1.65 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+code, pre, kbd { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; }
+
+/* ---- Barra de arriba ---- */
+.barra {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--negro); color: var(--fondo);
+  border-bottom: 3px solid var(--naranja);
+}
+.barra-in {
+  max-width: 1240px; margin: 0 auto; padding: 0 16px;
+  min-height: 56px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.logo-img { height: 46px; width: auto; background: #fff; border-radius: 6px; padding: 2px 6px; display: block; }
+.marca {
+  font-family: "Exo 2", "IBM Plex Sans", system-ui, sans-serif;
+  font-style: italic; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; font-size: 18px;
+}
+.barra .sub { color: #bdbdb8; font-size: 14px; }
+.barra .otra { margin-left: auto; font-size: 14px; }
+.barra .otra a { color: var(--fondo); text-decoration: none; border-bottom: 2px solid var(--naranja); padding-bottom: 2px; }
+.barra .otra a:hover { color: var(--naranja); }
+
+/* ---- Estructura ---- */
+.pagina { max-width: 1240px; margin: 0 auto; padding: 24px 16px 80px; display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 36px; }
+.indice { position: sticky; top: 80px; align-self: start; max-height: calc(100vh - 100px); overflow: auto; font-size: 14px; padding-right: 8px; }
+.indice h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--apoyo); margin: 0 0 10px; }
+.indice ol { list-style: none; margin: 0; padding: 0; counter-reset: sec; }
+.indice li { counter-increment: sec; }
+.indice a { display: block; padding: 5px 10px; border-left: 3px solid var(--borde); color: var(--texto); text-decoration: none; }
+.indice a::before { content: counter(sec) ". "; color: var(--apoyo); }
+.indice a:hover { border-left-color: var(--naranja); background: var(--superficie); }
+.indice a.activo { border-left-color: var(--naranja); background: var(--superficie); font-weight: 600; }
+.indice-movil { display: none; }
+main { min-width: 0; }
+
+/* ---- Portada ---- */
+.portada { background: var(--negro); color: var(--fondo); border-radius: var(--radio); padding: 32px 32px 28px; margin-bottom: 28px; border-left: 8px solid var(--naranja); }
+.portada h1 { font-family: "Exo 2", "IBM Plex Sans", system-ui, sans-serif; font-style: italic; font-weight: 800; font-size: 34px; line-height: 1.15; margin: 0 0 10px; }
+.portada p { margin: 0; color: #d6d6d1; max-width: 62ch; }
+.portada .meta { margin-top: 16px; font-size: 13px; color: #a8a8a3; }
+.portada .meta b { color: var(--naranja); font-weight: 600; }
+
+/* ---- Texto ---- */
+section { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 28px 32px; margin-bottom: 22px; }
+h2.sec { font-family: "Exo 2", "IBM Plex Sans", system-ui, sans-serif; font-style: italic; font-weight: 800; font-size: 26px; line-height: 1.2; margin: 0 0 6px; }
+h2.sec .n { display: inline-block; background: var(--naranja); color: var(--negro); font-style: normal; font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 15px; padding: 2px 9px; border-radius: 6px; margin-right: 10px; vertical-align: 4px; }
+.lema { color: var(--apoyo); margin: 0 0 18px; }
+h3 { font-size: 19px; margin: 28px 0 6px; }
+h4 { font-size: 16px; margin: 20px 0 4px; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 14px; padding-left: 22px; }
+li { margin-bottom: 4px; }
+a { color: var(--naranja-texto); }
+a:hover { color: var(--negro); }
+hr { border: 0; border-top: 1px solid var(--borde); margin: 22px 0; }
+code { background: #efefec; border: 1px solid var(--borde); border-radius: 4px; padding: 0 5px; font-size: .88em; }
+pre { background: var(--negro); color: #f1f1ee; border-radius: var(--radio); padding: 14px 16px; overflow: auto; font-size: 13.5px; line-height: 1.55; margin: 0 0 16px; border-left: 4px solid var(--naranja); }
+pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+pre .c { color: #9a9a95; }
+kbd { background: #fff; border: 1px solid #b9b9b3; border-bottom-width: 2px; border-radius: 4px; padding: 0 6px; font-size: .85em; }
+.btn { display: inline-block; background: var(--naranja); color: var(--negro); font-weight: 600; border-radius: 6px; padding: 0 9px; font-size: .92em; white-space: nowrap; }
+.etq { background: var(--fondo); border: 1px solid var(--borde); border-radius: 6px; padding: 0 7px; font-weight: 500; white-space: nowrap; }
+
+/* ---- Tablas ---- */
+.tabla { overflow-x: auto; margin: 0 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th { background: var(--negro); color: var(--fondo); text-align: left; padding: 8px 12px; font-weight: 600; white-space: nowrap; }
+td { border-bottom: 1px solid var(--borde); padding: 8px 12px; vertical-align: top; }
+tr:nth-child(even) td { background: #fafaf8; }
+
+/* ---- Avisos ---- */
+.aviso { border-radius: var(--radio); padding: 12px 16px 12px 16px; margin: 0 0 16px; border-left: 5px solid; font-size: 15px; }
+.aviso > :last-child { margin-bottom: 0; }
+.aviso b.t { display: block; font-size: 12px; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 2px; }
+.nota { background: var(--azul-suave); border-color: #3b5f86; } .nota b.t { color: #2c4a6c; }
+.ojo { background: var(--ambar-suave); border-color: var(--ambar); } .ojo b.t { color: var(--ambar); }
+.tip { background: var(--ok-suave); border-color: var(--ok); } .tip b.t { color: var(--ok); }
+.peligro { background: var(--rojo-suave); border-color: var(--rojo); } .peligro b.t { color: var(--rojo); }
+.marca-aviso { background: var(--naranja-suave); border-color: var(--naranja); } .marca-aviso b.t { color: var(--naranja-texto); }
+
+/* ---- Pasos numerados ---- */
+.pasos { list-style: none; padding: 0; counter-reset: paso; margin: 0 0 16px; }
+.pasos > li { counter-increment: paso; position: relative; padding: 2px 0 12px 48px; margin: 0; }
+.pasos > li::before { content: counter(paso); position: absolute; left: 0; top: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--negro); color: var(--naranja); font: 600 15px/32px "IBM Plex Mono", monospace; text-align: center; }
+.pasos > li::after { content: ""; position: absolute; left: 15px; top: 36px; bottom: 4px; width: 2px; background: var(--borde); }
+.pasos > li:last-child::after { display: none; }
+
+/* ---- Recorrido (flujo) ---- */
+.flujo { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px 4px; margin: 14px 0 18px; }
+.flujo .f { background: var(--superficie); border: 2px solid var(--negro); border-radius: var(--radio); padding: 8px 12px; font-size: 14px; line-height: 1.3; min-width: 110px; flex: 1 1 110px; }
+.flujo .f b { display: block; font-size: 12px; color: var(--naranja-texto); font-family: "IBM Plex Mono", monospace; font-weight: 500; }
+.flujo .f.hecho { background: var(--ok-suave); border-color: var(--ok); }
+.flujo .f.falta { background: #efefec; border-style: dashed; border-color: #8a8a85; color: var(--apoyo); }
+.flujo .fl { align-self: center; color: var(--naranja); font-weight: 800; font-size: 20px; }
+
+/* ---- Estados ---- */
+.est { display: inline-block; border-radius: 999px; padding: 0 10px; font-size: 13px; font-weight: 600; border: 1px solid; }
+.est.borrador { background: #ececea; border-color: #9a9a95; color: #444; }
+.est.pendiente { background: var(--ambar-suave); border-color: var(--ambar); color: var(--ambar); }
+.est.observado { background: var(--rojo-suave); border-color: var(--rojo); color: var(--rojo); }
+.est.aprobado { background: var(--ok-suave); border-color: var(--ok); color: var(--ok); }
+
+/* ---- Tarjetas ---- */
+.tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 0 0 16px; }
+.tarjeta { border: 1px solid var(--borde); border-top: 4px solid var(--naranja); border-radius: var(--radio); padding: 12px 14px; background: var(--superficie); }
+.tarjeta h4 { margin: 0 0 4px; }
+.tarjeta p { font-size: 14.5px; margin: 0; }
+
+/* ---- Capas / arquitectura ---- */
+.capas { display: grid; gap: 8px; margin: 14px 0 18px; }
+.capa { border: 2px solid var(--negro); border-radius: var(--radio); padding: 10px 14px; background: var(--superficie); font-size: 14.5px; }
+.capa b { color: var(--naranja-texto); }
+.capa.oscura { background: var(--negro); color: var(--fondo); border-color: var(--negro); } .capa.oscura b { color: var(--naranja); }
+.columnas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+
+.capa.oscura code, .portada code { background: #2b2b2b; color: #fff; border-color: #4a4a4a; }
+
+details { border: 1px solid var(--borde); border-radius: var(--radio); padding: 8px 14px; margin: 0 0 10px; background: #fafaf8; }
+summary { cursor: pointer; font-weight: 600; }
+details[open] summary { margin-bottom: 8px; }
+
+footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 8px 0 0; }
+
+/* ---- Celular ---- */
+@media (max-width: 900px) {
+  .pagina { grid-template-columns: 1fr; gap: 12px; padding-top: 14px; }
+  .indice { display: none; }
+  .indice-movil { display: block; }
+  .indice-movil ol { margin: 6px 0 0; padding-left: 22px; }
+  section { padding: 20px 18px; }
+  .portada { padding: 22px 20px; } .portada h1 { font-size: 26px; }
+  h2.sec { font-size: 22px; }
+  .barra .otra { margin-left: 0; }
+}
+/* ---- Impresión ---- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .barra { position: static; } .indice, .indice-movil { display: none; }
+  .pagina { display: block; padding: 0; }
+  section { border: 0; padding: 0; break-inside: auto; margin-bottom: 14pt; }
+  .portada, th, pre, .pasos > li::before, .btn { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h2, h3 { break-after: avoid; } .aviso, table, pre { break-inside: avoid; }
+  a { color: inherit; }
+}
+
+</style>
+</head>
+<body>
+<header class="barra"><div class="barra-in">
+  <!--LOGO-->
+  <span class="marca">Cotizador</span><span class="sub">Guía para desarrolladores</span>
+  <span class="otra">¿Usás el sistema? <a href="GUIA-DEL-USUARIO.html">Guía del usuario</a></span>
+</div></header>
+<div class="pagina">
+  <nav class="indice" aria-label="Índice"><h2>En esta guía</h2><ol>
+    <li><a href="#que-es">El proyecto en cinco minutos</a></li>
+    <li><a href="#arquitectura">Arquitectura</a></li>
+    <li><a href="#puesta-en-marcha">Puesta en marcha</a></li>
+    <li><a href="#estructura">Estructura del repositorio</a></li>
+    <li><a href="#backend">El backend por dentro</a></li>
+    <li><a href="#dominio">El dominio, por temas</a></li>
+    <li><a href="#frontend">El frontend por dentro</a></li>
+    <li><a href="#base">Base de datos y migraciones</a></li>
+    <li><a href="#pruebas">Pruebas y CI</a></li>
+    <li><a href="#git">Flujo de trabajo con Git</a></li>
+    <li><a href="#reglas">Las reglas que no se negocian</a></li>
+    <li><a href="#scripts">Scripts y herramientas</a></li>
+    <li><a href="#recetas">Recetas: cómo agregar cosas</a></li>
+    <li><a href="#documentacion">Dónde está la documentación</a></li>
+    <li><a href="#despliegue">Despliegue (lo que viene)</a></li>
+    <li><a href="#otro-proyecto">Llevar esto a otro proyecto</a></li>
+    <li><a href="#glosario">Glosario técnico</a></li>
+  </ol></nav>
+  <main>
+    <div class="portada">
+      <h1>Cómo está hecho y cómo se trabaja en él</h1>
+      <p>Arquitectura, puesta en marcha, el dominio (DXF, anidado, costeo), pruebas, flujo de Git, recetas para los cambios más comunes y las prácticas que se pueden llevar a otro proyecto.</p>
+      <div class="meta">Para <b>equipos de desarrollo</b> que se suman a este proyecto o a otro con la misma base</div>
+    </div>
+    <details class="indice-movil"><summary>Índice</summary><ol>
+    <li><a href="#que-es">El proyecto en cinco minutos</a></li>
+    <li><a href="#arquitectura">Arquitectura</a></li>
+    <li><a href="#puesta-en-marcha">Puesta en marcha</a></li>
+    <li><a href="#estructura">Estructura del repositorio</a></li>
+    <li><a href="#backend">El backend por dentro</a></li>
+    <li><a href="#dominio">El dominio, por temas</a></li>
+    <li><a href="#frontend">El frontend por dentro</a></li>
+    <li><a href="#base">Base de datos y migraciones</a></li>
+    <li><a href="#pruebas">Pruebas y CI</a></li>
+    <li><a href="#git">Flujo de trabajo con Git</a></li>
+    <li><a href="#reglas">Las reglas que no se negocian</a></li>
+    <li><a href="#scripts">Scripts y herramientas</a></li>
+    <li><a href="#recetas">Recetas: cómo agregar cosas</a></li>
+    <li><a href="#documentacion">Dónde está la documentación</a></li>
+    <li><a href="#despliegue">Despliegue (lo que viene)</a></li>
+    <li><a href="#otro-proyecto">Llevar esto a otro proyecto</a></li>
+    <li><a href="#glosario">Glosario técnico</a></li>
+    </ol></details>
+<section id="que-es">
+  <h2 class="sec"><span class="n">1</span>El proyecto en cinco minutos</h2>
+  <p class="lema">Qué problema resuelve, para quién y cómo está pensado.</p>
+  <p>Un sistema a medida para una empresa de <b>cartelería de gran formato en chapa</b>. Reemplaza tres tareas manuales: <b>cotizar</b> un cartel, <b>acomodar sus piezas en la chapa</b> (nesting) y <b>hacer aprobar el presupuesto</b> antes de que llegue al cliente. Entra un dibujo DXF exportado de CorelDRAW y sale un presupuesto con precio sugerido, un PDF para el cliente y archivos de corte para el taller.</p>
+  <div class="tarjetas">
+    <div class="tarjeta"><h4>Backend</h4><p>Python 3.11+, FastAPI, SQLAlchemy 2, Alembic. Geometría con <code>shapely</code> y <code>ezdxf</code>. Anidado con <b>Sparrow</b> (<code>spyrrow</code>).</p></div>
+    <div class="tarjeta"><h4>Frontend</h4><p>React 18, Vite, TypeScript, Tailwind, React Query. Sin lógica de negocio: pide todo al servidor.</p></div>
+    <div class="tarjeta"><h4>Datos</h4><p>SQLite en desarrollo, PostgreSQL en el servidor. Los DXF se guardan como archivos junto a la base.</p></div>
+    <div class="tarjeta"><h4>Estado</h4><p>Funciona de punta a punta en local, con login. Falta el despliegue (Docker, copias, PostgreSQL, servidor).</p></div>
+  </div>
+  <div class="aviso nota"><b class="t">Qué guía leer</b>
+    <p>Esta es la guía para quien <b>desarrolla</b>. Si necesitás entender cómo lo usa la gente de la empresa, está la <a href="GUIA-DEL-USUARIO.html">guía del usuario</a>. El mapa de todos los documentos del repositorio está en la <a href="#documentacion">sección 14</a>.</p>
+  </div>
+  <h3>Principios de diseño</h3>
+  <ul>
+    <li><b>El servidor sabe, la pantalla pide.</b> Toda regla de negocio vive en el backend; el frontend solo muestra y envía.</li>
+    <li><b>Un solo lugar para cada decisión.</b> Si una regla se repite en dos sitios, se unifica (ejemplo: <code>anidado_que_cuenta.py</code> decide qué anidado cuenta para el precio, y costeo, inicio, PDF y Chapas lo consumen).</li>
+    <li><b>Nada hardcodeado.</b> Los valores configurables tienen un ID en el registro de supuestos (ver <a href="#reglas">sección 11</a>).</li>
+    <li><b>Los errores los lee una persona.</b> Los mensajes están pensados para quien usa el sistema, no para quien programa.</li>
+  </ul>
+</section>
+
+<section id="arquitectura">
+  <h2 class="sec"><span class="n">2</span>Arquitectura</h2>
+  <p class="lema">Qué procesos hay y cómo se hablan.</p>
+  <div class="capas">
+    <div class="capa oscura"><b>Navegador</b> — SPA de React. Habla con un solo origen: <code>/api/…</code>. La cookie de sesión viaja sola.</div>
+    <div class="capa"><b>Vite (desarrollo) / Caddy (producción, planeado)</b> — reenvía <code>/api/*</code> al servidor <b>sacando el prefijo</b>. Las rutas del backend no llevan <code>/api</code>.</div>
+    <div class="capa oscura"><b>Servidor</b> — FastAPI + Uvicorn, puerto 8000. Rutas en <code>app/api/</code>, lógica en <code>app/services/</code>, tablas en <code>app/modelos/</code>.</div>
+    <div class="columnas">
+      <div class="capa"><b>Base de datos</b><br>SQLite (<code>backend/local/carteleria.db</code>) o PostgreSQL, vía <code>DATABASE_URL</code>.</div>
+      <div class="capa"><b>Archivos</b><br>El DXF subido de cada trabajo, en <code>local/archivos/</code>: se conserva para poder releerlo con otra escala.</div>
+      <div class="capa"><b>Sparrow</b><br>Proceso aparte (<code>sparrow_worker.py</code>), lanzado y vigilado por el servidor. Tarda; el servidor sigue respondiendo.</div>
+      <div class="capa"><b>PDF</b><br>ReportLab, dentro del propio servidor.</div>
+    </div>
+  </div>
+
+  <h3>Un pedido, de punta a punta</h3>
+  <ol class="pasos">
+    <li>La pantalla llama a una función de <code>src/api/*.ts</code> (por ejemplo <code>subirDxf</code>), que hace el <code>fetch</code> a <code>/api/…</code>.</li>
+    <li>Vite (o Caddy) reenvía el pedido al backend sin el prefijo.</li>
+    <li>La ruta en <code>app/api/rutas_*.py</code> valida el pedido con un esquema de Pydantic (<code>esquemas_*.py</code>) y comprueba la sesión y los permisos.</li>
+    <li>La ruta llama a un servicio en <code>app/services/…</code>, que trabaja con los modelos de <code>app/modelos/</code> (SQLAlchemy) y con las librerías geométricas.</li>
+    <li>Si algo falla de una manera que el usuario puede entender, se lanza <code>ErrorParaElUsuario</code>; el manejador lo convierte en JSON con un <code>mensaje</code> (y un <code>detalle</code> técnico aparte).</li>
+    <li>La respuesta vuelve a la pantalla; React Query actualiza o invalida lo que corresponda.</li>
+  </ol>
+
+  <h3>Cola de trabajos largos</h3>
+  <p>El anidado puede tardar minutos. Se lanza en segundo plano (<code>app/cola/</code>, configurable con <code>CARTELERIA_COLA</code>: <code>proceso</code> por defecto, <code>celery</code> cuando exista) y la pantalla consulta el progreso (<code>progreso.py</code>), con tiempo máximo y botón de cancelar. Se pueden correr varios a la vez. Los archivos de trabajo temporales van a <code>local/tmp/</code> (no a la carpeta temporal del sistema, que suele estar en un disco chico) y se borran al terminar.</p>
+</section>
+
+<section id="puesta-en-marcha">
+  <h2 class="sec"><span class="n">3</span>Puesta en marcha</h2>
+  <p class="lema">De cero a la app corriendo en tu máquina, sin Docker ni bases externas.</p>
+  <h3>Qué necesitás</h3>
+  <div class="tabla"><table>
+    <tr><th>Herramienta</th><th>Versión</th><th>Cómo chequearla</th></tr>
+    <tr><td>Git</td><td>cualquiera</td><td><code>git --version</code></td></tr>
+    <tr><td>Python</td><td>3.11 o más nuevo (el CI usa 3.11)</td><td><code>python --version</code></td></tr>
+    <tr><td>Node.js</td><td>18 o más nuevo</td><td><code>node --version</code></td></tr>
+  </table></div>
+  <p>Vas a usar <b>tres terminales</b>. Los comandos son de Windows; en Mac/Linux cambiá <code>.venv\Scripts\python</code> por <code>.venv/bin/python</code>.</p>
+<pre><code>git clone https://github.com/enzopazzelli/carteleria.git
+cd carteleria</code></pre>
+  <h4>Terminal 1 — el servidor (queda corriendo)</h4>
+<pre><code>cd backend
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements-dev.txt
+.venv\Scripts\python -m uvicorn app.api.app:app --reload</code></pre>
+  <p>La base se crea o se actualiza sola al arrancar (<code>app/arranque.py</code>): si estaba atrasada, antes deja un respaldo en <code>backend/local/respaldo-&lt;fecha&gt;-antes-de-&lt;versión&gt;/</code>. Si la base es <b>más nueva</b> que el código (pasa al volver a una rama vieja), no la toca y el servidor no arranca. Cuando termina, <code>http://localhost:8000/docs</code> muestra la documentación interactiva de la API (en producción está cerrada).</p>
+  <p><b>Una sola vez, el primer usuario</b> (sin él la pantalla no deja entrar), con el servidor ya arrancado:</p>
+<pre><code>.venv\Scripts\python -m app.usuarios crear enzo --nombre "Enzo" --administrador --puede-aprobar --generar</code></pre>
+  <p>Imprime una contraseña temporal; al entrar, la pantalla pide elegir una propia (mínimo 10 caracteres).</p>
+  <h4>Terminal 2 — datos de demostración</h4>
+<pre><code>cd backend
+.venv\Scripts\python scripts/cargar_catalogo_demo.py
+.venv\Scripts\python scripts/generar_dxf_demo.py</code></pre>
+  <p>Cargan materiales «DEMO» con precios inventados (marcados «(simulado)») y crean <code>backend/local/demo.dxf</code>. Se pueden repetir sin duplicar nada.</p>
+  <h4>Terminal 3 — la pantalla (queda corriendo)</h4>
+<pre><code>cd frontend
+npm ci
+npm run dev</code></pre>
+  <div class="aviso ojo"><b class="t">Abrí exactamente esta dirección</b>
+    <p>Abrí <code>http://localhost:5173</code>, no <code>127.0.0.1</code> ni otro puerto. Vite tiene <code>strictPort</code>: si el 5173 está ocupado, no arranca (antes se corría solo al 5174 y la app cargaba pero nada funcionaba). Lo mismo con el 8000.</p>
+  </div>
+
+  <h3>Variables de entorno</h3>
+  <p>Todas tienen un valor por defecto; en desarrollo no hace falta definir ninguna. Las más útiles:</p>
+  <div class="tabla"><table>
+    <tr><th>Variable</th><th>Por defecto</th><th>Para qué</th></tr>
+    <tr><td><code>CARTELERIA_DATOS</code></td><td><code>backend/local</code></td><td>Carpeta con la base, los archivos y los respaldos. <b>Sirve para aislar una prueba</b> de tu base real.</td></tr>
+    <tr><td><code>DATABASE_URL</code></td><td>SQLite en la carpeta de datos</td><td>Apuntar a PostgreSQL.</td></tr>
+    <tr><td><code>CARTELERIA_ENTORNO</code></td><td><code>desarrollo</code></td><td><code>produccion</code>: la cookie de sesión va <code>Secure</code> y no queda abierta la documentación de la API.</td></tr>
+    <tr><td><code>CARTELERIA_COLA</code></td><td><code>proceso</code></td><td>Cómo se lanzan los trabajos largos.</td></tr>
+    <tr><td><code>CARTELERIA_SESION_HORAS</code> / <code>…_DIAS_MANTENIDA</code></td><td>12 / 30</td><td>Duración de la sesión sin uso / con «mantener abierta».</td></tr>
+    <tr><td><code>CARTELERIA_CONTRASENA_LARGO_MINIMO</code></td><td>10</td><td>Largo mínimo de contraseña.</td></tr>
+    <tr><td><code>CARTELERIA_INTENTOS_ANTES_DE_BLOQUEAR</code> / <code>…MINUTOS_DE_BLOQUEO</code></td><td>5 / 15</td><td>Bloqueo por intentos fallidos.</td></tr>
+    <tr><td><code>CARTELERIA_TOPE_TRAMOS</code></td><td>50</td><td>Máximo de tramos al seccionar una pieza.</td></tr>
+    <tr><td><code>CARTELERIA_RETAZO_MINIMO_MM</code></td><td>250</td><td>El retazo más chico que se guarda, en mm por lado.</td></tr>
+    <tr><td><code>CARTELERIA_TIEMPO_REACOMODAR_S</code></td><td>30</td><td>Tiempo para reacomodar una chapa al mover una pieza.</td></tr>
+  </table></div>
+  <p>La lista completa está en <code>backend/app/config.py</code>: es el <b>único</b> lugar donde se leen variables de entorno.</p>
+</section>
+
+<section id="estructura">
+  <h2 class="sec"><span class="n">4</span>Estructura del repositorio</h2>
+  <p class="lema">Dónde está cada cosa.</p>
+<pre><code>carteleria/
+├── README.md              <span class="c"># puerta de entrada: qué es, cómo se prueba, en qué estamos</span>
+├── docs/                  <span class="c"># documentación, ordenada por estado (ver sección 14)</span>
+│   ├── guias/             <span class="c"># estas guías (HTML)</span>
+│   ├── plan/              <span class="c"># lo que sigue: plan maestro + un diseño por sub-proyecto</span>
+│   ├── motor/             <span class="c"># el motor de anidado: contrato, mediciones</span>
+│   ├── cliente/           <span class="c"># lo que dijo y entregó la empresa</span>
+│   └── historico/         <span class="c"># lo ya ejecutado o reemplazado: se consulta, no se sigue</span>
+├── backend/
+│   ├── app/api/           <span class="c"># rutas (rutas_*.py) y esquemas Pydantic (esquemas_*.py)</span>
+│   ├── app/services/      <span class="c"># la lógica, por tema (ver tabla de abajo)</span>
+│   ├── app/modelos/       <span class="c"># tablas SQLAlchemy</span>
+│   ├── app/cola/          <span class="c"># trabajos en segundo plano</span>
+│   ├── alembic/           <span class="c"># migraciones</span>
+│   ├── scripts/           <span class="c"># herramientas: usuarios, limpiar base, demos, extractores</span>
+│   ├── tests/             <span class="c"># pruebas, espejo de app/</span>
+│   └── local/             <span class="c"># TU base, DXF, respaldos, logo. NO va a git</span>
+├── frontend/src/
+│   ├── api/               <span class="c"># una función por llamada al servidor (+ sus tests)</span>
+│   ├── hooks/             <span class="c"># React Query: useXxx() sobre esas funciones</span>
+│   ├── routes/            <span class="c"># una pantalla por archivo; TrabajoWorkspace/ = las 5 etapas</span>
+│   ├── components/        <span class="c"># piezas reutilizables de la interfaz</span>
+│   ├── auth/              <span class="c"># sesión y permisos</span>
+│   └── styles/            <span class="c"># Tailwind y tipografías</span>
+├── nesting-engine/        <span class="c"># Deepnest: estudiado y medido; hoy sin interfaz</span>
+└── prototipo-dashboard/   <span class="c"># maqueta HTML del dashboard rápido (futuro)</span></code></pre>
+  <div class="aviso peligro"><b class="t">Nunca se sube a git</b>
+    <p>El repositorio es <b>público</b>. No entran archivos del cliente (<code>.cdr</code>, <code>.dxf</code> reales, el Excel de precios, fotos), contraseñas, ni nada de <code>backend/local/</code> (base real, logo, datos de contacto, respaldos). Para un test que necesite un archivo, se usa uno de ejemplo anonimizado.</p>
+  </div>
+</section>
+
+<section id="backend">
+  <h2 class="sec"><span class="n">5</span>El backend por dentro</h2>
+  <p class="lema">Capas, módulos y las reglas de cada una.</p>
+  <h3>Capas</h3>
+  <p><b>api → services → modelos.</b> Una ruta solo valida, comprueba permisos y delega; no contiene lógica de negocio. Un servicio no conoce FastAPI. Los modelos solo describen tablas.</p>
+
+  <h3>Servicios (<code>app/services/</code>)</h3>
+  <div class="tabla"><table>
+    <tr><th>Carpeta</th><th>Qué hace</th></tr>
+    <tr><td><code>ingesta/</code></td><td>Lee el DXF: <code>dxf.py</code> (parser), <code>dibujo.py</code> (la imagen de «cómo se leyó»), <code>uniones.py</code>, <code>analisis.py</code> (qué es pieza, agujero, descartada), <code>correcciones_guardadas.py</code> (recordar correcciones por contenido del archivo).</td></tr>
+    <tr><td><code>nesting/</code></td><td>El anidado. <code>sparrow.py</code> + <code>sparrow_worker.py</code> (motor principal), <code>engine.py</code> (rectangular, de prueba), <code>huecos_primero.py</code>, <code>reacomodar.py</code>, <code>mover_entre_chapas.py</code>, <code>material_usado.py</code>, <code>exportacion_dxf.py</code>, <code>pdf_anidado.py</code>, <code>visualizacion.py</code>.</td></tr>
+    <tr><td><code>seccionado/</code></td><td><code>grilla.py</code>: parte una pieza que no entra en una chapa en tramos, buscando la mejor grilla (ángulo y desplazamiento).</td></tr>
+    <tr><td><code>piezas/</code></td><td>Alta y consulta de piezas de un trabajo.</td></tr>
+    <tr><td><code>catalogo/</code></td><td>Materiales, medidas, artículos y precios; <code>planilla.py</code> y <code>revision.py</code> (leer el Excel y mostrar qué cambiaría), <code>aplicar.py</code>, <code>retazos.py</code>.</td></tr>
+    <tr><td><code>presupuesto/</code></td><td><code>totales.py</code> y <code>sugerido.py</code> (costeo y precio), <code>estados.py</code> (máquina de estados), <code>pdf.py</code> y <code>documento.py</code> (PDF del cliente), <code>empresa.py</code> (logo y datos), <code>del_catalogo.py</code>.</td></tr>
+    <tr><td><code>usuarios/</code></td><td>Alta, baja, contraseñas (argon2id), sesiones y bloqueo.</td></tr>
+  </table></div>
+  <p>Módulos sueltos en <code>app/</code>: <code>config.py</code> (configuración), <code>arranque.py</code> (migra y respalda al iniciar), <code>mensajes.py</code> (<code>ErrorParaElUsuario</code>), <code>anidado_que_cuenta.py</code>, <code>costeo.py</code>, <code>pasos.py</code>, <code>progreso.py</code>, <code>registro.py</code> (logs rotativos), <code>usuarios.py</code> (el comando de emergencia).</p>
+
+  <h3>Modelos (tablas)</h3>
+  <div class="tabla"><table>
+    <tr><th>Archivo</th><th>Tablas</th></tr>
+    <tr><td><code>trabajo.py</code></td><td><code>Trabajo</code>, <code>GrupoDeCorte</code>, <code>Pieza</code> (con <code>seccionada_de_id</code> para los tramos), <code>EjecucionNesting</code>, <code>Colocacion</code>, <code>CorreccionesDelDibujo</code></td></tr>
+    <tr><td><code>catalogo.py</code></td><td><code>Material</code>, <code>Formato</code> (una chapa; <code>es_retazo</code> marca los sobrantes guardados), <code>Articulo</code>, <code>ParametrosCorteMaterial</code>, <code>CargaDePlanilla</code>, <code>CambioDePrecio</code>, <code>CotizacionMoneda</code></td></tr>
+    <tr><td><code>presupuesto.py</code></td><td><code>Cliente</code>, <code>Presupuesto</code>, <code>LineaCosto</code>, <code>CambioDeEstado</code> (el historial)</td></tr>
+    <tr><td><code>usuario.py</code></td><td><code>Usuario</code>, <code>SesionDeUsuario</code></td></tr>
+  </table></div>
+  <p>Las medidas se guardan con el tipo <code>Milimetros</code> (<code>modelos/tipos.py</code>), un <code>Decimal</code> con precisión fija. Hay una carpeta de migraciones con una por cambio de esquema.</p>
+
+  <h3>Autenticación y permisos</h3>
+  <ul>
+    <li><b>Sesión por cookie</b>, contraseñas con <b>argon2id</b>. Duración, bloqueo y largo mínimo, configurables (sección 3).</li>
+    <li>Los pedidos que <b>cambian algo</b> (todo lo que no es <code>GET</code>) deben llevar el encabezado <code>X-Cartel-Pedido</code>. Sin él, el servidor los rechaza. Es la defensa contra pedidos forjados desde otro sitio; el cliente del frontend (<code>src/api/client.ts</code>) lo agrega solo.</li>
+    <li>Dos permisos: <code>puede_aprobar</code> y <code>administra_usuarios</code>. Se exigen con <code>Depends(exigir_permiso("…"))</code>.</li>
+    <li><b>Toda ruta nueva exige sesión.</b> El test <code>test_todas_las_rutas_exigen_sesion</code> recorre las rutas y falla si alguna queda abierta. Si agregás una pública a propósito, tenés que declararla.</li>
+    <li>Siempre tiene que haber al menos una persona que administre usuarios; el servicio lo garantiza.</li>
+  </ul>
+
+  <h3>Errores para personas</h3>
+  <p>Todo error que lee una persona se lanza con <code>ErrorParaElUsuario(mensaje, detalle=…)</code>. Reglas (también en <code>CONVENCIONES.md §6</code>):</p>
+  <ol>
+    <li>Primero <b>qué pasó</b>, después <b>qué hacer</b>. Una o dos oraciones, con voseo («elegí», «probá»).</li>
+    <li>Se nombra lo que el usuario ve: la pieza por su nombre del dibujo, el grupo por su nombre, la chapa por material y medida.</li>
+    <li><b>Nunca</b> ids de base, códigos del proyecto (<code>CART-</code>, <code>PAR-</code>), nombres de programas (Sparrow, rectpack), inglés ni palabras de programación.</li>
+    <li>Lo técnico va en <code>detalle</code>; la pantalla lo muestra en «Ver detalle técnico».</li>
+  </ol>
+  <p>Un cálculo que solo conoce ids lanza un error con nombre propio y <code>api/traducir_errores.py</code> lo traduce. <code>tests/test_mensajes_claros.py</code> revisa los textos.</p>
+</section>
+
+<section id="dominio">
+  <h2 class="sec"><span class="n">6</span>El dominio, por temas</h2>
+  <p class="lema">Las ideas que hay que entender antes de tocar cada parte.</p>
+
+  <h3>DXF y la escala</h3>
+  <ul>
+    <li>El parser (<code>ingesta/dxf.py</code>) arma <b>piezas cerradas</b> a partir de entidades del DXF. No lee texto, imágenes ni <code>HATCH</code>; cuenta lo que ignora y lo avisa. Los contornos que no cierran (empalmes con huecos de más de 0,1 mm) se informan aparte.</li>
+    <li>La <b>escala</b> (<code>escala_a_mm</code>) es los mm por unidad del dibujo. <b>Nunca se adivina</b>: las cabeceras del DXF (<code>INSUNITS</code>) no son confiables (se vieron valores 4, 5 y 6 para dibujos equivalentes). La pantalla la pide y da una referencia: <code>POST /dxf/medida</code> mide el dibujo en sus unidades y la pantalla multiplica por la escala escrita («con esta escala el dibujo mide … mm»).</li>
+    <li>Hay dos pasos: <code>…/dxf/lectura</code> (cómo se leería, <b>sin guardar nada</b>) y <code>…/dxf</code> (cargar). Las correcciones manuales (forma «no va», descartar) se recuerdan por el contenido del archivo.</li>
+  </ul>
+
+  <h3>Anidado</h3>
+  <ul>
+    <li><b>Sparrow</b> (<code>spyrrow</code>) es el motor principal; corre en un proceso aparte. Soporta giro libre, huecos (<code>usar_anidado_en_huecos</code>) y varios anidados a la vez. <code>rectpack</code> queda como motor rectangular de prueba.</li>
+    <li>«Entra en la chapa» es una sola regla (<code>sparrow.entra_en_la_chapa</code>), con los mismos giros que el anidado: con giro libre, a cualquier ángulo (de a 1°); con veta, media vuelta; si no, cuartos de vuelta.</li>
+    <li>Cada ejecución (<code>EjecucionNesting</code>) guarda parámetros y colocaciones; recalcular crea una nueva y la anterior queda en el historial.</li>
+    <li>El <b>material usado</b> se mide en ancho × alto (sobrante arriba). El sobrante de una chapa puede guardarse como <b>retazo</b> (<code>Formato.es_retazo</code>), que dice de dónde salió y su estado.</li>
+    <li>Al mover una pieza a otra chapa (<code>mover_entre_chapas.py</code>), si no entra en lo libre, se reacomoda esa chapa con Sparrow (<code>reacomodar.py</code>), con «Deshacer».</li>
+  </ul>
+
+  <h3>Seccionado</h3>
+  <p>Una pieza que no entra en ninguna chapa se parte en <b>tramos</b> con una grilla (ángulo + desplazamiento), buscando la que da menos tramos y menos soldadura. Los tramos son <code>Pieza</code> con <code>seccionada_de_id</code>; la original queda <code>descartada</code>. Hay un tope de tramos (<code>CARTELERIA_TOPE_TRAMOS</code>) y se rechaza antes de buscar lo que ya se sabe que no lo cumple. Aplicar reemplaza los tramos anteriores, salvo que estén en un anidado guardado.</p>
+
+  <h3>Costeo y presupuesto</h3>
+  <ul>
+    <li><b>Dinero siempre en <code>Decimal</code></b>, nunca <code>float</code>; el redondeo se aplica una sola vez, al final.</li>
+    <li>El costeo (<code>costeo.py</code>, <code>presupuesto/totales.py</code>) suma material usado (del anidado), artículos del catálogo, mano de obra, IVA y margen; <code>sugerido.py</code> calcula el precio con el margen configurado.</li>
+    <li><b>Regla única del anidado:</b> <code>anidado_que_cuenta.py</code> decide qué anidado de un grupo cuenta. Si cambia la chapa del grupo después de anidar, <b>ninguno</b> lo da por terminado ni lo cobra. Hay una prueba «guardiana» (<code>test_regla_unica_del_anidado.py</code>) que impide reintroducir una segunda regla.</li>
+    <li>El PDF del cliente no muestra costos ni márgenes; el logo y los datos de contacto vienen de <code>backend/local/empresa/</code> (fuera de git). Sin esa carpeta, el PDF sale sin logo.</li>
+  </ul>
+
+  <h3>Estados del presupuesto</h3>
+  <div class="flujo">
+    <div class="f"><span class="est borrador">Borrador</span></div><span class="fl">→</span>
+    <div class="f"><span class="est pendiente">Pendiente</span></div><span class="fl">→</span>
+    <div class="f"><span class="est aprobado">Aprobado</span></div>
+  </div>
+  <div class="tabla"><table>
+    <tr><th>Transición</th><th>Condición</th></tr>
+    <tr><td>Borrador → Pendiente</td><td>Mandar a aprobar</td></tr>
+    <tr><td>Pendiente → Aprobado</td><td>Permiso <code>puede_aprobar</code> (puede aprobar uno que armó la misma persona)</td></tr>
+    <tr><td>Pendiente → Observado</td><td>Permiso <code>puede_aprobar</code> y motivo obligatorio</td></tr>
+    <tr><td>Observado → Pendiente</td><td>Volver a mandar</td></tr>
+    <tr><td>Pendiente / Aprobado → Borrador</td><td>Motivo obligatorio</td></tr>
+  </table></div>
+  <p>Pendiente y Aprobado <b>bloquean la edición</b>. Cada cambio queda en <code>CambioDeEstado</code> (quién, cuándo, por qué). La máquina de estados está en <code>presupuesto/estados.py</code> y es uno de los tres componentes con tests obligatorios.</p>
+
+  <h3>Catálogo y planilla</h3>
+  <p>Los materiales, medidas y precios no se cargan a mano: se sube la planilla Excel de la empresa en <b>Materiales</b>, el sistema muestra una <b>revisión</b> de lo que cambiaría (<code>revision.py</code>) y recién al confirmar se aplica (<code>aplicar.py</code>). Cada carga se guarda (<code>CargaDePlanilla</code>) con sus cambios de precio (<code>CambioDePrecio</code>).</p>
+</section>
+
+<section id="frontend">
+  <h2 class="sec"><span class="n">7</span>El frontend por dentro</h2>
+  <p class="lema">Cómo está organizada la pantalla y qué patrones se repiten.</p>
+  <h3>Patrón: api → hooks → routes</h3>
+  <ol>
+    <li><code>src/api/xxx.ts</code>: una función por llamada al servidor, con sus tipos. Cada archivo tiene su <code>xxx.test.ts</code>.</li>
+    <li><code>src/hooks/useXxx.ts</code>: envuelve esas funciones con React Query (<code>useQuery</code> / <code>useMutation</code>).</li>
+    <li><code>src/routes/*.tsx</code>: las pantallas. Las del espacio de trabajo están en <code>routes/TrabajoWorkspace/</code>: <code>PiezasTab</code>, <code>GruposTab</code>, <code>AnidadoTab</code>, <code>ChapasTab</code>, <code>CosteoTab</code>.</li>
+  </ol>
+  <h3>Lógica pura en archivos <code>.ts</code> aparte</h3>
+  <p>Lo que se puede calcular sin React (formatear importes, armar filas de una comparación, decidir si una pieza se puede seccionar, la referencia de la escala) vive en archivos <code>.ts</code> junto a la pantalla, con su <code>.test.ts</code>. Así se prueba sin montar componentes (el entorno de Vitest es <code>node</code>).</p>
+  <h3>Invalidar lo que cambió</h3>
+  <p>Cuando una acción modifica datos, se invalidan las consultas afectadas. Por ejemplo, <code>refrescarPiezasYDisenio</code> (<code>hooks/usePiezas.ts</code>) refresca piezas, diseño, «a seccionar», ejecuciones y costeo de un trabajo. <b>Si agregás una consulta que depende de las piezas, sumala ahí</b> o la pantalla mostrará datos viejos.</p>
+  <h3>Sesión y rutas protegidas</h3>
+  <p><code>auth/SesionContext</code> guarda quién entró; <code>RutaProtegida</code> manda a la pantalla de entrada si no hay sesión y fuerza «Mi cuenta» si la contraseña es temporal. <code>Barra.tsx</code> muestra «Usuarios» solo a quien administra.</p>
+  <h3>La marca</h3>
+  <p>Los colores y tipografías están en <code>frontend/tailwind.config.ts</code> y se usan <b>por nombre</b> (más de 400 usos). Cambiar un valor ahí cambia toda la aplicación.</p>
+  <div class="tabla"><table>
+    <tr><th>Nombre</th><th>Valor</th><th>Uso</th></tr>
+    <tr><td><code>negro</code></td><td>#0D0D0D</td><td>Barra de arriba; letra de los botones naranjas</td></tr>
+    <tr><td><code>cut</code></td><td>#FF5D00</td><td>Naranja de marca: botones principales, lo activo, lo seleccionado. <b>Nunca como letra sobre fondo claro.</b></td></tr>
+    <tr><td><code>cuttext</code></td><td>#B83A00</td><td>Naranja para texto y enlaces sobre claro (contraste 5,8)</td></tr>
+    <tr><td><code>paper</code> / <code>ink</code> / <code>line</code></td><td>#F4F4F2 / #1A1A1A / #DCDCD8</td><td>Fondo, texto, divisiones</td></tr>
+    <tr><td><code>ok</code>, <code>bronze</code>, <code>conflict</code></td><td>#1F7A3D / #8A6100 / #C8102E</td><td>Aprobado·listo / aviso·en curso / error</td></tr>
+  </table></div>
+  <p><b>Letra negra sobre el naranja</b> (la blanca da contraste 3,1; la negra, 6,3). Letra de lectura: <b>IBM Plex Sans</b> y <b>Plex Mono</b>; la de marca, <b>Exo 2</b> cursiva, solo para el nombre de la barra y los títulos. Los colores de piezas y chapas en los planos <b>no</b> son de marca.</p>
+</section>
+
+<section id="base">
+  <h2 class="sec"><span class="n">8</span>Base de datos y migraciones</h2>
+  <p class="lema">Alembic, SQLite y PostgreSQL.</p>
+  <ul>
+    <li><b>Una migración por PR</b>, generada <b>justo antes de abrirlo</b> (después de <code>git pull --rebase origin main</code>), para que su cabeza sea la última.</li>
+    <li>Se revisa siempre el archivo generado: el autogenerate se equivoca con índices, defaults y renombres.</li>
+    <li><code>downgrade()</code> funcional siempre. Migración de datos ≠ migración de esquema: van separadas.</li>
+    <li>Si quedan dos <i>heads</i> (<code>alembic heads</code>): primero hablarlo; después <code>alembic merge</code>.</li>
+    <li>Las migraciones se escriben para SQLite y se verifican <b>también contra PostgreSQL 16</b> en el CI (aplicar todo, deshacer, guardar y leer datos del modelo).</li>
+  </ul>
+<pre><code>cd backend
+alembic upgrade head                                  <span class="c"># aplicar (el servidor ya lo hace al arrancar)</span>
+alembic revision --autogenerate -m "agregar tabla x"  <span class="c"># generar</span>
+alembic heads                                         <span class="c"># ver cabezas</span></code></pre>
+  <div class="aviso ojo"><b class="t">Antes de migrar la base real</b>
+    <p>El servidor deja solo un respaldo cuando actualiza la base al arrancar. Aun así, antes de un cambio de esquema grande conviene copiar <code>backend/local/carteleria.db</code>.</p>
+  </div>
+  <h3>Probar sin tocar tus datos</h3>
+  <p><code>scripts/copiar_base.py</code> arma una copia de la base en <code>local/copias/&lt;nombre&gt;</code> y se corre la app contra ella con <code>CARTELERIA_DATOS=local/copias/&lt;nombre&gt;</code>. Ojo: la copia puede seguir apuntando a los DXF reales por ruta absoluta.</p>
+</section>
+
+<section id="pruebas">
+  <h2 class="sec"><span class="n">9</span>Pruebas y CI</h2>
+  <p class="lema">Qué se corre, cuándo, y qué es obligatorio.</p>
+  <div class="tabla"><table>
+    <tr><th>Qué</th><th>Cómo</th></tr>
+    <tr><td>Backend (completo)</td><td><code>cd backend</code> → <code>.venv\Scripts\python -m pytest -q</code></td></tr>
+    <tr><td>Backend (un archivo)</td><td><code>pytest tests/api/test_rutas_medida_dxf.py -q</code></td></tr>
+    <tr><td>Frontend</td><td><code>cd frontend</code> → <code>npm test</code> (Vitest) y <code>npx tsc -b</code> (tipos)</td></tr>
+    <tr><td>Build del frontend</td><td><code>npm run build</code> (corre <code>tsc -b</code> y Vite)</td></tr>
+    <tr><td>PostgreSQL (opcional en local)</td><td>Con <code>CARTELERIA_PRUEBAS_POSTGRES_URL</code> definida: <code>pytest tests/postgres -q</code></td></tr>
+  </table></div>
+  <div class="aviso tip"><b class="t">Si el disco del sistema está lleno</b>
+    <p>«database or disk is full» en las pruebas suele ser la carpeta temporal del sistema. Corré con <code>--basetemp</code> apuntando a otro disco, y con <code>CARTELERIA_DATOS</code> en otro lado.</p>
+  </div>
+  <h3>Obligatorias</h3>
+  <p>No todo necesita test, pero <b>tres cosas sí, sin excepción</b>: el <b>motor de nesting</b> (un error se ve como chapa mal cortada), el <b>motor de costeo</b> (un error llega al cliente como un precio equivocado) y la <b>máquina de estados</b> (una transición inválida rompe el circuito de aprobación).</p>
+  <h3>Pruebas guardianas</h3>
+  <p>Varias pruebas existen para que una regla no se rompa en silencio: todas las rutas exigen sesión; una sola regla de qué anidado cuenta; los mensajes al usuario respetan las reglas de redacción. Si una falla, no la «arregles» debilitando la prueba: la falla te está diciendo que rompiste una regla del proyecto.</p>
+  <h3>CI (GitHub Actions, <code>.github/workflows/ci.yml</code>)</h3>
+  <p>Corre en cada <i>push</i> a <code>main</code>, en cada PR y a mano (<code>workflow_dispatch</code>). Dos trabajos:</p>
+  <ul>
+    <li><b>backend:</b> Python 3.11, <code>alembic upgrade head</code> contra una base vacía (las migraciones tienen que correr de cero) y <code>pytest -q</code> completo, sobre SQLite.</li>
+    <li><b>postgres:</b> un PostgreSQL 16 de verdad; aplica y deshace las migraciones y prueba el modelo.</li>
+  </ul>
+  <p><b>CI en verde es innegociable</b> para fusionar. El CI es también donde se verifica lo que no se puede probar en la máquina de quien desarrolla (por ejemplo, Docker).</p>
+</section>
+
+<section id="git">
+  <h2 class="sec"><span class="n">10</span>Flujo de trabajo con Git</h2>
+  <p class="lema">Ramas, commits y PR.</p>
+  <ol class="pasos">
+    <li><b>Código:</b> una rama corta (<code>feat/…</code>, <code>fix/…</code>, <code>chore/…</code>) desde <code>main</code>, actualizada con <code>git pull --rebase origin main</code>.</li>
+    <li><b>PR a <code>main</code></b> con título claro, qué cambia y cómo probarlo. Si el diff pasa unas 400 líneas, partirlo.</li>
+    <li><b>CI en verde</b>, revisión del dueño de la zona y <b>fusión</b>; la rama se borra al fusionar.</li>
+    <li><b>Documentación:</b> puede ir directo a <code>main</code>, sin PR.</li>
+  </ol>
+  <p><b>Commits:</b> Conventional Commits, <b>en español e imperativo</b>: <code>feat(piezas): referencia para la escala del DXF</code>. Tipos: <code>feat</code>, <code>fix</code>, <code>refactor</code>, <code>test</code>, <code>docs</code>, <code>chore</code>, <code>perf</code>. El cuerpo explica el <i>por qué</i>, no el <i>qué</i>.</p>
+  <div class="aviso marca-aviso"><b class="t">Sin <code>Co-Authored-By</code></b>
+    <p>Los commits y las descripciones de PR van firmados <b>solo por el autor humano</b>: nada de trailers de atribución a herramientas o asistentes. Es una regla explícita del proyecto.</p>
+  </div>
+  <h3>Dos carriles de trabajo</h3>
+  <div class="tabla"><table>
+    <tr><th>Carril</th><th>Alcance</th></tr>
+    <tr><td><b>Producto</b></td><td>Todo lo que no es el motor de anidado.</td></tr>
+    <tr><td><b>Motor</b></td><td>El motor de anidado y sus mejoras. No crea ni modifica tablas: si necesita un campo, lo pide.</td></tr>
+  </table></div>
+  <p>El detalle de propiedad del código y de cuándo hay que hablar antes de escribir está en <code>docs/CONVENCIONES.md §2-3</code>.</p>
+</section>
+
+<section id="reglas">
+  <h2 class="sec"><span class="n">11</span>Las reglas que no se negocian</h2>
+  <p class="lema">Si te llevás solo esto de la guía, que sea esto.</p>
+  <div class="tarjetas">
+    <div class="tarjeta"><h4>1. No hardcode</h4><p>Ningún valor configurable va escrito en la lógica ni repetido en dos documentos. Todo valor por defecto tiene un ID <code>PAR-xx</code> en <code>docs/REGISTRO.md</code>; el resto lo referencia por ID. Igual para supuestos (<code>SUP-xx</code>) y dudas (<code>P-xx</code>).</p></div>
+    <div class="tarjeta"><h4>2. Todo en milímetros</h4><p>Toda medida geométrica en mm y toda área en mm²; la unidad va en el nombre (<code>ancho_mm</code>, <code>area_mm2</code>). Convertir a m² solo al presentar. Una unidad equivocada da un presupuesto equivocado que nadie nota hasta que llega la chapa cortada.</p></div>
+    <div class="tarjeta"><h4>3. Se documenta al avanzar</h4><p>Una entrada en <code>docs/BITACORA.md</code> al cerrar cada jornada y el registro al día. Un registro desactualizado es peor que no tenerlo: da confianza falsa.</p></div>
+  </div>
+  <h3>Otras convenciones</h3>
+  <ul>
+    <li><b>Dinero:</b> <code>Decimal</code>, moneda explícita, redondeo una sola vez al final.</li>
+    <li><b>Idioma:</b> el dominio en español (<code>presupuesto</code>, <code>pieza</code>, <code>anidado</code>); términos técnicos sin traducción natural en inglés (<code>nesting</code>, <code>kerf</code>); tablas y columnas en español <code>snake_case</code>; comentarios y documentación en español. Sin <code>ñ</code> ni acentos en identificadores de base ni en nombres de archivo.</li>
+    <li><b>Mensajes al usuario:</b> ver <a href="#backend">sección 5</a>.</li>
+    <li><b>Secretos:</b> nunca en el repositorio (es público).</li>
+  </ul>
+</section>
+
+<section id="scripts">
+  <h2 class="sec"><span class="n">12</span>Scripts y herramientas</h2>
+  <p class="lema">Todo lo que está en <code>backend/scripts/</code>.</p>
+  <div class="tabla"><table>
+    <tr><th>Script</th><th>Para qué</th></tr>
+    <tr><td><code>administrar_usuarios.py</code></td><td>Menú de terminal para crear, editar, restablecer, dar de baja y de alta. Habla con la app por HTTP (sirve contra local o servidor); solo entra quien administra usuarios.</td></tr>
+    <tr><td><code>limpiar_base.py</code></td><td>Limpia la base <b>SQLite de desarrollo</b>: A trabajos · B + clientes · C de fábrica · D sesiones. Con respaldo, vista previa y confirmación escribiendo <code>BORRAR</code>. Nunca toca usuarios. Se niega si hay algo escuchando en 8000/5173 o si la base no es SQLite.</td></tr>
+    <tr><td><code>copiar_base.py</code></td><td>Copia la base para probar sin tocar la real.</td></tr>
+    <tr><td><code>cargar_catalogo_demo.py</code>, <code>generar_dxf_demo.py</code></td><td>Datos y dibujo de demostración.</td></tr>
+    <tr><td><code>cargar_catalogo_chapa.py</code>, <code>…_acrilico.py</code>, <code>extraer_catalogo_*_xlsx.py</code></td><td>Cargan el catálogo real desde el Excel de la empresa.</td></tr>
+    <tr><td><code>leer_un_dxf.py</code>, <code>lectura_del_corpus.py</code></td><td>Leer un DXF desde la terminal; comparar la lectura contra un corpus de DXF reales. <b>Todo cambio del lector se compara con <code>lectura_del_corpus.py</code>.</b></td></tr>
+    <tr><td><code>comparar_motores.py</code>, <code>probar_nesting_real.py</code>, <code>medir_sparrow_de_un_grupo.py</code></td><td>Medir y comparar los motores de anidado.</td></tr>
+    <tr><td><code>generar_visor_html.py</code></td><td>Un visor HTML de un anidado, para mirarlo en el navegador.</td></tr>
+  </table></div>
+  <p>Para el comando de emergencia de usuarios (sin la app): <code>python -m app.usuarios restablecer|crear|listar</code>, desde <code>backend/</code>.</p>
+</section>
+
+<section id="recetas">
+  <h2 class="sec"><span class="n">13</span>Recetas: cómo agregar cosas</h2>
+  <p class="lema">Los cambios más comunes, paso a paso.</p>
+
+  <details open><summary>Agregar una ruta nueva al backend</summary>
+    <ol>
+      <li>Esquemas en <code>app/api/esquemas_*.py</code> (Pydantic).</li>
+      <li>La lógica, en un servicio de <code>app/services/…</code> (la ruta solo delega).</li>
+      <li>La ruta en el <code>rutas_*.py</code> que corresponda. La sesión se exige sola; si hace falta un permiso, <code>Depends(exigir_permiso("…"))</code>.</li>
+      <li>Errores para personas con <code>ErrorParaElUsuario</code>.</li>
+      <li>Un test en <code>tests/api/</code>. El test guardián <code>test_todas_las_rutas_exigen_sesion</code> tiene que seguir pasando.</li>
+    </ol>
+  </details>
+  <details><summary>Agregar o cambiar una columna</summary>
+    <ol>
+      <li>Cambiá el modelo en <code>app/modelos/</code>.</li>
+      <li><code>git pull --rebase origin main</code> y recién ahí <code>alembic revision --autogenerate -m "…"</code>.</li>
+      <li>Revisá el archivo a mano y asegurate de que <code>downgrade()</code> funcione.</li>
+      <li>Si hay datos que transformar, hacelo en una migración aparte.</li>
+      <li>Corré la suite completa. El job de PostgreSQL del CI la va a verificar también contra PostgreSQL.</li>
+    </ol>
+  </details>
+  <details><summary>Agregar un parámetro configurable</summary>
+    <ol>
+      <li>Dale un ID <code>PAR-xx</code> en <code>docs/REGISTRO.md §2</code>, con su valor y su porqué.</li>
+      <li>Léelo en <code>app/config.py</code> (con variable de entorno y valor por defecto), no en la lógica.</li>
+      <li>En código y documentos, referencialo por ID; no repitas el valor.</li>
+    </ol>
+  </details>
+  <details><summary>Agregar una pantalla o una llamada al servidor</summary>
+    <ol>
+      <li>La función en <code>src/api/xxx.ts</code> (+ su test) y el hook en <code>src/hooks/</code>.</li>
+      <li>La pantalla en <code>src/routes/</code>; la lógica que no es de React, en un <code>.ts</code> aparte con test.</li>
+      <li>Si cambia datos, invalidá las consultas afectadas.</li>
+      <li>Usá los colores y tipografías de Tailwind por nombre; no escribas códigos de color a mano.</li>
+      <li>Corré <code>npm test</code> y <code>npx tsc -b</code>.</li>
+    </ol>
+  </details>
+  <details><summary>Tocar el lector de DXF o el anidado</summary>
+    <ol>
+      <li>Antes y después, corré <code>scripts/lectura_del_corpus.py</code> y comparalas: un cambio «inofensivo» puede empeorar el aprovechamiento o romper un dibujo real.</li>
+      <li>Agregá un test con el caso que motivó el cambio.</li>
+      <li>Anotá lo medido en la bitácora o en el documento del sub-proyecto.</li>
+    </ol>
+  </details>
+  <details><summary>Cerrar una jornada</summary>
+    <ol>
+      <li>Entrada en <code>docs/BITACORA.md</code> (las más nuevas, arriba): qué se hizo, qué se decidió, qué queda.</li>
+      <li>Actualizar <code>docs/REGISTRO.md</code> si se abrió o cerró algún ID, y <code>docs/MAPA-DEL-PROYECTO.md</code> si cambió el estado de una feature.</li>
+    </ol>
+  </details>
+</section>
+
+<section id="documentacion">
+  <h2 class="sec"><span class="n">14</span>Dónde está la documentación</h2>
+  <p class="lema">Ordenada por estado, para no perderse.</p>
+  <div class="tabla"><table>
+    <tr><th>Carpeta</th><th>Qué hay</th></tr>
+    <tr><td><code>docs/</code> (raíz)</td><td>Referencia que vale siempre: <code>MAPA-DEL-PROYECTO</code> (dónde estamos), <code>REGISTRO</code> (supuestos, parámetros, preguntas), <code>EPICA</code> (contexto, requisitos, ADRs, riesgos), <code>BACKLOG</code>, <code>BITACORA</code>, <code>CONVENCIONES</code>, <code>MANUAL-USUARIOS</code>, guías de prueba.</td></tr>
+    <tr><td><code>docs/plan/</code></td><td>Lo que sigue: <code>PLAN-MAESTRO.md</code> (el plan vigente) y una carpeta por sub-proyecto con <code>diseno.md</code> y <code>plan.md</code>.</td></tr>
+    <tr><td><code>docs/motor/</code></td><td>El motor de anidado: contrato, mediciones, cómo funciona cada motor.</td></tr>
+    <tr><td><code>docs/cliente/</code></td><td>Lo que dijo y entregó la empresa: propuesta, relevamientos, planillas.</td></tr>
+    <tr><td><code>docs/historico/</code></td><td>Lo ya ejecutado o reemplazado. <b>No se sigue</b>; se consulta para entender por qué el código es como es (el código lo cita en sus comentarios).</td></tr>
+    <tr><td><code>fuentes/</code></td><td>Documentos originales. No se editan.</td></tr>
+  </table></div>
+  <h3>Por dónde empezar si es tu primera vez (una hora)</h3>
+  <ol>
+    <li><code>docs/EPICA.md §1-2</code>: qué problema resuelve y de dónde salió (10 min).</li>
+    <li><code>docs/EPICA.md §7-8</code>: las features y el roadmap (10 min).</li>
+    <li><code>docs/EPICA.md §9</code>: los ADR, las decisiones técnicas ya cerradas y por qué (15 min).</li>
+    <li><code>docs/CONVENCIONES.md</code> completo (15 min): <b>obligatorio antes de escribir código</b>.</li>
+    <li><code>docs/REGISTRO.md §7</code>: el tablero de lo abierto hoy (5 min).</li>
+  </ol>
+  <p>Si volvés después de un tiempo: <code>PLAN-MAESTRO.md</code> y las últimas tres entradas de <code>BITACORA.md</code>.</p>
+  <div class="aviso nota"><b class="t">Una regla de oro de la documentación</b>
+    <p>Un dato vive en <b>un solo lugar</b>; el resto lo referencia. Si al cambiar un valor tenés que tocar más de un documento, algo estaba repetido.</p>
+  </div>
+</section>
+
+<section id="despliegue">
+  <h2 class="sec"><span class="n">15</span>Despliegue (lo que viene)</h2>
+  <p class="lema">Hoy todo corre en local. Este es el plan para el servidor.</p>
+  <p>El plan detallado está en <code>docs/plan/1.1-servidor-y-login/</code> (<code>diseno.md</code> y <code>plan.md</code>). La parte de login ya está hecha; sigue la <b>entrega A3</b>:</p>
+  <ol class="pasos">
+    <li><b>Docker Compose:</b> que todo levante con un comando, igual que en el servidor.</li>
+    <li><b>Copias de seguridad diarias</b> (con <code>restic</code>), y un aviso en <code>/salud</code> («backup atrasado») si pasan demasiadas horas sin una copia buena (<code>CARTELERIA_BACKUP_HORAS_MAXIMAS</code>).</li>
+    <li><b>Catálogo a PostgreSQL:</b> pasar los datos reales de SQLite.</li>
+    <li><b>El servidor real:</b> alquilarlo, dominio y HTTPS con <b>Caddy</b> (que además reenvía <code>/api</code> como lo hace hoy Vite).</li>
+  </ol>
+  <div class="aviso ojo"><b class="t">Lo que se verifica en el CI</b>
+    <p>La máquina de desarrollo no tiene Docker: lo que depende de Docker o de PostgreSQL se verifica en GitHub Actions. Por eso el CI ya tiene un job con PostgreSQL 16.</p>
+  </div>
+  <p>Después: mail real y aviso al dueño, envío al cliente con el presupuesto congelado, WhatsApp, dashboard rápido y fotomontaje (OpenCV y Pillow).</p>
+</section>
+
+<section id="otro-proyecto">
+  <h2 class="sec"><span class="n">16</span>Llevar esto a otro proyecto</h2>
+  <p class="lema">Las prácticas de este proyecto que sirven en cualquier otro.</p>
+  <div class="tarjetas">
+    <div class="tarjeta"><h4>Un registro central</h4><p>Supuestos, parámetros y dudas con un ID, en un único documento. Código y documentos referencian el ID, nunca el valor.</p></div>
+    <div class="tarjeta"><h4>Guardianes</h4><p>Pruebas que protegen una <i>regla</i> (todas las rutas piden sesión, una sola regla de qué cuenta) y no solo un resultado.</p></div>
+    <div class="tarjeta"><h4>Mensajes pensados</h4><p>Primero qué pasó, después qué hacer; lo técnico aparte. Se revisa con una prueba.</p></div>
+    <div class="tarjeta"><h4>Documentación por estado</h4><p>Lo vigente, lo que sigue y lo histórico en carpetas distintas; nada suelto.</p></div>
+    <div class="tarjeta"><h4>Migraciones sin sorpresas</h4><p>Una por PR, generada al final, con <i>downgrade</i>, probada de cero y contra la base de producción en el CI.</p></div>
+    <div class="tarjeta"><h4>Medir antes de cambiar</h4><p>Un corpus de casos reales y un script que compara antes y después. Los cambios de «motor» se juzgan por números.</p></div>
+    <div class="tarjeta"><h4>Aislar las pruebas</h4><p>Una variable de entorno apunta toda la app a otra carpeta de datos: se prueba sin poner en riesgo la base real.</p></div>
+    <div class="tarjeta"><h4>Todo en una unidad</h4><p>Un solo sistema de unidades en el dominio, con la unidad en el nombre de cada variable.</p></div>
+  </div>
+  <p>Para reutilizar el esqueleto en otro proyecto: copiá la estructura de <code>docs/</code> y <code>CONVENCIONES.md</code>, el patrón <i>api → hooks → routes</i> del frontend, la capa <i>api → services → modelos</i> del backend, y el CI de dos trabajos (suite rápida + base real).</p>
+</section>
+
+<section id="glosario">
+  <h2 class="sec"><span class="n">17</span>Glosario técnico</h2>
+  <p class="lema">Siglas y palabras que aparecen en el código y en los documentos.</p>
+  <div class="tabla"><table>
+    <tr><th>Término</th><th>Qué es</th></tr>
+    <tr><td><b>Nesting / anidado</b></td><td>Acomodar piezas dentro de una chapa minimizando el desperdicio.</td></tr>
+    <tr><td><b>Sparrow / <code>spyrrow</code></b></td><td>Motor de nesting irregular (con giro libre y huecos) usado como motor principal.</td></tr>
+    <tr><td><b>Kerf</b></td><td>Ancho de material que consume la herramienta al cortar.</td></tr>
+    <tr><td><b>Veta</b></td><td>Dirección del material; si la tiene, las piezas no pueden girar libremente.</td></tr>
+    <tr><td><b>Grupo de corte</b></td><td>Piezas de un trabajo que se cortan del mismo material.</td></tr>
+    <tr><td><b>Formato</b></td><td>Una medida de chapa de un material. <code>es_retazo</code> marca los sobrantes guardados.</td></tr>
+    <tr><td><b>Retazo</b></td><td>Sobrante de una chapa guardado para reutilizar (disponible, en uso o usado).</td></tr>
+    <tr><td><b>Seccionar / tramo</b></td><td>Partir una pieza que no entra en una chapa; cada parte es un tramo.</td></tr>
+    <tr><td><b>Ejecución</b></td><td>Un resultado de anidado guardado (parámetros + colocaciones).</td></tr>
+    <tr><td><b>Colocación</b></td><td>La posición y el giro de una pieza en una chapa de una ejecución.</td></tr>
+    <tr><td><b><code>PAR-xx</code>, <code>SUP-xx</code>, <code>P-xx</code>, <code>D-xx</code></b></td><td>IDs del registro: parámetro, supuesto, pregunta y decisión pendiente (<code>docs/REGISTRO.md</code>).</td></tr>
+    <tr><td><b><code>CART-xxx</code></b></td><td>ID de historia del backlog.</td></tr>
+    <tr><td><b>ADR</b></td><td>Registro corto de una decisión técnica y sus consecuencias (<code>docs/EPICA.md §9</code>).</td></tr>
+    <tr><td><b>A10 … A25</b></td><td>Nombres de las entregas ya hechas, en <code>docs/historico/ENTREGAS-HECHAS.md</code>.</td></tr>
+    <tr><td><b>Migración</b></td><td>Un cambio versionado del esquema de la base (Alembic).</td></tr>
+    <tr><td><b>CI</b></td><td>Pruebas automáticas que GitHub corre en cada cambio.</td></tr>
+  </table></div>
+</section>
+
+    <footer class="pie">Cotizador · Guía para desarrolladores · Actualizada el 2026-11-11 · Si algo no se entiende, es un error de la guía.</footer>
+  </main>
+</div>
+<script>
+(function () {
+  var enlaces = [].slice.call(document.querySelectorAll('.indice a'));
+  if (!('IntersectionObserver' in window) || !enlaces.length) return;
+  var visto = new IntersectionObserver(function (entradas) {
+    entradas.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      enlaces.forEach(function (a) { a.classList.toggle('activo', a.getAttribute('href') === '#' + e.target.id); });
+    });
+  }, { rootMargin: '-80px 0px -65% 0px' });
+  document.querySelectorAll('main > section[id]').forEach(function (s) { visto.observe(s); });
+})();
+</script>
+</body>
+</html>
