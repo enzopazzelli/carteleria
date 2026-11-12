@@ -378,7 +378,7 @@ Además de lo anterior: medir las métricas del hito (`PAR-32` a `PAR-37`), demo
 | Carpeta | Qué va | Se sigue |
 |---|---|---|
 | `docs/` (raíz) | Solo los documentos de referencia: `MAPA-DEL-PROYECTO`, `REGISTRO`, `EPICA`, `BACKLOG`, `BITACORA`, `CONVENCIONES`, `DECISIONES-Y-BLOQUEANTES`, `GUIA-PRUEBAS-LOCALES`, `GUIA-PROBAR-EL-SISTEMA`, `MANUAL-USUARIOS` | Sí |
-| `docs/guias/` | Las dos guías completas en HTML, con la marca: `GUIA-DEL-USUARIO.html` y `GUIA-DEL-DESARROLLO.html`. Van **sin logo** (el repo es público); la copia con logo se genera con `backend/scripts/guias_con_logo.py` en `backend/local/guias/` | Sí |
+| `docs/guias/` | Las dos guías completas en HTML, con la marca y el logo de la empresa incrustado (un solo archivo cada una, se pueden mandar por mail): `GUIA-DEL-USUARIO.html` y `GUIA-DEL-DESARROLLO.html`. Se editan a mano | Sí |
 | `docs/plan/` | `PLAN-MAESTRO.md` y una carpeta por sub-proyecto en curso, con su número del plan maestro (`docs/plan/1.1-servidor-y-login/`). Adentro, `diseno.md` y `plan.md` | Sí: es lo que sigue |
 | `docs/motor/` | El motor de anidado: contrato, mediciones, plan del carril | Sí, en el carril del motor |
 | `docs/cliente/` | Lo que dijo y entregó la empresa, y lo que se le presentó: relevamientos, propuesta, presentaciones | Como fuente |
