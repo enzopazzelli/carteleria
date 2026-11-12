@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guía del usuario — Cotizador</title>
+<meta name="description" content="Cómo usar el cotizador de cartelería: del dibujo al presupuesto aprobado.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@1,700;1,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --negro: #0d0d0d;
+  --naranja: #ff5d00;
+  --naranja-texto: #b83a00;
+  --naranja-suave: #fff1e8;
+  --fondo: #f4f4f2;
+  --superficie: #ffffff;
+  --borde: #dcdcd8;
+  --texto: #1a1a1a;
+  --apoyo: #5f5f5f;
+  --ok: #1f7a3d;
+  --ok-suave: #e6f3ea;
+  --ambar: #8a6100;
+  --ambar-suave: #fbf1d9;
+  --rojo: #c8102e;
+  --rojo-suave: #fbe7ea;
+  --azul-suave: #e8eef5;
+  --radio: 8px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font: 16px/1.65 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+code, pre, kbd { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; }
+
+/* ---- Barra de arriba ---- */
+.barra {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--negro); color: var(--fondo);
+  border-bottom: 3px solid var(--naranja);
+}
+.barra-in {
+  max-width: 1240px; margin: 0 auto; padding: 0 16px;
+  min-height: 56px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.logo-img { height: 46px; width: auto; background: #fff; border-radius: 6px; padding: 2px 6px; display: block; }
+.marca {
+  font-family: "Exo 2", "IBM Plex Sans", system-ui, sans-serif;
+  font-style: italic; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; font-size: 18px;
+}
+.barra .sub { color: #bdbdb8; font-size: 14px; }
+.barra .otra { margin-left: auto; font-size: 14px; }
+.barra .otra a { color: var(--fondo); text-decoration: none; border-bottom: 2px solid var(--naranja); padding-bottom: 2px; }
+.barra .otra a:hover { color: var(--naranja); }
+
+/* ---- Estructura ---- */
+.pagina { max-width: 1240px; margin: 0 auto; padding: 24px 16px 80px; display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 36px; }
+.indice { position: sticky; top: 80px; align-self: start; max-height: calc(100vh - 100px); overflow: auto; font-size: 14px; padding-right: 8px; }
+.indice h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--apoyo); margin: 0 0 10px; }
+.indice ol { list-style: none; margin: 0; padding: 0; counter-reset: sec; }
+.indice li { counter-increment: sec; }
+.indice a { display: block; padding: 5px 10px; border-left: 3px solid var(--borde); color: var(--texto); text-decoration: none; }
+.indice a::before { content: counter(sec) ". "; color: var(--apoyo); }
+.indice a:hover { border-left-color: var(--naranja); background: var(--superficie); }
+.indice a.activo { border-left-color: var(--naranja); background: var(--superficie); font-weight: 600; }
+.indice-movil { display: none; }
+main { min-width: 0; }
+
+/* ---- Portada ---- */
+.portada { background: var(--negro); color: var(--fondo); border-radius: var(--radio); padding: 32px 32px 28px; margin-bottom: 28px; border-left: 8px solid var(--naranja); }
+.portada h1 { font-family: "Exo 2", "IBM Plex Sans", system-ui, sans-serif; font-style: italic; font-weight: 800; font-size: 34px; line-height: 1.15; margin: 0 0 10px; }
+.portada p { margin: 0; color: #d6d6d1; max-width: 62ch; }
+.portada .meta { margin-top: 16px; font-size: 13px; color: #a8a8a3; }
+.portada .meta b { color: var(--naranja); font-weight: 600; }
+
+/* ---- Texto ---- */
+section { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 28px 32px; margin-bottom: 22px; }
+h2.sec { font-family: "Exo 2", "IBM Plex Sans", system-ui, sans-serif; font-style: italic; font-weight: 800; font-size: 26px; line-height: 1.2; margin: 0 0 6px; }
+h2.sec .n { display: inline-block; background: var(--naranja); color: var(--negro); font-style: normal; font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 15px; padding: 2px 9px; border-radius: 6px; margin-right: 10px; vertical-align: 4px; }
+.lema { color: var(--apoyo); margin: 0 0 18px; }
+h3 { font-size: 19px; margin: 28px 0 6px; }
+h4 { font-size: 16px; margin: 20px 0 4px; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 14px; padding-left: 22px; }
+li { margin-bottom: 4px; }
+a { color: var(--naranja-texto); }
+a:hover { color: var(--negro); }
+hr { border: 0; border-top: 1px solid var(--borde); margin: 22px 0; }
+code { background: #efefec; border: 1px solid var(--borde); border-radius: 4px; padding: 0 5px; font-size: .88em; }
+pre { background: var(--negro); color: #f1f1ee; border-radius: var(--radio); padding: 14px 16px; overflow: auto; font-size: 13.5px; line-height: 1.55; margin: 0 0 16px; border-left: 4px solid var(--naranja); }
+pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+pre .c { color: #9a9a95; }
+kbd { background: #fff; border: 1px solid #b9b9b3; border-bottom-width: 2px; border-radius: 4px; padding: 0 6px; font-size: .85em; }
+.btn { display: inline-block; background: var(--naranja); color: var(--negro); font-weight: 600; border-radius: 6px; padding: 0 9px; font-size: .92em; white-space: nowrap; }
+.etq { background: var(--fondo); border: 1px solid var(--borde); border-radius: 6px; padding: 0 7px; font-weight: 500; white-space: nowrap; }
+
+/* ---- Tablas ---- */
+.tabla { overflow-x: auto; margin: 0 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th { background: var(--negro); color: var(--fondo); text-align: left; padding: 8px 12px; font-weight: 600; white-space: nowrap; }
+td { border-bottom: 1px solid var(--borde); padding: 8px 12px; vertical-align: top; }
+tr:nth-child(even) td { background: #fafaf8; }
+
+/* ---- Avisos ---- */
+.aviso { border-radius: var(--radio); padding: 12px 16px 12px 16px; margin: 0 0 16px; border-left: 5px solid; font-size: 15px; }
+.aviso > :last-child { margin-bottom: 0; }
+.aviso b.t { display: block; font-size: 12px; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 2px; }
+.nota { background: var(--azul-suave); border-color: #3b5f86; } .nota b.t { color: #2c4a6c; }
+.ojo { background: var(--ambar-suave); border-color: var(--ambar); } .ojo b.t { color: var(--ambar); }
+.tip { background: var(--ok-suave); border-color: var(--ok); } .tip b.t { color: var(--ok); }
+.peligro { background: var(--rojo-suave); border-color: var(--rojo); } .peligro b.t { color: var(--rojo); }
+.marca-aviso { background: var(--naranja-suave); border-color: var(--naranja); } .marca-aviso b.t { color: var(--naranja-texto); }
+
+/* ---- Pasos numerados ---- */
+.pasos { list-style: none; padding: 0; counter-reset: paso; margin: 0 0 16px; }
+.pasos > li { counter-increment: paso; position: relative; padding: 2px 0 12px 48px; margin: 0; }
+.pasos > li::before { content: counter(paso); position: absolute; left: 0; top: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--negro); color: var(--naranja); font: 600 15px/32px "IBM Plex Mono", monospace; text-align: center; }
+.pasos > li::after { content: ""; position: absolute; left: 15px; top: 36px; bottom: 4px; width: 2px; background: var(--borde); }
+.pasos > li:last-child::after { display: none; }
+
+/* ---- Recorrido (flujo) ---- */
+.flujo { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px 4px; margin: 14px 0 18px; }
+.flujo .f { background: var(--superficie); border: 2px solid var(--negro); border-radius: var(--radio); padding: 8px 12px; font-size: 14px; line-height: 1.3; min-width: 110px; flex: 1 1 110px; }
+.flujo .f b { display: block; font-size: 12px; color: var(--naranja-texto); font-family: "IBM Plex Mono", monospace; font-weight: 500; }
+.flujo .f.hecho { background: var(--ok-suave); border-color: var(--ok); }
+.flujo .f.falta { background: #efefec; border-style: dashed; border-color: #8a8a85; color: var(--apoyo); }
+.flujo .fl { align-self: center; color: var(--naranja); font-weight: 800; font-size: 20px; }
+
+/* ---- Estados ---- */
+.est { display: inline-block; border-radius: 999px; padding: 0 10px; font-size: 13px; font-weight: 600; border: 1px solid; }
+.est.borrador { background: #ececea; border-color: #9a9a95; color: #444; }
+.est.pendiente { background: var(--ambar-suave); border-color: var(--ambar); color: var(--ambar); }
+.est.observado { background: var(--rojo-suave); border-color: var(--rojo); color: var(--rojo); }
+.est.aprobado { background: var(--ok-suave); border-color: var(--ok); color: var(--ok); }
+
+/* ---- Tarjetas ---- */
+.tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 0 0 16px; }
+.tarjeta { border: 1px solid var(--borde); border-top: 4px solid var(--naranja); border-radius: var(--radio); padding: 12px 14px; background: var(--superficie); }
+.tarjeta h4 { margin: 0 0 4px; }
+.tarjeta p { font-size: 14.5px; margin: 0; }
+
+/* ---- Capas / arquitectura ---- */
+.capas { display: grid; gap: 8px; margin: 14px 0 18px; }
+.capa { border: 2px solid var(--negro); border-radius: var(--radio); padding: 10px 14px; background: var(--superficie); font-size: 14.5px; }
+.capa b { color: var(--naranja-texto); }
+.capa.oscura { background: var(--negro); color: var(--fondo); border-color: var(--negro); } .capa.oscura b { color: var(--naranja); }
+.columnas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+
+.capa.oscura code, .portada code { background: #2b2b2b; color: #fff; border-color: #4a4a4a; }
+
+details { border: 1px solid var(--borde); border-radius: var(--radio); padding: 8px 14px; margin: 0 0 10px; background: #fafaf8; }
+summary { cursor: pointer; font-weight: 600; }
+details[open] summary { margin-bottom: 8px; }
+
+footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 8px 0 0; }
+
+/* ---- Celular ---- */
+@media (max-width: 900px) {
+  .pagina { grid-template-columns: 1fr; gap: 12px; padding-top: 14px; }
+  .indice { display: none; }
+  .indice-movil { display: block; }
+  .indice-movil ol { margin: 6px 0 0; padding-left: 22px; }
+  section { padding: 20px 18px; }
+  .portada { padding: 22px 20px; } .portada h1 { font-size: 26px; }
+  h2.sec { font-size: 22px; }
+  .barra .otra { margin-left: 0; }
+}
+/* ---- Impresión ---- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .barra { position: static; } .indice, .indice-movil { display: none; }
+  .pagina { display: block; padding: 0; }
+  section { border: 0; padding: 0; break-inside: auto; margin-bottom: 14pt; }
+  .portada, th, pre, .pasos > li::before, .btn { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h2, h3 { break-after: avoid; } .aviso, table, pre { break-inside: avoid; }
+  a { color: inherit; }
+}
+
+</style>
+</head>
+<body>
+<header class="barra"><div class="barra-in">
+  <!--LOGO-->
+  <span class="marca">Cotizador</span><span class="sub">Guía del usuario</span>
+  <span class="otra">¿Desarrollás? <a href="GUIA-DEL-DESARROLLO.html">Guía para desarrolladores</a></span>
+</div></header>
+<div class="pagina">
+  <nav class="indice" aria-label="Índice"><h2>En esta guía</h2><ol>
+    <li><a href="#que-es">Qué es y qué hace</a></li>
+    <li><a href="#entrar">Entrar y tu cuenta</a></li>
+    <li><a href="#pantalla">Recorrer la pantalla</a></li>
+    <li><a href="#dibujo">Antes de empezar: el dibujo</a></li>
+    <li><a href="#trabajo">Un trabajo de punta a punta</a></li>
+    <li><a href="#materiales">Materiales y precios</a></li>
+    <li><a href="#presupuestos">Presupuestos y aprobación</a></li>
+    <li><a href="#usuarios">Administrar personas</a></li>
+    <li><a href="#problemas">Cuando algo no sale como esperabas</a></li>
+    <li><a href="#glosario">Glosario</a></li>
+    <li><a href="#todavia-no">Lo que todavía no hace</a></li>
+  </ol></nav>
+  <main>
+    <div class="portada">
+      <h1>Del dibujo al presupuesto aprobado</h1>
+      <p>Todo lo que necesitás para usar el cotizador: cómo entrar, cómo cargar un dibujo, acomodar las piezas en la chapa, armar el presupuesto y hacerlo aprobar. Sin tecnicismos.</p>
+      <div class="meta">Para <b>diseñadores</b>, <b>quien aprueba</b> y <b>quien administra</b> el sistema</div>
+    </div>
+    <details class="indice-movil"><summary>Índice</summary><ol>
+    <li><a href="#que-es">Qué es y qué hace</a></li>
+    <li><a href="#entrar">Entrar y tu cuenta</a></li>
+    <li><a href="#pantalla">Recorrer la pantalla</a></li>
+    <li><a href="#dibujo">Antes de empezar: el dibujo</a></li>
+    <li><a href="#trabajo">Un trabajo de punta a punta</a></li>
+    <li><a href="#materiales">Materiales y precios</a></li>
+    <li><a href="#presupuestos">Presupuestos y aprobación</a></li>
+    <li><a href="#usuarios">Administrar personas</a></li>
+    <li><a href="#problemas">Cuando algo no sale como esperabas</a></li>
+    <li><a href="#glosario">Glosario</a></li>
+    <li><a href="#todavia-no">Lo que todavía no hace</a></li>
+    </ol></details>
+<section id="que-es">
+  <h2 class="sec"><span class="n">1</span>Qué es y qué hace</h2>
+  <p class="lema">El cotizador en una página: para qué sirve y por dónde pasa un cartel.</p>
+  <p>El <b>Cotizador</b> es el sistema de la empresa para tres tareas que antes se hacían a mano y llevaban mucho tiempo:</p>
+  <div class="tarjetas">
+    <div class="tarjeta"><h4>Presupuestar</h4><p>Calcula cuánto cuesta hacer un cartel y <b>sugiere el precio</b> con el margen de la empresa.</p></div>
+    <div class="tarjeta"><h4>Acomodar en la chapa</h4><p>Reparte las piezas sobre las chapas para <b>desperdiciar lo menos posible</b>. A eso se le dice <i>anidado</i>.</p></div>
+    <div class="tarjeta"><h4>Hacer aprobar</h4><p>El presupuesto lo <b>aprueba el dueño</b> antes de que llegue al cliente. Todo queda registrado.</p></div>
+  </div>
+
+  <h3>El recorrido de un cartel</h3>
+  <p>Así pasa un trabajo, desde el dibujo hasta el presupuesto. Lo verde ya funciona; lo punteado todavía no.</p>
+  <div class="flujo">
+    <div class="f hecho"><b>1</b>Subir el dibujo (DXF)</div><span class="fl">›</span>
+    <div class="f hecho"><b>2</b>Ver cómo lo leyó y corregir</div><span class="fl">›</span>
+    <div class="f hecho"><b>3</b>Grupos: qué chapa usa cada pieza</div><span class="fl">›</span>
+    <div class="f hecho"><b>4</b>Anidado: acomodar en la chapa</div><span class="fl">›</span>
+    <div class="f hecho"><b>5</b>Chapas: revisar y mover piezas</div><span class="fl">›</span>
+    <div class="f hecho"><b>6</b>Costeo y presupuesto</div><span class="fl">›</span>
+    <div class="f hecho"><b>7</b>Aprobación del dueño</div><span class="fl">›</span>
+    <div class="f falta"><b>8</b>Aviso por mail y envío al cliente</div>
+  </div>
+  <p>Del trabajo salen dos papeles: <b>para el taller</b>, un PDF del diseño anidado y un DXF por cada chapa; <b>para el cliente</b>, el PDF del presupuesto con la marca de la empresa, sin costos ni márgenes.</p>
+
+  <div class="aviso marca-aviso"><b class="t">Dónde estamos</b>
+    <p>Hoy el sistema funciona completo <b>en una computadora</b>. Todavía no está en un servidor (no se puede entrar desde el celular) y no manda mails. El detalle de lo que falta está en la sección <a href="#todavia-no">«Lo que todavía no hace»</a>.</p>
+  </div>
+</section>
+
+<section id="entrar">
+  <h2 class="sec"><span class="n">2</span>Entrar y tu cuenta</h2>
+  <p class="lema">Usuario, contraseña y permisos.</p>
+
+  <h3>Cómo entrar</h3>
+  <p>La pantalla de entrada pide <b>usuario</b> y <b>contraseña</b>. Tu usuario es una sola palabra (por ejemplo <code>enzo</code>) y te lo da quien administra el sistema.</p>
+  <ul>
+    <li><b>«Mantener la sesión abierta en este dispositivo»</b> la deja abierta 30 días (pensado para el celular). Sin marcar, la sesión se cierra después de 12 horas sin usarla.</li>
+    <li>Para salir, usá <span class="etq">Cerrar sesión</span> arriba a la derecha.</li>
+  </ul>
+
+  <h3>La primera vez</h3>
+  <p>Si te dieron una contraseña <b>temporal</b> (porque te dieron de alta o te la restablecieron), el sistema te lleva a <span class="etq">Mi cuenta</span> y no te deja ir a otro lado hasta que elijas una propia.</p>
+
+  <h3>Cambiar la contraseña cuando quieras</h3>
+  <ol class="pasos">
+    <li>Tocá tu nombre, arriba a la derecha (abre <span class="etq">Mi cuenta</span>).</li>
+    <li>En «Cambiar la contraseña», escribí la actual y la nueva.</li>
+    <li>La nueva tiene que tener <b>al menos 10 caracteres</b> y ser distinta de la actual. Al cambiarla se cierran tus sesiones en los otros dispositivos.</li>
+  </ol>
+
+  <div class="aviso ojo"><b class="t">Si te la olvidás</b>
+    <p>No podés recuperarla vos solo (todavía no hay mail). Pedísela a quien administra usuarios: te la <b>restablece</b> y te da una temporal. Si fallás <b>5 veces seguidas</b>, la cuenta se bloquea 15 minutos; restablecerla también levanta el bloqueo.</p>
+  </div>
+
+  <h3>Quién puede hacer qué</h3>
+  <p>Cada persona puede tener dos permisos, que se combinan:</p>
+  <div class="tabla"><table>
+    <tr><th>Persona</th><th>Permisos</th><th>Qué puede hacer</th></tr>
+    <tr><td><b>Diseñador</b></td><td>ninguno</td><td>Armar trabajos y presupuestos, y mandarlos a aprobar</td></tr>
+    <tr><td><b>Quien aprueba</b></td><td>«puede aprobar»</td><td>Aprobar, observar o devolver presupuestos</td></tr>
+    <tr><td><b>Quien administra</b></td><td>«administra usuarios»</td><td>Crear personas, cambiar permisos, darlas de baja y restablecer contraseñas</td></tr>
+  </table></div>
+  <p>El dueño suele tener los dos permisos. <b>Todos ven todos los trabajos.</b> Nadie ve la contraseña de otra persona: el sistema guarda solo una huella, no la contraseña.</p>
+</section>
+
+<section id="pantalla">
+  <h2 class="sec"><span class="n">3</span>Recorrer la pantalla</h2>
+  <p class="lema">La barra negra de arriba te lleva a todos lados.</p>
+  <div class="tabla"><table>
+    <tr><th>Lugar</th><th>Para qué sirve</th></tr>
+    <tr><td><span class="etq">Inicio</span></td><td>Crear un trabajo nuevo y ver las tarjetas de los trabajos recientes: cada una con su miniatura pintada por chapa y en qué paso quedó.</td></tr>
+    <tr><td><span class="etq">Trabajos</span></td><td>Todos los trabajos, con un buscador. El «⋯» de una tarjeta borra el trabajo (pide confirmación).</td></tr>
+    <tr><td><span class="etq">Presupuestos</span></td><td>La lista de todos los presupuestos, de todos los trabajos, con su estado.</td></tr>
+    <tr><td><span class="etq">Materiales</span></td><td>Los materiales, las medidas de chapa y los precios, alimentados por la planilla de la empresa.</td></tr>
+    <tr><td><span class="etq">Usuarios</span></td><td>Solo aparece si administrás usuarios. Ver la <a href="#usuarios">sección 8</a>.</td></tr>
+    <tr><td>Tu nombre</td><td>Abre <span class="etq">Mi cuenta</span>.</td></tr>
+  </table></div>
+  <p>Dentro de un trabajo, a la izquierda están las <b>cinco etapas</b>, en el orden en que se usan: <span class="etq">Piezas</span> · <span class="etq">Grupos</span> · <span class="etq">Anidado</span> · <span class="etq">Chapas</span> · <span class="etq">Costeo</span>.</p>
+</section>
+
+<section id="dibujo">
+  <h2 class="sec"><span class="n">4</span>Antes de empezar: el dibujo</h2>
+  <p class="lema">Qué tiene que traer el archivo que sale de CorelDRAW.</p>
+  <p>El sistema lee archivos <b>DXF</b>. Se exportan desde CorelDRAW con <i>Archivo → Exportar → DXF</i>.</p>
+  <h3>Qué lee y qué no</h3>
+  <div class="tabla"><table>
+    <tr><th>Sí lee</th><th>No lee</th></tr>
+    <tr><td>Curvas (splines, círculos, elipses), polilíneas con arcos, líneas y arcos sueltos que cierran una figura, y bloques.</td>
+        <td><b>Texto</b> (convertilo a curvas antes de exportar), imágenes y rellenos.</td></tr>
+  </table></div>
+  <p>Cada figura <b>cerrada</b> del dibujo se convierte en una <b>pieza</b>. Un contorno que no llega a cerrar (los empalmes tienen huecos de más de 0,1 mm) no se puede usar, y el sistema avisa cuántos hubo.</p>
+
+  <h3>La escala: lo que más conviene entender</h3>
+  <p>El archivo guarda las medidas en «unidades del dibujo», y el sistema <b>no adivina</b> cuántos milímetros vale cada una. Lo tenés que decir vos con la <b>escala</b>:</p>
+  <div class="tabla"><table>
+    <tr><th>Si el dibujo está hecho en…</th><th>Escala</th></tr>
+    <tr><td>milímetros</td><td><code>1</code></td></tr>
+    <tr><td>centímetros</td><td><code>10</code></td></tr>
+    <tr><td>metros</td><td><code>1000</code></td></tr>
+  </table></div>
+  <div class="aviso tip"><b class="t">La referencia que te ayuda</b>
+    <p>Al elegir el archivo, debajo de la cajita de la escala aparece: <b>«Con esta escala, el dibujo mide … mm (… m)»</b>, y se recalcula mientras escribís. Compará ese tamaño con lo que sabés del cartel. Si dice <i>46 mm</i> y el cartel mide casi 5 metros, la escala está mal: con escala 100 diría <i>4.610 mm (4,61 m)</i>, que sí es un cartel.</p>
+  </div>
+  <div class="aviso ojo"><b class="t">Ojo</b>
+    <p>Una escala equivocada no da error: da un presupuesto equivocado. Por eso conviene mirar siempre esa referencia antes de cargar.</p>
+  </div>
+</section>
+
+<section id="trabajo">
+  <h2 class="sec"><span class="n">5</span>Un trabajo de punta a punta</h2>
+  <p class="lema">Qué hacer en cada etapa, en el orden en que se usan.</p>
+
+  <h3 id="t-crear">5.1 Crear el trabajo</h3>
+  <ol class="pasos">
+    <li>En <span class="etq">Inicio</span>, escribí un nombre en «Nuevo trabajo» (por ejemplo el del cliente o el del cartel).</li>
+    <li>Tocá <span class="btn">Crear y cargar el DXF</span>. Entrás al trabajo, en la etapa <b>Piezas</b>.</li>
+  </ol>
+
+  <h3 id="t-piezas">5.2 Piezas: cargar y revisar el dibujo</h3>
+  <ol class="pasos">
+    <li>Escribí la <b>escala</b> (ver la <a href="#dibujo">sección 4</a>).</li>
+    <li>Elegí el archivo. <b>Elegirlo todavía no lo carga</b>: primero mirá la referencia de tamaño y confirmá que la escala tenga sentido.</li>
+    <li>Tocá <span class="etq">Ver cómo se lee</span> para ver una imagen de cómo el sistema entendió el dibujo, antes de guardar nada.</li>
+    <li>Si algo está mal (por ejemplo, un hueco leído como pieza o una forma que no va), <b>corregilo con clics</b> sobre el dibujo: una forma puede ir a cortarse, quedar descartada o marcarse como <i>no va</i>.</li>
+    <li>Tocá <span class="btn">Cargar «archivo» a escala N</span>. Cada carga <b>reemplaza</b> las piezas que el trabajo ya tenía. Si la escala no era, la cambiás y volvés a tocar el mismo botón.</li>
+  </ol>
+  <p>Lo que tendrías que ver: una tabla con cada pieza (su dibujo, ancho, alto y cantidad) y, si corresponde, un aviso con lo que se ignoró (texto, imágenes) o lo que no cerró.</p>
+  <div class="aviso nota"><b class="t">Las correcciones se recuerdan</b>
+    <p>Si volvés a cargar el mismo archivo (aun en otro trabajo), el sistema aplica las correcciones de la vez anterior y lo avisa: «Se aplicó 1 corrección de la vez anterior», con la opción <span class="etq">Empezar de cero</span>.</p>
+  </div>
+  <h4>Descartar y restaurar</h4>
+  <p>Cada pieza tiene <span class="etq">Descartar</span> (no se corta) y <span class="etq">Restaurar</span>. Las descartadas quedan plegadas debajo de la tabla.</p>
+  <h4>Seccionar: cuando una pieza no entra en la chapa</h4>
+  <p>Si una pieza es más grande que la chapa, aparece un aviso («No entra en la chapa de su grupo» o «No entra en ninguna chapa») y el botón <span class="etq">Seccionar</span>. Abre un panel que <b>propone cómo partirla en tramos</b> que sí entran, y calcula cuánta soldadura llevará. Se puede ajustar el ángulo del corte o arrastrar la grilla, y después <span class="etq">Aplicar</span>. La pieza original queda descartada y los tramos pasan a ser piezas (con <span class="etq">Deshacer</span> y <span class="etq">Volver a seccionar</span> a mano).</p>
+
+  <h3 id="t-grupos">5.3 Grupos: qué chapa usa cada pieza</h3>
+  <p>Un <b>grupo</b> reúne las piezas que se cortan del mismo material (por ejemplo «Chapa negra» y «Acrílico»).</p>
+  <ol class="pasos">
+    <li>Tocá <span class="etq">Nuevo grupo</span> y ponele nombre.</li>
+    <li>Tildá <span class="etq">Seleccionar todas</span> (o solo algunas), elegí el grupo en <span class="etq">Mover a grupo…</span> y tocá <span class="etq">Mover</span>.</li>
+    <li>En el grupo, tocá <span class="etq">Comparar formatos</span>, tildá dos o más medidas de chapa y <span class="etq">Comparar</span>. Una tabla muestra cuántas chapas hacen falta, el aprovechamiento y el costo de cada opción.</li>
+    <li>Elegí la mejor con <span class="etq">Usar este</span>: el grupo queda con ese material y esa medida.</li>
+  </ol>
+  <div class="aviso nota"><b class="t">Girar a cualquier ángulo</b>
+    <p>La comparación tiene una casilla para permitir que las piezas giren libremente. Con giro libre entran más piezas en cada chapa, pero el resultado es una disposición menos «ordenada». Si la desmarcás, las piezas solo giran en cuartos de vuelta.</p>
+  </div>
+
+  <h3 id="t-anidado">5.4 Anidado: acomodar las piezas</h3>
+  <p>El programa que lo hace se llama <b>Sparrow</b>. Usa los huecos de las piezas grandes para meter las chicas y gira las piezas para aprovechar mejor la chapa.</p>
+  <ol class="pasos">
+    <li>Elegí el grupo y tocá <span class="btn">Anidar</span>. Aparece una <b>barra de avance</b> con tiempo máximo y botón para cancelar. Podés seguir usando el sistema mientras tanto, y se pueden hacer varios anidados a la vez.</li>
+    <li>Cuando termina, la ejecución pasa a <b>lista</b>, con la cantidad de chapas y el porcentaje de aprovechamiento.</li>
+    <li>Si querés cambiar algo, ajustá el <b>kerf</b>, el <b>margen</b>, la <b>separación</b> o la rotación y tocá <span class="etq">Aplicar y recalcular</span>. Se crea una ejecución nueva y la anterior queda en el historial.</li>
+    <li>Probá <span class="etq">Aprovechar huecos</span> para que las piezas chicas entren dentro de los agujeros de las grandes.</li>
+    <li>Cuando estés conforme, <span class="etq">Marcar definitiva</span>.</li>
+  </ol>
+  <div class="tabla"><table>
+    <tr><th>Parámetro</th><th>Qué es</th></tr>
+    <tr><td><b>Kerf</b></td><td>El ancho de material que se come la herramienta al cortar.</td></tr>
+    <tr><td><b>Margen</b></td><td>La franja del borde de la chapa donde no se acomoda nada.</td></tr>
+    <tr><td><b>Separación</b></td><td>La distancia mínima entre una pieza y la siguiente.</td></tr>
+    <tr><td><b>Rotación</b></td><td>Cuánto pueden girar las piezas: media vuelta, cuartos de vuelta o cualquier ángulo.</td></tr>
+  </table></div>
+  <div class="aviso ojo"><b class="t">Valores provisorios</b>
+    <p>Los valores de kerf, margen y separación que trae el sistema son provisorios: todavía no se confirmaron con el taller.</p>
+  </div>
+  <h4>Guardar un sobrante como retazo</h4>
+  <p>En la tabla de chapas del resumen, al lado de un sobrante, el botón <span class="etq">Guardar como retazo</span> lo anota para usarlo en otro trabajo. En <b>Materiales</b> el material pasa a mostrar «Retazos: 1 retazo disponible · … m²» y de dónde salió. Un retazo puede estar <i>disponible</i>, <i>en uso</i> o <i>usado</i>.</p>
+
+  <h3 id="t-chapas">5.5 Chapas: revisar y retocar</h3>
+  <p>Muestra <b>todas las chapas juntas</b> y el diseño inicial pintado por chapa. Lo que está bajo el mouse se ilumina en los dos lugares.</p>
+  <ul>
+    <li><b>Mover una pieza a otra chapa:</b> arrastrala a la chapa de destino, o a <span class="etq">Chapa nueva</span>. Si no entra en lo libre, el sistema reacomoda esa chapa y podés <span class="etq">Deshacer</span>.</li>
+    <li><b>Retocar una chapa:</b> doble clic en ella; arrastrá piezas y girálas con la rueda del mouse (o los botones ±15° / ±90°). Una pieza que se sale o choca se marca en <b style="color:var(--rojo)">rojo</b>.</li>
+  </ul>
+  <h4>Lo que sale para el taller</h4>
+  <div class="tabla"><table>
+    <tr><th>Botón</th><th>Qué baja</th></tr>
+    <tr><td><span class="etq">Ver plano imprimible</span></td><td>El plano de una chapa para imprimir.</td></tr>
+    <tr><td><span class="etq">Descargar DXF de corte</span></td><td>Un DXF por chapa, para la máquina.</td></tr>
+    <tr><td><span class="etq">Descargar PDF</span> (arriba a la derecha)</td><td>El PDF del trabajo entero: la hoja del diseño completo más las chapas, para imprimir en A4.</td></tr>
+  </table></div>
+
+  <h3 id="t-costeo">5.6 Costeo: de lo que cuesta al precio</h3>
+  <ol class="pasos">
+    <li>Elegí el cliente o <span class="etq">+ Cliente nuevo…</span>.</li>
+    <li>Tocá <span class="etq">Crear primera opción de presupuesto</span> y después <span class="etq">Recalcular materiales</span>: el sistema suma el material usado según el anidado.</li>
+    <li>Agregá lo demás: líneas a mano (mano de obra, flete…) o artículos del catálogo con <span class="etq">Agregar del catálogo</span> (vinilos, pintura, tornillos…). Buscá, elegí, escribí la cantidad y <span class="etq">Agregar</span>.</li>
+    <li>Mirá el desglose por rubro, con IVA y total, y en «Presupuesto para el cliente» el <b>precio sugerido</b> con el margen de la empresa. Si lo que cobrás queda por debajo del sugerido, se marca en amarillo.</li>
+    <li>Cuando esté listo, <span class="btn">Mandar a aprobar</span>. Ver la <a href="#presupuestos">sección 7</a>.</li>
+    <li><span class="etq">Descargar PDF</span> baja el PDF para el cliente, <b>sin costos ni márgenes</b> y con la marca de la empresa.</li>
+  </ol>
+  <div class="aviso peligro"><b class="t">Si cambiás la chapa después de anidar</b>
+    <p>Si a un grupo ya anidado le cambiás el material o la medida de chapa, el anidado viejo <b>deja de cobrarse</b>: la tarjeta del Inicio dice «Falta volver a anidar», Chapas avisa que «la chapa cambió después de este anidado» y el PDF lo marca en rojo. Volvé a anidar el grupo.</p>
+  </div>
+</section>
+
+<section id="materiales">
+  <h2 class="sec"><span class="n">6</span>Materiales y precios</h2>
+  <p class="lema">De dónde salen los precios y cómo se actualizan.</p>
+  <p>Los materiales, sus medidas de chapa, los artículos (vinilos, pintura, tornillos…) y los precios <b>vienen de la planilla de la empresa</b>. No se cargan a mano.</p>
+  <ol class="pasos">
+    <li>Entrá a <span class="etq">Materiales</span> y tocá <span class="etq">Actualizar desde la planilla</span>.</li>
+    <li>Elegí el archivo Excel. El sistema lo lee y te muestra una <b>revisión</b>: qué materiales y precios cambian.</li>
+    <li>Revisá los cambios y <b>aplicalos</b> (o cancelá si algo no cierra). Nada cambia hasta que aplicás.</li>
+  </ol>
+  <p>Cada material muestra sus medidas, sus precios y los <b>retazos</b> guardados.</p>
+  <div class="aviso nota"><b class="t">Para probar</b>
+    <p>La versión de demostración trae materiales «DEMO» con <b>precios inventados</b>, marcados como «(simulado)». No son datos reales.</p>
+  </div>
+</section>
+
+<section id="presupuestos">
+  <h2 class="sec"><span class="n">7</span>Presupuestos y aprobación</h2>
+  <p class="lema">Los cuatro estados y quién puede mover cada uno.</p>
+  <p>Un presupuesto pasa por cuatro estados:</p>
+  <div class="flujo">
+    <div class="f"><span class="est borrador">Borrador</span><br>Se arma y se edita.</div><span class="fl">›</span>
+    <div class="f"><span class="est pendiente">Pendiente</span><br>Esperando al dueño. No se edita.</div><span class="fl">›</span>
+    <div class="f"><span class="est aprobado">Aprobado</span><br>Listo. No se edita.</div>
+  </div>
+  <div class="flujo">
+    <div class="f"><span class="est pendiente">Pendiente</span></div><span class="fl">›</span>
+    <div class="f"><span class="est observado">Observado</span><br>El dueño pidió un cambio.</div><span class="fl">›</span>
+    <div class="f"><span class="est pendiente">Pendiente</span><br>Se vuelve a mandar.</div>
+  </div>
+  <div class="tabla"><table>
+    <tr><th>Quiero…</th><th>Hago…</th><th>Quién puede</th></tr>
+    <tr><td>Mandar el presupuesto a revisar</td><td><span class="etq">Mandar a aprobar</span></td><td>Cualquiera</td></tr>
+    <tr><td>Darlo por bueno</td><td><span class="etq">Aprobar</span></td><td>Quien tiene «puede aprobar»</td></tr>
+    <tr><td>Pedir un cambio</td><td><span class="etq">Observar</span>, con un motivo</td><td>Quien tiene «puede aprobar»</td></tr>
+    <tr><td>Volver a editarlo</td><td><span class="etq">Volver a borrador</span>, con un motivo</td><td>Cualquiera, desde Pendiente o Aprobado</td></tr>
+  </table></div>
+  <ul>
+    <li>Un presupuesto <b>pendiente o aprobado queda bloqueado</b>. Para tocarlo hay que volverlo a borrador, y el sistema pide un motivo.</li>
+    <li>Cada cambio queda en el <b>historial</b>: quién lo hizo, cuándo y por qué. El nombre de quien aprueba sale de su sesión; no se escribe a mano.</li>
+    <li>Un <b>observado</b> vuelve a quien lo armó, que lo edita ahí mismo y lo manda de nuevo.</li>
+  </ul>
+  <p>La pantalla <span class="etq">Presupuestos</span> lista todos, de todos los trabajos, para ver de un vistazo cuáles esperan aprobación.</p>
+</section>
+
+<section id="usuarios">
+  <h2 class="sec"><span class="n">8</span>Administrar personas</h2>
+  <p class="lema">Solo para quien tiene el permiso «administra usuarios» (normalmente el dueño).</p>
+
+  <h3>Desde la pantalla (el camino de todos los días)</h3>
+  <p>Con un usuario que administra, aparece <span class="etq">Usuarios</span> en la barra. Ahí podés <b>crear</b> una persona, <b>editarla</b>, <b>restablecerle la contraseña</b>, y darla de <b>baja</b> o de <b>alta</b>.</p>
+  <ul>
+    <li>Al crear o restablecer, el sistema muestra una <b>contraseña temporal una sola vez</b>: anotala y pasásela a la persona. En su primer ingreso tendrá que elegir una propia.</li>
+    <li><b>«Borrar» es dar de baja.</b> Nadie se elimina: el historial de quién aprobó o cambió qué tiene que seguir diciendo quién fue.</li>
+    <li>Tiene que quedar <b>siempre al menos una persona</b> que administre usuarios; el sistema no deja darla de baja ni sacarle el permiso si es la última.</li>
+  </ul>
+
+  <h3>Desde la terminal</h3>
+  <p>Sirve para administrar sin abrir el navegador, o contra la app ya instalada en un servidor. Habla con la app (no con la base) y hace lo mismo que la pantalla. Desde la carpeta <code>backend/</code>:</p>
+<pre><code>python scripts/administrar_usuarios.py
+python scripts/administrar_usuarios.py --url https://tu-dominio/api   <span class="c"># contra el servidor</span></code></pre>
+  <p>Pide usuario y contraseña (si no administrás usuarios, no pasa de ahí) y muestra este menú:</p>
+<pre><code>1. Crear   2. Editar   3. Restablecer contraseña   4. Dar de baja   5. Ver dados de baja (N)   0. Salir</code></pre>
+  <p>La opción 5 solo aparece si hay alguien dado de baja; elegir a uno lo vuelve a dar de alta, con la misma contraseña que tenía.</p>
+
+  <h3>Emergencia: nadie puede entrar</h3>
+  <p>Si la app está caída o se bloqueó la única cuenta que administra, el menú no sirve. Quien tiene acceso al servidor puede usar, desde <code>backend/</code>:</p>
+<pre><code>python -m app.usuarios restablecer enzo     <span class="c"># da una contraseña temporal y levanta el bloqueo</span>
+python -m app.usuarios listar</code></pre>
+  <p>El manual completo, con todas las opciones y la limpieza de la base de pruebas, está en <code>docs/MANUAL-USUARIOS.md</code>.</p>
+</section>
+
+<section id="problemas">
+  <h2 class="sec"><span class="n">9</span>Cuando algo no sale como esperabas</h2>
+  <p class="lema">Los problemas más comunes y qué hacer.</p>
+  <div class="tabla"><table>
+    <tr><th>Qué ves</th><th>Qué significa y qué hacer</th></tr>
+    <tr><td>«Usuario o contraseña incorrectos»</td><td>El sistema no dice cuál de los dos falló, a propósito. Probá de nuevo; si fallás 5 veces, esperá 15 minutos o pedí que te restablezcan la contraseña.</td></tr>
+    <tr><td>La referencia dice un tamaño absurdo</td><td>La escala está mal. Corregila (1 para milímetros, 10 para centímetros, 1000 para metros) antes de cargar.</td></tr>
+    <tr><td>«Se ignoraron N entidades…»</td><td>El dibujo trae texto, imágenes o rellenos que no se cortan. Si el texto tenía que cortarse, convertilo a curvas en Corel y exportá de nuevo.</td></tr>
+    <tr><td>«N contornos no se pudieron cerrar»</td><td>Hay figuras con huecos en los empalmes. Cerralas en Corel y volvé a exportar.</td></tr>
+    <tr><td>«No entra en la chapa…» en una pieza</td><td>La pieza es más grande que la chapa. Usá <span class="etq">Seccionar</span> o elegí una chapa más grande.</td></tr>
+    <tr><td>«Falta volver a anidar» en la tarjeta</td><td>Cambiaste la chapa de un grupo después de anidar. Volvé a anidar ese grupo.</td></tr>
+    <tr><td>«El material … no tiene parámetros de corte»</td><td>Falta cargar kerf, margen y separación del material. Usá materiales de la planilla.</td></tr>
+    <tr><td>No puedo editar un presupuesto</td><td>Está pendiente o aprobado. Volvelo a borrador (con un motivo).</td></tr>
+    <tr><td>No veo «Usuarios» en la barra</td><td>No tenés el permiso «administra usuarios».</td></tr>
+  </table></div>
+  <div class="aviso tip"><b class="t">Qué nos sirve que anotes</b>
+    <p>Cualquier cosa que te confunda (aunque funcione), el nombre de la pieza o del trabajo, la escala que usaste y en qué paso pasó. Si algo no anda, copiá el texto del error tal cual.</p>
+  </div>
+</section>
+
+<section id="glosario">
+  <h2 class="sec"><span class="n">10</span>Glosario</h2>
+  <p class="lema">Las palabras del sistema, en lenguaje corriente.</p>
+  <div class="tabla"><table>
+    <tr><th>Palabra</th><th>Qué es</th></tr>
+    <tr><td><b>Anidado (nesting)</b></td><td>Acomodar las piezas dentro de la chapa para desperdiciar lo menos posible.</td></tr>
+    <tr><td><b>Sparrow</b></td><td>El programa que hace el anidado.</td></tr>
+    <tr><td><b>DXF</b></td><td>El tipo de archivo de dibujo que sale de CorelDRAW y que el sistema lee.</td></tr>
+    <tr><td><b>Pieza</b></td><td>Cada forma cerrada del dibujo que hay que cortar.</td></tr>
+    <tr><td><b>Grupo (de corte)</b></td><td>Las piezas de un trabajo que se cortan del mismo material.</td></tr>
+    <tr><td><b>Chapa (plancha)</b></td><td>La hoja de material de la que se cortan las piezas.</td></tr>
+    <tr><td><b>Retazo</b></td><td>El sobrante de una chapa, guardado para usarlo después.</td></tr>
+    <tr><td><b>Seccionar</b></td><td>Partir una pieza que no entra entera en una chapa, en tramos que sí entran (después se sueldan).</td></tr>
+    <tr><td><b>Tramo</b></td><td>Cada parte en que queda una pieza seccionada.</td></tr>
+    <tr><td><b>Costeo</b></td><td>Sumar todo lo que cuesta hacer el cartel. El precio sale de sumarle el margen.</td></tr>
+    <tr><td><b>Precio sugerido</b></td><td>El precio que propone el sistema, con el margen de la empresa.</td></tr>
+    <tr><td><b>Kerf</b></td><td>El ancho de material que se come la herramienta al cortar.</td></tr>
+    <tr><td><b>Escala</b></td><td>Cuántos milímetros vale cada unidad del dibujo.</td></tr>
+    <tr><td><b>Aprovechamiento</b></td><td>El porcentaje de la chapa que se usa en piezas (el resto es sobrante).</td></tr>
+  </table></div>
+</section>
+
+<section id="todavia-no">
+  <h2 class="sec"><span class="n">11</span>Lo que todavía no hace</h2>
+  <p class="lema">Para no esperar de más.</p>
+  <ul>
+    <li><b>Entrar desde el celular o desde otra computadora:</b> el sistema todavía no está en un servidor. Es lo próximo que se construye (empaquetado en Docker, copias de seguridad diarias y base PostgreSQL).</li>
+    <li><b>Mail:</b> todavía no avisa al dueño ni manda el presupuesto al cliente. La aprobación se hace dentro del sistema, con el usuario de cada uno.</li>
+    <li><b>WhatsApp, panel de control rápido y fotomontaje</b> (pegar el cartel sobre la foto del local): más adelante.</li>
+    <li><b>Archivos <code>.cdr</code>:</b> hoy se exporta a DXF desde Corel; leer <code>.cdr</code> directo está en espera.</li>
+  </ul>
+  <p>El orden de lo que viene está en <code>docs/plan/PLAN-MAESTRO.md</code>.</p>
+</section>
+
+    <footer class="pie">Cotizador · Guía del usuario · Actualizada el 2026-11-11 · Si algo no se entiende, es un error de la guía.</footer>
+  </main>
+</div>
+<script>
+(function () {
+  var enlaces = [].slice.call(document.querySelectorAll('.indice a'));
+  if (!('IntersectionObserver' in window) || !enlaces.length) return;
+  var visto = new IntersectionObserver(function (entradas) {
+    entradas.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      enlaces.forEach(function (a) { a.classList.toggle('activo', a.getAttribute('href') === '#' + e.target.id); });
+    });
+  }, { rootMargin: '-80px 0px -65% 0px' });
+  document.querySelectorAll('main > section[id]').forEach(function (s) { visto.observe(s); });
+})();
+</script>
+</body>
+</html>
