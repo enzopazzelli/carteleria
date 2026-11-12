@@ -148,7 +148,7 @@ Una sola regla del servidor decide qué anidado cuenta para el presupuesto: el c
 
 | Qué | Para qué | Quién |
 |---|---|---|
-| **Entrega A3 del servidor:** Docker, copias de seguridad diarias y llevar el catálogo a PostgreSQL | Que todo levante con un comando, igual que en el servidor | Se puede construir ya. Se verifica en el CI de GitHub, porque no hay Docker en la máquina de Enzo ([plan](docs/plan/1.1-servidor-y-login/plan.md)) |
+| **Entrega A3 del servidor:** Docker, copias de seguridad diarias y llevar el catálogo a PostgreSQL | Que todo levante con un comando, igual que en el servidor | **Vale** (acordado el 2026-11-11). Se verifica en el CI de GitHub, porque no hay Docker en la máquina de Enzo ([plan](docs/plan/1.1-servidor-y-login/plan.md)) |
 | **El servidor real:** alquilarlo, el dominio y HTTPS | Entrar desde el celular | Enzo, etapa 4 |
 | **Mail real y aviso al dueño; envío al cliente** con el presupuesto congelado | Cerrar la aprobación | Después del servidor |
 | **WhatsApp** | Avisos por ese canal | Etapa 4 |
@@ -442,6 +442,7 @@ Desarrolladas en [`docs/CONVENCIONES.md`](docs/CONVENCIONES.md). Si te llevás s
 |---|---|---|
 | **Producto** | Enzo | Todo lo que no es el motor de anidado, en el orden del plan maestro |
 | **Motor** | Vale | El motor de anidado y sus mejoras |
+| **Despliegue** | Vale | Dockerizar el proyecto y desplegarlo (entrega A3 y servidor), desde el 2026-11-11 |
 
 Detalle, zona compartida y propiedad del código en [`docs/CONVENCIONES.md §2-3`](docs/CONVENCIONES.md). **Capacidad asumida:** part-time, unas 15 a 20 horas por semana cada uno (`SUP-15`).
 

@@ -19,7 +19,7 @@
 | **A3. Docker, copias y datos** | 11 a 14 | Todo levanta con un comando, con copias diarias y el catálogo llevado a PostgreSQL. **Se verifica en el CI**, no en la máquina de Enzo | Después de A2 |
 | **B. El servidor alquilado** | B1 a B7 | El sistema en internet, con dominio y HTTPS | Después de A3 |
 
-**Estado (2026-11-11):** A1 y **A2 hechas y en `main`** (PR #31, y el arreglo del comando en el PR #32); la base real de Enzo está migrada y con su usuario. **Sigue A3** (tareas 11 a 14) y después la fase B. Para administrar usuarios hay, además de la pantalla, un menú en la terminal que habla con la app (`backend/scripts/administrar_usuarios.py`); cómo se usa, en [`MANUAL-USUARIOS.md`](../../MANUAL-USUARIOS.md).
+**Estado (2026-11-11):** A1 y **A2 hechas y en `main`** (PR #31, y el arreglo del comando en el PR #32); la base real de Enzo está migrada y con su usuario. **Sigue A3** (tareas 11 a 14) y después la fase B: **las toma Vale** (acordado el 2026-11-11), con el motor ya entregado a ella. Para administrar usuarios hay, además de la pantalla, un menú en la terminal que habla con la app (`backend/scripts/administrar_usuarios.py`); cómo se usa, en [`MANUAL-USUARIOS.md`](../../MANUAL-USUARIOS.md).
 
 ## Restricciones globales
 
