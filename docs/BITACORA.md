@@ -67,6 +67,7 @@ Qué queda abierto y cuál es el próximo paso.
 - **Lo que apareció al probarlo:** Sparrow corre en un proceso aparte (`python -m app.services.nesting.sparrow_worker`), que tiene que encontrar el paquete `app` por su cuenta. El Python portátil no mira la carpeta actual, así que el anidado fallaba siempre; se resolvió en el instalador agregando la carpeta del código a `python313._pth`. Después, las 935 pruebas del motor y de la API pasaron con ese Python.
 - **Docker Desktop instalado en la máquina de Enzo, en D:** es el paso 2 de la Tarea 0 de `docs/plan/1.1-servidor-y-login/plan.md`. El programa está en `D:\Docker` y los datos en `D:\DockerData`; solo los complementos de la línea de comandos quedan en C: (686 MB). Probado con `hello-world`.
 - Se corrigió donde decía que la máquina de Enzo no tiene Docker: el README, el plan y el diseño de 1.1, y la guía del desarrollo.
+- **Comparación de servidor y dominio (paso B1):** [`plan/1.1-servidor-y-login/B1-servidor-y-dominio.md`](plan/1.1-servidor-y-login/B1-servidor-y-dominio.md). Latencia medida desde la conexión de Enzo: Santiago de Chile 38 ms, São Paulo 49 ms, EE. UU. 146 a 220 ms, Alemania 316 ms. Candidatos: DonWeb (en pesos, IVA incluido, ARS 34.830 por mes de lista, con dudas que se miden en un mes de prueba) y Vultr en Santiago (US$ 40 por mes). Al revisar el dominio apareció que **`anibaldumit.com`, la web que imprime el PDF, se venció el 2026-09-28** y está en «pending delete» (se libera alrededor del 2026-11-20).
 
 ### Qué se decidió
 - La demo no se subió a internet: el despliegue lo tiene Vale y todavía no está, y los planes gratuitos pierden la base al reiniciarse.
@@ -77,6 +78,7 @@ Sin cambios.
 
 ### Pendiente
 - Enzo trae cómo anduvo la demo en la PC de la cartelería.
+- Elegir el servidor con el dueño y registrar el `.com.ar` (B1); avisarle al dueño lo del `.com` vencido antes del 2026-11-20.
 - Limitar la memoria de WSL (`.wslconfig`, unos 4 GB, según la Tarea 0): no se hizo, porque el límite vale también para la Ubuntu del otro trabajo.
 - La entrega A3 y el servidor (Vale).
 

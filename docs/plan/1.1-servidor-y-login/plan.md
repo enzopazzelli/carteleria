@@ -421,7 +421,7 @@ Es operación más que código: cada paso termina con algo que se mira. Los paso
 
 ### B1: Elegir el servidor y el dominio (`T-01`, `T-02`)
 
-- [ ] **Claude:** buscar en el momento (los precios y las regiones cambian) y armar una comparación corta de tres o cuatro proveedores, con los **mínimos de este diseño**: **4 procesadores o más** (`SUP-42`), memoria a medir, región con poca latencia desde Argentina, pago con tarjeta, copias de seguridad propias del proveedor opcionales. Más una guía de qué dominio registrar y dónde.
+- [x] **Claude, hecho el 2026-11-18:** la comparación está en [`B1-servidor-y-dominio.md`](B1-servidor-y-dominio.md). El pedido original: buscar en el momento (los precios y las regiones cambian) y armar una comparación corta de tres o cuatro proveedores, con los **mínimos de este diseño**: **4 procesadores o más** (`SUP-42`), memoria a medir, región con poca latencia desde Argentina, pago con tarjeta, copias de seguridad propias del proveedor opcionales. Más una guía de qué dominio registrar y dónde.
 - [ ] **Enzo:** elige, contrata y registra. Comparte la dirección IP del servidor y el acceso por clave (nunca la contraseña por chat).
 - **Se mira:** el servidor responde por SSH con la clave; el dominio está registrado y se puede editar su DNS.
 
