@@ -48,21 +48,21 @@
 
 ## Tarea 1 · La tabla y el servicio
 
-- [ ] `PasoDelAjuste` en `modelos/trabajo.py` (`pasos_del_ajuste`: `id`, `ejecucion_id` con `ondelete="CASCADE"`, `creado_en`, `tipo`, `pieza`, `descripcion`, `foto` JSON) y `EjecucionNesting.pasos_del_ajuste` con `cascade="all, delete-orphan"`, ordenados por `id`.
-- [ ] La migración con Alembic sobre `9d3b6a1c7e45`; probar `upgrade` y `downgrade`.
-- [ ] `PAR-70` en `REGISTRO.md` y `config.PASOS_PARA_DESHACER`.
-- [ ] `services/nesting/deshacer.py`: `foto_de(ejecucion)`, `anotar(sesion, ejecucion, tipo, pieza, descripcion)` (no anota si el último es `girar` de la misma pieza; borra el más viejo pasado el límite), `deshacer(sesion, ejecucion)` (pone la foto y borra el paso; error si no hay) y `estado(ejecucion)` (`cuantos`, `ultimo`).
-- [ ] Pruebas: anotar y deshacer vuelve exacto; los giros seguidos son uno y uno de otra pieza no; el límite borra el más viejo; deshacer sin pasos da error; borrar el anidado borra los pasos; la migración sube y baja (también en `tests/postgres`).
-- [ ] `pytest` completo en verde. Commit: `feat(a27): los pasos del ajuste, en la base`.
+- [x] `PasoDelAjuste` en `modelos/trabajo.py` (`pasos_del_ajuste`: `id`, `ejecucion_id` con `ondelete="CASCADE"`, `creado_en`, `tipo`, `pieza`, `descripcion`, `foto` JSON) y `EjecucionNesting.pasos_del_ajuste` con `cascade="all, delete-orphan"`, ordenados por `id`.
+- [x] La migración con Alembic sobre `9d3b6a1c7e45`; probar `upgrade` y `downgrade`.
+- [x] `PAR-70` en `REGISTRO.md` y `config.PASOS_PARA_DESHACER`.
+- [x] `services/nesting/deshacer.py`: `foto_de(ejecucion)`, `anotar(sesion, ejecucion, tipo, pieza, descripcion)` (no anota si el último es `girar` de la misma pieza; borra el más viejo pasado el límite), `deshacer(sesion, ejecucion)` (pone la foto y borra el paso; error si no hay) y `estado(ejecucion)` (`cuantos`, `ultimo`).
+- [x] Pruebas: anotar y deshacer vuelve exacto; los giros seguidos son uno y uno de otra pieza no; el límite borra el más viejo; deshacer sin pasos da error; borrar el anidado borra los pasos; la migración sube y baja (también en `tests/postgres`).
+- [x] `pytest` completo en verde. Commit: `feat(a27): los pasos del ajuste, en la base`.
 - [ ] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 2 · Las rutas
 
-- [ ] `ajustar_colocacion` anota `mover` o `girar` (según qué cambió) antes de tocar; `pasar_a_otra_chapa` anota `pasar` («a la chapa N» o «a una chapa nueva») después de validar y antes de tocar, y no anota si falla.
-- [ ] `GET /ejecuciones/{id}/deshacer` y `POST /ejecuciones/{id}/deshacer` (409 si no hay nada o si se está anidando el grupo).
-- [ ] Sale `POST /ejecuciones/{id}/deshacer-reacomodo`, `_para_deshacer`, `_olvidar_para_deshacer` y `puede_deshacer`; `_sigue_igual` y la foto del reacomodo para ese control se quedan.
-- [ ] Pruebas de la API, una por punto del Review Focus, más: mover y deshacer; girar con la rueda (varios PATCH) y deshacer una vez.
-- [ ] `pytest` completo en verde. Commit: `feat(a27): deshacer mover, girar y pasar de chapa`.
+- [x] `ajustar_colocacion` anota `mover` o `girar` (según qué cambió) antes de tocar; `pasar_a_otra_chapa` anota `pasar` («a la chapa N» o «a una chapa nueva») después de validar y antes de tocar, y no anota si falla.
+- [x] `GET /ejecuciones/{id}/deshacer` y `POST /ejecuciones/{id}/deshacer` (409 si no hay nada o si se está anidando el grupo).
+- [x] Sale `POST /ejecuciones/{id}/deshacer-reacomodo`, `_para_deshacer`, `_olvidar_para_deshacer` y `puede_deshacer`; `_sigue_igual` y la foto del reacomodo para ese control se quedan.
+- [x] Pruebas de la API, una por punto del Review Focus, más: mover y deshacer; girar con la rueda (varios PATCH) y deshacer una vez.
+- [x] `pytest` completo en verde. Commit: `feat(a27): deshacer mover, girar y pasar de chapa`.
 - [ ] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 3 · La pantalla

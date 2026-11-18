@@ -163,8 +163,14 @@ class MovidaDeChapaLeer(BaseModel):
     #: La chapa que se reacomodó para que entre la pieza (A17), con su número
     #: final: si se quitó una de antes, ya bajó uno.
     reacomodada: int | None = None
-    #: Si «Deshacer» puede dejar todo como antes del reacomodo.
-    puede_deshacer: bool = False
+
+
+class DeshacerLeer(BaseModel):
+    """Lo que se puede deshacer del ajuste de un anidado (A27)."""
+
+    cuantos: int
+    #: Lo que dice el botón: «pasar «P12» a la chapa 3». `None` si no hay nada.
+    ultimo: str | None = None
 
 
 # --- Costeo (envuelve `app/costeo.py`, no lo reemplaza) -------------------

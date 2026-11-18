@@ -16,7 +16,6 @@ colocación de una pieza que el diseñador ya sacó del trabajo.
 from __future__ import annotations
 
 import math
-import threading
 from dataclasses import dataclass, replace
 from decimal import Decimal
 
@@ -33,6 +32,7 @@ from ..modelos.trabajo import Colocacion, EjecucionNesting, EstadoEjecucion, Gru
 from ..services.catalogo.retazos import exigir_terminado, guardar_sobrante
 from ..services.nesting.aprovechamiento import calcular_aprovechamiento
 from ..services.nesting.exportacion_dxf import exportar_plancha_a_dxf, nombre_de_archivo
+from ..services.nesting import deshacer as pasos
 from ..services.nesting.huecos_primero import lugar_libre
 from ..services.nesting.material_usado import MaterialUsado, material_usado
 from ..services.nesting.models import ParametrosCorte, Plancha, PosicionPieza, ResultadoAnidado, RotacionPermitida
@@ -58,6 +58,7 @@ from .esquemas_nesting import (
     ColocacionAjusteLeer,
     ColocacionAOtraChapa,
     ColocacionLeer,
+    DeshacerLeer,
     MaterialDeChapaLeer,
     MaterialUsadoLeer,
     MedidaLeer,
@@ -196,6 +197,12 @@ def ajustar_colocacion(
         )
         for c in [*en_la_chapa, *([] if colocacion in en_la_chapa else [colocacion])]
     }
+    # Antes de tocar nada: deshacer vuelve a como estaba ahora (A27).
+    solo_gira = datos.angulo_grados is not None and datos.centro_x_mm is None and datos.centro_y_mm is None
+    pasos.anotar(
+        sesion, ejecucion, pasos.GIRAR if solo_gira else pasos.MOVER, f"{colocacion.pieza_id}#{colocacion.instancia}",
+        f"{'girar' if solo_gira else 'mover'} «{colocacion.pieza.id_origen}»",
+    )
     leidas = []
     for movida in [colocacion, *de_adentro]:
         otras = [(posiciones[c_id], geometrias[c_id]) for c_id in posiciones if c_id != movida.id]
@@ -203,8 +210,6 @@ def ajustar_colocacion(
         movida.centro_x_mm, movida.centro_y_mm, movida.angulo_grados = nuevas[movida.id]
         movida.movida_a_mano = True
         leidas.append((movida, resultado_validacion))
-    # Un cambio en el anidado: lo de deshacer un reacomodo ya no vale (A17).
-    _olvidar_para_deshacer(ejecucion.id)
     sesion.commit()
 
     principal, *tambien = [
@@ -342,8 +347,11 @@ def pasar_a_otra_chapa(
             },
         )
 
-    # Un cambio en el anidado: lo de deshacer de antes ya no vale.
-    _olvidar_para_deshacer(ejecucion.id)
+    # Ya se sabe que se puede: se anota para poder deshacerlo (A27).
+    pasos.anotar(
+        sesion, ejecucion, pasos.PASAR, f"{colocacion.pieza_id}#{colocacion.instancia}",
+        f"pasar «{pieza.id_origen}» a " + ("una chapa nueva" if destino == total else f"la chapa {destino + 1}"),
+    )
     if reacomodo is not None:
         pasadas = {colocacion.id, *(c.id for c in de_adentro)}
         for otra in ejecucion.colocaciones:
@@ -378,11 +386,8 @@ def pasar_a_otra_chapa(
     sesion.commit()
     if foto is None:
         return _movida(ejecucion, chapa_quitada=chapa_quitada)
-    despues = _foto_de(ejecucion)
-    with _candado:
-        _para_deshacer[ejecucion.id] = (foto, despues)
     reacomodada = destino - 1 if chapa_quitada is not None and chapa_quitada < destino else destino
-    return _movida(ejecucion, chapa_quitada=chapa_quitada, reacomodada=reacomodada, puede_deshacer=True)
+    return _movida(ejecucion, chapa_quitada=chapa_quitada, reacomodada=reacomodada)
 
 
 def _movida(ejecucion, **extra) -> MovidaDeChapaLeer:
@@ -434,26 +439,19 @@ def _reacomodar(
     return nuevas
 
 
-# --- Deshacer el reacomodo (A17) -------------------------------------------
+# --- Deshacer (A27) --------------------------------------------------------
 
 
 @dataclass(frozen=True)
 class _Foto:
-    """Todas las colocaciones del anidado antes del reacomodo, también las
-    de piezas descartadas, con las chapas y el aprovechamiento."""
+    """Todas las colocaciones del anidado, también las de piezas descartadas,
+    con las chapas. Sirve para saber si nadie cambió el anidado mientras
+    Sparrow reacomodaba una chapa (`_sigue_igual`)."""
 
     #: `(pieza_id, instancia, chapa, centro_x, centro_y, angulo, movida_a_mano)`.
     colocaciones: tuple[tuple[int, int, int, Decimal, Decimal, Decimal, bool], ...]
     planchas_usadas: int
     aprovechamiento_pct: Decimal | None
-
-
-#: Lo que hace falta para deshacer el último reacomodo de cada anidado, en la
-#: memoria del servidor, como las comparaciones: el anidado de antes y el de
-#: después del reacomodo. Vale mientras la base siga como quedó después, y si
-#: el servidor se reinicia, se pierde.
-_para_deshacer: dict[int, tuple[_Foto, _Foto]] = {}
-_candado = threading.Lock()
 
 
 def _foto_de(ejecucion) -> _Foto:
@@ -483,39 +481,24 @@ def _sigue_igual(sesion: Session, ejecucion_id: int, foto: _Foto) -> bool:
     return planchas == foto.planchas_usadas and sorted(tuple(f) for f in filas) == sorted(foto.colocaciones)
 
 
-def _olvidar_para_deshacer(ejecucion_id: int) -> None:
-    with _candado:
-        _para_deshacer.pop(ejecucion_id, None)
+@router.get("/ejecuciones/{ejecucion_id}/deshacer", response_model=DeshacerLeer)
+def estado_de_deshacer(ejecucion_id: int, sesion: Session = Depends(obtener_sesion)) -> DeshacerLeer:
+    """Cuántos cambios del ajuste se pueden deshacer y qué dice el último."""
+    estado = pasos.estado(_ejecucion_o_404(sesion, ejecucion_id))
+    return DeshacerLeer(cuantos=estado.cuantos, ultimo=estado.ultimo)
 
 
-@router.post("/ejecuciones/{ejecucion_id}/deshacer-reacomodo", response_model=MovidaDeChapaLeer)
-def deshacer_reacomodo(ejecucion_id: int, sesion: Session = Depends(obtener_sesion)) -> MovidaDeChapaLeer:
-    """Deja el anidado como estaba antes del último reacomodo: cada
-    colocación en su chapa y su lugar, y la chapa que se había quitado,
-    de vuelta. Cada colocación vuelve a su fila, así no cambia su `id`."""
+@router.post("/ejecuciones/{ejecucion_id}/deshacer", response_model=MovidaDeChapaLeer)
+def deshacer_ultimo(ejecucion_id: int, sesion: Session = Depends(obtener_sesion)) -> MovidaDeChapaLeer:
+    """Vuelve atrás el último cambio del ajuste (mover, girar o pasar de chapa,
+    con su reacomodo): cada colocación a su chapa y su lugar, y la chapa que se
+    había quitado, de vuelta. Cada colocación vuelve a su fila, así no cambia su `id`."""
     ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
-    with _candado:
-        guardado = _para_deshacer.pop(ejecucion_id, None)
-    # Además de olvidarlo en cada cambio, se mira la base: también cubre un
-    # anidado borrado cuyo número volvió a usar uno nuevo.
-    if guardado is None or not _sigue_igual(sesion, ejecucion_id, guardado[1]):
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "Ya hubo otro cambio en este anidado, o se reinició el servidor: no se puede deshacer.",
-        )
-    foto = guardado[0]
-    por_clave = {(c.pieza_id, c.instancia): c for c in ejecucion.colocaciones}
-    for pieza_id, instancia, chapa, centro_x, centro_y, angulo, movida_a_mano in foto.colocaciones:
-        colocacion = por_clave.get((pieza_id, instancia))
-        if colocacion is None:
-            # Era de una pieza descartada en la chapa que se quitó.
-            colocacion = Colocacion(ejecucion_id=ejecucion.id, pieza_id=pieza_id, instancia=instancia)
-            ejecucion.colocaciones.append(colocacion)
-        colocacion.plancha_indice = chapa
-        colocacion.centro_x_mm, colocacion.centro_y_mm, colocacion.angulo_grados = centro_x, centro_y, angulo
-        colocacion.movida_a_mano = movida_a_mano
-    ejecucion.planchas_usadas = foto.planchas_usadas
-    ejecucion.aprovechamiento_pct = foto.aprovechamiento_pct
+    rechazar_si_hay_anidado_en_curso(sesion, GrupoDeCorte.id == ejecucion.grupo_id, "deshacer un cambio")
+    try:
+        pasos.deshacer(sesion, ejecucion)
+    except pasos.NadaParaDeshacer as error:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
     sesion.commit()
     return _movida(ejecucion)
 
