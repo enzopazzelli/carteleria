@@ -302,7 +302,7 @@ class Colocacion(Base):
 
 
 class PasoDelAjuste(Base):
-    """Un cambio del ajuste que se puede deshacer (A27, `docs/plan/A27-deshacer-en-el-ajuste/diseno.md §5`).
+    """Un cambio del ajuste que se puede deshacer (A27, `docs/historico/A27-deshacer-en-el-ajuste/diseno.md §5`).
 
     Guarda la **foto** del anidado de antes del cambio: deshacer vuelve a ella.
     Se escribe en la base, no en la memoria, para que sobreviva a apagar la

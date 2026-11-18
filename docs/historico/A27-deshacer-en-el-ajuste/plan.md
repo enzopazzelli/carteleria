@@ -54,7 +54,7 @@
 - [x] `services/nesting/deshacer.py`: `foto_de(ejecucion)`, `anotar(sesion, ejecucion, tipo, pieza, descripcion)` (no anota si el último es `girar` de la misma pieza; borra el más viejo pasado el límite), `deshacer(sesion, ejecucion)` (pone la foto y borra el paso; error si no hay) y `estado(ejecucion)` (`cuantos`, `ultimo`).
 - [x] Pruebas: anotar y deshacer vuelve exacto; los giros seguidos son uno y uno de otra pieza no; el límite borra el más viejo; deshacer sin pasos da error; borrar el anidado borra los pasos; la migración sube y baja (también en `tests/postgres`).
 - [x] `pytest` completo en verde. Commit: `feat(a27): los pasos del ajuste, en la base`.
-- [ ] **Pausa: mostrar a Enzo y esperar el ok.**
+- [x] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 2 · Las rutas
 
@@ -63,7 +63,7 @@
 - [x] Sale `POST /ejecuciones/{id}/deshacer-reacomodo`, `_para_deshacer`, `_olvidar_para_deshacer` y `puede_deshacer`; `_sigue_igual` y la foto del reacomodo para ese control se quedan.
 - [x] Pruebas de la API, una por punto del Review Focus, más: mover y deshacer; girar con la rueda (varios PATCH) y deshacer una vez.
 - [x] `pytest` completo en verde. Commit: `feat(a27): deshacer mover, girar y pasar de chapa`.
-- [ ] **Pausa: mostrar a Enzo y esperar el ok.**
+- [x] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 3 · La pantalla
 
@@ -71,11 +71,11 @@
 - [x] `ChapasTab.tsx`: el botón arriba, al lado de «Descargar PDF»; Ctrl+Z con una función aparte (`esDeshacer(evento)`, que no actúa dentro de un campo de texto) y su prueba; el aviso del reacomodo usa el general.
 - [x] `ChapaGrande.tsx`: las marcas rojas se borran después de deshacer.
 - [x] `npm test` y `npm run build` en verde. Commit: `feat(a27): el botón Deshacer en Chapas`.
-- [ ] **Pausa: mostrar a Enzo y esperar el ok.**
+- [x] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 4 · Verificar, documentar y cerrar
 
 - [x] Recorrido en Chrome sin ventana contra una copia: pasar una pieza a otra chapa y deshacer (vuelve a su lugar); a una chapa nueva y deshacer; girar con la rueda y deshacer de una vez; Ctrl+Z; el botón deshabilitado sin pasos.
 - [x] Guía del usuario (5.5 Chapas y «Lo que todavía no hace»), README («En qué estamos»), bitácora.
-- [ ] PR a `main`. Con el ok de Enzo, fusionar, pasar la carpeta a `docs/historico/` y borrar la rama.
+- [x] PR #38, CI en verde, fusionado el 2026-11-18 con el ok de Enzo; carpeta en `docs/historico/` y rama borrada.
 - [ ] Antes de usarla con la base real: **respaldo** (la migración lo hace sola al arrancar, igual conviene uno a mano).

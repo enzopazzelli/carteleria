@@ -64,7 +64,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Qué se hizo
 - **El pedido de la demo:** Enzo pasó una pieza a otra chapa, la devolvió y cayó en otro lugar (el servidor busca el lugar libre más abajo y a la izquierda, sin recordar dónde estaba). Un botón para deshacer.
-- **A27** ([diseño](../docs/plan/A27-deshacer-en-el-ajuste/diseno.md)), en la rama `feat/a27-deshacer-en-el-ajuste`:
+- **A27** ([diseño](historico/A27-deshacer-en-el-ajuste/diseno.md)), en la rama `feat/a27-deshacer-en-el-ajuste`:
   - Antes de mover, girar o pasar de chapa se anota un **paso** con una foto del anidado, en la base (tabla `pasos_del_ajuste`, migración `a7d3e9c2b564`). Deshacer vuelve a la foto: cada pieza a su chapa y su lugar exacto, con la chapa creada o quitada.
   - Hasta **20 pasos** por anidado (`PAR-70`). Los giros seguidos de la misma pieza son un paso.
   - `GET` y `POST /ejecuciones/{id}/deshacer`. Sale el deshacer del reacomodo que vivía en la memoria del servidor.

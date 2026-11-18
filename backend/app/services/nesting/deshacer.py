@@ -1,4 +1,4 @@
-"""Deshacer los cambios del ajuste del anidado (A27, `docs/plan/A27-deshacer-en-el-ajuste/diseno.md`).
+"""Deshacer los cambios del ajuste del anidado (A27, `docs/historico/A27-deshacer-en-el-ajuste/diseno.md`).
 
 Antes de cada cambio (mover, girar, pasar de chapa) se anota un **paso** con una
 foto del anidado: dónde está cada colocación, cuántas chapas hay y el
