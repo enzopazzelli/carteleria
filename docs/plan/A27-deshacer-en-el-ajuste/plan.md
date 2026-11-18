@@ -75,7 +75,7 @@
 
 ## Tarea 4 · Verificar, documentar y cerrar
 
-- [ ] Recorrido en Chrome sin ventana contra una copia: pasar una pieza a otra chapa y deshacer (vuelve a su lugar); a una chapa nueva y deshacer; girar con la rueda y deshacer de una vez; Ctrl+Z; el botón deshabilitado sin pasos.
-- [ ] Guía del usuario (5.5 Chapas y «Lo que todavía no hace»), README («En qué estamos»), bitácora.
+- [x] Recorrido en Chrome sin ventana contra una copia: pasar una pieza a otra chapa y deshacer (vuelve a su lugar); a una chapa nueva y deshacer; girar con la rueda y deshacer de una vez; Ctrl+Z; el botón deshabilitado sin pasos.
+- [x] Guía del usuario (5.5 Chapas y «Lo que todavía no hace»), README («En qué estamos»), bitácora.
 - [ ] PR a `main`. Con el ok de Enzo, fusionar, pasar la carpeta a `docs/historico/` y borrar la rama.
 - [ ] Antes de usarla con la base real: **respaldo** (la migración lo hace sola al arrancar, igual conviene uno a mano).

@@ -58,6 +58,32 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-18 — Deshacer en el ajuste del anidado (A27)
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+- **El pedido de la demo:** Enzo pasó una pieza a otra chapa, la devolvió y cayó en otro lugar (el servidor busca el lugar libre más abajo y a la izquierda, sin recordar dónde estaba). Un botón para deshacer.
+- **A27** ([diseño](../docs/plan/A27-deshacer-en-el-ajuste/diseno.md)), en la rama `feat/a27-deshacer-en-el-ajuste`:
+  - Antes de mover, girar o pasar de chapa se anota un **paso** con una foto del anidado, en la base (tabla `pasos_del_ajuste`, migración `a7d3e9c2b564`). Deshacer vuelve a la foto: cada pieza a su chapa y su lugar exacto, con la chapa creada o quitada.
+  - Hasta **20 pasos** por anidado (`PAR-70`). Los giros seguidos de la misma pieza son un paso.
+  - `GET` y `POST /ejecuciones/{id}/deshacer`. Sale el deshacer del reacomodo que vivía en la memoria del servidor.
+  - En Chapas, el botón «↶ Deshacer: …» y Ctrl+Z.
+- Pruebas: 1591 del servidor y 330 de la pantalla en verde; recorrido en Chrome sin ventana contra una copia del Complejo: pasar a una chapa nueva y deshacer, cuatro giros y Ctrl+Z, mover más pasar y deshacer de a uno, sin errores de consola.
+- Hallazgo de la prueba: Ctrl+Z no andaba porque se copiaba el evento del teclado con `{...evento}`, que no copia `key` ni `ctrlKey`.
+
+### Qué se decidió
+- Decisiones mías, a corregir: 20 pasos, giros seguidos como un paso, sin «Rehacer», Ctrl+Z además del botón, guardado en la base y no en memoria.
+
+### Cambios en el registro
+`PAR-70` nuevo (cuántos pasos del ajuste se pueden deshacer).
+
+### Pendiente
+- **La migración se aplica sola al arrancar, con respaldo antes**: en la base de Enzo y en la de la cartelería al actualizar el instalador.
+- A28: los retazos agrupados por material.
+
+---
+
 ## 2026-11-18 — Lo que pidió el cliente en la demo: sin login, sin presupuesto, una sola chapa por grupo (A26)
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —

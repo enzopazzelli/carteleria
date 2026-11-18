@@ -370,8 +370,15 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
   <h3 id="t-chapas">5.5 Chapas: revisar y retocar</h3>
   <p>Muestra <b>todas las chapas juntas</b> y el diseño inicial pintado por chapa. Lo que está bajo el mouse se ilumina en los dos lugares.</p>
   <ul>
-    <li><b>Mover una pieza a otra chapa:</b> arrastrala a la chapa de destino, o a <span class="etq">Chapa nueva</span>. Si no entra en lo libre, el sistema reacomoda esa chapa y podés <span class="etq">Deshacer</span>.</li>
+    <li><b>Mover una pieza a otra chapa:</b> arrastrala a la chapa de destino, o a <span class="etq">Chapa nueva</span>. Si no entra en lo libre, el sistema reacomoda esa chapa.</li>
     <li><b>Retocar una chapa:</b> doble clic en ella; arrastrá piezas y girálas con la rueda del mouse (o los botones ±15° / ±90°). Una pieza que se sale o choca se marca en <b style="color:var(--rojo)">rojo</b>.</li>
+  </ul>
+  <h4>Deshacer</h4>
+  <p>Arriba a la derecha de Chapas está el botón <span class="etq">↶ Deshacer</span>. Dice qué va a deshacer (por ejemplo «pasar «P12» a la chapa 3») y se puede apretar varias veces seguidas, o usar <b>Ctrl+Z</b>. Vuelve atrás <b>mover</b>, <b>girar</b> y <b>pasar de chapa</b> (con el reacomodo, si lo hubo): la pieza queda exactamente donde estaba, y si se creó o se quitó una chapa, también se deshace.</p>
+  <ul>
+    <li>Guarda los <b>últimos 20 cambios</b> de cada anidado, y se guardan aunque apagues la computadora.</li>
+    <li>Los giros seguidos de una misma pieza (una vuelta de la rueda del mouse) cuentan como <b>un solo paso</b>.</li>
+    <li><b>No se deshace</b> descartar una pieza, guardar un sobrante como retazo ni volver a anidar. Y todavía no hay «Rehacer».</li>
   </ul>
   <h4>Lo que sale para el taller</h4>
   <div class="tabla"><table>
@@ -446,7 +453,6 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
   <h2 class="sec"><span class="n">9</span>Lo que todavía no hace</h2>
   <p class="lema">Para no esperar de más.</p>
   <ul>
-    <li><b>Deshacer cualquier movimiento en Chapas:</b> hoy solo se puede deshacer el reacomodo de una chapa. Un botón para volver atrás arrastrar, girar o pasar una pieza de chapa está en camino.</li>
     <li><b>Ver todos los retazos juntos, agrupados por material:</b> hoy se ven dentro de cada material. Está en camino.</li>
     <li><b>Compartir los datos entre computadoras:</b> cada instalación guarda los suyos (ver la <a href="#abrir">sección 2</a>).</li>
     <li><b>Archivos <code>.cdr</code>:</b> hoy se exporta a DXF desde Corel; leer <code>.cdr</code> directo está en espera.</li>

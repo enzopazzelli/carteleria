@@ -20,7 +20,8 @@ import { usePiezas } from "../../hooks/usePiezas";
 function AtajoDeshacer({ alDeshacer }: { alDeshacer: () => void }) {
   useEffect(() => {
     function alApretar(evento: KeyboardEvent) {
-      if (!esDeshacer({ ...evento, target: evento.target as HTMLElement | null })) return;
+      const { key, ctrlKey, metaKey, shiftKey } = evento;
+      if (!esDeshacer({ key, ctrlKey, metaKey, shiftKey, target: evento.target as HTMLElement | null })) return;
       evento.preventDefault();
       alDeshacer();
     }
