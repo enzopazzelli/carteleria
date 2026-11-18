@@ -117,6 +117,7 @@ Una sola regla del servidor decide qué anidado cuenta: la tarjeta del inicio, e
 
 | Qué | Para qué | Quién |
 |---|---|---|
+| **A29: simplificar Anidado** | Sacar de la pantalla lo del motor (Sparrow, semilla y similares): que queden solo los parámetros de corte | Enzo, el próximo pedido (sin diseño todavía) |
 | **Kerf, margen y separación de 15 materiales** (ACM, PVC, Metalex, Polyfan, entre otros) | Sin esos valores no se puede anidar con esas chapas | Falta el dato del taller |
 | **Rearmar el instalador** con esta versión | Que la cartelería tenga lo nuevo (A26 ya está en `main`) | Enzo, cuando lo pida |
 | **Medir la segunda tanda de A17** (unos 75 minutos con la máquina libre) | Decidir cómo repartir el tiempo del anidado | Enzo, solo cuando la pida |
