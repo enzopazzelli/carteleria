@@ -58,6 +58,30 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-18 — Demo instalada en la cartelería y Docker en la máquina de Enzo
+
+**Quién:** Enzo · **Carril:** — · **Sprint:** —
+
+### Qué se hizo
+- **Demo para la cartelería:** un instalador para Windows, **fuera del repo** porque lleva la base con precios y clientes. Deja el sistema en `C:\Carteleria` de una PC de ellos con un Python portátil (no hace falta instalar nada ni tener internet), un acceso en el escritorio y el arranque al prender la PC; se entra desde el wifi del local. Un `arrancar.py` sirve la pantalla compilada y reenvía `/api` al servidor sin el prefijo, igual que Vite en desarrollo y que Caddy en el servidor. La base es una copia de la real sin trabajos ni sesiones. **Sin cambios en el código de la app.**
+- **Lo que apareció al probarlo:** Sparrow corre en un proceso aparte (`python -m app.services.nesting.sparrow_worker`), que tiene que encontrar el paquete `app` por su cuenta. El Python portátil no mira la carpeta actual, así que el anidado fallaba siempre; se resolvió en el instalador agregando la carpeta del código a `python313._pth`. Después, las 935 pruebas del motor y de la API pasaron con ese Python.
+- **Docker Desktop instalado en la máquina de Enzo, en D:** es el paso 2 de la Tarea 0 de `docs/plan/1.1-servidor-y-login/plan.md`. El programa está en `D:\Docker` y los datos en `D:\DockerData`; solo los complementos de la línea de comandos quedan en C: (686 MB). Probado con `hello-world`.
+- Se corrigió donde decía que la máquina de Enzo no tiene Docker: el README, el plan y el diseño de 1.1, y la guía del desarrollo.
+
+### Qué se decidió
+- La demo no se subió a internet: el despliegue lo tiene Vale y todavía no está, y los planes gratuitos pierden la base al reiniciarse.
+- **Para el Docker (Vale):** el contenedor del servidor tiene que dejar que el proceso del motor importe `app`, con la carpeta de trabajo en `backend/` o con `PYTHONPATH`. Si no, el anidado falla aunque el servidor arranque bien.
+
+### Cambios en el registro
+Sin cambios.
+
+### Pendiente
+- Enzo trae cómo anduvo la demo en la PC de la cartelería.
+- Limitar la memoria de WSL (`.wslconfig`, unos 4 GB, según la Tarea 0): no se hizo, porque el límite vale también para la Ubuntu del otro trabajo.
+- La entrega A3 y el servidor (Vale).
+
+---
+
 ## 2026-11-11 — Menú de usuarios, script para limpiar la base, manual y documentación al día
 
 **Quién:** Enzo · **Carril:** B · **Sprint:** —

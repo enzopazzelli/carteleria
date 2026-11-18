@@ -148,7 +148,7 @@ Una sola regla del servidor decide qué anidado cuenta para el presupuesto: el c
 
 | Qué | Para qué | Quién |
 |---|---|---|
-| **Entrega A3 del servidor:** Docker, copias de seguridad diarias y llevar el catálogo a PostgreSQL | Que todo levante con un comando, igual que en el servidor | **Vale** (acordado el 2026-11-11). Se verifica en el CI de GitHub, porque no hay Docker en la máquina de Enzo ([plan](docs/plan/1.1-servidor-y-login/plan.md)) |
+| **Entrega A3 del servidor:** Docker, copias de seguridad diarias y llevar el catálogo a PostgreSQL | Que todo levante con un comando, igual que en el servidor | **Vale** (acordado el 2026-11-11). Se verifica en el CI de GitHub y, desde el 2026-11-18, también en la máquina de Enzo, que ya tiene Docker ([plan](docs/plan/1.1-servidor-y-login/plan.md)) |
 | **El servidor real:** alquilarlo, el dominio y HTTPS | Entrar desde el celular | Enzo, etapa 4 |
 | **Mail real y aviso al dueño; envío al cliente** con el presupuesto congelado | Cerrar la aprobación | Después del servidor |
 | **WhatsApp** | Avisos por ese canal | Etapa 4 |

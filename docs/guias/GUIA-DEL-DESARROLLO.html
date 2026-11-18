@@ -693,7 +693,7 @@ alembic heads                                         <span class="c"># ver cabe
     <li><b>El servidor real:</b> alquilarlo, dominio y HTTPS con <b>Caddy</b> (que además reenvía <code>/api</code> como lo hace hoy Vite).</li>
   </ol>
   <div class="aviso ojo"><b class="t">Lo que se verifica en el CI</b>
-    <p>La máquina de desarrollo no tiene Docker: lo que depende de Docker o de PostgreSQL se verifica en GitHub Actions. Por eso el CI ya tiene un job con PostgreSQL 16.</p>
+    <p>Lo que depende de Docker o de PostgreSQL se verifica en GitHub Actions: por eso el CI ya tiene un job con PostgreSQL 16. Desde el 2026-11-18 la máquina de Enzo también tiene Docker (en D:), así que la pila se puede levantar y probar ahí antes de subir.</p>
   </div>
   <p>Después: mail real y aviso al dueño, envío al cliente con el presupuesto congelado, WhatsApp, dashboard rápido y fotomontaje (OpenCV y Pillow).</p>
 </section>
