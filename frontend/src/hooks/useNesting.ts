@@ -168,7 +168,6 @@ function alCambiarLasChapas(queryClient: ReturnType<typeof useQueryClient>, ejec
   queryClient.invalidateQueries({ queryKey: ["ejecuciones"] });
   queryClient.invalidateQueries({ queryKey: ["ejecucion", ejecucionId] });
   queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
-  queryClient.invalidateQueries({ queryKey: ["costeo"] });
 }
 
 /** Guarda el sobrante de una chapa como retazo (A21). Cambia la lista de

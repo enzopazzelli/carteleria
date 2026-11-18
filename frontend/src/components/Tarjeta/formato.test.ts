@@ -1,22 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { PresupuestoResumido, Tarjeta } from "../../api/inicio";
+import type { Tarjeta } from "../../api/inicio";
 import {
   coincideConLaBusqueda,
   cuantos,
   fechaDeTarjeta,
   renglonesDeChapas,
   rutaDelDestino,
-  rutaDelPresupuesto,
   textoDeBorrado,
-  textoDelPresupuesto,
 } from "./formato";
 
 const AHORA = new Date("2026-10-26T12:00:00Z");
 
-const PRESUPUESTO: PresupuestoResumido = {
-  id: 3, codigo: "P-2026-0001", cliente: "Parador", trabajo_id: 4, trabajo: "parador",
-  total: "300000.00", moneda: "ARS", estado: "BORRADOR", creado_en: "2026-10-26T12:00:00Z", por_debajo: 0,
-};
 
 describe("fechaDeTarjeta", () => {
   it("va en hora de Argentina y sin el año actual", () => {
@@ -44,30 +38,6 @@ describe("renglonesDeChapas", () => {
   });
 });
 
-describe("el presupuesto", () => {
-  it("va en un renglón", () => {
-    expect(textoDelPresupuesto(PRESUPUESTO)).toBe("P-2026-0001 · Parador · $ 300.000,00 · borrador");
-  });
-
-  it("dice el estado como se lee, no como se guarda", () => {
-    expect(textoDelPresupuesto({ ...PRESUPUESTO, estado: "PENDIENTE_APROBACION" })).toBe(
-      "P-2026-0001 · Parador · $ 300.000,00 · pendiente de aprobación",
-    );
-  });
-
-  it("sin total, lo deja afuera", () => {
-    expect(textoDelPresupuesto({ ...PRESUPUESTO, total: null })).toBe("P-2026-0001 · Parador · borrador");
-  });
-
-  it("abre ese mismo presupuesto en el Costeo de su trabajo", () => {
-    expect(rutaDelPresupuesto(PRESUPUESTO)).toBe("/trabajos/4/costeo?presupuesto=3");
-  });
-
-  it("sin trabajo no lleva a ningún lado", () => {
-    expect(rutaDelPresupuesto({ ...PRESUPUESTO, trabajo_id: null, trabajo: null })).toBeNull();
-  });
-});
-
 it("la tarjeta lleva al paso que sigue", () => {
   expect(rutaDelDestino(4, "chapas")).toBe("/trabajos/4/chapas");
 });
@@ -75,13 +45,13 @@ it("la tarjeta lleva al paso que sigue", () => {
 it("cuenta en singular y en plural", () => {
   expect(cuantos(1, "retazo", "retazos")).toBe("1 retazo");
   expect(cuantos(29, "medida de chapa", "medidas de chapa")).toBe("29 medidas de chapa");
-  expect(cuantos(0, "presupuesto", "presupuestos")).toBe("0 presupuestos");
+  expect(cuantos(0, "retazo", "retazos")).toBe("0 retazos");
 });
 
-function tarjeta(nombre: string, presupuesto: PresupuestoResumido | null): Tarjeta {
+function tarjeta(nombre: string): Tarjeta {
   return {
-    id: 4, nombre, tocado_en: "2026-10-24T19:14:00Z", frase: "Falta el presupuesto", destino: "chapas", chapas: [],
-    pasos: { piezas: "hecho", grupos: "hecho", anidado: "hecho", presupuesto: "pendiente" }, presupuesto,
+    id: 4, nombre, tocado_en: "2026-10-24T19:14:00Z", frase: "Listo para cortar", destino: "chapas", chapas: [],
+    pasos: { piezas: "hecho", grupos: "hecho", anidado: "hecho" },
   };
 }
 
@@ -100,14 +70,8 @@ describe("coincideConLaBusqueda", () => {
 
 describe("textoDeBorrado", () => {
   it("nombra el trabajo y lo que se borra", () => {
-    expect(textoDeBorrado(tarjeta("parador", null))).toEqual([
+    expect(textoDeBorrado(tarjeta("parador"))).toEqual([
       "¿Borrar «parador»? Se borran sus piezas, sus grupos, sus anidados y el dibujo guardado. No se puede deshacer.",
     ]);
-  });
-
-  it("avisa que el presupuesto queda", () => {
-    expect(textoDeBorrado(tarjeta("parador", PRESUPUESTO))[1]).toBe(
-      "Su presupuesto P-2026-0001 no se borra: queda sin trabajo.",
-    );
   });
 });

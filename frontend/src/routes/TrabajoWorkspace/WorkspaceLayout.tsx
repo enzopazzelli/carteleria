@@ -7,8 +7,8 @@ const ETAPAS = [
   { path: "piezas", etiqueta: "Piezas" },
   { path: "grupos", etiqueta: "Grupos" },
   { path: "anidado", etiqueta: "Anidado" },
+  // Sin Costeo desde A26: el recorrido termina en Chapas, con el DXF y el PDF.
   { path: "chapas", etiqueta: "Chapas" },
-  { path: "costeo", etiqueta: "Costeo" },
 ] as const;
 
 export default function WorkspaceLayout() {
@@ -21,12 +21,10 @@ export default function WorkspaceLayout() {
   const tieneDatos: Record<string, boolean> = {
     piezas: (piezas?.length ?? 0) > 0,
     grupos: (grupos?.length ?? 0) > 0,
-    // Anidado, Chapas y Costeo se afinan en las Tareas 10/12/13 cuando
-    // exista el hook para consultar ejecuciones/presupuestos — hasta
-    // entonces el punto queda vacío (nunca en falso positivo).
+    // Anidado y Chapas: el punto queda vacío hasta que haya con qué
+    // consultarlo (nunca en falso positivo).
     anidado: false,
     chapas: false,
-    costeo: false,
   };
 
   // La barra fija de arriba (A16) mide 3rem.

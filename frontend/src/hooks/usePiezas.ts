@@ -20,7 +20,6 @@ export function refrescarPiezasYDisenio(queryClient: QueryClient, trabajoId: num
     queryClient.invalidateQueries({ queryKey: ["disenio", trabajoId] }),
     queryClient.invalidateQueries({ queryKey: ["a-seccionar", trabajoId] }),
     queryClient.invalidateQueries({ queryKey: ["ejecuciones"] }),
-    queryClient.invalidateQueries({ queryKey: ["costeo", trabajoId] }),
   ]);
 }
 

@@ -4,7 +4,7 @@ import { useFormato, useMateriales } from "../hooks/useCatalogo";
 import { useEjecucionesDeGrupo, useGuardarSobrante, useMaterialUsado } from "../hooks/useNesting";
 import { urlPlano, urlDxf, urlPdfAnidado, type MedidaLeer } from "../api/nesting";
 import type { GrupoDeCorte } from "../api/piezasYgrupos";
-import { ejecucionALaVista, paraElPresupuesto } from "../routes/TrabajoWorkspace/historial";
+import { ejecucionALaVista, paraCortar } from "../routes/TrabajoWorkspace/historial";
 import Mensaje from "./Mensaje/Mensaje";
 import { falla, type QueMostrar } from "./Mensaje/contenido";
 
@@ -48,7 +48,7 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
       </div>
       <Link className="text-sm underline self-center" to={`/trabajos/${grupo.trabajo_id}/grupos`}>Cambiar la chapa</Link>
     </div>
-    {formatoCambio && <p role="alert" className="text-conflict mb-3">El material elegido cambió. Este plano corresponde al formato anterior; calculá un nuevo anidado antes de presupuestar.</p>}
+    {formatoCambio && <p role="alert" className="text-conflict mb-3">La chapa del grupo cambió. Este plano es de la chapa anterior: volvé a anidar antes de cortar.</p>}
     {ejecucion ? <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <div className="bg-paper rounded-lg p-3"><p className="text-xs text-ink/60">Planchas necesarias</p><p className="text-xl font-semibold font-mono">{n}</p></div>
@@ -79,7 +79,7 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
         </tr>)}</tbody>
       </table>}
       {errorAlGuardar && <div className="mb-4"><Mensaje variante="error" que={errorAlGuardar} trabajoId={grupo.trabajo_id} /></div>}
-      <p className="text-sm mb-3">{ejecucion.motor === "sparrow" ? "Sparrow irregular" : "Rectangular"} · anidado #{ejecucion.id} · {paraElPresupuesto(ejecucion, historial ?? [])}</p>
+      <p className="text-sm mb-3">{ejecucion.motor === "sparrow" ? "Sparrow irregular" : "Rectangular"} · anidado #{ejecucion.id} · {paraCortar(ejecucion, historial ?? [])}</p>
       <div className="flex flex-wrap items-center gap-3 mb-3 text-sm">
         <label>Plancha <select className="border rounded p-1" value={hoja} onChange={(e) => setPlancha(Number(e.target.value))}>
           {Array.from({length:n},(_,i) => <option key={i} value={i}>{i+1} de {n}</option>)}
@@ -96,7 +96,7 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
         <img key={`${ejecucion.id}-${hoja}`} src={`${urlPlano(ejecucion.id,hoja)}&etiquetas=false`} alt={`Anidado de ${material?.nombre ?? "material"}, plancha ${hoja+1} de ${n}`} style={{width:`${zoom*100}%`,height:600*zoom,objectFit:"contain",maxWidth:"none",display:"block"}} />
       </div>
       <p className="text-sm text-ink/70 mt-3">{materialUsado ? `Material consumido: ${area.toFixed(3)} m². ` : ""}Superficie sin piezas: {(area*(1-aprovechamiento/100)).toFixed(3)} m². Incluye huecos, márgenes y separación de corte; no equivale íntegramente a retazo reutilizable.</p>
-      {aprovechamiento < 10 && <p className="text-sm text-conflict mt-3">Aprovechamiento bajo: revisá la escala del DXF y compará formatos más pequeños antes de presupuestar.</p>}
+      {aprovechamiento < 10 && <p className="text-sm text-conflict mt-3">Aprovechamiento bajo: revisá la escala del DXF o probá con una chapa más chica.</p>}
     </> : <div className="bg-paper rounded-lg p-5"><p className="mb-2">Todavía no hay un anidado válido para mostrar.</p>
       <Link className="underline" to={`/trabajos/${grupo.trabajo_id}/anidado`}>Calcular el anidado con Sparrow</Link></div>}
   </section>;

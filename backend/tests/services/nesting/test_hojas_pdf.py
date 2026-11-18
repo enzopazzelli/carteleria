@@ -38,14 +38,14 @@ def _bloque(n, ancho, alto, disenio=(1000, 1000)) -> BloqueDelPdf:
     ]
     return BloqueDelPdf(
         material="Chapa negra", grupo="G1", chapa_ancho_mm=ancho, chapa_alto_mm=alto, con_veta=False,
-        chapas=chapas, linea=f"{n} chapas enteras", anidado="anidado #9, elegido para el presupuesto",
+        chapas=chapas, linea=f"{n} chapas enteras", anidado="anidado #9, el definitivo",
         disenio=DisenioDelPdf(fondo=[_rectangulo(*disenio)], piezas=[], cortes=[], sin_lugar=[]),
     )
 
 
 def _trabajo(bloques) -> TrabajoDelPdf:
     return TrabajoDelPdf(nombre="Prueba", archivo="prueba.dxf", generado=datetime(2026, 10, 25, 11, 0),
-                         presupuesto=None, bloques=bloques, sin_anidar=[])
+                         bloques=bloques, sin_anidar=[])
 
 
 def test_nombre_corto():

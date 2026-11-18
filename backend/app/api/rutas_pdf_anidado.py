@@ -19,7 +19,6 @@ from sqlalchemy.orm import Session
 
 from ..anidado_que_cuenta import anidado_que_cuenta, aviso_de_no_cobrar
 from ..modelos.catalogo import Formato
-from ..modelos.presupuesto import Presupuesto
 from ..modelos.trabajo import EjecucionNesting, GrupoDeCorte, Pieza, Trabajo
 from ..services.disenio import PosicionEnDisenio, al_disenio
 from ..services.nesting.exportacion_dxf import _anillos_en_plancha, _geometria_de
@@ -129,25 +128,18 @@ def _disenio(
     )
 
 
-def _presupuesto(sesion: Session, trabajo: Trabajo) -> str | None:
-    """El más reciente del trabajo, si tiene alguno."""
-    presupuesto = sesion.scalars(
-        select(Presupuesto).where(Presupuesto.trabajo_id == trabajo.id).order_by(Presupuesto.id.desc())
-    ).first()
-    return f"{presupuesto.codigo} · {presupuesto.cliente.nombre}" if presupuesto else None
-
-
 def _que_anidado_es(grupo: GrupoDeCorte, ejecucion: EjecucionNesting) -> str:
-    """Cuál anidado es el del bloque para el presupuesto. Si hay un elegido
-    y el bloque no es ese, es porque el elegido quedó vencido y se cobra
-    este, el más reciente al día (`anidado_que_cuenta`, Enzo, A17)."""
+    """Cuál anidado es el del bloque, el que se corta. Si hay uno marcado
+    como definitivo y el bloque no es ese, es porque el definitivo quedó
+    vencido y se usa este, el más reciente al día (`anidado_que_cuenta`,
+    Enzo, A17). Desde A26 no nombra el presupuesto."""
     if ejecucion.es_definitiva:
-        return f"anidado #{ejecucion.id}, elegido para el presupuesto"
+        return f"anidado #{ejecucion.id}, el definitivo"
     elegido = next((e for e in grupo.ejecuciones if e.es_definitiva and e.estado == "lista"), None)
     if elegido is not None:
-        return (f"anidado #{ejecucion.id}, el que se usa para el presupuesto: el elegido (#{elegido.id}) "
+        return (f"anidado #{ejecucion.id}, el más reciente: el definitivo (#{elegido.id}) "
                 "es de antes de que cambiaran las piezas")
-    return f"anidado #{ejecucion.id}, el más reciente, sin elegir para el presupuesto"
+    return f"anidado #{ejecucion.id}, el más reciente (ninguno marcado como definitivo)"
 
 
 def datos_del_pdf(sesion: Session, trabajo: Trabajo, ahora: datetime) -> TrabajoDelPdf:
@@ -175,7 +167,7 @@ def datos_del_pdf(sesion: Session, trabajo: Trabajo, ahora: datetime) -> Trabajo
             aviso_de_no_cobrar=aviso_de_no_cobrar(cuenta.motivo),
         ))
     return TrabajoDelPdf(nombre=trabajo.nombre, archivo=trabajo.archivo_origen, generado=ahora,
-                         presupuesto=_presupuesto(sesion, trabajo), bloques=bloques, sin_anidar=sin_anidar)
+                         bloques=bloques, sin_anidar=sin_anidar)
 
 
 @router.get("/trabajos/{trabajo_id}/pdf-anidado")

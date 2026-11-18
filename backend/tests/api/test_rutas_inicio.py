@@ -64,32 +64,25 @@ def test_cuando_se_toco_cambia_al_crear_el_presupuesto(cliente):
     assert cliente.get(f"/trabajos/{trabajo['id']}").json()["actualizado_en"] == trabajo["actualizado_en"]
 
 
-def test_la_tarjeta_de_un_trabajo_anidado_sin_presupuesto(cliente, tmp_path):
+def test_la_tarjeta_de_un_trabajo_anidado_esta_lista_para_cortar(cliente, tmp_path):
     _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
 
     tarjeta = cliente.get("/tarjetas").json()[0]
 
-    assert tarjeta["pasos"] == {"piezas": "hecho", "grupos": "hecho", "anidado": "hecho", "presupuesto": "pendiente"}
-    assert (tarjeta["frase"], tarjeta["destino"]) == ("Falta el presupuesto", "chapas")
+    assert tarjeta["pasos"] == {"piezas": "hecho", "grupos": "hecho", "anidado": "hecho"}
+    assert (tarjeta["frase"], tarjeta["destino"]) == ("Listo para cortar", "chapas")
     assert tarjeta["chapas"] == ["1 chapa · Chapa"]
-    assert tarjeta["presupuesto"] is None
+    assert "presupuesto" not in tarjeta
 
 
-def test_la_tarjeta_trae_el_presupuesto_mas_reciente(cliente, tmp_path):
+def test_un_presupuesto_viejo_no_cambia_la_tarjeta(cliente, tmp_path):
+    """Las bases que ya tenían presupuestos (A26): la tarjeta no los nombra ni lleva al costeo."""
     trabajo, _grupo, _ = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
-    _presupuesto(cliente, trabajo["id"], "Otro")
-    ultimo = _presupuesto(cliente, trabajo["id"])
+    _presupuesto(cliente, trabajo["id"])
 
     tarjeta = cliente.get("/tarjetas").json()[0]
 
-    total = cliente.get(f"/presupuestos/{ultimo['id']}/totales").json()["total"]
-    creado_en = tarjeta["presupuesto"].pop("creado_en")
-    assert datetime.fromisoformat(creado_en).utcoffset() == timedelta(0)
-    assert tarjeta["presupuesto"] == {
-        "id": ultimo["id"], "codigo": ultimo["codigo"], "cliente": "Parador", "trabajo_id": trabajo["id"],
-        "trabajo": "Prueba", "total": total, "moneda": "ARS", "estado": "BORRADOR", "por_debajo": 0,
-    }
-    assert (tarjeta["frase"], tarjeta["destino"]) == ("Presupuesto en borrador", "costeo")
+    assert (tarjeta["frase"], tarjeta["destino"]) == ("Listo para cortar", "chapas")
 
 
 def test_si_las_piezas_cambiaron_despues_de_anidar_falta_volver_a_anidar(cliente, tmp_path):
@@ -142,7 +135,7 @@ def test_un_trabajo_sin_piezas(cliente):
 
     tarjeta = cliente.get("/tarjetas").json()[0]
 
-    assert (tarjeta["frase"], tarjeta["chapas"], tarjeta["presupuesto"]) == ("Falta cargar el dibujo", [], None)
+    assert (tarjeta["frase"], tarjeta["chapas"]) == ("Falta cargar el dibujo", [])
 
 
 # --- La miniatura -------------------------------------------------------------
@@ -228,26 +221,12 @@ def test_las_chapas_de_un_grupo_sin_piezas_no_van_en_la_tarjeta(cliente, tmp_pat
 # --- El resumen del inicio ----------------------------------------------------
 
 
-def test_el_resumen_trae_los_5_presupuestos_mas_recientes(cliente):
+def test_el_resumen_ya_no_trae_presupuestos(cliente):
+    """Salieron del inicio en A26; los de la base quedan, sin pantalla."""
     trabajo = cliente.post("/trabajos", json={"nombre": "A"}).json()
-    ids = [_presupuesto(cliente, trabajo["id"], f"Cliente {n}")["id"] for n in range(6)]
+    _presupuesto(cliente, trabajo["id"])
 
-    resumen = cliente.get("/resumen-del-inicio").json()
-
-    assert [p["id"] for p in resumen["presupuestos"]] == ids[::-1][:5]
-    assert resumen["total_presupuestos"] == 6
-    assert resumen["presupuestos"][0]["cliente"] == "Cliente 5"
-
-
-def test_un_presupuesto_de_un_trabajo_borrado_queda_sin_trabajo(cliente):
-    trabajo = cliente.post("/trabajos", json={"nombre": "A"}).json()
-    presupuesto = _presupuesto(cliente, trabajo["id"])
-
-    cliente.delete(f"/trabajos/{trabajo['id']}")
-
-    fila = cliente.get("/resumen-del-inicio").json()["presupuestos"][0]
-    assert (fila["id"], fila["trabajo_id"], fila["trabajo"]) == (presupuesto["id"], None, None)
-    assert cliente.get("/tarjetas").json() == []
+    assert set(cliente.get("/resumen-del-inicio").json()) == {"materiales"}
 
 
 def test_los_conteos_de_materiales(cliente):
@@ -284,7 +263,6 @@ def test_el_resumen_del_inicio_cuenta_los_articulos_y_la_fecha(cliente):
 
 def test_el_resumen_sin_nada(cliente):
     assert cliente.get("/resumen-del-inicio").json() == {
-        "presupuestos": [], "total_presupuestos": 0,
         "materiales": {"materiales": 0, "medidas": 0, "retazos": 0, "por_familia": [], "articulos": 0, "ultima_planilla_en": None},
     }
 
@@ -327,13 +305,3 @@ def test_un_presupuesto_cuyo_trabajo_se_borro_queda_en_la_lista(cliente):
 
     [fila] = cliente.get("/resumen-de-presupuestos").json()
     assert (fila["id"], fila["trabajo_id"], fila["trabajo"], fila["por_debajo"]) == (presupuesto["id"], None, None, 0)
-
-
-def test_el_inicio_trae_tambien_la_fecha_y_por_debajo(cliente):
-    trabajo = cliente.post("/trabajos", json={"nombre": "A"}).json()
-    _presupuesto(cliente, trabajo["id"])
-
-    [fila] = cliente.get("/resumen-del-inicio").json()["presupuestos"]
-
-    assert datetime.fromisoformat(fila["creado_en"]).utcoffset() == timedelta(0)
-    assert fila["por_debajo"] == 0

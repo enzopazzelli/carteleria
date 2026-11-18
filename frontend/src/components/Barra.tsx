@@ -1,8 +1,8 @@
 import { NavLink } from "react-router-dom";
 
 // La barra fija de arriba, en todas las pantallas (A16, diseño §5.1).
-// Cada lugar tiene su pantalla: Materiales desde A18 y Presupuestos desde A19.
-// Sin login desde A26: no hay usuario, «Mi cuenta» ni «Cerrar sesión».
+// Cada lugar tiene su pantalla (Materiales desde A18). Desde A26, sin login ni
+// presupuesto: no hay usuario, «Mi cuenta», «Cerrar sesión» ni «Presupuestos».
 
 const LUGAR = "h-12 flex items-center px-1 border-b-[3px] pt-[3px] text-sm";
 
@@ -21,9 +21,6 @@ export default function Barra() {
         {/* Sin `end`: dentro de un trabajo también queda marcado Trabajos. */}
         <NavLink to="/trabajos" className={claseDelLugar}>
           Trabajos
-        </NavLink>
-        <NavLink to="/presupuestos" className={claseDelLugar}>
-          Presupuestos
         </NavLink>
         <NavLink to="/materiales" className={claseDelLugar}>
           Materiales

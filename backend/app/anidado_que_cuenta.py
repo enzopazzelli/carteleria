@@ -53,15 +53,15 @@ class AnidadoQueCuenta:
         return self.mostrado if self.motivo is None else None
 
 
-_AVISO_DE_PIEZAS = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de presupuestar."
+_AVISO_DE_PIEZAS = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de cortar."
 
 #: El texto corto que ven la pantalla y el PDF. El costeo tiene los suyos, que
 #: nombran el grupo.
 AVISO_DE_NO_COBRAR: dict[Motivo, str] = {
     Motivo.PIEZAS_CAMBIARON: _AVISO_DE_PIEZAS,
     Motivo.SIN_PIEZAS: _AVISO_DE_PIEZAS,
-    Motivo.CHAPA_CAMBIO: "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de presupuestar.",
-    Motivo.SIN_MATERIAL: "Este grupo no tiene material asignado: asignale uno antes de presupuestar.",
+    Motivo.CHAPA_CAMBIO: "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de cortar.",
+    Motivo.SIN_MATERIAL: "Este grupo no tiene chapa: elegila en la pestaña Grupos.",
 }
 
 

@@ -4,40 +4,20 @@ import { API_BASE, apiDelete, apiGet } from "./client";
 // (`backend/app/api/rutas_inicio.py`). Los importes y las fechas viajan como texto.
 
 export type EstadoPaso = "hecho" | "a_medias" | "error" | "pendiente";
-export type Destino = "piezas" | "grupos" | "anidado" | "chapas" | "costeo";
-
-export interface PresupuestoResumido {
-  id: number;
-  codigo: string;
-  cliente: string;
-  /** `null` si su trabajo se borró: el presupuesto queda. */
-  trabajo_id: number | null;
-  trabajo: string | null;
-  /** `null` mientras falte con qué calcularlo. */
-  total: string | null;
-  moneda: string;
-  estado: string;
-  /** Cuándo se armó, en UTC (A19). */
-  creado_en: string;
-  /** Cuántos productos quedaron por debajo del precio sugerido (A19). */
-  por_debajo: number;
-}
+export type Destino = "piezas" | "grupos" | "anidado" | "chapas";
 
 export interface Tarjeta {
   id: number;
   nombre: string;
   /** Lo último que se hizo en el trabajo, en UTC. */
   tocado_en: string;
-  pasos: Record<"piezas" | "grupos" | "anidado" | "presupuesto", EstadoPaso>;
+  pasos: Record<"piezas" | "grupos" | "anidado", EstadoPaso>;
   frase: string;
   destino: Destino;
   chapas: string[];
-  presupuesto: PresupuestoResumido | null;
 }
 
 export interface ResumenDelInicio {
-  presupuestos: PresupuestoResumido[];
-  total_presupuestos: number;
   materiales: {
     materiales: number;
     medidas: number;
@@ -52,11 +32,6 @@ export interface ResumenDelInicio {
 
 export function listarTarjetas(limite?: number): Promise<Tarjeta[]> {
   return apiGet<Tarjeta[]>(limite === undefined ? "/tarjetas" : `/tarjetas?limite=${limite}`);
-}
-
-/** Todos los presupuestos, del más nuevo al más viejo (A19). */
-export function listarPresupuestosResumidos(): Promise<PresupuestoResumido[]> {
-  return apiGet<PresupuestoResumido[]>("/resumen-de-presupuestos");
 }
 
 export function obtenerResumenDelInicio(): Promise<ResumenDelInicio> {

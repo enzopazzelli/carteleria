@@ -10,13 +10,12 @@ import {
 
 /** Un cambio en los grupos o en qué grupo va cada pieza cambia también qué
  * hay que seccionar (la chapa y los parámetros con que se mira), y si un
- * anidado sigue al día y qué se cobra (A17). */
+ * anidado sigue al día (A17). */
 export function refrescar(queryClient: QueryClient, trabajoId: number, clave: "grupos" | "piezas") {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: [clave, trabajoId] }),
     queryClient.invalidateQueries({ queryKey: ["a-seccionar", trabajoId] }),
     queryClient.invalidateQueries({ queryKey: ["ejecuciones"] }),
-    queryClient.invalidateQueries({ queryKey: ["costeo", trabajoId] }),
   ]);
 }
 

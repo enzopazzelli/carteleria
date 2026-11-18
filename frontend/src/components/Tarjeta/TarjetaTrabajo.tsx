@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { urlMiniatura, type EstadoPaso, type Tarjeta } from "../../api/inicio";
 import ConfirmarBorrado from "./ConfirmarBorrado";
-import { fechaDeTarjeta, renglonesDeChapas, rutaDelDestino, textoDelPresupuesto } from "./formato";
+import { fechaDeTarjeta, renglonesDeChapas, rutaDelDestino } from "./formato";
 
 // La tarjeta de un trabajo (A16, diseño §5.3): la miniatura del diseño
-// pintado, en qué paso quedó, las chapas y el presupuesto. Entera lleva al
+// pintado, en qué paso quedó y las chapas (sin presupuesto desde A26). Entera lleva al
 // paso que sigue; el «⋯» va aparte, porque un botón no puede ir adentro de
 // un enlace.
 
@@ -13,7 +13,6 @@ const PASOS = [
   { clave: "piezas", nombre: "Piezas" },
   { clave: "grupos", nombre: "Grupos" },
   { clave: "anidado", nombre: "Anidado" },
-  { clave: "presupuesto", nombre: "Presupuesto" },
 ] as const;
 
 const COLOR: Record<EstadoPaso, string> = {
@@ -127,9 +126,6 @@ export default function TarjetaTrabajo({ tarjeta, ahora }: { tarjeta: Tarjeta; a
               </li>
             ))}
           </ul>
-          <p className={`text-xs mt-1 truncate ${tarjeta.presupuesto ? "text-ink/70" : "text-ink/40"}`}>
-            {tarjeta.presupuesto ? textoDelPresupuesto(tarjeta.presupuesto) : "Sin presupuesto"}
-          </p>
         </div>
       </Link>
       <MenuDeTarjeta tarjeta={tarjeta} />

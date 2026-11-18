@@ -67,7 +67,7 @@ def test_lo_movido_a_mano_sale_en_su_lugar_nuevo(cliente, tmp_path):
     assert ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2) == pytest.approx((900, 900))
 
 
-_VENCIDO = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de presupuestar."
+_VENCIDO = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de cortar."
 
 
 def test_el_anidado_vencido_lo_avisa_en_la_hoja_del_disenio(cliente, tmp_path):
@@ -82,8 +82,8 @@ def test_el_anidado_vencido_lo_avisa_en_la_hoja_del_disenio(cliente, tmp_path):
     assert _VENCIDO in texto.replace("\n", " ")
 
 
-_CHAPA_CAMBIO = "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de presupuestar."
-_SIN_MATERIAL = "Este grupo no tiene material asignado: asignale uno antes de presupuestar."
+_CHAPA_CAMBIO = "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de cortar."
+_SIN_MATERIAL = "Este grupo no tiene chapa: elegila en la pestaña Grupos."
 
 
 def test_con_la_chapa_cambiada_el_pdf_lo_avisa_con_su_motivo(cliente, tmp_path):
@@ -113,7 +113,8 @@ def test_un_grupo_sin_material_lo_avisa_en_el_pdf(cliente, tmp_path):
 def test_si_se_cobra_otro_que_el_elegido_lo_dice(cliente, tmp_path):
     """El elegido quedó vencido y hay uno más nuevo al día (Enzo, A17,
     opción a): el PDF decía de ese «el más reciente, sin elegir para el
-    presupuesto», aunque es el que se cobra (revisión de la tanda 7)."""
+    presupuesto», aunque es el que se cobra (revisión de la tanda 7). Desde
+    A26 no nombra el presupuesto."""
     trabajo, grupo, elegido = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
     cliente.post(f"/ejecuciones/{elegido}/marcar-definitiva")
     pieza = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()[0]
@@ -123,7 +124,7 @@ def test_si_se_cobra_otro_que_el_elegido_lo_dice(cliente, tmp_path):
 
     texto = _texto(cliente.get(f"/trabajos/{trabajo['id']}/pdf-anidado").content).replace("\n", " ")
 
-    assert (f"anidado #{nuevo}, el que se usa para el presupuesto: el elegido (#{elegido}) "
+    assert (f"anidado #{nuevo}, el más reciente: el definitivo (#{elegido}) "
             "es de antes de que cambiaran las piezas") in texto
     assert _VENCIDO not in texto
 

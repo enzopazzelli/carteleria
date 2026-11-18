@@ -73,12 +73,16 @@
 
 ## Tarea 3 · El presupuesto
 
-- [ ] **Servidor, `pasos.py`.** Sin el paso de presupuesto: si todo está anidado, frase «Listo para cortar» y destino `chapas`. `Destino` pierde `costeo`. `rutas_inicio.py` y el esquema de pasos dejan de mandar el paso `presupuesto` y el presupuesto de la tarjeta; el resumen del inicio deja de mandar los presupuestos. Pruebas de `test_pasos.py` y `test_rutas_inicio.py` ajustadas.
-- [ ] **Pantalla.** Barra sin «Presupuestos»; `/presupuestos` lleva al inicio. `WorkspaceLayout` sin «Costeo»; `/trabajos/N/costeo` lleva a Chapas. Inicio sin «Últimos presupuestos». Tarjeta sin el paso ni el renglón del presupuesto.
-- [ ] **Textos.** `historial.ts` («Elegida para cortar», «Vista previa; todavía no elegida para cortar» y los que nombran el presupuesto), `AnidadoTab.tsx` (el aviso al borrar el definitivo), `ResumenAnidado.tsx`. Revisar con `grep -rni presupuest frontend/src` que no quede ningún texto visible.
-- [ ] `ChapasTab.tsx`: sale el aviso de cambio de cantidad de chapas que dependía de los presupuestos.
-- [ ] Se borran `Presupuestos.tsx`, `CosteoTab.tsx`, `components/Presupuestos/`, las secciones de cliente y aprobación, el buscador de catálogo del costeo y lo de `api/` y `hooks/` que solo usaban ellos, con sus pruebas.
-- [ ] `pytest` completo, `npm test` y `npm run build` en verde. Commit: `feat(a26): sin presupuesto: el recorrido termina en Chapas`.
+- [x] **Servidor, `pasos.py`.** Sin el paso de presupuesto: si todo está anidado, frase «Listo para cortar» y destino `chapas`. `Destino` pierde `costeo`. `rutas_inicio.py` y el esquema de pasos dejan de mandar el paso `presupuesto` y el presupuesto de la tarjeta; el resumen del inicio deja de mandar los presupuestos. Pruebas de `test_pasos.py` y `test_rutas_inicio.py` ajustadas.
+- [x] **Pantalla.** Barra sin «Presupuestos»; `/presupuestos` lleva al inicio. `WorkspaceLayout` sin «Costeo»; `/trabajos/N/costeo` lleva a Chapas. Inicio sin «Últimos presupuestos». Tarjeta sin el paso ni el renglón del presupuesto.
+- [x] **Textos.** `historial.ts` («Elegida para cortar», «Vista previa; todavía no elegida para cortar» y los que nombran el presupuesto), `AnidadoTab.tsx` (el aviso al borrar el definitivo), `ResumenAnidado.tsx`. Revisar con `grep -rni presupuest frontend/src` que no quede ningún texto visible.
+- [x] `ChapasTab.tsx`: sale el aviso de cambio de cantidad de chapas que dependía de los presupuestos.
+- [x] Se borran `Presupuestos.tsx`, `CosteoTab.tsx`, `components/Presupuestos/`, las secciones de cliente y aprobación, el buscador de catálogo del costeo y lo de `api/` y `hooks/` que solo usaban ellos, con sus pruebas.
+- [x] **El PDF del diseño anidado tampoco nombra el presupuesto:** sale el código y el cliente del encabezado, y el renglón de cada bloque dice «anidado #N, el definitivo» / «el más reciente: el definitivo (#M) es de antes de…» / «el más reciente (ninguno marcado como definitivo)».
+- [x] **Los avisos de anidado vencido** (`anidado_que_cuenta`, los ven Chapas, Anidado y el PDF) dicen «anidá de nuevo antes de cortar»; sin chapa: «Este grupo no tiene chapa: elegila en la pestaña Grupos».
+- [x] En Materiales, la revisión de la planilla pierde la nota de los presupuestos ya armados. Las invalidaciones de la caché del costeo salen de los ganchos.
+- [x] **Visto en el navegador** contra una copia: inicio, enlaces viejos, Chapas, Anidado y Materiales sin «presupuesto» ni «costeo»; PDF del Parador sin presupuesto.
+- [x] `pytest` completo, `npm test` y `npm run build` en verde. Commit: `feat(a26): sin presupuesto: el recorrido termina en Chapas`.
 - [ ] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 4 · Documentación
