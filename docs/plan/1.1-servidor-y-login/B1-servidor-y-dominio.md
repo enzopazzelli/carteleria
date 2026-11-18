@@ -48,7 +48,7 @@ La latencia es lo que tarda un paquete en ir al servidor y volver. Se midió con
 | **Plan** | Cloud Server | Regular Cloud Compute (`vc2-4c-8gb`) | KVM 4 | Basic Droplet |
 | **Procesadores / memoria / disco** | 4 / 8 GB / **30 GB** NVMe | 4 / 8 GB / 160 GB SSD | 4 / 16 GB / 200 GB NVMe | 4 / 8 GB / 160 GB |
 | **Precio por mes** | **ARS 34.830,20** de lista; ARS 15.673,60 con la promoción (55 % menos). En pesos, **IVA incluido** | **US$ 40** | US$ 12,99 en promoción; renueva a **US$ 28,99** | US$ 48 |
-| **En pesos, por mes** (aprox.) | ARS 15.674 a 34.830 | ARS 80.000 a 93.000 | ARS 620.000 de una vez por los 2 años; después, unos ARS 58.000 a 67.000 | ARS 96.000 a 112.000 |
+| **En pesos, por mes** (aprox.) | ARS 15.674 a 34.830 | ARS 80.000 a 93.000 | ARS 620.000 a 725.000 de una vez por los 2 años; después, unos ARS 58.000 a 67.000 | ARS 96.000 a 112.000 |
 | **Compromiso** | Pago mensual (según el resumen de su página; confirmar). También ofrece de 2 a 10 años | Ninguno: por hora, con tope mensual | **24 meses por adelantado** (US$ 311,76) | Ninguno |
 | **Latencia** | Sin medir | **38 ms** (medida) | Sin medir (la página no dice la ciudad) | ~160 ms (estimada) |
 | **A favor** | El más barato. En pesos: sin percepción del 30 % ni IVA del exterior. Empresa argentina, soporte en castellano. La empresa ya es cliente (su `.com` estaba registrado ahí). El configurador deja elegir procesadores, memoria y disco por separado | Lo más cerca entre lo medido. Precio de su lista oficial. IP pública incluida. Si el anidado anda lento, se pasa en minutos al plan de alto rendimiento (`vhp-4c-8gb-amd`, US$ 48) | El más barato en dólares, con el doble de memoria | Muy usado y con buena documentación |
