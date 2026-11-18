@@ -20,7 +20,6 @@ import { urlPlano } from "../../api/nesting";
 import { useGrupos } from "../../hooks/useGrupos";
 import ResumenAnidado from "../../components/ResumenAnidado";
 import type { LineaCosto } from "../../api/presupuestos";
-import AprobacionSeccion from "./AprobacionSeccion";
 import { esEditable } from "./aprobacion";
 import BuscadorDeCatalogo from "./BuscadorDeCatalogo";
 import PresupuestoClienteSeccion from "./PresupuestoClienteSeccion";
@@ -171,7 +170,6 @@ export default function CosteoTab() {
 
       {presupuestoActivo && (
         <div className="border border-line rounded p-4">
-          <AprobacionSeccion presupuestoId={presupuestoActivo.id} estado={presupuestoActivo.estado} />
           <div className="flex justify-between items-center mb-3">
             <h2 className="font-medium">Costeo de materiales</h2>
             <button

@@ -157,15 +157,16 @@ def test_el_valor_a_mano_no_exige_decir_quien_es(persona):
 # --- Quién creó cada cosa ------------------------------------------------------------------
 
 
-def test_trabajos_y_presupuestos_guardan_quien_los_creo(persona):
+def test_los_presupuestos_guardan_quien_los_creo_y_los_trabajos_ya_no(persona):
+    """Sin login (A26), crear un trabajo no pide sesión: no hay quién. El presupuesto, sin pantalla, la sigue
+    pidiendo."""
     vale = persona("vale")
 
     trabajo = vale.post("/trabajos", json={"nombre": "Parador"}).json()
     presupuesto = _presupuesto(vale)
 
-    assert trabajo["creado_por"]["nombre"] == "Vale"
+    assert trabajo["creado_por"] is None
     assert presupuesto["creado_por"]["nombre"] == "Vale"
-    assert vale.get(f"/trabajos/{trabajo['id']}").json()["creado_por"] == trabajo["creado_por"]
     assert vale.get(f"/presupuestos/{presupuesto['id']}").json()["creado_por"]["nombre"] == "Vale"
 
 

@@ -48,13 +48,15 @@
 
 ## Tarea 1 · El login
 
-- [ ] **Servidor.** En `autenticacion.py`, `pedido_propio(request)`: 403 «Pedido no permitido.» si el método cambia datos y falta `X-Cartel-Pedido`; nada más. `app.py` la pone en cada grupo de rutas en lugar de `usuario_actual`. `usuario_actual` y `exigir_permiso` quedan para las rutas de usuarios y presupuesto que ya los piden.
-- [ ] **Quién creó.** `crear_trabajo` y `confirmar_importacion` dejan de pedir `usuario_actual`; `creado_por_id` queda vacío.
-- [ ] **Guardiana.** `test_todas_las_rutas_exigen_sesion.py` → `test_todas_las_rutas_piden_el_encabezado.py`: toda ruta que cambia datos, sin el encabezado, da 403; y una ruta de trabajos sin cookie responde (no 401).
-- [ ] **Pruebas que esperaban 401** en rutas comunes: se ajustan. Las de `/acceso` y `/usuarios` quedan como están.
-- [ ] **Pantalla.** `App.tsx` sin `SesionProvider`, `RutaProtegida`, `/entrar`, `/cuenta`, `/usuarios`; esas tres direcciones llevan al inicio. `Barra.tsx` sin nombre, «Cerrar sesión» ni «Usuarios». `client.ts` sin `alPerderLaSesion`; el encabezado propio se sigue mandando.
-- [ ] Se borran `Entrar.tsx`, `MiCuenta.tsx`, `Usuarios.tsx`, `RutaProtegida.tsx`, `auth/` y sus pruebas, y lo de `api/` que solo usaban ellos.
-- [ ] `pytest` completo, `npm test` y `npm run build` en verde. Commit: `feat(a26): la app entra directo, sin login`.
+- [x] **Servidor.** En `autenticacion.py`, `pedido_propio(request)`: 403 «Pedido no permitido.» si el método cambia datos y falta `X-Cartel-Pedido`; nada más. `app.py` la pone en cada grupo de rutas en lugar de `usuario_actual`. `usuario_actual` y `exigir_permiso` quedan para las rutas de usuarios y presupuesto que ya los piden.
+- [x] **Quién creó.** `crear_trabajo` y `confirmar_importacion` dejan de pedir `usuario_actual`; `creado_por_id` queda vacío.
+- [x] **Guardiana.** `test_todas_las_rutas_exigen_sesion.py` → `test_todas_las_rutas_piden_el_encabezado.py`: toda ruta que cambia datos, sin el encabezado, da 403; y una ruta de trabajos sin cookie responde (no 401).
+- [x] **Pruebas que esperaban 401** en rutas comunes: se ajustan. Las de `/acceso` y `/usuarios` quedan como están.
+- [x] **Pantalla.** `App.tsx` sin `SesionProvider`, `RutaProtegida`, `/entrar`, `/cuenta`, `/usuarios`; esas tres direcciones llevan al inicio. `Barra.tsx` sin nombre, «Cerrar sesión» ni «Usuarios». `client.ts` sin `alPerderLaSesion`; el encabezado propio se sigue mandando.
+- [x] Se borran `Entrar.tsx`, `MiCuenta.tsx`, `Usuarios.tsx`, `RutaProtegida.tsx`, `auth/` y sus pruebas, y lo de `api/` que solo usaban ellos.
+- [x] **La aprobación del presupuesto sale acá y no en la Tarea 3:** era lo único del presupuesto que usaba la sesión (aprobar pide un usuario con permiso). Se borra `AprobacionSeccion.tsx` y se la saca del Costeo.
+- [x] La guía del desarrollo nombra la guardiana nueva.
+- [x] `pytest` completo, `npm test` y `npm run build` en verde. Commit: `feat(a26): la app entra directo, sin login`.
 - [ ] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 2 · Elegir la chapa del grupo

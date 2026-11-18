@@ -1,9 +1,8 @@
 import { NavLink } from "react-router-dom";
-import { administraUsuarios } from "../auth/permisos";
-import { useSesion } from "../auth/SesionContext";
 
 // La barra fija de arriba, en todas las pantallas (A16, diseño §5.1).
 // Cada lugar tiene su pantalla: Materiales desde A18 y Presupuestos desde A19.
+// Sin login desde A26: no hay usuario, «Mi cuenta» ni «Cerrar sesión».
 
 const LUGAR = "h-12 flex items-center px-1 border-b-[3px] pt-[3px] text-sm";
 
@@ -12,11 +11,10 @@ function claseDelLugar({ isActive }: { isActive: boolean }): string {
 }
 
 export default function Barra() {
-  const { yo, salir } = useSesion();
   return (
     <header className="sticky top-0 z-20 h-12 bg-negro text-paper">
       <nav className="h-full max-w-6xl mx-auto px-4 sm:px-8 flex items-center gap-6" aria-label="Secciones">
-        <span className="font-display italic font-extrabold uppercase tracking-wide text-[17px] mr-4">Cotizador</span>
+        <span className="font-display italic font-extrabold uppercase tracking-wide text-[17px] mr-4">Cartelería</span>
         <NavLink to="/" end className={claseDelLugar}>
           Inicio
         </NavLink>
@@ -30,23 +28,6 @@ export default function Barra() {
         <NavLink to="/materiales" className={claseDelLugar}>
           Materiales
         </NavLink>
-        {/* Solo para quien administra usuarios (1.1). */}
-        {administraUsuarios(yo) && (
-          <NavLink to="/usuarios" className={claseDelLugar}>
-            Usuarios
-          </NavLink>
-        )}
-        {/* A la derecha: quién entró, su cuenta y salir (1.1). */}
-        {yo && (
-          <div className="ml-auto flex items-center gap-4 text-sm">
-            <NavLink to="/cuenta" className={claseDelLugar} title="Mi cuenta">
-              {yo.nombre}
-            </NavLink>
-            <button type="button" className="underline text-paper/70 hover:text-paper" onClick={() => void salir()}>
-              Cerrar sesión
-            </button>
-          </div>
-        )}
       </nav>
     </header>
   );

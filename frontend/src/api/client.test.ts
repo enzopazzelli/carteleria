@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  alPerderLaSesion,
   API_BASE,
   apiDelete,
   apiGet,
@@ -92,7 +91,6 @@ describe("sin servidor", () => {
 describe("el pedido (1.1)", () => {
   afterEach(() => {
     vi.restoreAllMocks();
-    alPerderLaSesion(null);
   });
 
   function respuesta(status: number, cuerpo: unknown = {}) {
@@ -127,35 +125,11 @@ describe("el pedido (1.1)", () => {
     expect((fetchFalso.mock.calls[4][1].headers as Record<string, string>)["Content-Type"]).toBeUndefined();
   });
 
-  it("un 401 avisa a quien pidió enterarse de que se perdió la sesión", async () => {
-    const aviso = vi.fn();
-    alPerderLaSesion(aviso);
-    vi.stubGlobal("fetch", respuesta(401, { detail: { mensaje: "Entrá con tu usuario y contraseña." } }));
-
-    await expect(apiGet("/trabajos")).rejects.toMatchObject({ status: 401 });
-
-    expect(aviso).toHaveBeenCalledTimes(1);
-  });
-
-  it("un 401 al entrar (contraseña mala) no cuenta como perder la sesión", async () => {
-    const aviso = vi.fn();
-    alPerderLaSesion(aviso);
-    vi.stubGlobal("fetch", respuesta(401, { detail: { mensaje: "Usuario o contraseña incorrectos." } }));
-
-    await expect(apiPost("/acceso/entrar", {})).rejects.toMatchObject({ status: 401 });
-
-    expect(aviso).not.toHaveBeenCalled();
-  });
-
-  it("otros errores no avisan, y un pedido que no llega sigue dando SIN_CONEXION", async () => {
-    const aviso = vi.fn();
-    alPerderLaSesion(aviso);
-    vi.stubGlobal("fetch", respuesta(403, { detail: { mensaje: "No tenés permiso para hacer esto." } }));
+  it("un error del servidor llega como ApiError, y un pedido que no llega da SIN_CONEXION", async () => {
+    vi.stubGlobal("fetch", respuesta(403, { detail: { mensaje: "Pedido no permitido." } }));
     await expect(apiGet("/x")).rejects.toMatchObject({ status: 403 });
 
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
     await expect(apiGet("/x")).rejects.toMatchObject({ status: 0, message: SIN_CONEXION });
-
-    expect(aviso).not.toHaveBeenCalled();
   });
 });
