@@ -31,9 +31,9 @@
 
 ## Tarea 2 · La vista
 
-- [ ] `RetazosPorMaterial.tsx`: la cuenta de arriba, el buscador, la casilla, un bloque por material con sus medidas abribles y el enlace al material.
-- [ ] `routes/Materiales.tsx`: los botones «Materiales» / «Retazos»; el enlace de un material vuelve a «Materiales» con ese material elegido.
-- [ ] `npm test` y `npm run build` en verde. Commit: `feat(a28): la vista Retazos en Materiales`.
+- [x] `RetazosPorMaterial.tsx`: la cuenta de arriba, el buscador, la casilla, un bloque por material con sus medidas abribles y el enlace al material.
+- [x] `routes/Materiales.tsx`: los botones «Materiales» / «Retazos»; el enlace de un material vuelve a «Materiales» con ese material elegido.
+- [x] `npm test` y `npm run build` en verde. Commit: `feat(a28): la vista Retazos en Materiales`.
 - [ ] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 3 · Verificar, documentar y cerrar
