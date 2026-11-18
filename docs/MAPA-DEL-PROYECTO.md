@@ -10,7 +10,7 @@
 
 ## 0. Rumbo nuevo (2026-11-18)
 
-Después de la demo en la cartelería, el cliente pidió quitar el login, el presupuesto y «Comparar formatos», y no va a haber servidor: el sistema se instala en cada computadora. **El producto final es el DXF de cada chapa y el PDF del diseño anidado.** Lo que se saca se **apaga, no se borra**: deja de verse y de pedirse, pero el código del servidor y las tablas quedan (A26: [`plan/A26-sacar-lo-que-no-va/diseno.md`](plan/A26-sacar-lo-que-no-va/diseno.md)). Todo lo que este mapa dice del presupuesto, la aprobación, los usuarios y el servidor quedó en ese estado. El rumbo, en [`plan/PLAN-MAESTRO.md §0`](plan/PLAN-MAESTRO.md).
+Después de la demo en la cartelería, el cliente pidió quitar el login, el presupuesto y «Comparar formatos», y no va a haber servidor: el sistema se instala en cada computadora. **El producto final es el DXF de cada chapa y el PDF del diseño anidado.** Lo que se saca se **apaga, no se borra**: deja de verse y de pedirse, pero el código del servidor y las tablas quedan (A26: [`historico/A26-sacar-lo-que-no-va/diseno.md`](historico/A26-sacar-lo-que-no-va/diseno.md)). Todo lo que este mapa dice del presupuesto, la aprobación, los usuarios y el servidor quedó en ese estado. El rumbo, en [`plan/PLAN-MAESTRO.md §0`](plan/PLAN-MAESTRO.md).
 
 ---
 

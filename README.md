@@ -6,7 +6,7 @@ Un sistema a medida para una empresa de cartelería de gran formato en chapa. Ll
 2. **Acomodar las piezas en la chapa** (el *anidado*, o *nesting*), para desperdiciar lo menos posible.
 3. **Sacar lo que se corta:** un DXF por chapa para la máquina y un PDF del diseño anidado para imprimir.
 
-> **Hoy (2026-11-18):** funciona de punta a punta y **se instala en cada computadora** de la empresa, sin internet, sin servidor y sin usuarios. Después de la demo del 2026-11-18, el cliente pidió quitar el login, el presupuesto y la comparación de chapas: **el producto final es el DXF y el PDF** ([`A26`](docs/plan/A26-sacar-lo-que-no-va/diseno.md)).
+> **Hoy (2026-11-18):** funciona de punta a punta y **se instala en cada computadora** de la empresa, sin internet, sin servidor y sin usuarios. Después de la demo del 2026-11-18, el cliente pidió quitar el login, el presupuesto y la comparación de chapas: **el producto final es el DXF y el PDF** ([`A26`](docs/historico/A26-sacar-lo-que-no-va/diseno.md)).
 
 **Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) · **Equipo:** Enzo (todo lo que no es el motor) y Vale (motor de anidado) · **Última actualización:** 2026-11-18 · **Versión etiquetada:** `v2026.11.09` (una foto del estado de ese día; todavía no hay numeración) · [Bitácora](docs/BITACORA.md)
 
@@ -117,11 +117,10 @@ Una sola regla del servidor decide qué anidado cuenta: la tarjeta del inicio, e
 
 | Qué | Para qué | Quién |
 |---|---|---|
-| **A26: sacar lo que no va** (login, presupuesto, comparar formatos) | Lo que pidió el cliente en la demo | Enzo, en curso ([plan](docs/plan/A26-sacar-lo-que-no-va/plan.md)) |
-| **A27: deshacer en el ajuste del anidado** | Volver atrás arrastrar, girar o pasar una pieza de chapa. Hoy, al devolver una pieza a su chapa, cae en otro lugar | Enzo, después de A26 |
+| **A27: deshacer en el ajuste del anidado** | Volver atrás arrastrar, girar o pasar una pieza de chapa. Hoy, al devolver una pieza a su chapa, cae en otro lugar | Enzo, en curso |
 | **A28: retazos agrupados por material** | Ver todos los retazos juntos y saber qué hay de cada material | Enzo, después de A27 |
 | **Kerf, margen y separación de 15 materiales** (ACM, PVC, Metalex, Polyfan, entre otros) | Sin esos valores no se puede anidar con esas chapas | Falta el dato del taller |
-| **Rearmar el instalador** con esta versión | Que la cartelería tenga lo nuevo | Enzo, cuando cierre A26 |
+| **Rearmar el instalador** con esta versión | Que la cartelería tenga lo nuevo (A26 ya está en `main`) | Enzo, cuando lo pida |
 | **Medir la segunda tanda de A17** (unos 75 minutos con la máquina libre) | Decidir cómo repartir el tiempo del anidado | Enzo, solo cuando la pida |
 
 **Abierto (2026-11-18):** si la empresa instala en varias computadoras, cada una tiene su base: los retazos usados en una siguen apareciendo disponibles en la otra. La alternativa es que una sola computadora tenga el sistema y las demás entren por wifi, como en la demo.
@@ -240,9 +239,9 @@ cartelería/
 
 ```mermaid
 flowchart LR
-    H["HECHO<br/>Del dibujo al corte:<br/>lectura, grupos, anidado,<br/>chapas, DXF y PDF,<br/>materiales e instalador"]
-    N["AHORA<br/>A26: sacar el login,<br/>el presupuesto y la<br/>comparación de chapas"]
-    D["DESPUÉS<br/>A27: deshacer en el ajuste<br/>A28: retazos por material"]
+    H["HECHO<br/>Del dibujo al corte:<br/>lectura, grupos, anidado,<br/>chapas, DXF y PDF,<br/>materiales e instalador.<br/>A26: sin login ni presupuesto"]
+    N["AHORA<br/>A27: deshacer<br/>en el ajuste"]
+    D["DESPUÉS<br/>A28: retazos<br/>por material"]
     H --> N --> D
 
     classDef hecho fill:#cfe8d5,stroke:#3d7a52,color:#14351f
@@ -322,7 +321,6 @@ Lo que vale siempre. Se edita.
 
 | Documento | Qué contiene |
 |---|---|
-| [`A26-sacar-lo-que-no-va/`](docs/plan/A26-sacar-lo-que-no-va/diseno.md) | Lo que pidió el cliente en la demo del 2026-11-18: sin login, sin presupuesto, una sola chapa por grupo ([`plan.md`](docs/plan/A26-sacar-lo-que-no-va/plan.md)) |
 | [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) | **El plan vigente.** Etapas, sub-proyectos en orden, el enchufe del motor y las decisiones abiertas. Cada sub-proyecto suma acá su propia carpeta con `diseno.md` y `plan.md` |
 
 ### `docs/motor/` — el motor de anidado
@@ -362,6 +360,7 @@ Lo que vale siempre. Se edita.
 | [`FACTIBILIDAD-NESTING-WEB.md`](docs/historico/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores en el navegador |
 | [`ENTREGAS-HECHAS.md`](docs/historico/ENTREGAS-HECHAS.md) | Lo que ya está en `main`, entrega por entrega (A10 a A25), con fechas y migraciones aplicadas en la base real |
 | [`SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | ¿Se puede leer `.cdr` sin CorelDRAW? Sí, con dos límites conocidos. Lo cita `D-11` |
+| [`A26-sacar-lo-que-no-va/`](docs/historico/A26-sacar-lo-que-no-va/diseno.md) | Lo que pidió el cliente en la demo del 2026-11-18: sin login, sin presupuesto, una sola chapa por grupo. Fusionado el 2026-11-18 (PR #37) |
 | [`1.1-servidor-y-login/`](docs/historico/1.1-servidor-y-login/diseno.md) | Usuarios y login (hecho el 2026-11-09, apagado el 2026-11-18), Docker, PostgreSQL, copias y el servidor alquilado (no se hace: el cliente instala en cada computadora) |
 
 ### `fuentes/` — documentos originales

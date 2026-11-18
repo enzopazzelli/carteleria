@@ -57,7 +57,7 @@
 - [x] **La aprobación del presupuesto sale acá y no en la Tarea 3:** era lo único del presupuesto que usaba la sesión (aprobar pide un usuario con permiso). Se borra `AprobacionSeccion.tsx` y se la saca del Costeo.
 - [x] La guía del desarrollo nombra la guardiana nueva.
 - [x] `pytest` completo, `npm test` y `npm run build` en verde. Commit: `feat(a26): la app entra directo, sin login`.
-- [ ] **Pausa: mostrar a Enzo y esperar el ok.**
+- [x] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 2 · Elegir la chapa del grupo
 
@@ -69,7 +69,7 @@
 - [x] **Queda sin uso, para la limpieza:** en `PiezasTab.tsx`, la lectura de `?seccionar=…&formato=…`, que armaba solo la comparación. Lo que no entra en la chapa del grupo lo sigue diciendo Piezas (`useASeccionar`) y el anidado («Estas piezas no entran en la chapa…»).
 - [x] Pruebas de la pantalla: el texto de la chapa del grupo (con y sin chapa) en una función aparte con su prueba.
 - [x] `npm test` y `npm run build` en verde. Commit: `feat(a26): cada grupo elige su chapa, sin comparar`.
-- [ ] **Pausa: mostrar a Enzo y esperar el ok.**
+- [x] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 3 · El presupuesto
 
@@ -83,7 +83,7 @@
 - [x] En Materiales, la revisión de la planilla pierde la nota de los presupuestos ya armados. Las invalidaciones de la caché del costeo salen de los ganchos.
 - [x] **Visto en el navegador** contra una copia: inicio, enlaces viejos, Chapas, Anidado y Materiales sin «presupuesto» ni «costeo»; PDF del Parador sin presupuesto.
 - [x] `pytest` completo, `npm test` y `npm run build` en verde. Commit: `feat(a26): sin presupuesto: el recorrido termina en Chapas`.
-- [ ] **Pausa: mostrar a Enzo y esperar el ok.**
+- [x] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 4 · Documentación
 
@@ -94,9 +94,9 @@
 - [x] `BITACORA.md`: la entrada de la demo y de este pedido.
 - [x] También: `MAPA-DEL-PROYECTO.md §0`, `CONVENCIONES.md` (el ejemplo de carpeta de plan) y la guía del usuario con «Abrir el sistema» en lugar de «Entrar y tu cuenta». Sin enlaces rotos en lo tocado.
 - [x] Commit: `docs(a26): el rumbo nuevo después de la demo`.
-- [ ] **Pausa: mostrar a Enzo y esperar el ok.**
+- [x] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 5 · Verificar y cerrar
 
 - [x] Recorrido en Chrome sin ventana contra una copia de la base: entra directo; crear un trabajo y cargar el DXF de demostración (11 piezas); armar el grupo; elegir la chapa (CHAPA NEGRA cal. 14); anidar; DXF (200, `application/dxf`) y PDF (200, `application/pdf`) desde Anidado y Chapas; «Listo para cortar» lleva a Chapas; cambiar la chapa y ver «Falta volver a anidar» y «anidá de nuevo antes de cortar»; los cinco enlaces viejos. Sin errores de consola. (En lugar del Complejo, el DXF de demostración: anidar el Complejo tarda unos 4 minutos y no prueba nada distinto de A26.)
-- [ ] PR a `main` con el resumen y las capturas. Después del ok de Enzo, fusionar, pasar la carpeta a `docs/historico/` y borrar la rama.
+- [x] PR #37 a `main`, CI en verde, fusionado el 2026-11-18 (`1075a71`) con el ok de Enzo; carpeta en `docs/historico/` y rama borrada.

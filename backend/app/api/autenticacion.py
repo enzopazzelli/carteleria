@@ -2,7 +2,7 @@
 
 **Desde A26 la app no tiene login** (el cliente lo pidió en la demo del 2026-11-18): las rutas del sistema
 piden solo `pedido_propio`. `usuario_actual` y `exigir_permiso` quedan para las rutas de usuarios y de
-presupuesto, que ya no usa ninguna pantalla (`docs/plan/A26-sacar-lo-que-no-va/diseno.md §2` y `§3`).
+presupuesto, que ya no usa ninguna pantalla (`docs/historico/A26-sacar-lo-que-no-va/diseno.md §2` y `§3`).
 
 `usuario_actual` es la dependencia que exige haber entrado: lee la cookie, valida la sesión y dice quién
 es. Se pone **una sola vez por grupo de rutas** (`app.py`), no en cada ruta, y una prueba guardiana

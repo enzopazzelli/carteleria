@@ -1,6 +1,6 @@
 # 1.1 · Usuarios y servidor — plan de implementación
 
-> **Pasó a `docs/historico/` el 2026-11-18 (A26).** Después de la demo, el cliente pidió quitar el login y no va a haber servidor: la app se instala en cada computadora. El login de la entrega A2 quedó en el código, apagado (ninguna ruta pide sesión y no hay pantallas de usuarios); las tablas siguen en la base. La entrega A3 (Docker, copias, PostgreSQL) y la fase B (servidor y dominio) no se van a hacer. Ver [`../../plan/A26-sacar-lo-que-no-va/diseno.md`](../../plan/A26-sacar-lo-que-no-va/diseno.md).
+> **Pasó a `docs/historico/` el 2026-11-18 (A26).** Después de la demo, el cliente pidió quitar el login y no va a haber servidor: la app se instala en cada computadora. El login de la entrega A2 quedó en el código, apagado (ninguna ruta pide sesión y no hay pantallas de usuarios); las tablas siguen en la base. La entrega A3 (Docker, copias, PostgreSQL) y la fase B (servidor y dominio) no se van a hacer. Ver [`../A26-sacar-lo-que-no-va/diseno.md`](../A26-sacar-lo-que-no-va/diseno.md).
 
 > **Para quien lo ejecute:** usar `superpowers:executing-plans` (en esta sesión) o `superpowers:subagent-driven-development`. Los pasos son casillas (`- [ ]`). **Enzo pidió pasos chicos con su visto bueno**: no encadenar tareas sin pausar; al terminar cada una, mostrar qué cambió y esperar el ok.
 

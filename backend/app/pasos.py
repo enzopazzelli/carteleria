@@ -1,7 +1,7 @@
 """Los pasos de la tarjeta de un trabajo — `docs/plan/A16-pagina-de-inicio/diseno.md §5.4`.
 
 Desde A26 no hay paso de presupuesto: el recorrido termina en Chapas, con el DXF y el PDF
-(`docs/plan/A26-sacar-lo-que-no-va/diseno.md §5`).
+(`docs/historico/A26-sacar-lo-que-no-va/diseno.md §5`).
 
 Recibe lo que ya se leyó de la base (`api/rutas_inicio.py`) y decide en
 qué quedó cada paso, qué frase lleva la tarjeta y a dónde lleva. No toca

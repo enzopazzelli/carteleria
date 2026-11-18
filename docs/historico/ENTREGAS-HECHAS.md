@@ -10,6 +10,13 @@
 
 
 **Ya está en `main`:**
+- **Sacar lo que no va (A26), desde el 2026-11-18.**
+  - **Para qué:** lo que pidió el cliente en la demo: sin login, sin presupuesto y sin «Comparar formatos». El producto final es el DXF de cada chapa y el PDF del diseño anidado, y no va a haber servidor: se instala en cada computadora.
+  - **Lo que se nota:** la app entra directo; la barra dice «Cartelería» y tiene Inicio, Trabajos y Materiales; un trabajo tiene cuatro etapas (sin Costeo); cada grupo elige **una** chapa con «Elegir chapa»; con todo anidado la tarjeta dice «Listo para cortar» y lleva a Chapas. El PDF del diseño anidado ya no nombra el presupuesto.
+  - **Apagado, no borrado:** sin migración; las tablas de usuarios, presupuestos y clientes siguen en la base, y el servidor del presupuesto, de la comparación y de los usuarios sigue montado, sin pantalla. Las rutas piden solo el encabezado propio en lo que cambia datos.
+  - **La base real no hace falta tocarla:** no hay migración.
+
+  Ver [`historico/A26-sacar-lo-que-no-va/`](A26-sacar-lo-que-no-va/diseno.md).
 - **Una referencia para la escala, desde el 2026-11-11.** Al elegir el DXF, debajo de la cajita de escala aparece «Con esta escala, el dibujo mide 4.610 × 7.760 mm (4,61 × 7,76 m)», que se recalcula mientras se escribe, y una explicación fija de qué es la escala (1 si el dibujo está en milímetros, 10 en centímetros, 1000 en metros). El servidor mide el dibujo en sus propias unidades con `POST /dxf/medida`; la pantalla multiplica. No hay alarmas: es solo la referencia. Sin migración.
 - **Una sola regla de qué anidado cuenta para el presupuesto (A25), desde el 2026-11-09.**
   - **Para qué:** que el costeo, la tarjeta del inicio, el PDF y Chapas digan lo mismo de un grupo. Antes cada uno lo decidía por su cuenta, y solo el costeo notaba si la chapa cambiaba después de anidar.

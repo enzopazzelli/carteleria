@@ -64,7 +64,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Qué se hizo
 - **Notas de la demo** (Enzo, desde la oficina): quitar el login, quitar «Comparar formatos», quitar el presupuesto («el producto final tiene que ser el DXF y el PDF»), un botón para deshacer en el ajuste del anidado, ver los retazos agrupados por material, y **sin despliegue**: el cliente prefiere instalar en cada computadora, como la demo.
-- **A26, en la rama `feat/a26-sacar-lo-que-no-va`** ([diseño](plan/A26-sacar-lo-que-no-va/diseno.md), [plan](plan/A26-sacar-lo-que-no-va/plan.md)), en cuatro commits:
+- **A26, en la rama `feat/a26-sacar-lo-que-no-va`** ([diseño](historico/A26-sacar-lo-que-no-va/diseno.md), [plan](historico/A26-sacar-lo-que-no-va/plan.md)), en cuatro commits:
   - **Sin login.** Las rutas piden solo el encabezado propio en lo que cambia datos (`pedido_propio`), que frena pedidos mandados desde otra página. Salen Entrar, Mi cuenta, Usuarios y la aprobación del presupuesto. La barra dice «Cartelería».
   - **Una sola chapa por grupo.** «Elegir chapa» / «Cambiar chapa» abre la lista de chapas en modo de elegir una (con filtros, buscador y retazos) y «Usar esta chapa» la asigna sin anidar. Hallazgo: «Usar este» de la comparación era la única forma de darle chapa a un grupo.
   - **Sin presupuesto.** La tarjeta dice «Listo para cortar» y lleva a Chapas; salen el menú Presupuestos, la pestaña Costeo y los presupuestos del inicio. El PDF del diseño anidado tampoco los nombra (llevaba el código y el cliente en el encabezado), y los avisos de vencido dicen «anidá de nuevo antes de cortar».
