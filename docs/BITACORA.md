@@ -58,6 +58,31 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-18 — Retazos agrupados por material (A28)
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+- **El pedido de la demo:** ver los retazos juntos, agrupados por material, para saber qué hay. Hasta ahora solo se veían adentro del detalle de cada material.
+- **A28** ([diseño](historico/A28-retazos-por-material/diseno.md)), solo pantalla, sin servidor ni migración:
+  - Materiales tiene dos vistas, «Materiales» y «Retazos».
+  - «Retazos»: un bloque por material con su espesor y su cuenta (disponibles y m²), las medidas iguales juntas (600 × 400 y 400 × 600 son la misma), cada medida abre sus retazos con de dónde salió y en qué anda, un buscador y una casilla para sumar usados y quitados. Solo se mira; el nombre del material abre ese material.
+  - Función `retazosPorMaterial` en `components/Materiales/retazos.ts`, con 7 pruebas.
+- Pruebas: 337 de la pantalla en verde; recorrido en Chrome sin ventana contra una copia de la base (2 retazos disponibles, 1,53 m²): la cuenta coincide con el catálogo, abrir una medida, el buscador, la casilla (la cuenta no cambia, aparece la medida del retazo no disponible) y el enlace al material. Sin errores de consola.
+
+### Qué se decidió
+- Decisiones mías, a corregir: una vista aparte, solo se mira, por defecto solo disponibles, medidas giradas como la misma.
+
+### Cambios en el registro
+Sin cambios.
+
+### Pendiente
+- Con A28 se cierran los pedidos de la demo. Queda **rearmar el instalador** con A26, A27 y A28, y avisarle a Vale que el despliegue ya no es suyo.
+- 15 de los 44 materiales sin kerf, margen y separación.
+- Abierto: con instalaciones separadas, cada computadora tiene su base (los retazos de una no se ven en la otra).
+
+---
+
 ## 2026-11-18 — Deshacer en el ajuste del anidado (A27)
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —

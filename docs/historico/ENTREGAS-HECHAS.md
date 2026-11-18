@@ -10,6 +10,12 @@
 
 
 **Ya está en `main`:**
+- **Retazos agrupados por material (A28), desde el 2026-11-18.**
+  - **Para qué:** saber qué retazos hay sin entrar material por material.
+  - **Lo que se nota:** Materiales tiene dos vistas, «Materiales» y «Retazos». «Retazos» muestra un bloque por material con cuántos disponibles hay y cuántos m², las medidas iguales juntas (600 × 400 y 400 × 600 son la misma) y, al abrir una medida, de dónde salió cada retazo y en qué anda. Un buscador y una casilla para sumar usados y quitados. Solo se mira.
+  - **Sin migración:** el catálogo ya traía todo.
+
+  Ver [`historico/A28-retazos-por-material/`](A28-retazos-por-material/diseno.md).
 - **Deshacer en el ajuste del anidado (A27), desde el 2026-11-18.**
   - **Para qué:** al pasar una pieza a otra chapa y devolverla, caía en otro lugar. Ahora se puede volver atrás.
   - **Cómo funciona:** un botón «↶ Deshacer» arriba en Chapas (y Ctrl+Z) que dice qué va a deshacer. Vuelve atrás mover, girar y pasar de chapa, con el reacomodo: la pieza queda en su lugar exacto, y la chapa creada o quitada vuelve a como estaba. Guarda los últimos 20 cambios por anidado; los giros seguidos de una pieza cuentan como uno.

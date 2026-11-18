@@ -117,7 +117,6 @@ Una sola regla del servidor decide qué anidado cuenta: la tarjeta del inicio, e
 
 | Qué | Para qué | Quién |
 |---|---|---|
-| **A28: retazos agrupados por material** | Ver todos los retazos juntos y saber qué hay de cada material | Enzo, en curso |
 | **Kerf, margen y separación de 15 materiales** (ACM, PVC, Metalex, Polyfan, entre otros) | Sin esos valores no se puede anidar con esas chapas | Falta el dato del taller |
 | **Rearmar el instalador** con esta versión | Que la cartelería tenga lo nuevo (A26 ya está en `main`) | Enzo, cuando lo pida |
 | **Medir la segunda tanda de A17** (unos 75 minutos con la máquina libre) | Decidir cómo repartir el tiempo del anidado | Enzo, solo cuando la pida |
@@ -238,8 +237,8 @@ cartelería/
 
 ```mermaid
 flowchart LR
-    H["HECHO<br/>Del dibujo al corte:<br/>lectura, grupos, anidado,<br/>chapas, DXF y PDF,<br/>materiales e instalador.<br/>A26: sin login ni presupuesto.<br/>A27: deshacer en el ajuste"]
-    N["AHORA<br/>A28: retazos<br/>por material"]
+    H["HECHO<br/>Del dibujo al corte:<br/>lectura, grupos, anidado,<br/>chapas, DXF y PDF,<br/>materiales e instalador.<br/>A26: sin login ni presupuesto.<br/>A27: deshacer en el ajuste.<br/>A28: retazos por material"]
+    N["AHORA<br/>Rearmar el instalador<br/>con lo nuevo"]
     H --> N
 
     classDef hecho fill:#cfe8d5,stroke:#3d7a52,color:#14351f

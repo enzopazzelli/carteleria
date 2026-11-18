@@ -38,6 +38,6 @@
 
 ## Tarea 3 · Verificar, documentar y cerrar
 
-- [ ] Recorrido en Chrome sin ventana contra una copia: guardar un sobrante como retazo, ver «Retazos», abrir una medida, la casilla, el buscador y el enlace al material.
-- [ ] Guía del usuario, README, entregas hechas y bitácora.
+- [x] Recorrido en Chrome sin ventana contra una copia: guardar un sobrante como retazo, ver «Retazos», abrir una medida, la casilla, el buscador y el enlace al material.
+- [x] Guía del usuario, README, entregas hechas y bitácora.
 - [ ] PR a `main`. Con el ok de Enzo, fusionar, pasar la carpeta a `docs/historico/` y borrar la rama.
