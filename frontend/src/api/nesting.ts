@@ -120,8 +120,13 @@ export interface MovidaDeChapa {
   chapa_quitada: number | null;
   /** La chapa que se reacomodó para que entre la pieza (A17), con su número final. */
   reacomodada: number | null;
-  /** Si «Deshacer» puede dejar todo como antes del reacomodo. */
-  puede_deshacer: boolean;
+}
+
+/** Lo que se puede deshacer del ajuste de un anidado (A27). */
+export interface EstadoDeshacer {
+  cuantos: number;
+  /** Lo que dice el botón: «pasar «P12» a la chapa 3». `null` si no hay nada. */
+  ultimo: string | null;
 }
 
 /** `planchaDestino` igual a la cantidad de chapas es una chapa nueva, al final. */
@@ -129,9 +134,13 @@ export function moverAOtraChapa(colocacionId: number, planchaDestino: number): P
   return apiPost<MovidaDeChapa>(`/colocaciones/${colocacionId}/a-otra-chapa`, { plancha_destino: planchaDestino });
 }
 
-/** Deja el anidado como estaba antes del último reacomodo (A17). */
-export function deshacerReacomodo(ejecucionId: number): Promise<MovidaDeChapa> {
-  return apiPost<MovidaDeChapa>(`/ejecuciones/${ejecucionId}/deshacer-reacomodo`, {});
+export function estadoDeshacer(ejecucionId: number): Promise<EstadoDeshacer> {
+  return apiGet<EstadoDeshacer>(`/ejecuciones/${ejecucionId}/deshacer`);
+}
+
+/** Vuelve atrás el último cambio del ajuste: mover, girar o pasar de chapa (A27). */
+export function deshacerUltimo(ejecucionId: number): Promise<MovidaDeChapa> {
+  return apiPost<MovidaDeChapa>(`/ejecuciones/${ejecucionId}/deshacer`, {});
 }
 
 export function urlPlano(ejecucionId: number, plancha: number): string {

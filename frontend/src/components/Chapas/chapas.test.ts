@@ -2,29 +2,30 @@ import { describe, expect, it } from "vitest";
 import type { Colocacion, Ejecucion } from "../../api/nesting";
 import type { Pieza } from "../../api/piezasYgrupos";
 import {
-  anidadoParaMostrar, anillosColocados, aprovechamientoDeChapa, areaDePieza, avisoDeReacomodo, cambioLaCantidadDeChapas,
+  anidadoParaMostrar, anillosColocados, aprovechamientoDeChapa, areaDePieza, avisoDeReacomodo, esDeshacer,
   lasDeAdentro,
 } from "./chapas";
 
-describe("cambioLaCantidadDeChapas", () => {
-  // Cuántas chapas tenía el anidado cuando un pase cambió la cantidad, con
-  // presupuestos ya hechos: el aviso dura mientras no vuelva a esa cantidad.
-  const antes = { ejecucionId: 7, chapas: 3 };
-
-  it("sin un pase que haya cambiado la cantidad, no avisa", () => {
-    expect(cambioLaCantidadDeChapas(null, { id: 7, planchas_usadas: 2 })).toBe(false);
+describe("esDeshacer", () => {
+  const tecla = (extra: object = {}) => ({
+    key: "z", ctrlKey: true, metaKey: false, shiftKey: false, target: { tagName: "DIV" }, ...extra,
   });
 
-  it("avisa mientras la cantidad sea otra", () => {
-    expect(cambioLaCantidadDeChapas(antes, { id: 7, planchas_usadas: 2 })).toBe(true);
+  it("Ctrl+Z y Cmd+Z deshacen", () => {
+    expect(esDeshacer(tecla())).toBe(true);
+    expect(esDeshacer(tecla({ ctrlKey: false, metaKey: true }))).toBe(true);
+    expect(esDeshacer(tecla({ key: "Z" }))).toBe(true);
   });
 
-  it("deja de avisar si «Deshacer» vuelve a la cantidad de antes", () => {
-    expect(cambioLaCantidadDeChapas(antes, { id: 7, planchas_usadas: 3 })).toBe(false);
+  it("la Z sola, otra tecla o Ctrl+Shift+Z no", () => {
+    expect(esDeshacer(tecla({ ctrlKey: false }))).toBe(false);
+    expect(esDeshacer(tecla({ key: "y" }))).toBe(false);
+    expect(esDeshacer(tecla({ shiftKey: true }))).toBe(false);
   });
 
-  it("no avisa por otro anidado", () => {
-    expect(cambioLaCantidadDeChapas(antes, { id: 8, planchas_usadas: 2 })).toBe(false);
+  it("no vale mientras se escribe en un campo", () => {
+    for (const tagName of ["INPUT", "TEXTAREA", "SELECT"]) expect(esDeshacer(tecla({ target: { tagName } }))).toBe(false);
+    expect(esDeshacer(tecla({ target: { tagName: "DIV", isContentEditable: true } }))).toBe(false);
   });
 });
 

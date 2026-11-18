@@ -67,10 +67,10 @@
 
 ## Tarea 3 · La pantalla
 
-- [ ] `api/nesting.ts`: `estadoDeshacer`, `deshacer`. `hooks/useNesting.ts`: `useDeshacer` (consulta) y `useDeshacerUltimo` (mutación); `useAjustarColocacion` y `useMoverAOtraChapa` refrescan `["deshacer", id]`. Sale `useDeshacerReacomodo`.
-- [ ] `ChapasTab.tsx`: el botón arriba, al lado de «Descargar PDF»; Ctrl+Z con una función aparte (`esDeshacer(evento)`, que no actúa dentro de un campo de texto) y su prueba; el aviso del reacomodo usa el general.
-- [ ] `ChapaGrande.tsx`: las marcas rojas se borran después de deshacer.
-- [ ] `npm test` y `npm run build` en verde. Commit: `feat(a27): el botón Deshacer en Chapas`.
+- [x] `api/nesting.ts`: `estadoDeshacer`, `deshacer`. `hooks/useNesting.ts`: `useDeshacer` (consulta) y `useDeshacerUltimo` (mutación); `useAjustarColocacion` y `useMoverAOtraChapa` refrescan `["deshacer", id]`. Sale `useDeshacerReacomodo`.
+- [x] `ChapasTab.tsx`: el botón arriba, al lado de «Descargar PDF»; Ctrl+Z con una función aparte (`esDeshacer(evento)`, que no actúa dentro de un campo de texto) y su prueba; el aviso del reacomodo usa el general.
+- [x] `ChapaGrande.tsx`: las marcas rojas se borran después de deshacer.
+- [x] `npm test` y `npm run build` en verde. Commit: `feat(a27): el botón Deshacer en Chapas`.
 - [ ] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 4 · Verificar, documentar y cerrar

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { urlPdfAnidado } from "../../api/nesting";
@@ -6,15 +6,29 @@ import type { GrupoDeCorte } from "../../api/piezasYgrupos";
 import Banner from "../../components/Banner";
 import ChapaGrande from "../../components/Chapas/ChapaGrande";
 import Mosaico from "../../components/Chapas/Mosaico";
-import { anidadoParaMostrar, avisoDeReacomodo } from "../../components/Chapas/chapas";
+import { anidadoParaMostrar, avisoDeReacomodo, esDeshacer } from "../../components/Chapas/chapas";
 import DisenioInicial from "../../components/Disenio/DisenioInicial";
 import { IluminadoProvider } from "../../components/Disenio/Iluminado";
 import { estadosPorPieza } from "../../components/Disenio/pintado";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import { useFormato } from "../../hooks/useCatalogo";
 import { useGrupos } from "../../hooks/useGrupos";
-import { useColocaciones, useDeshacerReacomodo, useEjecucionesDeGrupo, useMoverAOtraChapa } from "../../hooks/useNesting";
+import { useColocaciones, useDeshacerUltimo, useEjecucionesDeGrupo, useEstadoDeshacer, useMoverAOtraChapa } from "../../hooks/useNesting";
 import { usePiezas } from "../../hooks/usePiezas";
+
+/** Ctrl+Z deshace el último cambio del ajuste, salvo mientras se escribe en un campo (A27). */
+function AtajoDeshacer({ alDeshacer }: { alDeshacer: () => void }) {
+  useEffect(() => {
+    function alApretar(evento: KeyboardEvent) {
+      if (!esDeshacer({ ...evento, target: evento.target as HTMLElement | null })) return;
+      evento.preventDefault();
+      alDeshacer();
+    }
+    window.addEventListener("keydown", alApretar);
+    return () => window.removeEventListener("keydown", alApretar);
+  }, [alDeshacer]);
+  return null;
+}
 
 /** Todas las chapas del anidado de un grupo, con el diseño inicial pintado
  * por chapa (A14, `docs/plan/A14-chapas-en-conjunto/diseno.md §5.3`).
@@ -82,9 +96,12 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
   const mover = useMoverAOtraChapa(anidado?.id ?? -1);
   /** Por qué no se pudo pasar la última pieza (no hay lugar, anidado en curso...). */
   const [problema, setProblema] = useState<ApiError | null>(null);
-  /** La chapa que se reacomodó para que entre una pieza, mientras «Deshacer» vale (A17). */
+  /** La chapa que se reacomodó para que entre una pieza, hasta el próximo cambio (A17). */
   const [reacomodo, setReacomodo] = useState<{ chapa: number; nombre: string } | null>(null);
-  const deshacer = useDeshacerReacomodo(anidado?.id ?? -1);
+  const deshacer = useDeshacerUltimo(anidado?.id ?? -1);
+  const { data: paraDeshacer } = useEstadoDeshacer(anidado?.id ?? -1);
+  /** Sube al deshacer: la vista grande de una chapa se arma de nuevo, sin las marcas rojas de antes. */
+  const [version, setVersion] = useState(0);
 
   if (!anidado) {
     return <p className="text-sm text-ink/60">Este grupo todavía no tiene un anidado terminado: anidalo en la pestaña Anidado.</p>;
@@ -116,9 +133,7 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
     setProblema(null);
     try {
       const movida = await mover.mutateAsync({ colocacionId, planchaDestino: destino });
-      // Un pase que sí se hizo es un cambio: el «Deshacer» de antes ya no vale.
-      // Uno que falló no cambió nada, y el servidor todavía lo puede deshacer.
-      if (movida.reacomodada !== null && movida.puede_deshacer) {
+      if (movida.reacomodada !== null) {
         const pasada = colocaciones.find((c) => c.id === colocacionId);
         const nombre = piezas!.find((p) => p.id === pasada?.pieza_id)?.id_origen ?? "la pieza";
         setReacomodo({ chapa: movida.reacomodada, nombre });
@@ -131,11 +146,13 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
     }
   }
 
-  /** Deja todo como antes del reacomodo; si ya no se puede, el mensaje dice por qué. */
+  /** Vuelve atrás el último cambio del ajuste; si ya no se puede, el mensaje dice por qué (A27). */
   async function alDeshacer() {
+    if (!paraDeshacer?.cuantos || deshacer.isPending) return;
     setProblema(null);
     try {
       await deshacer.mutateAsync();
+      setVersion((v) => v + 1);
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       setProblema(error);
@@ -147,6 +164,18 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
   return (
     <div className="space-y-4">
       {anidado.aviso_de_no_cobrar && <Mensaje variante="aviso" que={anidado.aviso_de_no_cobrar} />}
+      <AtajoDeshacer alDeshacer={alDeshacer} />
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="text-sm border border-line rounded px-3 py-1 hover:bg-line/40 disabled:opacity-40 disabled:hover:bg-transparent"
+          disabled={!paraDeshacer?.cuantos || deshacer.isPending}
+          onClick={alDeshacer}
+          title="Ctrl+Z"
+        >
+          {deshacer.isPending ? "Deshaciendo…" : paraDeshacer?.ultimo ? `↶ Deshacer: ${paraDeshacer.ultimo}` : "↶ Deshacer"}
+        </button>
+      </div>
       <DisenioInicial trabajoId={trabajoId} modo="por_chapa" estados={estados} alClicPieza={irASuChapa} />
       {problema && <Mensaje variante="error" que={problema} trabajoId={trabajoId} />}
       {reacomodo && (
@@ -173,7 +202,7 @@ function ChapasDelGrupo({ trabajoId, grupoId, grupo }: { trabajoId: number; grup
       {!(anchoMm > 0 && altoMm > 0) ? (
         <p className="text-sm text-ink/60">Cargando las medidas de la chapa...</p>
       ) : abierta !== null && abierta < (anidado.planchas_usadas ?? 0) ? (
-        <ChapaGrande trabajoId={trabajoId} ejecucion={anidado} piezas={piezas} colocaciones={colocaciones}
+        <ChapaGrande key={version} trabajoId={trabajoId} ejecucion={anidado} piezas={piezas} colocaciones={colocaciones}
           indice={abierta} anchoMm={anchoMm} altoMm={altoMm} alVolver={() => setAbierta(null)}
           alCambiar={() => setReacomodo(null)} />
       ) : (
