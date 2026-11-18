@@ -1,4 +1,8 @@
-"""La sesión en el servidor (1.1, `docs/plan/1.1-servidor-y-login/diseno.md §4.2` y `§4.3`).
+"""La sesión en el servidor (1.1, `docs/historico/1.1-servidor-y-login/diseno.md §4.2` y `§4.3`).
+
+**Desde A26 la app no tiene login** (el cliente lo pidió en la demo del 2026-11-18): las rutas del sistema
+piden solo `pedido_propio`. `usuario_actual` y `exigir_permiso` quedan para las rutas de usuarios y de
+presupuesto, que ya no usa ninguna pantalla (`docs/plan/A26-sacar-lo-que-no-va/diseno.md §2` y `§3`).
 
 `usuario_actual` es la dependencia que exige haber entrado: lee la cookie, valida la sesión y dice quién
 es. Se pone **una sola vez por grupo de rutas** (`app.py`), no en cada ruta, y una prueba guardiana
@@ -46,14 +50,21 @@ def _ahora() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def pedido_propio(request: Request) -> None:
+    """403 si es un pedido que cambia datos y no trae el encabezado propio (A26). Sin login no hay cookie que
+    robar, pero el encabezado sigue frenando que una página ajena abierta en el mismo navegador mande
+    pedidos a la app: no puede agregarlo sin permiso del servidor, y el servidor no lo da (no hay CORS)."""
+    if request.method not in _PEDIDOS_QUE_NO_CAMBIAN_DATOS and ENCABEZADO_DE_PEDIDO not in request.headers:
+        raise ErrorPrevisto("Pedido no permitido.", estado=403)
+
+
 def usuario_actual(request: Request, sesion: Session = Depends(obtener_sesion)) -> UsuarioActual:
     """401 si no entró; 403 si es un pedido que cambia datos y no trae el encabezado propio."""
     token = request.cookies.get(COOKIE_DE_SESION)
     usuario = servicio.usuario_de_sesion(sesion, token, _ahora()) if token else None
     if usuario is None:
         raise ErrorPrevisto("Entrá con tu usuario y contraseña.", estado=401)
-    if request.method not in _PEDIDOS_QUE_NO_CAMBIAN_DATOS and ENCABEZADO_DE_PEDIDO not in request.headers:
-        raise ErrorPrevisto("Pedido no permitido.", estado=403)
+    pedido_propio(request)
     return UsuarioActual(
         id=usuario.id,
         usuario=usuario.usuario,

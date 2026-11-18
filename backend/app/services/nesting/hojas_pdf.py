@@ -82,7 +82,6 @@ class TrabajoDelPdf:
     nombre: str
     archivo: str | None
     generado: datetime
-    presupuesto: str | None
     bloques: list[BloqueDelPdf]
     #: Los grupos sin anidado terminado: no tienen hojas, se nombran al pie.
     sin_anidar: list[str]

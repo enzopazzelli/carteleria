@@ -4,7 +4,13 @@
 >
 > Índice del proyecto: [`../README.md`](../README.md) · [`EPICA.md`](EPICA.md) · [`BACKLOG.md`](BACKLOG.md) · [`REGISTRO.md`](REGISTRO.md) · [`BITACORA.md`](BITACORA.md)
 >
-> **Versión:** 3.3 · **Fecha:** 2026-11-11 · Reemplaza la 3.2 (2026-11-09), que decía «sin usuarios» y dibujaba como inexistentes el PDF del diseño anidado y la aprobación. La 3.2 reemplazó a la 3.1 (2026-10-23), que no tenía las pantallas de Materiales y Presupuestos (A18 y A19), la aprobación (A20), los retazos (A21), el PDF con la marca (A22), los materiales del catálogo (A23), recordar las correcciones (A24) ni la regla única del anidado (A25). La 3.1 reemplazó a la 3.0 (2026-10-05), que todavía decía que el motor no estaba construido
+> **Versión:** 3.4 · **Fecha:** 2026-11-18 · Suma el rumbo nuevo de la demo (§0); §1 a §4 siguen siendo el estado al 2026-11-11. La 3.3 reemplazó a la 3.2 (2026-11-09), que decía «sin usuarios» y dibujaba como inexistentes el PDF del diseño anidado y la aprobación. La 3.2 reemplazó a la 3.1 (2026-10-23), que no tenía las pantallas de Materiales y Presupuestos (A18 y A19), la aprobación (A20), los retazos (A21), el PDF con la marca (A22), los materiales del catálogo (A23), recordar las correcciones (A24) ni la regla única del anidado (A25). La 3.1 reemplazó a la 3.0 (2026-10-05), que todavía decía que el motor no estaba construido
+
+---
+
+## 0. Rumbo nuevo (2026-11-18)
+
+Después de la demo en la cartelería, el cliente pidió quitar el login, el presupuesto y «Comparar formatos», y no va a haber servidor: el sistema se instala en cada computadora. **El producto final es el DXF de cada chapa y el PDF del diseño anidado.** Lo que se saca se **apaga, no se borra**: deja de verse y de pedirse, pero el código del servidor y las tablas quedan (A26: [`plan/A26-sacar-lo-que-no-va/diseno.md`](plan/A26-sacar-lo-que-no-va/diseno.md)). Todo lo que este mapa dice del presupuesto, la aprobación, los usuarios y el servidor quedó en ese estado. El rumbo, en [`plan/PLAN-MAESTRO.md §0`](plan/PLAN-MAESTRO.md).
 
 ---
 

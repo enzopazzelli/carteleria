@@ -1,5 +1,4 @@
-import { ApiError, apiDelete, apiGet, apiPatch, apiPost, apiPostForm } from "./client";
-import type { Aviso, ErrorDelServidor } from "./mensajes";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPostForm } from "./client";
 
 export interface Pieza {
   id: number;
@@ -166,30 +165,6 @@ export interface PiezaASeccionar {
   alto_mm: string;
 }
 
-/** Con `piezas_a_seccionar` no vacío, el formato no se anidó: alguna
- * pieza no entra ni rotándola y hay que partirla en tramos (seccionado).
- * Por eso planchas, consumo, aprovechamiento y costo llegan en `null`. */
-export interface OpcionFormato {
-  area_total_m2: string | null;
-  motor: "rectpack" | "sparrow";
-  advertencias: Aviso[];
-  formato_id: number;
-  formato_descripcion: string;
-  material_nombre: string;
-  espesor: string | null;
-  planchas_usadas: number | null;
-  aprovechamiento_pct: string | null;
-  costo_total: string | null;
-  moneda: string;
-  recomendado: boolean;
-  precio_simulado: boolean;
-  piezas_a_seccionar: PiezaASeccionar[];
-  /** Piezas seccionadas que en este formato entran enteras: se compararon enteras (A17). */
-  enteras: PiezaASeccionar[];
-  /** El formato no se pudo anidar (A9): no llegó a tiempo o falló el cálculo. Sin planchas ni costo. */
-  error?: ErrorDelServidor | null;
-}
-
 export function crearGrupo(trabajoId: number, nombre: string): Promise<GrupoDeCorte> {
   return apiPost<GrupoDeCorte>(`/trabajos/${trabajoId}/grupos`, { nombre });
 }
@@ -217,42 +192,6 @@ export function actualizarParametrosGrupo(
   parametros: ParametrosCorteOverride | null
 ): Promise<GrupoDeCorte> {
   return apiPatch<GrupoDeCorte>(`/grupos/${grupoId}`, { parametros_usados: parametros });
-}
-
-/** Una comparación de formatos en segundo plano (A7). */
-export interface Comparacion {
-  id: number;
-  grupo_id: number;
-  estado: "corriendo" | "lista" | "cancelada" | "error";
-  progreso: import("./nesting").Progreso | null;
-  opciones: OpcionFormato[] | null;
-  error: ErrorDelServidor | null;
-}
-
-export function iniciarComparacion(
-  grupoId: number,
-  formatoIds: number[],
-  opciones: import("./nesting").OpcionesAnidado = {},
-): Promise<Comparacion> {
-  return apiPost<Comparacion>(`/grupos/${grupoId}/comparaciones`, { formato_ids: formatoIds, ...opciones });
-}
-
-export function obtenerComparacion(comparacionId: number): Promise<Comparacion> {
-  return apiGet<Comparacion>(`/comparaciones/${comparacionId}`);
-}
-
-export function cancelarComparacion(comparacionId: number): Promise<Comparacion> {
-  return apiPost<Comparacion>(`/comparaciones/${comparacionId}/cancelar`);
-}
-
-/** La última comparación del grupo, o `null` si no tiene. */
-export async function ultimaComparacion(grupoId: number): Promise<Comparacion | null> {
-  try {
-    return await apiGet<Comparacion>(`/grupos/${grupoId}/comparacion`);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) return null;
-    throw e;
-  }
 }
 
 export interface CorteSeccionado {

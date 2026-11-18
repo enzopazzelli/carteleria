@@ -1,4 +1,4 @@
-"""La administración de usuarios (1.1, `docs/plan/1.1-servidor-y-login/diseno.md §4.5`).
+"""La administración de usuarios (1.1, `docs/historico/1.1-servidor-y-login/diseno.md §4.5`).
 
 Todas las rutas piden el permiso `administra_usuarios`: quien no lo tiene ni siquiera ve la lista. Las
 reglas (que quede un administrador, cerrar las sesiones al dar de baja) viven en el servicio.

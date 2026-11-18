@@ -58,6 +58,37 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-18 — Lo que pidió el cliente en la demo: sin login, sin presupuesto, una sola chapa por grupo (A26)
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+- **Notas de la demo** (Enzo, desde la oficina): quitar el login, quitar «Comparar formatos», quitar el presupuesto («el producto final tiene que ser el DXF y el PDF»), un botón para deshacer en el ajuste del anidado, ver los retazos agrupados por material, y **sin despliegue**: el cliente prefiere instalar en cada computadora, como la demo.
+- **A26, en la rama `feat/a26-sacar-lo-que-no-va`** ([diseño](plan/A26-sacar-lo-que-no-va/diseno.md), [plan](plan/A26-sacar-lo-que-no-va/plan.md)), en cuatro commits:
+  - **Sin login.** Las rutas piden solo el encabezado propio en lo que cambia datos (`pedido_propio`), que frena pedidos mandados desde otra página. Salen Entrar, Mi cuenta, Usuarios y la aprobación del presupuesto. La barra dice «Cartelería».
+  - **Una sola chapa por grupo.** «Elegir chapa» / «Cambiar chapa» abre la lista de chapas en modo de elegir una (con filtros, buscador y retazos) y «Usar esta chapa» la asigna sin anidar. Hallazgo: «Usar este» de la comparación era la única forma de darle chapa a un grupo.
+  - **Sin presupuesto.** La tarjeta dice «Listo para cortar» y lleva a Chapas; salen el menú Presupuestos, la pestaña Costeo y los presupuestos del inicio. El PDF del diseño anidado tampoco los nombra (llevaba el código y el cliente en el encabezado), y los avisos de vencido dicen «anidá de nuevo antes de cortar».
+  - **Documentación:** README, plan maestro (§0), mapa (§0), guía del usuario (con «Abrir el sistema» en lugar de «Entrar y tu cuenta»), guía para probar, manual y la guía del desarrollo. La carpeta `1.1-servidor-y-login/` pasó a `historico/`.
+- Pruebas: 1573 del servidor y 331 de la pantalla en verde; recorrido en Chrome sin ventana contra una copia de la base.
+
+### Qué se decidió
+- **Apagar, no borrar** (Enzo, 2026-11-18): las tablas de usuarios, presupuestos y clientes quedan en la base, sin migración; el servidor del presupuesto, de la comparación y de los usuarios queda montado. En la pantalla, lo que queda sin forma de llegar se borra (vuelve con git).
+- **Sin despliegue:** no se hacen el servidor, el dominio, Docker, PostgreSQL, las copias en la nube, el mail ni WhatsApp. A Vale ya no le toca el despliegue.
+- Decisiones mías, para corregir: la barra dice «Cartelería» y el README se llama «Sistema de Nesting para Cartelería»; los precios siguen en Materiales.
+
+### Cambios en el registro
+Sin cambios. Los parámetros de la sesión (`PAR-62` a `PAR-66`) y de las copias (`PAR-67` a `PAR-69`) quedan sin uso, con el login y el servidor.
+
+### Pendiente
+- Cerrar A26: recorrido final y PR a `main`.
+- **A27:** deshacer en el ajuste del anidado. Causa del pedido: al devolver una pieza a su chapa, va al lugar libre más abajo y a la izquierda, no a donde estaba.
+- **A28:** los retazos agrupados por material.
+- 15 de los 44 materiales no tienen kerf, margen y separación (ACM, PVC, Metalex, Polyfan…): con esas chapas no se puede anidar.
+- Rearmar el instalador de la demo con esta versión.
+- **Abierto:** con instalaciones separadas, cada computadora tiene su base (los retazos de una no se ven en la otra).
+
+---
+
 ## 2026-11-18 — Demo instalada en la cartelería y Docker en la máquina de Enzo
 
 **Quién:** Enzo · **Carril:** — · **Sprint:** —
@@ -65,9 +96,9 @@ Qué queda abierto y cuál es el próximo paso.
 ### Qué se hizo
 - **Demo para la cartelería:** un instalador para Windows, **fuera del repo** porque lleva la base con precios y clientes. Deja el sistema en `C:\Carteleria` de una PC de ellos con un Python portátil (no hace falta instalar nada ni tener internet), un acceso en el escritorio y el arranque al prender la PC; se entra desde el wifi del local. Un `arrancar.py` sirve la pantalla compilada y reenvía `/api` al servidor sin el prefijo, igual que Vite en desarrollo y que Caddy en el servidor. La base es una copia de la real sin trabajos ni sesiones. **Sin cambios en el código de la app.**
 - **Lo que apareció al probarlo:** Sparrow corre en un proceso aparte (`python -m app.services.nesting.sparrow_worker`), que tiene que encontrar el paquete `app` por su cuenta. El Python portátil no mira la carpeta actual, así que el anidado fallaba siempre; se resolvió en el instalador agregando la carpeta del código a `python313._pth`. Después, las 935 pruebas del motor y de la API pasaron con ese Python.
-- **Docker Desktop instalado en la máquina de Enzo, en D:** es el paso 2 de la Tarea 0 de `docs/plan/1.1-servidor-y-login/plan.md`. El programa está en `D:\Docker` y los datos en `D:\DockerData`; solo los complementos de la línea de comandos quedan en C: (686 MB). Probado con `hello-world`.
+- **Docker Desktop instalado en la máquina de Enzo, en D:** es el paso 2 de la Tarea 0 de `docs/historico/1.1-servidor-y-login/plan.md`. El programa está en `D:\Docker` y los datos en `D:\DockerData`; solo los complementos de la línea de comandos quedan en C: (686 MB). Probado con `hello-world`.
 - Se corrigió donde decía que la máquina de Enzo no tiene Docker: el README, el plan y el diseño de 1.1, y la guía del desarrollo.
-- **Comparación de servidor y dominio (paso B1):** [`plan/1.1-servidor-y-login/B1-servidor-y-dominio.md`](plan/1.1-servidor-y-login/B1-servidor-y-dominio.md). Latencia medida desde la conexión de Enzo: Santiago de Chile 38 ms, São Paulo 49 ms, EE. UU. 146 a 220 ms, Alemania 316 ms. Candidatos: DonWeb (en pesos, IVA incluido, ARS 34.830 por mes de lista, con dudas que se miden en un mes de prueba) y Vultr en Santiago (US$ 40 por mes). Al revisar el dominio apareció que **`anibaldumit.com`, la web que imprime el PDF, se venció el 2026-09-28** y está en «pending delete» (se libera alrededor del 2026-11-20).
+- **Comparación de servidor y dominio (paso B1):** [`historico/1.1-servidor-y-login/B1-servidor-y-dominio.md`](historico/1.1-servidor-y-login/B1-servidor-y-dominio.md). Latencia medida desde la conexión de Enzo: Santiago de Chile 38 ms, São Paulo 49 ms, EE. UU. 146 a 220 ms, Alemania 316 ms. Candidatos: DonWeb (en pesos, IVA incluido, ARS 34.830 por mes de lista, con dudas que se miden en un mes de prueba) y Vultr en Santiago (US$ 40 por mes). Al revisar el dominio apareció que **`anibaldumit.com`, la web que imprime el PDF, se venció el 2026-09-28** y está en «pending delete» (se libera alrededor del 2026-11-20).
 
 ### Qué se decidió
 - La demo no se subió a internet: el despliegue lo tiene Vale y todavía no está, y los planes gratuitos pierden la base al reiniciarse.
@@ -100,7 +131,7 @@ Sin cambios.
 - PR #35 fusionado (referencia de la escala, CI en verde) y su rama borrada; queda solo `main`, local y remota.
 - **Reporte sin reproducir (2026-11-11):** al cargar `carrusel.dxf`, el aviso de la pestaña Piezas ofreció «Seccionar» y el panel contestó «entra entera… no hace falta seccionarla». Se probó en una copia de la base con escalas 10, 20, 50, 100, 200 y 1000, con las chapas que tienen kerf cargado: el aviso y el panel usan la misma regla y no se contradijeron. Sin cambios de código; si vuelve a pasar, anotar el nombre de la pieza, la escala y la chapa elegida en el panel.
 - **Guías completas en HTML (2026-11-11):** `docs/guias/GUIA-DEL-USUARIO.html` (el recorrido de un cartel, cada pantalla, aprobación, administración de personas, problemas y glosario) y `docs/guias/GUIA-DEL-DESARROLLO.html` (arquitectura, puesta en marcha, dominio, pruebas y CI, Git, recetas y prácticas para otros proyectos), con los colores y letras de la marca. Llevan el logo de la empresa incrustado (decisión de Enzo: el logo ya sale en los PDF a clientes, así que se sube al repo público solo dentro de las guías; el resto de `backend/local/empresa/` sigue fuera de git).
-- **Reparto del despliegue (2026-11-11):** Vale recibió el proyecto y se encarga del dockerizado y el despliegue (entrega A3 y servidor). Enzo queda con producto; las tareas 11 a 14 de `docs/plan/1.1-servidor-y-login/plan.md` pasan a ella.
+- **Reparto del despliegue (2026-11-11):** Vale recibió el proyecto y se encarga del dockerizado y el despliegue (entrega A3 y servidor). Enzo queda con producto; las tareas 11 a 14 de `docs/historico/1.1-servidor-y-login/plan.md` pasan a ella.
 
 ### Qué se decidió
 - El menú de usuarios habla con la app y no con la base, para que sirva igual contra la local y contra la desplegada (la base de producción no publica ningún puerto). El comando `python -m app.usuarios` queda para emergencias en el servidor.

@@ -32,7 +32,6 @@ from ..services.ingesta.analisis import (
 )
 from ..services.ingesta.dxf import ArchivoDXFInvalido, parsear_dxf
 from ..services.nesting.models import Plancha
-from .autenticacion import UsuarioActual, usuario_actual
 from .dependencias import obtener_sesion
 from .esquemas_importacion import (
     AnalisisDXFLeer,
@@ -154,7 +153,6 @@ def confirmar_importacion(
     token: str,
     datos: ConfirmacionDXF,
     sesion: Session = Depends(obtener_sesion),
-    actual: UsuarioActual = Depends(usuario_actual),
 ) -> list[TrabajoImportado]:
     """Crea un Trabajo por diseño confirmado, con las piezas cuyo rol
     final es `cortar` (el sugerido, o el que cambió el usuario).
@@ -208,7 +206,6 @@ def confirmar_importacion(
             nombre=nombre,
             archivo_origen=guardado["archivo_origen"],
             escala_a_mm=escala_a_mm,
-            creado_por_id=actual.id,
         )
         sesion.add(trabajo)
         sesion.flush()

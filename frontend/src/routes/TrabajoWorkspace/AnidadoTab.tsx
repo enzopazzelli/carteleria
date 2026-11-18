@@ -262,7 +262,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   async function alBorrar(ejecucion: Ejecucion) {
     const confirma = window.confirm(
       ejecucion.es_definitiva
-        ? `El anidado #${ejecucion.id} es el definitivo de este grupo. Si lo borrás, el costeo va a usar el más reciente que quede, o va a quedar pendiente si no queda ninguno. ¿Borrarlo?`
+        ? `El anidado #${ejecucion.id} es el definitivo de este grupo. Si lo borrás, Chapas, el DXF y el PDF van a usar el más reciente que quede. ¿Borrarlo?`
         : `¿Borrar el anidado #${ejecucion.id}? No se puede deshacer.`
     );
     if (!confirma) return;

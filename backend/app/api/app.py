@@ -8,8 +8,8 @@ Correr localmente (desde `backend/`, con el entorno de
 La base se crea o se actualiza sola al arrancar (`app/arranque.py`); si
 estaba atrasada, antes guarda un respaldo en `local/respaldo-…`.
 
-Todas las rutas exigen haber entrado (1.1) salvo `POST /acceso/entrar` y `GET /salud`; la prueba
-`tests/test_todas_las_rutas_exigen_sesion.py` lo vigila.
+No hay login (A26): las rutas del sistema no piden sesión, pero todo pedido que cambia datos tiene que traer
+el encabezado propio; la prueba `tests/test_todas_las_rutas_piden_el_encabezado.py` lo vigila.
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from ..arranque import ActualizacionFallida, BaseMasNueva, poner_la_base_al_dia,
 from ..modelos.base import inicializar
 from ..registro import configurar_registro, registro
 from . import rutas_nesting
-from .autenticacion import usuario_actual
+from .autenticacion import pedido_propio
 from .dependencias import obtener_sesion
 from .manejadores import registrar_manejadores
 from .rutas_acceso import router as router_acceso
@@ -79,9 +79,10 @@ async def _ciclo_de_vida(app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-#: Los routers que exigen haber entrado. Entrar y el estado de salud (`router_acceso`) son la excepción:
-#: viven aparte, y cada ruta de ese router decide por su cuenta si pide sesión.
-_ROUTERS_PROTEGIDOS = (
+#: Los routers del sistema. Desde A26 no piden sesión, solo el encabezado propio en lo que cambia datos.
+#: Usuarios y presupuesto siguen pidiéndola por su cuenta (sin pantalla que los use). Entrar y el estado de
+#: salud (`router_acceso`) viven aparte, y cada ruta de ese router decide por su cuenta.
+_ROUTERS = (
     router_catalogo,
     router_trabajos,
     router_importacion,
@@ -115,8 +116,8 @@ def crear_app(entorno: str | None = None) -> FastAPI:
     )
     registrar_manejadores(aplicacion)
     aplicacion.include_router(router_acceso)
-    for router in _ROUTERS_PROTEGIDOS:
-        aplicacion.include_router(router, dependencies=[Depends(usuario_actual)])
+    for router in _ROUTERS:
+        aplicacion.include_router(router, dependencies=[Depends(pedido_propio)])
     return aplicacion
 
 

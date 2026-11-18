@@ -1,5 +1,7 @@
 # B1 — El servidor y el dominio: comparación
 
+> **Pasó a `docs/historico/` el 2026-11-18 (A26).** Después de la demo, el cliente pidió quitar el login y no va a haber servidor: la app se instala en cada computadora. El login de la entrega A2 quedó en el código, apagado (ninguna ruta pide sesión y no hay pantallas de usuarios); las tablas siguen en la base. La entrega A3 (Docker, copias, PostgreSQL) y la fase B (servidor y dominio) no se van a hacer. Ver [`../../plan/A26-sacar-lo-que-no-va/diseno.md`](../../plan/A26-sacar-lo-que-no-va/diseno.md).
+
 > **Estado:** propuesta para decidir (2026-11-18). Lo que se elija acá cierra `T-01` (el servidor) y `T-02` (el dominio y el certificado) en [`REGISTRO.md`](../../REGISTRO.md). Es el paso B1 de [`plan.md`](plan.md).
 >
 > **Los precios son del 2026-11-18 y cambian:** confirmarlos al contratar. Cada número dice de dónde salió.

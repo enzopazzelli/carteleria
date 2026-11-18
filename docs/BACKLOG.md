@@ -76,7 +76,7 @@ Entonces existe un .env.example con todas las variables necesarias y sin valores
 
 ### CART-002 — Autenticación, roles y permisos
 
-> **Hecho el 2026-11-09** (1.1, entrega A2: [`plan/1.1-servidor-y-login/`](plan/1.1-servidor-y-login/diseno.md)): sesión con cookie, dos permisos («puede aprobar» y «administra usuarios») y bloqueo tras 5 intentos fallidos. Sin aprobación multinivel ni por monto (`SUP-06`).
+> **Hecho el 2026-11-09** (1.1, entrega A2: [`historico/1.1-servidor-y-login/`](historico/1.1-servidor-y-login/diseno.md)): sesión con cookie, dos permisos («puede aprobar» y «administra usuarios») y bloqueo tras 5 intentos fallidos. Sin aprobación multinivel ni por monto (`SUP-06`).
 
 **Como** administrador **quiero** que cada usuario tenga un rol con permisos definidos **para** que un diseñador no pueda aprobar sus propios presupuestos.
 

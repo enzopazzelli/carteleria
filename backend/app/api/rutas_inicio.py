@@ -38,10 +38,6 @@ from .rutas_trabajos import _trabajo_o_404
 
 router = APIRouter(tags=["inicio"])
 
-#: Cuántos presupuestos muestra el inicio (diseño §9, decisión de Claude).
-ULTIMOS_PRESUPUESTOS = 5
-
-
 def en_utc(fecha: datetime) -> datetime:
     """SQLite devuelve las fechas sin zona aunque se guarden en UTC
     (`modelos/base.py`): sin marcarlas, la pantalla las lee como hora local."""
@@ -136,24 +132,19 @@ def tarjeta_de(sesion: Session, trabajo: Trabajo, tocado_en: datetime) -> Tarjet
         if cuenta.motivo is None and _con_piezas(grupo):
             chapas.append(f"{_cuantas_chapas(ejecucion.planchas_usadas or 0)} · {_material(sesion, grupo, ejecucion)}")
 
-    presupuesto = sesion.scalars(
-        select(Presupuesto).where(Presupuesto.trabajo_id == trabajo.id).order_by(Presupuesto.id.desc())
-    ).first()
     pasos = pasos_del_trabajo(TrabajoParaPasos(
         piezas_a_cortar=len(a_cortar),
         sin_grupo=sum(1 for pieza in a_cortar if pieza.grupo_id is None),
         grupos=grupos,
-        presupuesto=presupuesto.estado if presupuesto else None,
     ))
     return TarjetaLeer(
         id=trabajo.id,
         nombre=trabajo.nombre,
         tocado_en=tocado_en,
-        pasos=PasosLeer(piezas=pasos.piezas, grupos=pasos.grupos, anidado=pasos.anidado, presupuesto=pasos.presupuesto),
+        pasos=PasosLeer(piezas=pasos.piezas, grupos=pasos.grupos, anidado=pasos.anidado),
         frase=pasos.frase,
         destino=pasos.destino,
         chapas=chapas,
-        presupuesto=presupuesto_resumido(sesion, presupuesto) if presupuesto else None,
     )
 
 
@@ -176,7 +167,7 @@ def listar_tarjetas(
 
 def disenio_de_miniatura(sesion: Session, trabajo: Trabajo) -> DisenioDelPdf:
     """Pinta el primer grupo con piezas, en el orden de los grupos, que tenga
-    un anidado terminado, el que cuenta para el presupuesto; también si está
+    un anidado terminado, el que cuenta para cortar; también si está
     vencido (A17), porque la miniatura muestra lo que se anidó. Lo de los
     otros va en gris. Sin ninguno, todo en gris."""
     for grupo in trabajo.grupos:
@@ -234,13 +225,5 @@ def listar_presupuestos_resumidos(sesion: Session = Depends(obtener_sesion)) -> 
 
 @router.get("/resumen-del-inicio", response_model=ResumenDelInicioLeer)
 def obtener_resumen_del_inicio(sesion: Session = Depends(obtener_sesion)) -> ResumenDelInicioLeer:
-    """Los últimos presupuestos y lo que hay cargado de materiales, mientras
-    no tengan su propia pantalla."""
-    presupuestos = sesion.scalars(
-        select(Presupuesto).order_by(Presupuesto.id.desc()).limit(ULTIMOS_PRESUPUESTOS)
-    ).all()
-    return ResumenDelInicioLeer(
-        presupuestos=[presupuesto_resumido(sesion, presupuesto) for presupuesto in presupuestos],
-        total_presupuestos=sesion.scalar(select(func.count(Presupuesto.id))) or 0,
-        materiales=_materiales_resumidos(sesion),
-    )
+    """Lo que hay cargado de materiales. Los últimos presupuestos salieron del inicio en A26."""
+    return ResumenDelInicioLeer(materiales=_materiales_resumidos(sesion))

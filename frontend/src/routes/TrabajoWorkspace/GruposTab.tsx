@@ -1,42 +1,15 @@
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { usePiezas } from "../../hooks/usePiezas";
-import {
-  useAsignarFormatoAGrupo,
-  useAsignarPiezaAGrupo,
-  useComparacion,
-  useCrearGrupo,
-  useGrupos,
-  useIniciarComparacion,
-  useUltimaComparacion,
-} from "../../hooks/useGrupos";
+import { useAsignarFormatoAGrupo, useAsignarPiezaAGrupo, useCrearGrupo, useGrupos } from "../../hooks/useGrupos";
 import { useTodosLosFormatos } from "../../hooks/useCatalogo";
-import { cancelarComparacion } from "../../api/piezasYgrupos";
-import BarraDeProgreso from "../../components/BarraDeProgreso";
-import { debeRetomar, delGrupo, seEsfumo } from "./comparacionEnCurso";
-import { agruparAvisos, avisoConSusChapas, avisosDeEnteras, materialConEspesor, ordenarFilas } from "./filasComparacion";
-import type { OpcionFormato } from "../../api/piezasYgrupos";
-import { ApiError } from "../../api/client";
 import ListaDeFormatos from "../../components/ListaDeFormatos/ListaDeFormatos";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import ConDisenioAlCostado from "../../components/Disenio/ConDisenioAlCostado";
 import PiezaNombrada from "../../components/PiezaNombrada";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
+import { chapaDelGrupo } from "./chapaDelGrupo";
 import { mostrarMedidas } from "./importes";
-
-/** La medida de la chapa y, si alguna pieza seccionada entra entera en
- * ella, el aviso de que para usarla hay que deshacer el seccionado (A17). */
-function CeldaFormato({ opcion }: { opcion: OpcionFormato }) {
-  return (
-    <td>
-      {opcion.formato_descripcion}
-      {avisosDeEnteras(opcion).map((aviso) => (
-        <span key={aviso} className="block text-xs text-conflict">{aviso}</span>
-      ))}
-    </td>
-  );
-}
 
 /** Con el diseño fijo al costado: las piezas nombradas se iluminan en él (A14). */
 export default function GruposTab() {
@@ -57,62 +30,17 @@ function GruposDelTrabajo() {
   const crearGrupo = useCrearGrupo(id);
   const asignarPieza = useAsignarPiezaAGrupo(id);
   const asignarFormato = useAsignarFormatoAGrupo(id);
-  const queryClient = useQueryClient();
-  const iniciarComparacion = useIniciarComparacion();
 
   const [nombreNuevoGrupo, setNombreNuevoGrupo] = useState("");
-  const [grupoComparando, setGrupoComparando] = useState<number | null>(null);
-  const [comparacionId, setComparacionId] = useState<number | null>(null);
-  const consultaComparacion = useComparacion(comparacionId);
-  const comparacion = delGrupo(consultaComparacion.data, grupoComparando);
-  const { data: ultima, isFetching: buscandoUltima } = useUltimaComparacion(grupoComparando);
-  const comparando = iniciarComparacion.isPending || comparacion?.estado === "corriendo";
-  const [candidatos, setCandidatos] = useState<number[]>([]);
-  const [resultado, setResultado] = useState<OpcionFormato[] | null>(null);
-  const [motor, setMotor] = useState<"rectpack" | "sparrow">("sparrow");
-  const [semilla, setSemilla] = useState(42);
-  const [busqueda, setBusqueda] = useState(2);
-  const [limite, setLimite] = useState(240);
-  const [simplificacion, setSimplificacion] = useState(0.3);
-  const [vaciarChapas, setVaciarChapas] = useState(true);
-  // Marcada por defecto (Enzo, 2026-10-14). En los materiales con veta el
-  // servidor no la aplica.
-  const [giroLibre, setGiroLibre] = useState(true);
-  // Marcada por defecto (Enzo, 2026-10-22, A10): la comparación aprovecha
-  // los huecos igual que el anidado. Solo con Sparrow.
-  const [usarHuecos, setUsarHuecos] = useState(true);
+  /** El grupo al que se le está eligiendo la chapa, y la que está tildada (A26). */
+  const [grupoEligiendo, setGrupoEligiendo] = useState<number | null>(null);
+  const [elegida, setElegida] = useState<number | null>(null);
   const [error, setError] = useState<QueMostrar | null>(null);
-  const [piezasInvalidas, setPiezasInvalidas] = useState<number[]>([]);
   const [seleccionadas, setSeleccionadas] = useState<Set<number>>(new Set());
   // Última pieza tildada a mano: el ancla desde la que shift-click
   // selecciona todo el rango intermedio.
   const [anclaSeleccion, setAnclaSeleccion] = useState<number | null>(null);
   const [grupoDestino, setGrupoDestino] = useState("");
-
-  // Al abrir «Comparar formatos» de un grupo se retoma su última
-  // comparación: la barra si sigue corriendo, la tabla si terminó (A7).
-  useEffect(() => {
-    if (ultima && debeRetomar(ultima, grupoComparando, buscandoUltima, comparacionId)) setComparacionId(ultima.id);
-  }, [ultima, grupoComparando, buscandoUltima, comparacionId]);
-
-  // Si el servidor ya no la conoce (se reinició, o la reemplazó una más
-  // nueva), la comparación se perdió: se la suelta para que vuelva
-  // «Comparar», y se olvida como la última del grupo para no retomarla otra
-  // vez. El aviso es el del servidor, que dice cuál de las dos pasó (A17).
-  useEffect(() => {
-    if (!seEsfumo(consultaComparacion.error)) return;
-    queryClient.setQueryData(["ultima-comparacion", grupoComparando], null);
-    setComparacionId(null);
-    setError(falla(consultaComparacion.error, "La comparación se perdió. Volvé a compararla."));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [consultaComparacion.error]);
-
-  // Cuando termina, la tabla o el error pasan a la pantalla como antes.
-  useEffect(() => {
-    if (comparacion?.estado === "lista") setResultado(comparacion.opciones);
-    if (comparacion?.estado === "error") setError(comparacion.error ?? "No se pudo comparar.");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comparacion?.id, comparacion?.estado]);
 
   const sinAsignar = piezas?.filter((p) => p.grupo_id === null && !p.descartada) ?? [];
 
@@ -177,42 +105,20 @@ function GruposDelTrabajo() {
     }
   }
 
-  async function alComparar(grupoId: number) {
+  function alAbrirLaEleccion(grupoId: number, formatoId: number | null) {
     setError(null);
-    setPiezasInvalidas([]);
-    setResultado(null);
-    try {
-      const arrancada = await iniciarComparacion.mutateAsync({ grupoId, formatoIds: candidatos,
-        opciones: { motor, semilla, segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion, vaciar_chapas: vaciarChapas, giro_libre: giroLibre, usar_anidado_en_huecos: usarHuecos && motor === "sparrow", criterio: "material" } });
-      // La recién arrancada es la última del grupo, y ya está corriendo: así
-      // «Comparar» no vuelve a habilitarse hasta la primera consulta, y al
-      // volver al grupo no se retoma una anterior.
-      queryClient.setQueryData(["comparacion", arrancada.id], arrancada);
-      queryClient.setQueryData(["ultima-comparacion", grupoId], arrancada);
-      setComparacionId(arrancada.id);
-    } catch (e) {
-      setError(falla(e, "No se pudo comparar."));
-      if (e instanceof ApiError) setPiezasInvalidas(e.piezasInvalidas);
-    }
+    setGrupoEligiendo(grupoId);
+    setElegida(formatoId);
   }
 
-  async function alCancelarComparacion() {
-    if (comparacionId === null) return;
-    try {
-      await cancelarComparacion(comparacionId);
-      await queryClient.invalidateQueries({ queryKey: ["comparacion", comparacionId] });
-    } catch (e) {
-      setError(falla(e, "No se pudo cancelar la comparación."));
-    }
-  }
-
-  async function alUsarFormato(grupoId: number, formatoId: number) {
+  async function alUsarLaChapa(grupoId: number) {
+    if (elegida === null) return;
     setError(null);
     try {
-      await asignarFormato.mutateAsync({ grupoId, formatoId });
-      setGrupoComparando(null);
+      await asignarFormato.mutateAsync({ grupoId, formatoId: elegida });
+      setGrupoEligiendo(null);
     } catch (e) {
-      setError(falla(e, "No se pudo asignar el formato."));
+      setError(falla(e, "No se pudo cambiar la chapa del grupo."));
     }
   }
 
@@ -313,200 +219,54 @@ function GruposDelTrabajo() {
 
       {grupos?.map((grupo) => (
         <div key={grupo.id} className="border border-line rounded p-4 mb-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-4">
             <h3 className="font-medium">{grupo.nombre}</h3>
-            <span className="text-sm font-mono">
-              {grupo.formato_id ? `Formato #${grupo.formato_id}` : "Sin material"}
+            <span className={`text-sm ${grupo.formato_id === null ? "text-conflict" : ""}`}>
+              Chapa: {chapaDelGrupo(grupo.formato_id, formatos, materiales)}
             </span>
           </div>
 
-          <div className="mt-3">
-            <button
-              className="text-sm underline"
-              disabled={comparando}
-              onClick={() => {
-                setGrupoComparando(grupo.id);
-                setResultado(null);
-                setCandidatos([]);
-                setComparacionId(null);
-                // Se vuelve a pedir la última: la guardada puede ser vieja (otra
-                // pestaña, o una comparación arrancada después).
-                void queryClient.invalidateQueries({ queryKey: ["ultima-comparacion", grupo.id] });
-              }}
-            >
-              Comparar formatos
+          {grupoEligiendo !== grupo.id && (
+            <button className="mt-3 text-sm underline" onClick={() => alAbrirLaEleccion(grupo.id, grupo.formato_id)}>
+              {grupo.formato_id === null ? "Elegir chapa" : "Cambiar chapa"}
             </button>
-          </div>
+          )}
 
-          {grupoComparando === grupo.id && (
+          {/* Una sola chapa, la que se va a anidar (A26): antes había que comparar al menos dos. */}
+          {grupoEligiendo === grupo.id && (
             <div className="mt-3 border-t border-line pt-3">
-              <p className="text-sm mb-2">Elegí 2 o más formatos candidatos:</p>
-              <p className="text-sm mb-3">Recomendación: menor superficie total de material consumido (m²); después, menos planchas. El costo se muestra por separado.</p>
-              {error && <div className="mb-3" role="alert">
-                <Mensaje variante="error" que={error} trabajoId={id} />
-                {piezasInvalidas.length > 0 && <Link className="underline text-sm" to={`/trabajos/${id}/piezas?revisar=${piezasInvalidas.join(",")}`}>
-                  Revisar las {piezasInvalidas.length} piezas con geometría inválida
-                </Link>}
-              </div>}
-              <fieldset disabled={comparando} className="flex flex-wrap gap-3 text-xs mb-3" onChange={() => setResultado(null)}>
-                <label>Motor <select value={motor} onChange={(e) => setMotor(e.target.value as "rectpack" | "sparrow")} className="border rounded p-1">
-                  <option value="sparrow">Sparrow irregular (prueba)</option><option value="rectpack">Rectangular</option>
-                </select></label>
-                {motor === "sparrow" && <>
-                  <label>Semilla <input type="number" min="0" max="2147483647" value={semilla} onChange={(e) => setSemilla(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
-                  <label>Búsqueda por chapa (s) <input type="number" min="1" max="30" value={busqueda} onChange={(e) => setBusqueda(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
-                  <label>Máximo por formato (s) <input type="number" min="5" max="300" value={limite} onChange={(e) => setLimite(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
-                  <label>Simplificación (mm) <input type="number" min="0" max="2" step="0.1" value={simplificacion} onChange={(e) => setSimplificacion(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
-                  <label
-                    className="flex items-center gap-1 cursor-pointer"
-                    title="Intenta vaciar las chapas que quedaron a medio llenar. Cada formato usa su tiempo máximo entero."
-                  >
-                    <input type="checkbox" checked={vaciarChapas} onChange={(e) => setVaciarChapas(e.target.checked)} />
-                    Vaciar chapas
-                  </label>
-                  <label
-                    className="flex items-center gap-1 cursor-pointer"
-                    title="Sparrow prueba las piezas a cualquier ángulo, no solo de a cuartos de vuelta. En los materiales con veta no se aplica: solo giran media vuelta."
-                  >
-                    <input type="checkbox" checked={giroLibre} onChange={(e) => setGiroLibre(e.target.checked)} />
-                    Girar a cualquier ángulo
-                  </label>
-                  <label
-                    className="flex items-center gap-1 cursor-pointer"
-                    title="Mete las piezas chicas en los huecos de las grandes antes de acomodar"
-                  >
-                    <input type="checkbox" checked={usarHuecos} onChange={(e) => setUsarHuecos(e.target.checked)} />
-                    Aprovechar huecos
-                  </label>
-                </>}
-              </fieldset>
-              <p className="text-sm mb-3">Se usan los parámetros de corte del grupo si los tiene; si no, los de cada material. La comparación no guarda un plano; luego ejecutá el mismo motor en Anidado.</p>
-              {motor === "sparrow" && <p className="text-sm mb-3">Calcula siluetas reales. Los formatos se procesan uno por uno{candidatos.length > 0 ? `; puede demorar hasta ${candidatos.length * limite} segundos más la validación de geometría` : ""}.</p>}
-              {cargando && <p className="text-sm mb-3">Cargando materiales y formatos…</p>}
-              {!cargando && !errorCatalogo && formatos.length === 0 && <p className="text-sm mb-3">No hay formatos en el catálogo.</p>}
+              {/* Arriba de la lista: el catálogo es largo y abajo no se ve. */}
+              <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
+                <span>
+                  Elegida: <strong>{elegida === null ? "ninguna" : chapaDelGrupo(elegida, formatos, materiales)}</strong>
+                </span>
+                <button
+                  className="bg-cut text-negro rounded px-3 py-1 disabled:opacity-50"
+                  disabled={elegida === null || elegida === grupo.formato_id || asignarFormato.isPending}
+                  onClick={() => void alUsarLaChapa(grupo.id)}
+                >
+                  {asignarFormato.isPending ? "Guardando…" : "Usar esta chapa"}
+                </button>
+                <button className="underline" onClick={() => setGrupoEligiendo(null)}>
+                  Cancelar
+                </button>
+                {grupo.formato_id !== null && elegida !== null && elegida !== grupo.formato_id && (
+                  <span className="text-ink/60">Si el grupo ya estaba anidado, hay que volver a anidarlo.</span>
+                )}
+              </div>
+              {cargando && <p className="text-sm mb-3">Cargando materiales y chapas…</p>}
+              {!cargando && !errorCatalogo && formatos.length === 0 && (
+                <p className="text-sm mb-3">No hay chapas en el catálogo: cargalas en Materiales.</p>
+              )}
               {!cargando && formatos.length > 0 && (
                 <ListaDeFormatos
                   formatos={formatos}
                   materiales={materiales}
-                  tildados={candidatos}
-                  alCambiar={setCandidatos}
-                  deshabilitada={comparando}
+                  tildados={elegida === null ? [] : [elegida]}
+                  alCambiar={(ids) => setElegida(ids[0] ?? null)}
+                  deshabilitada={asignarFormato.isPending}
+                  unaSola
                 />
-              )}
-              <button
-                className="bg-cut text-negro rounded px-3 py-1 text-sm mb-3"
-                disabled={candidatos.length < 2 || comparando || cargando || !!errorCatalogo}
-                onClick={() => alComparar(grupo.id)}
-              >
-                {comparando ? "Comparando…" : "Comparar"}
-              </button>
-              {comparacion?.estado === "corriendo" && (
-                <div className="mb-3">
-                  <BarraDeProgreso progreso={comparacion.progreso} />
-                  <button className="underline text-sm" onClick={() => void alCancelarComparacion()}>
-                    Cancelar
-                  </button>
-                </div>
-              )}
-              {comparacion?.estado === "cancelada" && <p className="text-sm mb-3">Comparación cancelada.</p>}
-              {/* Al retomar una comparación después de recargar no hay formatos tildados: mientras corre, el aviso confunde. */}
-              {candidatos.length < 2 && !comparando && <p className="text-sm mb-3">Seleccioná al menos dos formatos para habilitar la comparación.</p>}
-              {motor === "rectpack" && (piezas?.filter((p) => p.grupo_id === grupo.id && !p.descartada).reduce((n, p) => n + p.cantidad, 0) ?? 0) > 500 && (
-                <p className="text-sm mb-3">Comparación rápida rectangular para más de 500 piezas. El resultado es estimativo; confirmá el anidado en la etapa Anidado.</p>
-              )}
-
-              {resultado && (
-                <div>
-                {/* Por chapa: el mismo texto con otras piezas es otro aviso (A17). */}
-                {agruparAvisos(resultado).map((grupo) => (
-                  <Mensaje
-                    key={`${grupo.aviso.mensaje}|${grupo.formatos.join(",")}`}
-                    variante="aviso"
-                    que={avisoConSusChapas(grupo)}
-                    trabajoId={id}
-                  />
-                ))}
-                <table className="w-full text-sm mt-2">
-                  <thead>
-                    <tr className="text-left border-b border-line">
-                      <th>Material</th>
-                      <th>Motor</th>
-                      <th>Formato</th>
-                      <th>Planchas</th>
-                      <th>Material consumido</th>
-                      <th>Aprov.</th>
-                      <th>Costo</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* Las que no se anidaron o hay que seccionar, al final: no tienen números para comparar. */}
-                    {ordenarFilas(resultado).map((opcion) => opcion.error ? (
-                      <tr key={opcion.formato_id} className="border-b border-line text-ink/70">
-                        <td>{materialConEspesor(opcion)}</td>
-                        <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
-                        <CeldaFormato opcion={opcion} />
-                        <td colSpan={5}><Mensaje variante="error" que={opcion.error} trabajoId={id} /></td>
-                      </tr>
-                    ) : opcion.piezas_a_seccionar.length > 0 ? (
-                      <tr key={opcion.formato_id} className="border-b border-line text-ink/70">
-                        <td>{materialConEspesor(opcion)}</td>
-                        <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
-                        <CeldaFormato opcion={opcion} />
-                        <td colSpan={5}>
-                          {/* El seccionado se hace en Piezas: el enlace lleva esas piezas y esta chapa. */}
-                          <Link
-                            className="underline"
-                            to={`/trabajos/${id}/piezas?seccionar=${opcion.piezas_a_seccionar.map((p) => p.id).join(",")}&formato=${opcion.formato_id}`}
-                            title="No entra en este formato ni rotándola: hay que partirla en tramos que se sueldan después (seccionado). Tocá para seccionarlas en la pestaña Piezas."
-                          >
-                            Hay que seccionar {opcion.piezas_a_seccionar.length} pieza(s):{" "}
-                            {opcion.piezas_a_seccionar
-                              .slice(0, 3)
-                              .map((p) => mostrarMedidas(p.ancho_mm, p.alto_mm))
-                              .join(", ")}
-                            {opcion.piezas_a_seccionar.length > 3 && "…"}
-                          </Link>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {opcion.piezas_a_seccionar.slice(0, 3).map((aSeccionar) => {
-                              const pieza = piezas?.find((p) => p.id === aSeccionar.id);
-                              return pieza ? <PiezaNombrada key={pieza.id} pieza={pieza} trabajoId={id} /> : null;
-                            })}
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr
-                        key={opcion.formato_id}
-                        className={`border-b border-line ${opcion.recomendado ? "bg-bronze/10" : ""}`}
-                      >
-                        <td>{materialConEspesor(opcion)}</td>
-                        <td>{opcion.motor === "sparrow" ? "Sparrow" : "Rectangular"}</td>
-                        <CeldaFormato opcion={opcion} />
-                        <td className="font-mono">{opcion.planchas_usadas}</td>
-                        <td className="font-mono">{Number(opcion.area_total_m2).toFixed(3)} m²{opcion.recomendado && <span className="block text-bronze text-xs">Menor consumo</span>}</td>
-                        <td className="font-mono">{Number(opcion.aprovechamiento_pct).toFixed(1)}%</td>
-                        <td className="font-mono">
-                          {opcion.moneda} {Number(opcion.costo_total).toFixed(2)}
-                          {opcion.precio_simulado && (
-                            <span className="text-conflict ml-1" title="Precio de prueba, no es un dato real de la planilla">
-                              (simulado)
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <button
-                            className="text-xs underline"
-                            onClick={() => alUsarFormato(grupo.id, opcion.formato_id)}
-                          >
-                            Usar este
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                </div>
               )}
             </div>
           )}

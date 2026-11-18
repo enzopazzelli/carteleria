@@ -1,4 +1,4 @@
-"""Quiénes usan el sistema y sus sesiones (1.1, `docs/plan/1.1-servidor-y-login/diseno.md §4`).
+"""Quiénes usan el sistema y sus sesiones (1.1, `docs/historico/1.1-servidor-y-login/diseno.md §4`).
 
 Un usuario es una persona con un nombre de usuario corto, su contraseña (que **no se guarda**:
 se guarda una huella que no se puede volver a la contraseña) y dos permisos que se tildan.

@@ -10,13 +10,13 @@ def _grupo(nombre="Calibre 18", *, con_piezas=True, terminado=False, ultimo=None
     return GrupoParaPasos(nombre, con_piezas, terminado, ultimo, vencido)
 
 
-def _trabajo(*, piezas=2, sin_grupo=0, grupos=(), presupuesto=None):
-    return TrabajoParaPasos(piezas, sin_grupo, list(grupos), presupuesto)
+def _trabajo(*, piezas=2, sin_grupo=0, grupos=()):
+    return TrabajoParaPasos(piezas, sin_grupo, list(grupos))
 
 
 def test_sin_piezas_falta_el_dibujo():
     assert pasos_del_trabajo(_trabajo(piezas=0)) == Pasos(
-        "pendiente", "pendiente", "pendiente", "pendiente", "Falta cargar el dibujo", "piezas")
+        "pendiente", "pendiente", "pendiente", "Falta cargar el dibujo", "piezas")
 
 
 def test_sin_grupos_faltan_los_grupos():
@@ -84,24 +84,7 @@ def test_un_grupo_vacio_no_cuenta():
     assert pasos_del_trabajo(_trabajo(grupos=grupos)).anidado == "hecho"
 
 
-def test_anidado_sin_presupuesto_lleva_a_chapas():
+def test_con_todo_anidado_esta_listo_para_cortar_y_lleva_a_chapas():
+    """Sin presupuesto desde A26: el recorrido termina en Chapas, con el DXF y el PDF."""
     p = pasos_del_trabajo(_trabajo(grupos=[_grupo(terminado=True, ultimo="lista")]))
-    assert (p.presupuesto, p.frase, p.destino) == ("pendiente", "Falta el presupuesto", "chapas")
-
-
-@pytest.mark.parametrize(
-    "estado, frase",
-    [
-        ("PENDIENTE_APROBACION", "Presupuesto esperando aprobación"),
-        ("OBSERVADO", "Presupuesto observado: falta corregirlo"),
-        ("APROBADO", "Presupuesto aprobado"),
-    ],
-)
-def test_cada_estado_de_la_aprobacion_tiene_su_frase_y_lleva_al_costeo(estado, frase):
-    p = pasos_del_trabajo(_trabajo(grupos=[_grupo(terminado=True, ultimo="lista")], presupuesto=estado))
-    assert (p.presupuesto, p.frase, p.destino) == ("hecho", frase, "costeo")
-
-
-def test_con_presupuesto_dice_su_estado_y_lleva_al_costeo():
-    p = pasos_del_trabajo(_trabajo(grupos=[_grupo(terminado=True, ultimo="lista")], presupuesto="BORRADOR"))
-    assert p == Pasos("hecho", "hecho", "hecho", "hecho", "Presupuesto en borrador", "costeo")
+    assert p == Pasos("hecho", "hecho", "hecho", "Listo para cortar", "chapas")

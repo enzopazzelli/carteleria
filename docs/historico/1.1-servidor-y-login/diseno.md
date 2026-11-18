@@ -1,8 +1,10 @@
 # 1.1 · Usuarios y servidor — diseño
 
+> **Pasó a `docs/historico/` el 2026-11-18 (A26).** Después de la demo, el cliente pidió quitar el login y no va a haber servidor: la app se instala en cada computadora. El login de la entrega A2 quedó en el código, apagado (ninguna ruta pide sesión y no hay pantallas de usuarios); las tablas siguen en la base. La entrega A3 (Docker, copias, PostgreSQL) y la fase B (servidor y dominio) no se van a hacer. Ver [`../../plan/A26-sacar-lo-que-no-va/diseno.md`](../../plan/A26-sacar-lo-que-no-va/diseno.md).
+
 > **Estado:** 📝 borrador para que Enzo lo apruebe. Todavía no se tocó código.
 >
-> **De dónde sale.** [`PLAN-MAESTRO.md §6`](../PLAN-MAESTRO.md), sub-proyecto 1.1 («Servidor y login»), y [§7](../PLAN-MAESTRO.md), 4.1 («Servidor y dominio»). Se planifican **juntos, en dos fases** (decisión de Enzo, 2026-11-09): primero todo en Docker en una computadora, con usuarios y login; después se sube al servidor alquilado.
+> **De dónde sale.** [`PLAN-MAESTRO.md §6`](../../plan/PLAN-MAESTRO.md), sub-proyecto 1.1 («Servidor y login»), y [§7](../../plan/PLAN-MAESTRO.md), 4.1 («Servidor y dominio»). Se planifican **juntos, en dos fases** (decisión de Enzo, 2026-11-09): primero todo en Docker en una computadora, con usuarios y login; después se sube al servidor alquilado.
 >
 > **Sobre los valores.** Los números de este documento (cuánto dura una sesión, cuántos intentos, cuántos días de backup) están en [`REGISTRO.md §2.7`](../../REGISTRO.md) con su ID. Acá se citan por ID y no se repiten. Los supuestos nuevos son `SUP-42`.
 

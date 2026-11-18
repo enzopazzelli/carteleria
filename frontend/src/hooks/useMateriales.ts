@@ -20,7 +20,6 @@ const LO_QUE_DEPENDE_DEL_CATALOGO = [
   ["parametros-corte-material"],
   ["resumen-del-inicio"],
   ["a-seccionar"],
-  ["costeo"],
 ];
 
 export function refrescarElCatalogo(cliente: QueryClient) {

@@ -1,6 +1,4 @@
-import type { Destino, PresupuestoResumido, Tarjeta } from "../../api/inicio";
-import { nombreDeEstado } from "../Presupuestos/estado";
-import { mostrarImporte } from "../../routes/TrabajoWorkspace/importes";
+import type { Destino, Tarjeta } from "../../api/inicio";
 
 // Lo que dice una tarjeta de trabajo (A16, `docs/plan/A16-pagina-de-inicio/diseno.md §5.3`).
 
@@ -34,24 +32,12 @@ export function renglonesDeChapas(chapas: string[]): string[] {
   return [chapas[0], chapas[1], `y ${chapas.length - 2} más`];
 }
 
-export function textoDelPresupuesto(presupuesto: PresupuestoResumido): string {
-  const total = presupuesto.total === null ? null : mostrarImporte(presupuesto.total, presupuesto.moneda);
-  return [presupuesto.codigo, presupuesto.cliente, total, nombreDeEstado(presupuesto.estado)]
-    .filter((parte) => parte !== null)
-    .join(" · ");
-}
-
 export function cuantos(cantidad: number, singular: string, plural: string): string {
   return `${cantidad} ${cantidad === 1 ? singular : plural}`;
 }
 
 export function rutaDelDestino(trabajoId: number, destino: Destino): string {
   return `/trabajos/${trabajoId}/${destino}`;
-}
-
-/** Abre ese mismo presupuesto en el Costeo, no el primero del trabajo. */
-export function rutaDelPresupuesto(presupuesto: PresupuestoResumido): string | null {
-  return presupuesto.trabajo_id === null ? null : `/trabajos/${presupuesto.trabajo_id}/costeo?presupuesto=${presupuesto.id}`;
 }
 
 function sinAcentos(texto: string): string {
@@ -65,11 +51,8 @@ export function coincideConLaBusqueda(nombre: string, busqueda: string): boolean
 
 /** Los renglones de la confirmación antes de borrar un trabajo. */
 export function textoDeBorrado(tarjeta: Tarjeta): string[] {
-  const renglones = [
+  // Sin presupuesto desde A26: ya no avisa que el suyo queda sin trabajo.
+  return [
     `¿Borrar «${tarjeta.nombre}»? Se borran sus piezas, sus grupos, sus anidados y el dibujo guardado. No se puede deshacer.`,
   ];
-  if (tarjeta.presupuesto) {
-    renglones.push(`Su presupuesto ${tarjeta.presupuesto.codigo} no se borra: queda sin trabajo.`);
-  }
-  return renglones;
 }

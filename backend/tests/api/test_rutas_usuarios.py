@@ -184,12 +184,13 @@ def test_dar_de_baja_corta_la_sesion_abierta_en_el_siguiente_pedido(persona):
     enzo = persona("enzo", administra_usuarios=True)
     vale = persona("vale")
     vale_id = enzo.get("/usuarios").json()[1]["id"]
-    assert vale.get("/trabajos").status_code == 200
+    # «Quién soy» sigue pidiendo sesión; los trabajos ya no (A26).
+    assert vale.get("/acceso/yo").status_code == 200
 
     baja = enzo.post(f"/usuarios/{vale_id}/dar-de-baja")
 
     assert baja.status_code == 200 and baja.json()["activo"] is False
-    assert vale.get("/trabajos").status_code == 401
+    assert vale.get("/acceso/yo").status_code == 401
     assert TestClient(app).post(
         "/acceso/entrar", json={"usuario": "vale", "contrasena": CONTRASENA_DE_PRUEBA}
     ).status_code == 401

@@ -405,7 +405,7 @@ npm run dev</code></pre>
     <li><b>Sesión por cookie</b>, contraseñas con <b>argon2id</b>. Duración, bloqueo y largo mínimo, configurables (sección 3).</li>
     <li>Los pedidos que <b>cambian algo</b> (todo lo que no es <code>GET</code>) deben llevar el encabezado <code>X-Cartel-Pedido</code>. Sin él, el servidor los rechaza. Es la defensa contra pedidos forjados desde otro sitio; el cliente del frontend (<code>src/api/client.ts</code>) lo agrega solo.</li>
     <li>Dos permisos: <code>puede_aprobar</code> y <code>administra_usuarios</code>. Se exigen con <code>Depends(exigir_permiso("…"))</code>.</li>
-    <li><b>Toda ruta nueva exige sesión.</b> El test <code>test_todas_las_rutas_exigen_sesion</code> recorre las rutas y falla si alguna queda abierta. Si agregás una pública a propósito, tenés que declararla.</li>
+    <li><b>Toda ruta nueva pide el encabezado propio.</b> Desde A26 no hay login, pero todo pedido que cambia datos tiene que traer <code>X-Cartel-Pedido</code> (frena pedidos mandados desde otra página). El test <code>test_todas_las_rutas_piden_el_encabezado</code> recorre las rutas y falla si alguna no lo pide. Si agregás una libre a propósito, tenés que declararla.</li>
     <li>Siempre tiene que haber al menos una persona que administre usuarios; el servicio lo garantiza.</li>
   </ul>
 
@@ -613,7 +613,7 @@ alembic heads                                         <span class="c"># ver cabe
       <li>La lógica, en un servicio de <code>app/services/…</code> (la ruta solo delega).</li>
       <li>La ruta en el <code>rutas_*.py</code> que corresponda. La sesión se exige sola; si hace falta un permiso, <code>Depends(exigir_permiso("…"))</code>.</li>
       <li>Errores para personas con <code>ErrorParaElUsuario</code>.</li>
-      <li>Un test en <code>tests/api/</code>. El test guardián <code>test_todas_las_rutas_exigen_sesion</code> tiene que seguir pasando.</li>
+      <li>Un test en <code>tests/api/</code>. El test guardián <code>test_todas_las_rutas_piden_el_encabezado</code> tiene que seguir pasando.</li>
     </ol>
   </details>
   <details><summary>Agregar o cambiar una columna</summary>
@@ -685,7 +685,7 @@ alembic heads                                         <span class="c"># ver cabe
 <section id="despliegue">
   <h2 class="sec"><span class="n">15</span>Despliegue (lo que viene)</h2>
   <p class="lema">Hoy todo corre en local. Este es el plan para el servidor.</p>
-  <p>El plan detallado está en <code>docs/plan/1.1-servidor-y-login/</code> (<code>diseno.md</code> y <code>plan.md</code>). La parte de login ya está hecha; sigue la <b>entrega A3</b>:</p>
+  <p>El plan detallado está en <code>docs/historico/1.1-servidor-y-login/</code> (<code>diseno.md</code> y <code>plan.md</code>). La parte de login ya está hecha; sigue la <b>entrega A3</b>:</p>
   <ol class="pasos">
     <li><b>Docker Compose:</b> que todo levante con un comando, igual que en el servidor.</li>
     <li><b>Copias de seguridad diarias</b> (con <code>restic</code>), y un aviso en <code>/salud</code> («backup atrasado») si pasan demasiadas horas sin una copia buena (<code>CARTELERIA_BACKUP_HORAS_MAXIMAS</code>).</li>

@@ -293,10 +293,8 @@ export default function RevisionDePlanilla({ revision, alCancelar, alTerminar }:
         </div>
       )}
 
-      <div className="mt-6 pt-4 border-t border-line flex flex-wrap items-center justify-between gap-4">
-        <p className="text-sm text-ink/70 max-w-xl">
-          Los presupuestos ya armados no cambian solos: toman el precio nuevo si se vuelven a calcular los materiales en el Costeo.
-        </p>
+      {/* Sin la nota de los presupuestos ya armados: el presupuesto salió en A26. */}
+      <div className="mt-6 pt-4 border-t border-line flex flex-wrap items-center justify-end gap-4">
         <div className="flex gap-2">
           <button type="button" className="border border-line bg-white rounded px-3 py-1.5 text-sm" onClick={alCancelar} disabled={aplicar.isPending}>
             Cancelar

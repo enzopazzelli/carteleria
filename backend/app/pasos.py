@@ -1,5 +1,8 @@
 """Los pasos de la tarjeta de un trabajo — `docs/plan/A16-pagina-de-inicio/diseno.md §5.4`.
 
+Desde A26 no hay paso de presupuesto: el recorrido termina en Chapas, con el DXF y el PDF
+(`docs/plan/A26-sacar-lo-que-no-va/diseno.md §5`).
+
 Recibe lo que ya se leyó de la base (`api/rutas_inicio.py`) y decide en
 qué quedó cada paso, qué frase lleva la tarjeta y a dónde lleva. No toca
 la base: así cada caso se prueba sin anidar de verdad.
@@ -12,17 +15,11 @@ from typing import Literal
 from .modelos.trabajo import EstadoEjecucion
 
 EstadoPaso = Literal["hecho", "a_medias", "error", "pendiente"]
-Destino = Literal["piezas", "grupos", "anidado", "chapas", "costeo"]
+Destino = Literal["piezas", "grupos", "anidado", "chapas"]
 
 _EN_CURSO = {EstadoEjecucion.ENCOLADA.value, EstadoEjecucion.CORRIENDO.value}
-#: La frase con todo hecho, según el estado del presupuesto (A20). Un estado
-#: que no está acá se nombra tal cual.
-_FRASE_DEL_PRESUPUESTO = {
-    "BORRADOR": "Presupuesto en borrador",
-    "PENDIENTE_APROBACION": "Presupuesto esperando aprobación",
-    "OBSERVADO": "Presupuesto observado: falta corregirlo",
-    "APROBADO": "Presupuesto aprobado",
-}
+#: Con todo anidado: en Chapas están el DXF y el PDF (A26).
+LISTO = "Listo para cortar"
 
 
 @dataclass(frozen=True)
@@ -46,8 +43,6 @@ class TrabajoParaPasos:
     sin_grupo: int
     #: En el orden de los grupos.
     grupos: list[GrupoParaPasos]
-    #: El estado del presupuesto más reciente, o `None` si no tiene.
-    presupuesto: str | None
 
 
 @dataclass(frozen=True)
@@ -55,7 +50,6 @@ class Pasos:
     piezas: EstadoPaso
     grupos: EstadoPaso
     anidado: EstadoPaso
-    presupuesto: EstadoPaso
     #: Lo que sigue: la del primer paso que no está hecho.
     frase: str
     destino: Destino
@@ -112,7 +106,6 @@ def pasos_del_trabajo(trabajo: TrabajoParaPasos) -> Pasos:
     piezas: EstadoPaso = "hecho" if trabajo.piezas_a_cortar > 0 else "pendiente"
     grupos = _grupos(trabajo)
     anidado, frase_del_anidado = _anidado(trabajo.grupos)
-    presupuesto: EstadoPaso = "hecho" if trabajo.presupuesto is not None else "pendiente"
 
     frase: str
     destino: Destino
@@ -122,9 +115,6 @@ def pasos_del_trabajo(trabajo: TrabajoParaPasos) -> Pasos:
         frase, destino = _frase_de_grupos(trabajo, grupos), "grupos"
     elif anidado != "hecho":
         frase, destino = frase_del_anidado, "anidado"
-    elif presupuesto != "hecho":
-        frase, destino = "Falta el presupuesto", "chapas"
     else:
-        estado = trabajo.presupuesto or ""
-        frase, destino = _FRASE_DEL_PRESUPUESTO.get(estado, f"Presupuesto: {estado.lower()}"), "costeo"
-    return Pasos(piezas, grupos, anidado, presupuesto, frase, destino)
+        frase, destino = LISTO, "chapas"
+    return Pasos(piezas, grupos, anidado, frase, destino)

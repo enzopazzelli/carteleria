@@ -1,17 +1,17 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { ResumenDelInicio } from "../api/inicio";
 import { diaDeLaPlanilla } from "../components/Materiales/arbol";
 import Mensaje from "../components/Mensaje/Mensaje";
-import { falla, type QueMostrar } from "../components/Mensaje/contenido";
-import FilaDePresupuesto from "../components/Presupuestos/FilaDePresupuesto";
+import { falla } from "../components/Mensaje/contenido";
 import NuevoTrabajo from "../components/Tarjeta/NuevoTrabajo";
 import TarjetaTrabajo from "../components/Tarjeta/TarjetaTrabajo";
 import { cuantos } from "../components/Tarjeta/formato";
 import { useResumenDelInicio, useTarjetas } from "../hooks/useInicio";
 
 // La página de inicio (A16, diseño §5.2): las tarjetas de los trabajos a la
-// izquierda; a la derecha, crear uno, los últimos presupuestos y los materiales.
+// izquierda; a la derecha, crear uno y los materiales. Los últimos
+// presupuestos salieron en A26.
 
 /** Se muestran 6. Se piden 7 para saber si hay más y hace falta «Ver todos». */
 const TARJETAS_EN_EL_INICIO = 6;
@@ -26,32 +26,6 @@ function Recuadro({ titulo, children }: { titulo: string; children: ReactNode })
       <h2 className="font-semibold mb-3">{titulo}</h2>
       {children}
     </section>
-  );
-}
-
-function UltimosPresupuestos({ resumen }: { resumen: ResumenDelInicio }) {
-  const [error, setError] = useState<QueMostrar | null>(null);
-
-  if (resumen.presupuestos.length === 0) {
-    return <p className="text-sm text-ink/60">Todavía no hay presupuestos. Se arman en el Costeo de cada trabajo.</p>;
-  }
-  return (
-    <>
-      <ul className="divide-y divide-line">
-        {resumen.presupuestos.map((presupuesto) => (
-          <FilaDePresupuesto key={presupuesto.id} presupuesto={presupuesto} alFallarElPdf={setError} />
-        ))}
-      </ul>
-      <p className="text-xs text-ink/60 mt-2">{cuantos(resumen.total_presupuestos, "presupuesto", "presupuestos")} en total</p>
-      <Link to="/presupuestos" className="inline-block mt-2 text-sm underline hover:text-cuttext">
-        Ver todos
-      </Link>
-      {error && (
-        <div className="mt-2">
-          <Mensaje variante="error" que={error} />
-        </div>
-      )}
-    </>
   );
 }
 
@@ -132,9 +106,6 @@ export default function Inicio() {
       <aside className="flex flex-col gap-4">
         <Recuadro titulo="Nuevo trabajo">
           <NuevoTrabajo />
-        </Recuadro>
-        <Recuadro titulo="Últimos presupuestos">
-          {resumen.data ? <UltimosPresupuestos resumen={resumen.data} /> : resumen.isLoading && <Cargando />}
         </Recuadro>
         <Recuadro titulo="Materiales">
           {resumen.data ? <Materiales resumen={resumen.data} /> : resumen.isLoading && <Cargando />}

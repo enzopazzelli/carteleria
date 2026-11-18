@@ -22,22 +22,26 @@ def _carpeta_temporal_de_la_prueba(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _usuario_de_prueba(request):
-    """El arnés de la sesión (1.1). Todas las rutas del sistema exigen haber entrado; las pruebas que no
-    son de acceso entran solas, con un usuario de prueba que puede aprobar y administrar y **no está en la
-    base** (`id=None`): así no choca con las claves foráneas ni hace falta crearlo en cada base de prueba.
+    """El arnés de la sesión (1.1). Las rutas de usuarios y de presupuesto siguen pidiendo haber entrado; las
+    pruebas que no son de acceso entran solas, con un usuario de prueba que puede aprobar y administrar y
+    **no está en la base** (`id=None`): así no choca con las claves foráneas ni hace falta crearlo en cada
+    base de prueba. Tampoco mandan el encabezado propio que piden todas las rutas desde A26 (`pedido_propio`):
+    el arnés lo da por puesto, como ya lo daba por puesto al reemplazar `usuario_actual`.
 
-    Las que prueban justamente la entrada y los permisos se marcan `@pytest.mark.sin_sesion_de_prueba` y
-    entran de verdad, con usuarios que dan de alta ellas."""
+    Las que prueban justamente la entrada, los permisos y el encabezado se marcan
+    `@pytest.mark.sin_sesion_de_prueba` y van de verdad, con usuarios que dan de alta ellas."""
     if request.node.get_closest_marker("sin_sesion_de_prueba"):
         yield
         return
     from app.api.app import app
-    from app.api.autenticacion import UsuarioActual, usuario_actual
+    from app.api.autenticacion import UsuarioActual, pedido_propio, usuario_actual
 
     app.dependency_overrides[usuario_actual] = lambda: UsuarioActual(
         id=None, usuario="prueba", nombre="Prueba", puede_aprobar=True, administra_usuarios=True,
         debe_cambiar_contrasena=False,
     )
+    app.dependency_overrides[pedido_propio] = lambda: None
     yield
     # Los armadores de cliente de las pruebas de la API hacen `clear()` al terminar; esto es por las que no.
     app.dependency_overrides.pop(usuario_actual, None)
+    app.dependency_overrides.pop(pedido_propio, None)

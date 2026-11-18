@@ -147,7 +147,7 @@ def _encabezado(lienzo: Canvas, trabajo: TrabajoDelPdf, bloque: BloqueDelPdf, ho
     lienzo.setFont(_NEGRITA, 11)
     lienzo.drawString(MARGEN_MM * mm, (arriba - 4.5) * mm, _recortar(trabajo.nombre, lugar, _NEGRITA, 11))
     datos = [bloque.material, f"grupo {bloque.grupo}", f"chapa {bloque.chapa_ancho_mm:g} × {bloque.chapa_alto_mm:g}"]
-    datos += [dato for dato in (trabajo.archivo, trabajo.presupuesto) if dato]
+    datos += [trabajo.archivo] if trabajo.archivo else []
     lienzo.setFont(_NORMAL, 8)
     lienzo.setFillColor(_GRIS_TEXTO)
     lienzo.drawString(MARGEN_MM * mm, (arriba - 9) * mm, _recortar(" · ".join(datos), ancho, _NORMAL, 8))

@@ -150,7 +150,7 @@ def _elegido_viejo_y_uno_nuevo_al_dia(sesion, formato, *, definitiva: bool):
     return grupo, viejo, nuevo
 
 
-_PIEZAS_CAMBIARON = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de presupuestar."
+_PIEZAS_CAMBIARON = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de cortar."
 
 
 def test_sin_ningun_anidado_terminado_no_hay_nada_que_mostrar(sesion):
@@ -367,10 +367,10 @@ def test_los_avisos_de_no_cobrar():
     assert aviso_de_no_cobrar(Motivo.PIEZAS_CAMBIARON) == _PIEZAS_CAMBIARON
     assert aviso_de_no_cobrar(Motivo.SIN_PIEZAS) == _PIEZAS_CAMBIARON
     assert aviso_de_no_cobrar(Motivo.CHAPA_CAMBIO) == (
-        "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de presupuestar."
+        "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de cortar."
     )
     assert aviso_de_no_cobrar(Motivo.SIN_MATERIAL) == (
-        "Este grupo no tiene material asignado: asignale uno antes de presupuestar."
+        "Este grupo no tiene chapa: elegila en la pestaña Grupos."
     )
     assert aviso_de_no_cobrar(Motivo.SIN_ANIDADO) is None
     assert aviso_de_no_cobrar(None) is None

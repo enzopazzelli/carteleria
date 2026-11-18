@@ -34,7 +34,7 @@ def _rectangulo(ancho, alto, x=0.0, y=0.0):
 
 
 def _trabajo(n_chapas, *, nombre="Prueba", sin_anidar=(), con_veta=False, falta=(), sin_lugar=(),
-             disenio_vacio=False, copias=1, presupuesto=None, aviso_de_no_cobrar=None) -> TrabajoDelPdf:
+             disenio_vacio=False, copias=1, aviso_de_no_cobrar=None) -> TrabajoDelPdf:
     chapas = [
         ChapaDelPdf(indice=i, piezas=[PiezaEnChapa("497", _rectangulo(300, 200, 100, 100))],
                     usado="1220 × 400", sobrante="1220 × 2040", es_retazo=True)
@@ -51,11 +51,11 @@ def _trabajo(n_chapas, *, nombre="Prueba", sin_anidar=(), con_veta=False, falta=
     )
     bloque = BloqueDelPdf(
         material="Chapa negra cal. 22", grupo="G1", chapa_ancho_mm=1220, chapa_alto_mm=2440, con_veta=con_veta,
-        chapas=chapas, linea=f"{n_chapas} chapas enteras", anidado="anidado #9, elegido para el presupuesto",
+        chapas=chapas, linea=f"{n_chapas} chapas enteras", anidado="anidado #9, el definitivo",
         disenio=disenio, aviso_de_no_cobrar=aviso_de_no_cobrar,
     )
     return TrabajoDelPdf(nombre=nombre, archivo="prueba.dxf", generado=datetime(2026, 10, 25, 11, 0),
-                         presupuesto=presupuesto, bloques=[bloque], sin_anidar=list(sin_anidar))
+                         bloques=[bloque], sin_anidar=list(sin_anidar))
 
 
 def _texto(contenido: bytes) -> str:
@@ -71,10 +71,9 @@ def test_una_pagina_por_hoja_en_a4_apaisada():
 
 
 def test_trae_los_textos_de_la_hoja():
-    texto = _texto(dibujar_pdf(_trabajo(n_chapas=2, sin_anidar=["Calibre 18"], copias=3,
-                                        presupuesto="P-2026-0003 · Cliente SA")))
+    texto = _texto(dibujar_pdf(_trabajo(n_chapas=2, sin_anidar=["Calibre 18"], copias=3)))
     for esperado in ["Chapa 1", "Chapa 2", "497", "hoja 1 de 2", "Escala 1:20", "Imprimir al 100 %",
-                     "2 chapas enteras", "anidado #9", "Sin anidar", "Calibre 18", "×3", "P-2026-0003 · Cliente SA"]:
+                     "2 chapas enteras", "anidado #9", "Sin anidar", "Calibre 18", "×3", "prueba.dxf"]:
         assert esperado in texto
 
 
@@ -138,7 +137,7 @@ def test_el_numero_entra_a_lo_ancho_de_la_pieza():
 
 
 def test_el_bloque_escribe_el_aviso_de_no_cobrar_que_trae_y_si_no_hay_no_escribe_nada():
-    aviso = "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de presupuestar."
+    aviso = "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de cortar."
 
     con_aviso = _texto(dibujar_pdf(_trabajo(n_chapas=1, aviso_de_no_cobrar=aviso))).replace("\n", " ")
     sin_aviso = _texto(dibujar_pdf(_trabajo(n_chapas=1))).replace("\n", " ")

@@ -1,5 +1,5 @@
 """Las migraciones y el modelo, contra PostgreSQL (1.1, tarea 1,
-`docs/plan/1.1-servidor-y-login/plan.md`).
+`docs/historico/1.1-servidor-y-login/plan.md`).
 
 Las 18 migraciones se escribieron para SQLite. Antes de que el sistema corra en
 PostgreSQL hay que saber si sirven: estas pruebas aplican todas, las deshacen y

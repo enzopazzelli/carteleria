@@ -33,7 +33,6 @@ class PasosLeer(BaseModel):
     piezas: EstadoPaso
     grupos: EstadoPaso
     anidado: EstadoPaso
-    presupuesto: EstadoPaso
 
 
 class TarjetaLeer(BaseModel):
@@ -46,8 +45,6 @@ class TarjetaLeer(BaseModel):
     destino: Destino
     #: Un renglón por grupo con un anidado que cuenta: «7 chapas · CHAPA NEGRA cal. 22».
     chapas: list[str]
-    #: El más reciente del trabajo.
-    presupuesto: PresupuestoResumidoLeer | None
 
 
 class FamiliaLeer(BaseModel):
@@ -69,7 +66,4 @@ class MaterialesResumidosLeer(BaseModel):
 
 
 class ResumenDelInicioLeer(BaseModel):
-    #: Los más recientes primero.
-    presupuestos: list[PresupuestoResumidoLeer]
-    total_presupuestos: int
     materiales: MaterialesResumidosLeer

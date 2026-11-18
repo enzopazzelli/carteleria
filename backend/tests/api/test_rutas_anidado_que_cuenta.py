@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from .test_rutas_ajuste import _esperar_estado, _trabajo_anidado_con_dos_piezas, cliente  # noqa: F401
 
-_PIEZAS_CAMBIARON = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de presupuestar."
-_CHAPA_CAMBIO = "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de presupuestar."
+_PIEZAS_CAMBIARON = "Las piezas de este grupo cambiaron después de este anidado: anidá de nuevo antes de cortar."
+_CHAPA_CAMBIO = "La chapa de este grupo cambió después de este anidado: anidá de nuevo antes de cortar."
 
 
 def _historial(cliente, grupo_id: int) -> dict[int, dict]:

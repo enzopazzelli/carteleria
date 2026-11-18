@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Ejecucion } from "../../api/nesting";
-import { ejecucionALaVista, paraElPresupuesto, queMostrarDelHistorial } from "./historial";
+import { ejecucionALaVista, paraCortar, queMostrarDelHistorial } from "./historial";
 
 function ejecucion(extra: Partial<Ejecucion>): Ejecucion {
   return {
@@ -43,50 +43,60 @@ describe("ejecucionALaVista", () => {
   });
 });
 
-describe("paraElPresupuesto", () => {
+describe("paraCortar", () => {
   const elegida = ejecucion({ id: 10, es_definitiva: true, es_el_que_cuenta: true });
   const vencida = ejecucion({ id: 10, es_definitiva: true, vencido: true, no_se_cobra_por: "piezas_cambiaron" });
   const nueva = ejecucion({ id: 11, es_el_que_cuenta: true });
 
   it("la elegida al día", () => {
-    expect(paraElPresupuesto(elegida, [elegida])).toBe("Elegida para el presupuesto");
+    expect(paraCortar(elegida, [elegida])).toBe("El definitivo: es el que se corta");
   });
 
-  it("una vencida no se cobra, aunque sea la elegida", () => {
-    expect(paraElPresupuesto(vencida, [nueva, vencida])).toBe(
-      "Las piezas cambiaron después de este anidado: no se cobra",
+  it("una vencida hay que volver a anidarla, aunque sea la definitiva", () => {
+    expect(paraCortar(vencida, [nueva, vencida])).toBe(
+      "Las piezas cambiaron después de este anidado: hay que volver a anidar",
     );
   });
 
-  it("con la chapa cambiada tampoco se cobra, y lo dice con su motivo", () => {
+  it("con la chapa cambiada también, y lo dice con su motivo", () => {
     const deOtraChapa = ejecucion({ id: 10, es_definitiva: true, no_se_cobra_por: "chapa_cambio" });
-    expect(paraElPresupuesto(deOtraChapa, [deOtraChapa])).toBe(
-      "La chapa cambió después de este anidado: no se cobra",
+    expect(paraCortar(deOtraChapa, [deOtraChapa])).toBe(
+      "La chapa cambió después de este anidado: hay que volver a anidar",
     );
   });
 
   it("un grupo que se quedó sin piezas dice lo mismo que uno con las piezas cambiadas", () => {
     const sinPiezas = ejecucion({ id: 10, no_se_cobra_por: "sin_piezas" });
-    expect(paraElPresupuesto(sinPiezas, [sinPiezas])).toBe(
-      "Las piezas cambiaron después de este anidado: no se cobra",
+    expect(paraCortar(sinPiezas, [sinPiezas])).toBe(
+      "Las piezas cambiaron después de este anidado: hay que volver a anidar",
     );
   });
 
-  it("la que se cobra en lugar de la elegida vencida lo dice", () => {
-    expect(paraElPresupuesto(nueva, [nueva, vencida])).toBe(
-      "Se usa para el presupuesto: el elegido (#10) es de antes de que cambiaran las piezas",
+  it("la que se corta en lugar de la definitiva vencida lo dice", () => {
+    expect(paraCortar(nueva, [nueva, vencida])).toBe(
+      "Es el que se corta: el definitivo (#10) es de antes de que cambiaran las piezas",
     );
   });
 
   it("si la elegida quedó de otra chapa, también lo dice", () => {
     const deOtraChapa = ejecucion({ id: 10, es_definitiva: true, no_se_cobra_por: "chapa_cambio" });
-    expect(paraElPresupuesto(nueva, [nueva, deOtraChapa])).toBe(
-      "Se usa para el presupuesto: el elegido (#10) es de antes de que cambiara la chapa",
+    expect(paraCortar(nueva, [nueva, deOtraChapa])).toBe(
+      "Es el que se corta: el definitivo (#10) es de antes de que cambiara la chapa",
     );
   });
 
-  it("una sin elegir, sin vencida elegida, es vista previa", () => {
-    expect(paraElPresupuesto(nueva, [nueva, elegida])).toBe("Vista previa; aún no elegida para el presupuesto");
+  it("una sin elegir, con una definitiva al día, es vista previa", () => {
+    const otra = ejecucion({ id: 11 });
+    expect(paraCortar(otra, [otra, elegida])).toBe("Vista previa: no es el que se corta");
+  });
+
+  it("sin definitiva, la más reciente es la que se corta (A26)", () => {
+    expect(paraCortar(nueva, [nueva])).toBe("Es el que se corta: el más reciente, ninguno está marcado como definitivo");
+  });
+
+  it("sin definitiva, una más vieja es vista previa", () => {
+    const vieja = ejecucion({ id: 9 });
+    expect(paraCortar(vieja, [nueva, vieja])).toBe("Vista previa: no es el que se corta");
   });
 });
 
