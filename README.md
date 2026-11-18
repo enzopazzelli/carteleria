@@ -117,8 +117,7 @@ Una sola regla del servidor decide qué anidado cuenta: la tarjeta del inicio, e
 
 | Qué | Para qué | Quién |
 |---|---|---|
-| **A27: deshacer en el ajuste del anidado** | Volver atrás arrastrar, girar o pasar una pieza de chapa. Hoy, al devolver una pieza a su chapa, cae en otro lugar | Enzo, en curso |
-| **A28: retazos agrupados por material** | Ver todos los retazos juntos y saber qué hay de cada material | Enzo, después de A27 |
+| **A28: retazos agrupados por material** | Ver todos los retazos juntos y saber qué hay de cada material | Enzo, en curso |
 | **Kerf, margen y separación de 15 materiales** (ACM, PVC, Metalex, Polyfan, entre otros) | Sin esos valores no se puede anidar con esas chapas | Falta el dato del taller |
 | **Rearmar el instalador** con esta versión | Que la cartelería tenga lo nuevo (A26 ya está en `main`) | Enzo, cuando lo pida |
 | **Medir la segunda tanda de A17** (unos 75 minutos con la máquina libre) | Decidir cómo repartir el tiempo del anidado | Enzo, solo cuando la pida |
@@ -239,17 +238,15 @@ cartelería/
 
 ```mermaid
 flowchart LR
-    H["HECHO<br/>Del dibujo al corte:<br/>lectura, grupos, anidado,<br/>chapas, DXF y PDF,<br/>materiales e instalador.<br/>A26: sin login ni presupuesto"]
-    N["AHORA<br/>A27: deshacer<br/>en el ajuste"]
-    D["DESPUÉS<br/>A28: retazos<br/>por material"]
-    H --> N --> D
+    H["HECHO<br/>Del dibujo al corte:<br/>lectura, grupos, anidado,<br/>chapas, DXF y PDF,<br/>materiales e instalador.<br/>A26: sin login ni presupuesto.<br/>A27: deshacer en el ajuste"]
+    N["AHORA<br/>A28: retazos<br/>por material"]
+    H --> N
 
     classDef hecho fill:#cfe8d5,stroke:#3d7a52,color:#14351f
     classDef ahora fill:#ffe3cc,stroke:#ff5d00,color:#5a2300
     classDef luego fill:#eeeeee,stroke:#999,color:#555
     class H hecho
     class N ahora
-    class D luego
 ```
 
 El rumbo cambió el 2026-11-18, después de la demo: el producto final es el DXF y el PDF, y se instala en cada computadora. Las etapas del [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) que eran del ciclo de cotización y del servidor (login, aprobación, mail, servidor, WhatsApp) ya no se siguen; el plan maestro lo dice en su §0. Los hitos y las semanas de la estimación original siguen en [`docs/EPICA.md §8`](docs/EPICA.md).

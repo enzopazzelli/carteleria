@@ -687,7 +687,7 @@ def test_reacomoda_la_chapa_si_no_entra_en_lo_libre(cliente, tmp_path):
 
     assert respuesta.status_code == 200, respuesta.text
     cuerpo = respuesta.json()
-    assert (cuerpo["reacomodada"], cuerpo["puede_deshacer"]) == (0, True)
+    assert cuerpo["reacomodada"] == 0
     assert (cuerpo["planchas_usadas"], cuerpo["chapa_quitada"]) == (1, 1)
     despues = {c["id"]: c for c in cuerpo["colocaciones"]}
     assert {c["plancha_indice"] for c in despues.values()} == {0}
@@ -732,25 +732,108 @@ def test_deshacer_deja_todo_como_estaba(cliente, tmp_path):
     antes = _foto(_colocaciones(cliente, ejecucion_id))
     assert _pasar(cliente, pasada, 0).status_code == 200
 
-    respuesta = cliente.post(f"/ejecuciones/{ejecucion_id}/deshacer-reacomodo")
+    respuesta = _deshacer(cliente, ejecucion_id)
 
     assert respuesta.status_code == 200, respuesta.text
     cuerpo = respuesta.json()
-    assert (cuerpo["planchas_usadas"], cuerpo["puede_deshacer"], cuerpo["reacomodada"]) == (2, False, None)
+    assert (cuerpo["planchas_usadas"], cuerpo["reacomodada"]) == (2, None)
     assert _foto(cuerpo["colocaciones"]) == antes
     assert cliente.get(f"/ejecuciones/{ejecucion_id}").json()["planchas_usadas"] == 2
 
 
-def test_deshacer_despues_de_otro_cambio_da_409(cliente, tmp_path):
+def test_despues_de_otro_cambio_se_deshace_ese_y_despues_el_pase(cliente, tmp_path):
+    """Desde A27 cada cambio es un paso: el último se deshace primero."""
     ejecucion_id, _, (una, _, pasada) = _tres_de_400(cliente, tmp_path)
+    antes_del_pase = _foto(_colocaciones(cliente, ejecucion_id))
     cuerpo = _pasar(cliente, pasada, 0).json()
+    antes_del_movimiento = _foto(cuerpo["colocaciones"])
     x, y = _centro(next(c for c in cuerpo["colocaciones"] if c["id"] == una))
     cliente.patch(f"/colocaciones/{una}", json={"centro_x_mm": str(x + 1), "centro_y_mm": str(y)})
 
-    respuesta = cliente.post(f"/ejecuciones/{ejecucion_id}/deshacer-reacomodo")
+    primera = _deshacer(cliente, ejecucion_id)
+    segunda = _deshacer(cliente, ejecucion_id)
+
+    assert _foto(primera.json()["colocaciones"]) == antes_del_movimiento
+    assert _foto(segunda.json()["colocaciones"]) == antes_del_pase
+    assert _deshacer(cliente, ejecucion_id).status_code == 409
+
+
+def test_el_estado_dice_cuantos_pasos_hay_y_cual_es_el_ultimo(cliente, tmp_path):
+    ejecucion_id, cargadas, (_, _, pasada) = _tres_de_400(cliente, tmp_path)
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/deshacer").json() == {"cuantos": 0, "ultimo": None}
+
+    assert _pasar(cliente, pasada, 0).status_code == 200
+
+    estado = cliente.get(f"/ejecuciones/{ejecucion_id}/deshacer").json()
+    assert estado["cuantos"] == 1 and estado["ultimo"].startswith("pasar «") and estado["ultimo"].endswith("a la chapa 1")
+
+
+def test_sin_pasos_deshacer_da_409(cliente, tmp_path):
+    ejecucion_id, _, _ = _tres_de_400(cliente, tmp_path)
+
+    respuesta = _deshacer(cliente, ejecucion_id)
 
     assert respuesta.status_code == 409
-    assert mensaje_de(respuesta) == "Ya hubo otro cambio en este anidado, o se reinició el servidor: no se puede deshacer."
+    assert mensaje_de(respuesta) == "No hay nada para deshacer en este anidado."
+
+
+def test_pasar_a_una_chapa_nueva_y_deshacer_devuelve_la_pieza_a_su_lugar(cliente, tmp_path):
+    ejecucion_id, _, (una, _, _) = _tres_de_400(cliente, tmp_path)
+    antes = _foto(_colocaciones(cliente, ejecucion_id))
+
+    cuerpo = _pasar(cliente, una, 2).json()
+    assert cuerpo["planchas_usadas"] == 3
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/deshacer").json()["ultimo"].endswith("a una chapa nueva")
+
+    respuesta = _deshacer(cliente, ejecucion_id)
+    assert respuesta.json()["planchas_usadas"] == 2
+    assert _foto(respuesta.json()["colocaciones"]) == antes
+
+
+def test_mover_y_deshacer_vuelve_al_mismo_lugar(cliente, tmp_path):
+    ejecucion_id, _, (una, _, _) = _tres_de_400(cliente, tmp_path)
+    antes = _foto(_colocaciones(cliente, ejecucion_id))
+    x, y = _centro(next(c for c in _colocaciones(cliente, ejecucion_id) if c["id"] == una))
+    assert cliente.patch(f"/colocaciones/{una}", json={"centro_x_mm": str(x + 3), "centro_y_mm": str(y)}).status_code == 200
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/deshacer").json()["ultimo"].startswith("mover «")
+
+    respuesta = _deshacer(cliente, ejecucion_id)
+
+    assert _foto(respuesta.json()["colocaciones"]) == antes
+    assert _foto(_colocaciones(cliente, ejecucion_id)) == antes
+
+
+def test_una_vuelta_de_rueda_se_deshace_de_una_vez(cliente, tmp_path):
+    ejecucion_id, _, (una, _, _) = _tres_de_400(cliente, tmp_path)
+    antes = _foto(_colocaciones(cliente, ejecucion_id))
+    for grados in (15, 30, 45, 60):
+        assert cliente.patch(f"/colocaciones/{una}", json={"angulo_grados": str(grados)}).status_code == 200
+    estado = cliente.get(f"/ejecuciones/{ejecucion_id}/deshacer").json()
+    assert estado["cuantos"] == 1 and estado["ultimo"].startswith("girar «")
+
+    respuesta = _deshacer(cliente, ejecucion_id)
+
+    assert _foto(respuesta.json()["colocaciones"]) == antes
+
+
+def test_un_pase_que_no_se_hace_no_anota_paso(cliente, tmp_path):
+    ejecucion_id, _, (una, _, _) = _tres_de_400(cliente, tmp_path)
+
+    assert _pasar(cliente, una, 0).status_code == 400  # ya está en esa chapa
+    assert _pasar(cliente, una, 9).status_code == 404  # no hay esa chapa
+
+    assert cliente.get(f"/ejecuciones/{ejecucion_id}/deshacer").json()["cuantos"] == 0
+
+
+def test_no_se_deshace_mientras_se_anida_el_grupo(cliente, tmp_path):
+    ejecucion_id, _, (_, _, pasada) = _tres_de_400(cliente, tmp_path)
+    assert _pasar(cliente, pasada, 0).status_code == 200
+    with Session(cliente.motor) as sesion:
+        vieja = sesion.get(EjecucionNesting, ejecucion_id)
+        sesion.add(EjecucionNesting(grupo_id=vieja.grupo_id, motor="sparrow", estado=EstadoEjecucion.CORRIENDO.value))
+        sesion.commit()
+
+    assert _deshacer(cliente, ejecucion_id).status_code == 409
 
 
 @pytest.mark.parametrize("donde", ["en la chapa de destino", "en otra chapa"])
@@ -784,7 +867,9 @@ def test_un_cambio_mientras_se_reacomoda_no_se_pisa(cliente, tmp_path, monkeypat
     assert mensaje_de(respuesta) == "El anidado cambió mientras se reacomodaba la chapa 1: volvé a pasar la pieza."
     assert _foto(_colocaciones(cliente, ejecucion_id)) == tras_el_cambio
     assert cliente.get(f"/ejecuciones/{ejecucion_id}").json()["planchas_usadas"] == 3
-    assert cliente.post(f"/ejecuciones/{ejecucion_id}/deshacer-reacomodo").status_code == 409
+    # El pase que no se aplicó no anotó paso: solo está el movimiento del otro pedido.
+    estado = cliente.get(f"/ejecuciones/{ejecucion_id}/deshacer").json()
+    assert estado["cuantos"] == 1 and estado["ultimo"].startswith("mover «")
 
 
 def test_una_pieza_con_dos_copias_no_se_pierde(cliente, tmp_path):
@@ -831,7 +916,7 @@ _NO_ENTRA_EN_LA_1 = "No entra en la chapa 1 ni reacomodándola: probá con otra 
 
 
 def _deshacer(cliente, ejecucion_id):
-    return cliente.post(f"/ejecuciones/{ejecucion_id}/deshacer-reacomodo")
+    return cliente.post(f"/ejecuciones/{ejecucion_id}/deshacer")
 
 
 def test_si_sparrow_falla_al_reacomodar_no_entra_y_queda_en_el_registro(cliente, tmp_path, monkeypatch, caplog):
@@ -886,7 +971,7 @@ def test_deshacer_no_vale_para_otro_anidado_con_el_mismo_numero(cliente, tmp_pat
     """SQLite vuelve a usar el número del último anidado borrado: el nuevo
     no hereda el «Deshacer» del borrado."""
     ejecucion_id, _, (_, _, pasada) = _tres_de_400(cliente, tmp_path)
-    assert _pasar(cliente, pasada, 0).json()["puede_deshacer"]
+    assert _pasar(cliente, pasada, 0).status_code == 200
     with Session(cliente.motor) as sesion:
         vieja = sesion.get(EjecucionNesting, ejecucion_id)
         datos = dict(grupo_id=vieja.grupo_id, motor=vieja.motor, parametros=vieja.parametros, opciones=vieja.opciones)
@@ -939,7 +1024,7 @@ def test_al_reacomodar_lo_de_adentro_de_la_chapa_de_destino_sigue_adentro(client
 
 def test_un_pase_que_falla_no_pierde_el_deshacer(cliente, tmp_path):
     ejecucion_id, _, (una, _, pasada) = _tres_de_400(cliente, tmp_path)
-    assert _pasar(cliente, pasada, 0).json()["puede_deshacer"]
+    assert _pasar(cliente, pasada, 0).status_code == 200
 
     assert _pasar(cliente, una, 0).status_code == 400  # ya está en esa chapa
 

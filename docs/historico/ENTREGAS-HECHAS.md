@@ -10,6 +10,13 @@
 
 
 **Ya está en `main`:**
+- **Deshacer en el ajuste del anidado (A27), desde el 2026-11-18.**
+  - **Para qué:** al pasar una pieza a otra chapa y devolverla, caía en otro lugar. Ahora se puede volver atrás.
+  - **Cómo funciona:** un botón «↶ Deshacer» arriba en Chapas (y Ctrl+Z) que dice qué va a deshacer. Vuelve atrás mover, girar y pasar de chapa, con el reacomodo: la pieza queda en su lugar exacto, y la chapa creada o quitada vuelve a como estaba. Guarda los últimos 20 cambios por anidado; los giros seguidos de una pieza cuentan como uno.
+  - **No se deshace:** descartar una pieza, guardar un retazo ni volver a anidar. Sin «Rehacer».
+  - **En la base:** una tabla nueva (`pasos_del_ajuste`, migración `a7d3e9c2b564`), que se aplica sola al arrancar con respaldo antes.
+
+  Ver [`historico/A27-deshacer-en-el-ajuste/`](A27-deshacer-en-el-ajuste/diseno.md).
 - **Sacar lo que no va (A26), desde el 2026-11-18.**
   - **Para qué:** lo que pidió el cliente en la demo: sin login, sin presupuesto y sin «Comparar formatos». El producto final es el DXF de cada chapa y el PDF del diseño anidado, y no va a haber servidor: se instala en cada computadora.
   - **Lo que se nota:** la app entra directo; la barra dice «Cartelería» y tiene Inicio, Trabajos y Materiales; un trabajo tiene cuatro etapas (sin Costeo); cada grupo elige **una** chapa con «Elegir chapa»; con todo anidado la tarjeta dice «Listo para cortar» y lleva a Chapas. El PDF del diseño anidado ya no nombra el presupuesto.

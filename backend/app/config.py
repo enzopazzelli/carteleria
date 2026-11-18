@@ -119,6 +119,10 @@ if MARGEN_DEL_PRECIO_SUGERIDO not in {f"margen_venta_{numero}" for numero in ran
 #: la chapa de destino al pasarle una pieza (A17). La pantalla espera.
 TIEMPO_PARA_REACOMODAR_S = int(os.getenv("CARTELERIA_TIEMPO_REACOMODAR_S", "30"))
 
+#: `PAR-70` (`docs/REGISTRO.md`): cuántos cambios del ajuste se pueden deshacer
+#: por anidado (A27). Al anotar uno más, se borra el más viejo.
+PASOS_PARA_DESHACER = int(os.getenv("CARTELERIA_PASOS_PARA_DESHACER", "20"))
+
 #: `PAR-58` (`docs/REGISTRO.md`): en cuántos tramos, como mucho, se puede
 #: seccionar una pieza con una chapa (A17). Es el caso de un retazo de
 #: 300 × 300 con una pieza de 10 m: con más, se pide una chapa más grande.

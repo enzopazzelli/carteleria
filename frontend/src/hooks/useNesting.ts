@@ -4,7 +4,8 @@ import {
   ajustarColocacion,
   anidar,
   borrarEjecucion,
-  deshacerReacomodo,
+  deshacerUltimo,
+  estadoDeshacer,
   guardarSobrante,
   listarColocaciones,
   listarEjecucionesDeGrupo,
@@ -139,6 +140,7 @@ export function useAjustarColocacion(ejecucionId: number) {
       queryClient.invalidateQueries({ queryKey: clave });
       // Mover una pieza cambia lo usado y el sobrante de su chapa (A12).
       queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
+      queryClient.invalidateQueries({ queryKey: ["deshacer", ejecucionId] });
     },
   });
 }
@@ -154,11 +156,20 @@ export function useMoverAOtraChapa(ejecucionId: number) {
   });
 }
 
-/** «Deshacer» del reacomodo (A17): pone las colocaciones como al pasar una pieza. */
-export function useDeshacerReacomodo(ejecucionId: number) {
+/** Cuántos cambios del ajuste se pueden deshacer y qué dice el último (A27). */
+export function useEstadoDeshacer(ejecucionId: number) {
+  return useQuery({
+    queryKey: ["deshacer", ejecucionId],
+    queryFn: () => estadoDeshacer(ejecucionId),
+    enabled: ejecucionId > 0,
+  });
+}
+
+/** «Deshacer» (A27): vuelve atrás el último cambio del ajuste. */
+export function useDeshacerUltimo(ejecucionId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => deshacerReacomodo(ejecucionId),
+    mutationFn: () => deshacerUltimo(ejecucionId),
     onSuccess: (movida) => alCambiarLasChapas(queryClient, ejecucionId, movida.colocaciones),
   });
 }
@@ -168,6 +179,7 @@ function alCambiarLasChapas(queryClient: ReturnType<typeof useQueryClient>, ejec
   queryClient.invalidateQueries({ queryKey: ["ejecuciones"] });
   queryClient.invalidateQueries({ queryKey: ["ejecucion", ejecucionId] });
   queryClient.invalidateQueries({ queryKey: ["material-usado", ejecucionId] });
+  queryClient.invalidateQueries({ queryKey: ["deshacer", ejecucionId] });
 }
 
 /** Guarda el sobrante de una chapa como retazo (A21). Cambia la lista de
