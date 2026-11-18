@@ -3,6 +3,7 @@ import type { Catalogo, Revision } from "../api/materiales";
 import DetalleDelInsumo from "../components/Materiales/DetalleDelInsumo";
 import DetalleDelMaterial from "../components/Materiales/DetalleDelMaterial";
 import ListaDeCategorias from "../components/Materiales/ListaDeCategorias";
+import RetazosPorMaterial from "../components/Materiales/RetazosPorMaterial";
 import RevisionDePlanilla from "../components/Materiales/RevisionDePlanilla";
 import { diaDeLaPlanilla, filtrarCatalogo, primeraEleccion, type Eleccion } from "../components/Materiales/arbol";
 import Mensaje from "../components/Mensaje/Mensaje";
@@ -43,8 +44,12 @@ function LoElegido({ catalogo, eleccion }: { catalogo: Catalogo; eleccion: Elecc
   return <p className="text-sm text-ink/60">Elegí un material de la lista.</p>;
 }
 
+const BOTON_DE_VISTA = "px-3 py-1.5 text-sm border-b-2";
+
 export default function Materiales() {
   const catalogo = useCatalogo();
+  /** «Retazos» junta los de todos los materiales (A28). */
+  const [vista, setVista] = useState<"materiales" | "retazos">("materiales");
   const [eleccion, setEleccion] = useState<Eleccion | null>(null);
   const [abiertas, setAbiertas] = useState<Set<string>>(() => new Set());
   const [busqueda, setBusqueda] = useState("");
@@ -110,6 +115,20 @@ export default function Materiales() {
     <main className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-semibold">Materiales</h1>
+        <div role="tablist" aria-label="Qué ver" className="flex gap-2 mr-auto">
+          {(["materiales", "retazos"] as const).map((esta) => (
+            <button
+              key={esta}
+              type="button"
+              role="tab"
+              aria-selected={vista === esta}
+              className={`${BOTON_DE_VISTA} ${vista === esta ? "border-cut font-medium" : "border-transparent text-ink/60 hover:text-ink"}`}
+              onClick={() => setVista(esta)}
+            >
+              {esta === "materiales" ? "Materiales" : "Retazos"}
+            </button>
+          ))}
+        </div>
         {catalogo.data && (
           <div className="flex flex-wrap items-center justify-end gap-3 text-sm text-ink/70">
             <span>
@@ -159,7 +178,17 @@ export default function Materiales() {
       {catalogo.isLoading && <p className="text-sm text-ink/60">Cargando…</p>}
       {catalogo.error && <Mensaje variante="error" que={falla(catalogo.error, "No se pudieron cargar los materiales.")} />}
 
-      {catalogo.data && (
+      {catalogo.data && vista === "retazos" && (
+        <RetazosPorMaterial
+          catalogo={catalogo.data}
+          alElegirMaterial={(categoria, nombre) => {
+            setEleccion({ tipo: "material", categoria, nombre });
+            setAbiertas((antes) => new Set([...antes, categoria]));
+            setVista("materiales");
+          }}
+        />
+      )}
+      {catalogo.data && vista === "materiales" && (
         <div className="grid gap-6 lg:grid-cols-[18rem_1fr] items-start">
           <div className="lg:sticky lg:top-16 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
             <ListaDeCategorias
