@@ -24,9 +24,9 @@
 
 ## Tarea 1 · El armado de los grupos
 
-- [ ] `retazosPorMaterial(catalogo, { todos })` en `components/Materiales/retazos.ts`: devuelve, por material con espesor, sus medidas (del lado más largo × el más corto, de la más grande a la más chica) con sus retazos, y las cuentas por medida, por material y total.
-- [ ] Pruebas: una por punto del Review Focus, más el orden y el material con dos espesores.
-- [ ] `npm test` y `npm run build` en verde. Commit: `feat(a28): retazos agrupados por material y medida`.
+- [x] `retazosPorMaterial(catalogo, { todos })` en `components/Materiales/retazos.ts`: devuelve, por material con espesor, sus medidas (del lado más largo × el más corto, de la más grande a la más chica) con sus retazos, y las cuentas por medida, por material y total.
+- [x] Pruebas: una por punto del Review Focus, más el orden y el material con dos espesores.
+- [x] `npm test` y `npm run build` en verde. Commit: `feat(a28): retazos agrupados por material y medida`.
 - [ ] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 2 · La vista

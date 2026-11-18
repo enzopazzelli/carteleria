@@ -1,5 +1,5 @@
 import type { Formato } from "../../api/catalogo";
-import type { MedidaDelCatalogo } from "../../api/materiales";
+import type { Catalogo, MedidaDelCatalogo } from "../../api/materiales";
 
 // Lo que dice la pantalla de Materiales de los retazos (A21, diseño §5).
 
@@ -64,4 +64,66 @@ export function estadoParaMostrar(retazo: Formato): EstadoParaMostrar {
 /** De dónde salió: «Sobrante de Parador, chapa 2», o «a mano» si se escribió la medida. */
 export function origenParaMostrar(retazo: Formato): string {
   return retazo.origen_texto ?? "a mano";
+}
+
+// --- Todos los retazos, por material y medida (A28) ----------------------------
+
+export interface MedidaDeRetazos {
+  /** El lado más largo y el más corto: una medida girada es la misma. */
+  largo_mm: number;
+  corto_mm: number;
+  retazos: Formato[];
+  /** Cuántos de esos son disponibles. */
+  disponibles: number;
+}
+
+export interface MaterialConRetazos {
+  categoria: string;
+  /** El nombre de la planilla, sin cambiar: sirve para elegirlo en la pantalla de Materiales. */
+  nombre: string;
+  espesor: string | null;
+  /** De la más grande a la más chica. */
+  medidas: MedidaDeRetazos[];
+  cuenta: CuentaDeRetazos;
+}
+
+export interface RetazosPorMaterial {
+  materiales: MaterialConRetazos[];
+  /** Los disponibles de todos los materiales. */
+  cuenta: CuentaDeRetazos;
+}
+
+/** Todos los retazos del catálogo, un grupo por material con su espesor y, adentro,
+ * las medidas iguales juntas. Solo los disponibles, o con `todos`, también los
+ * usados, los que están en uso y los quitados. Un material sin retazos no aparece. */
+export function retazosPorMaterial(catalogo: Catalogo, { todos = false }: { todos?: boolean } = {}): RetazosPorMaterial {
+  const materiales: MaterialConRetazos[] = [];
+  for (const categoria of catalogo.categorias) {
+    for (const material of categoria.materiales) {
+      for (const espesor of material.espesores) {
+        const retazos = retazosDeLasMedidas(espesor.medidas).filter((r) => todos || estaDisponible(r));
+        if (retazos.length === 0) continue;
+        const porMedida = new Map<string, MedidaDeRetazos>();
+        for (const retazo of retazos) {
+          const lados = [Number(retazo.ancho_mm), Number(retazo.alto_mm)].sort((a, b) => b - a);
+          const clave = lados.join("x");
+          const medida = porMedida.get(clave) ?? { largo_mm: lados[0], corto_mm: lados[1], retazos: [], disponibles: 0 };
+          medida.retazos.push(retazo);
+          if (estaDisponible(retazo)) medida.disponibles += 1;
+          porMedida.set(clave, medida);
+        }
+        materiales.push({
+          categoria: categoria.nombre,
+          nombre: material.nombre,
+          espesor: espesor.material.espesor,
+          medidas: [...porMedida.values()].sort((a, b) => b.largo_mm * b.corto_mm - a.largo_mm * a.corto_mm),
+          cuenta: cuentaDeRetazos(retazos),
+        });
+      }
+    }
+  }
+  materiales.sort(
+    (a, b) => a.nombre.localeCompare(b.nombre, "es") || (a.espesor ?? "").localeCompare(b.espesor ?? "", "es", { numeric: true }),
+  );
+  return { materiales, cuenta: cuentaDeRetazos(materiales.flatMap((m) => m.medidas.flatMap((medida) => medida.retazos))) };
 }
