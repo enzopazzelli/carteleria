@@ -1,4 +1,4 @@
-"""Entrar, salir, la cuenta propia y el estado de salud (1.1, `docs/plan/1.1-servidor-y-login/diseno.md`).
+"""Entrar, salir, la cuenta propia y el estado de salud (1.1, `docs/historico/1.1-servidor-y-login/diseno.md`).
 
 **Públicas** (no exigen haber entrado): `POST /acceso/entrar` y `GET /salud`. Las demás sí.
 """

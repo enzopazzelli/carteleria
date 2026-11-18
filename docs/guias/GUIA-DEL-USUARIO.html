@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Guía del usuario — Cotizador</title>
-<meta name="description" content="Cómo usar el cotizador de cartelería: del dibujo al presupuesto aprobado.">
+<title>Guía del usuario — Cartelería</title>
+<meta name="description" content="Cómo usar el sistema de cartelería: del dibujo al DXF y al PDF para cortar.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@1,700;1,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -185,105 +185,85 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
 <body>
 <header class="barra"><div class="barra-in">
   <img class="logo-img" alt="Logo de la empresa" src="data:image/png;base64,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KGipIS1btkTENm3aqKp67tw5gr4fsvcdWOXf69ati4mJkQamHMUqja7FYpEEIDw8vE+f3n/88YdpTRdbtmwZMeKtypUr0z1FihR+5pmBixcvyrLu3w2YZpkJQojU1FSKfckDtQTZhg0bIuILL7wAAHv37LkdyKp+feguFUVREGHhwgWTJk1atGiR2XWUxQgvVTHSk1RVbdKkSdeu3dq3byeZ7qFDB+fPXzB79s87d8YBQJEiRZ5//vknn3yyYYMGwZm+AAKopL93tXWkVAUHBzdt2vTUqVM3VP/Jo1awYEEAuJpyNe9gsbyLH7J33iBA4/fHH3+MGzdu/fr1BEpyF+UIVmmrKl++fMeOHXv06F6nTl264dy5c8uWLfv5558XL15MQx4TE9OpU6fWrVsHBQVBZjx1lkCte+lSjoyseDM3lyxZUoY4cn5b08kP2Ts8igDgdrtjYmJ+/fVXuWIKIcxxgFk8VYGBga1aterRo3ubNm0KFAgj19eGDRtmz57966+/JicnM8bat28fHR3dpk2b/PnzZ0Hq3Raoecva4OCQm7mT+ENKSgoABAUF3o5d1g/ZO+wdUBRl/fp1v/76q8Viyc4BpPefwBoRUeGppzp36dKlTp06dMPx48fmzp33ww8/7Nq1CwDq1q0bHR3dvn17siiZ91f9g0g1FxnzkEefAEDNmjUB4OzZs4yxsLCCfil7f5U1a9bSim9298srQgir1daiRfPevXu3a9eO6J3b7Vq9es3333//+++/a5oWHh7+4osvdu3atXHjxiSPc9x6cD+Uc+fO3ZDyhoeH169fHwDi4+OLFy9eqFBBv5S9Xwrhadu2bdJBlYUDFClSpHPnzj179mzcuDE9cuLE8T//nPvdd9/t378fAJo3b96/f/8OHTqYCQC95D4Rq1kae+TIkbzvQcS6desWL1781KlTx44da9Omjc1mv514Lj9k7yQr4JyfP39+79690j6gaRpht1atWr179+7atSspIgCwZs2a6dOn//jjj7quh4WFDR06tE+fPtWrV79/qOoNtcwrV67s27cvD/WfVLROnTqRw0zX9UceeeR2N4T5Dah31hA7f/588qlS9wYEBHTs2PGPP/6QntVLly5OnTqVFkoAaNWq1ffff5+SkmK2/N89e+qddZGQHSM3oyxdL1my5MWLFxGxZ8+eAEDhabdslPW7Eu48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">
-  <span class="marca">Cotizador</span><span class="sub">Guía del usuario</span>
+  <span class="marca">Cartelería</span><span class="sub">Guía del usuario</span>
   <span class="otra">¿Desarrollás? <a href="GUIA-DEL-DESARROLLO.html">Guía para desarrolladores</a></span>
 </div></header>
 <div class="pagina">
   <nav class="indice" aria-label="Índice"><h2>En esta guía</h2><ol>
     <li><a href="#que-es">Qué es y qué hace</a></li>
-    <li><a href="#entrar">Entrar y tu cuenta</a></li>
+    <li><a href="#abrir">Abrir el sistema</a></li>
     <li><a href="#pantalla">Recorrer la pantalla</a></li>
     <li><a href="#dibujo">Antes de empezar: el dibujo</a></li>
     <li><a href="#trabajo">Un trabajo de punta a punta</a></li>
     <li><a href="#materiales">Materiales y precios</a></li>
-    <li><a href="#presupuestos">Presupuestos y aprobación</a></li>
-    <li><a href="#usuarios">Administrar personas</a></li>
     <li><a href="#problemas">Cuando algo no sale como esperabas</a></li>
     <li><a href="#glosario">Glosario</a></li>
     <li><a href="#todavia-no">Lo que todavía no hace</a></li>
   </ol></nav>
   <main>
     <div class="portada">
-      <h1>Del dibujo al presupuesto aprobado</h1>
-      <p>Todo lo que necesitás para usar el cotizador: cómo entrar, cómo cargar un dibujo, acomodar las piezas en la chapa, armar el presupuesto y hacerlo aprobar. Sin tecnicismos.</p>
-      <div class="meta">Para <b>diseñadores</b>, <b>quien aprueba</b> y <b>quien administra</b> el sistema</div>
+      <h1>Del dibujo al corte</h1>
+      <p>Todo lo que necesitás para usar el sistema: cómo abrirlo, cómo cargar un dibujo, elegir la chapa, acomodar las piezas y bajar el DXF y el PDF para el taller. Sin tecnicismos.</p>
+      <div class="meta">Para quien <b>diseña</b> y quien <b>corta</b></div>
     </div>
     <details class="indice-movil"><summary>Índice</summary><ol>
     <li><a href="#que-es">Qué es y qué hace</a></li>
-    <li><a href="#entrar">Entrar y tu cuenta</a></li>
+    <li><a href="#abrir">Abrir el sistema</a></li>
     <li><a href="#pantalla">Recorrer la pantalla</a></li>
     <li><a href="#dibujo">Antes de empezar: el dibujo</a></li>
     <li><a href="#trabajo">Un trabajo de punta a punta</a></li>
     <li><a href="#materiales">Materiales y precios</a></li>
-    <li><a href="#presupuestos">Presupuestos y aprobación</a></li>
-    <li><a href="#usuarios">Administrar personas</a></li>
     <li><a href="#problemas">Cuando algo no sale como esperabas</a></li>
     <li><a href="#glosario">Glosario</a></li>
     <li><a href="#todavia-no">Lo que todavía no hace</a></li>
     </ol></details>
 <section id="que-es">
   <h2 class="sec"><span class="n">1</span>Qué es y qué hace</h2>
-  <p class="lema">El cotizador en una página: para qué sirve y por dónde pasa un cartel.</p>
-  <p>El <b>Cotizador</b> es el sistema de la empresa para tres tareas que antes se hacían a mano y llevaban mucho tiempo:</p>
+  <p class="lema">El sistema en una página: para qué sirve y por dónde pasa un cartel.</p>
+  <p>Es el sistema de la empresa para pasar del dibujo del cartel a lo que va a la máquina de corte, algo que antes se hacía a mano y llevaba mucho tiempo:</p>
   <div class="tarjetas">
-    <div class="tarjeta"><h4>Presupuestar</h4><p>Calcula cuánto cuesta hacer un cartel y <b>sugiere el precio</b> con el margen de la empresa.</p></div>
+    <div class="tarjeta"><h4>Leer el dibujo</h4><p>Toma el <b>DXF</b> que sale de CorelDRAW y separa cada forma en una <b>pieza</b> para cortar.</p></div>
     <div class="tarjeta"><h4>Acomodar en la chapa</h4><p>Reparte las piezas sobre las chapas para <b>desperdiciar lo menos posible</b>. A eso se le dice <i>anidado</i>.</p></div>
-    <div class="tarjeta"><h4>Hacer aprobar</h4><p>El presupuesto lo <b>aprueba el dueño</b> antes de que llegue al cliente. Todo queda registrado.</p></div>
+    <div class="tarjeta"><h4>Sacar lo que se corta</h4><p>Un <b>DXF por chapa</b> para la máquina y un <b>PDF</b> del diseño anidado para imprimir.</p></div>
   </div>
 
   <h3>El recorrido de un cartel</h3>
-  <p>Así pasa un trabajo, desde el dibujo hasta el presupuesto. Lo verde ya funciona; lo punteado todavía no.</p>
+  <p>Así pasa un trabajo, desde el dibujo hasta el corte.</p>
   <div class="flujo">
     <div class="f hecho"><b>1</b>Subir el dibujo (DXF)</div><span class="fl">›</span>
     <div class="f hecho"><b>2</b>Ver cómo lo leyó y corregir</div><span class="fl">›</span>
-    <div class="f hecho"><b>3</b>Grupos: qué chapa usa cada pieza</div><span class="fl">›</span>
+    <div class="f hecho"><b>3</b>Grupos: elegir la chapa</div><span class="fl">›</span>
     <div class="f hecho"><b>4</b>Anidado: acomodar en la chapa</div><span class="fl">›</span>
     <div class="f hecho"><b>5</b>Chapas: revisar y mover piezas</div><span class="fl">›</span>
-    <div class="f hecho"><b>6</b>Costeo y presupuesto</div><span class="fl">›</span>
-    <div class="f hecho"><b>7</b>Aprobación del dueño</div><span class="fl">›</span>
-    <div class="f falta"><b>8</b>Aviso por mail y envío al cliente</div>
+    <div class="f hecho"><b>6</b>DXF y PDF para el taller</div>
   </div>
-  <p>Del trabajo salen dos papeles: <b>para el taller</b>, un PDF del diseño anidado y un DXF por cada chapa; <b>para el cliente</b>, el PDF del presupuesto con la marca de la empresa, sin costos ni márgenes.</p>
+  <p>El sobrante de una chapa se puede guardar como <b>retazo</b> para usarlo en otro trabajo.</p>
 
   <div class="aviso marca-aviso"><b class="t">Dónde estamos</b>
-    <p>Hoy el sistema funciona completo <b>en una computadora</b>. Todavía no está en un servidor (no se puede entrar desde el celular) y no manda mails. El detalle de lo que falta está en la sección <a href="#todavia-no">«Lo que todavía no hace»</a>.</p>
+    <p>El sistema se <b>instala en cada computadora</b> y funciona sin internet y sin usuario ni contraseña. Desde otra compu o un celular del mismo wifi se puede entrar a una computadora que lo tenga instalado. Lo que falta está en <a href="#todavia-no">«Lo que todavía no hace»</a>.</p>
   </div>
 </section>
 
-<section id="entrar">
-  <h2 class="sec"><span class="n">2</span>Entrar y tu cuenta</h2>
-  <p class="lema">Usuario, contraseña y permisos.</p>
+<section id="abrir">
+  <h2 class="sec"><span class="n">2</span>Abrir el sistema</h2>
+  <p class="lema">No hay usuario ni contraseña: se abre y se usa.</p>
 
-  <h3>Cómo entrar</h3>
-  <p>La pantalla de entrada pide <b>usuario</b> y <b>contraseña</b>. Tu usuario es una sola palabra (por ejemplo <code>enzo</code>) y te lo da quien administra el sistema.</p>
+  <h3>En la computadora donde está instalado</h3>
   <ul>
-    <li><b>«Mantener la sesión abierta en este dispositivo»</b> la deja abierta 30 días (pensado para el celular). Sin marcar, la sesión se cierra después de 12 horas sin usarla.</li>
-    <li>Para salir, usá <span class="etq">Cerrar sesión</span> arriba a la derecha.</li>
+    <li>Doble clic en el acceso <span class="etq">Cartelería</span> del escritorio. Si el sistema ya estaba andando, solo abre el navegador; si no, primero lo arranca.</li>
+    <li>O, en el navegador, la dirección <code>http://localhost:8000</code>. Conviene guardarla en favoritos.</li>
+    <li>El sistema <b>arranca solo al prender la computadora</b>, así que casi siempre está listo.</li>
   </ul>
 
-  <h3>La primera vez</h3>
-  <p>Si te dieron una contraseña <b>temporal</b> (porque te dieron de alta o te la restablecieron), el sistema te lleva a <span class="etq">Mi cuenta</span> y no te deja ir a otro lado hasta que elijas una propia.</p>
+  <h3>Desde otra computadora o un celular</h3>
+  <p>Tienen que estar en el <b>mismo wifi</b> que la computadora donde está instalado, y esa computadora tiene que estar prendida. En el navegador: <code>http://</code> + la dirección de esa computadora + <code>:8000</code> (por ejemplo <code>http://192.168.0.15:8000</code>). El instalador muestra esa dirección al terminar.</p>
 
-  <h3>Cambiar la contraseña cuando quieras</h3>
-  <ol class="pasos">
-    <li>Tocá tu nombre, arriba a la derecha (abre <span class="etq">Mi cuenta</span>).</li>
-    <li>En «Cambiar la contraseña», escribí la actual y la nueva.</li>
-    <li>La nueva tiene que tener <b>al menos 10 caracteres</b> y ser distinta de la actual. Al cambiarla se cierran tus sesiones en los otros dispositivos.</li>
-  </ol>
-
-  <div class="aviso ojo"><b class="t">Si te la olvidás</b>
-    <p>No podés recuperarla vos solo (todavía no hay mail). Pedísela a quien administra usuarios: te la <b>restablece</b> y te da una temporal. Si fallás <b>5 veces seguidas</b>, la cuenta se bloquea 15 minutos; restablecerla también levanta el bloqueo.</p>
+  <div class="aviso ojo"><b class="t">Cada instalación tiene sus datos</b>
+    <p>Los trabajos, los materiales y los retazos se guardan en la computadora donde está instalado (en <code>C:\Carteleria\datos</code>). Si se instala en dos computadoras, cada una tiene los suyos: lo que se carga en una no aparece en la otra.</p>
   </div>
-
-  <h3>Quién puede hacer qué</h3>
-  <p>Cada persona puede tener dos permisos, que se combinan:</p>
-  <div class="tabla"><table>
-    <tr><th>Persona</th><th>Permisos</th><th>Qué puede hacer</th></tr>
-    <tr><td><b>Diseñador</b></td><td>ninguno</td><td>Armar trabajos y presupuestos, y mandarlos a aprobar</td></tr>
-    <tr><td><b>Quien aprueba</b></td><td>«puede aprobar»</td><td>Aprobar, observar o devolver presupuestos</td></tr>
-    <tr><td><b>Quien administra</b></td><td>«administra usuarios»</td><td>Crear personas, cambiar permisos, darlas de baja y restablecer contraseñas</td></tr>
-  </table></div>
-  <p>El dueño suele tener los dos permisos. <b>Todos ven todos los trabajos.</b> Nadie ve la contraseña de otra persona: el sistema guarda solo una huella, no la contraseña.</p>
+  <div class="aviso tip"><b class="t">Si no abre</b>
+    <p>Si <code>localhost:8000</code> no carga, el sistema no está corriendo: doble clic en el acceso del escritorio lo levanta. Si algo falla, lo que pasó queda anotado en <code>C:\Carteleria\datos\servidor.log</code>.</p>
+  </div>
 </section>
 
 <section id="pantalla">
@@ -293,12 +273,9 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
     <tr><th>Lugar</th><th>Para qué sirve</th></tr>
     <tr><td><span class="etq">Inicio</span></td><td>Crear un trabajo nuevo y ver las tarjetas de los trabajos recientes: cada una con su miniatura pintada por chapa y en qué paso quedó.</td></tr>
     <tr><td><span class="etq">Trabajos</span></td><td>Todos los trabajos, con un buscador. El «⋯» de una tarjeta borra el trabajo (pide confirmación).</td></tr>
-    <tr><td><span class="etq">Presupuestos</span></td><td>La lista de todos los presupuestos, de todos los trabajos, con su estado.</td></tr>
-    <tr><td><span class="etq">Materiales</span></td><td>Los materiales, las medidas de chapa y los precios, alimentados por la planilla de la empresa.</td></tr>
-    <tr><td><span class="etq">Usuarios</span></td><td>Solo aparece si administrás usuarios. Ver la <a href="#usuarios">sección 8</a>.</td></tr>
-    <tr><td>Tu nombre</td><td>Abre <span class="etq">Mi cuenta</span>.</td></tr>
+    <tr><td><span class="etq">Materiales</span></td><td>Los materiales, las medidas de chapa, los precios y los retazos, alimentados por la planilla de la empresa.</td></tr>
   </table></div>
-  <p>Dentro de un trabajo, a la izquierda están las <b>cinco etapas</b>, en el orden en que se usan: <span class="etq">Piezas</span> · <span class="etq">Grupos</span> · <span class="etq">Anidado</span> · <span class="etq">Chapas</span> · <span class="etq">Costeo</span>.</p>
+  <p>Dentro de un trabajo, a la izquierda están las <b>cuatro etapas</b>, en el orden en que se usan: <span class="etq">Piezas</span> · <span class="etq">Grupos</span> · <span class="etq">Anidado</span> · <span class="etq">Chapas</span>. Cuando todo está anidado, la tarjeta del trabajo dice <b>«Listo para cortar»</b> y te lleva a Chapas.</p>
 </section>
 
 <section id="dibujo">
@@ -325,7 +302,7 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
     <p>Al elegir el archivo, debajo de la cajita de la escala aparece: <b>«Con esta escala, el dibujo mide … mm (… m)»</b>, y se recalcula mientras escribís. Compará ese tamaño con lo que sabés del cartel. Si dice <i>46 mm</i> y el cartel mide casi 5 metros, la escala está mal: con escala 100 diría <i>4.610 mm (4,61 m)</i>, que sí es un cartel.</p>
   </div>
   <div class="aviso ojo"><b class="t">Ojo</b>
-    <p>Una escala equivocada no da error: da un presupuesto equivocado. Por eso conviene mirar siempre esa referencia antes de cargar.</p>
+    <p>Una escala equivocada no da error: da piezas del tamaño equivocado, y se cortan así. Por eso conviene mirar siempre esa referencia antes de cargar.</p>
   </div>
 </section>
 
@@ -357,16 +334,13 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
   <p>Si una pieza es más grande que la chapa, aparece un aviso («No entra en la chapa de su grupo» o «No entra en ninguna chapa») y el botón <span class="etq">Seccionar</span>. Abre un panel que <b>propone cómo partirla en tramos</b> que sí entran, y calcula cuánta soldadura llevará. Se puede ajustar el ángulo del corte o arrastrar la grilla, y después <span class="etq">Aplicar</span>. La pieza original queda descartada y los tramos pasan a ser piezas (con <span class="etq">Deshacer</span> y <span class="etq">Volver a seccionar</span> a mano).</p>
 
   <h3 id="t-grupos">5.3 Grupos: qué chapa usa cada pieza</h3>
-  <p>Un <b>grupo</b> reúne las piezas que se cortan del mismo material (por ejemplo «Chapa negra» y «Acrílico»).</p>
+  <p>Un <b>grupo</b> reúne las piezas que se cortan de la misma chapa (por ejemplo «Chapa negra» y «Acrílico»).</p>
   <ol class="pasos">
     <li>Tocá <span class="etq">Nuevo grupo</span> y ponele nombre.</li>
     <li>Tildá <span class="etq">Seleccionar todas</span> (o solo algunas), elegí el grupo en <span class="etq">Mover a grupo…</span> y tocá <span class="etq">Mover</span>.</li>
-    <li>En el grupo, tocá <span class="etq">Comparar formatos</span>, tildá dos o más medidas de chapa y <span class="etq">Comparar</span>. Una tabla muestra cuántas chapas hacen falta, el aprovechamiento y el costo de cada opción.</li>
-    <li>Elegí la mejor con <span class="etq">Usar este</span>: el grupo queda con ese material y esa medida.</li>
+    <li>En el grupo, tocá <span class="etq">Elegir chapa</span> (o <span class="etq">Cambiar chapa</span> si ya tiene una). Aparece la lista de chapas del catálogo: filtrá por familia o buscá, y tildá <b>la que vas a usar</b>. También aparecen los retazos guardados, y podés sumar uno de medida libre.</li>
+    <li>Tocá <span class="btn">Usar esta chapa</span>. El grupo muestra su chapa por nombre, por ejemplo «Chapa: MDF 5 mm · 1830 × 2600 mm».</li>
   </ol>
-  <div class="aviso nota"><b class="t">Girar a cualquier ángulo</b>
-    <p>La comparación tiene una casilla para permitir que las piezas giren libremente. Con giro libre entran más piezas en cada chapa, pero el resultado es una disposición menos «ordenada». Si la desmarcás, las piezas solo giran en cuartos de vuelta.</p>
-  </div>
 
   <h3 id="t-anidado">5.4 Anidado: acomodar las piezas</h3>
   <p>El programa que lo hace se llama <b>Sparrow</b>. Usa los huecos de las piezas grandes para meter las chicas y gira las piezas para aprovechar mejor la chapa.</p>
@@ -375,8 +349,11 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
     <li>Cuando termina, la ejecución pasa a <b>lista</b>, con la cantidad de chapas y el porcentaje de aprovechamiento.</li>
     <li>Si querés cambiar algo, ajustá el <b>kerf</b>, el <b>margen</b>, la <b>separación</b> o la rotación y tocá <span class="etq">Aplicar y recalcular</span>. Se crea una ejecución nueva y la anterior queda en el historial.</li>
     <li>Probá <span class="etq">Aprovechar huecos</span> para que las piezas chicas entren dentro de los agujeros de las grandes.</li>
-    <li>Cuando estés conforme, <span class="etq">Marcar definitiva</span>.</li>
+    <li>Cuando estés conforme, <span class="etq">Marcar definitiva</span>. Ese es el anidado que va a Chapas, al DXF y al PDF. Si no marcás ninguno, va el más reciente.</li>
   </ol>
+  <div class="aviso nota"><b class="t">Girar a cualquier ángulo</b>
+    <p>La casilla <span class="etq">Girar a cualquier ángulo</span> deja que las piezas giren libremente. Entran más piezas en cada chapa, pero la disposición queda menos «ordenada». Si la desmarcás, las piezas solo giran en cuartos de vuelta.</p>
+  </div>
   <div class="tabla"><table>
     <tr><th>Parámetro</th><th>Qué es</th></tr>
     <tr><td><b>Kerf</b></td><td>El ancho de material que se come la herramienta al cortar.</td></tr>
@@ -404,17 +381,8 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
     <tr><td><span class="etq">Descargar PDF</span> (arriba a la derecha)</td><td>El PDF del trabajo entero: la hoja del diseño completo más las chapas, para imprimir en A4.</td></tr>
   </table></div>
 
-  <h3 id="t-costeo">5.6 Costeo: de lo que cuesta al precio</h3>
-  <ol class="pasos">
-    <li>Elegí el cliente o <span class="etq">+ Cliente nuevo…</span>.</li>
-    <li>Tocá <span class="etq">Crear primera opción de presupuesto</span> y después <span class="etq">Recalcular materiales</span>: el sistema suma el material usado según el anidado.</li>
-    <li>Agregá lo demás: líneas a mano (mano de obra, flete…) o artículos del catálogo con <span class="etq">Agregar del catálogo</span> (vinilos, pintura, tornillos…). Buscá, elegí, escribí la cantidad y <span class="etq">Agregar</span>.</li>
-    <li>Mirá el desglose por rubro, con IVA y total, y en «Presupuesto para el cliente» el <b>precio sugerido</b> con el margen de la empresa. Si lo que cobrás queda por debajo del sugerido, se marca en amarillo.</li>
-    <li>Cuando esté listo, <span class="btn">Mandar a aprobar</span>. Ver la <a href="#presupuestos">sección 7</a>.</li>
-    <li><span class="etq">Descargar PDF</span> baja el PDF para el cliente, <b>sin costos ni márgenes</b> y con la marca de la empresa.</li>
-  </ol>
   <div class="aviso peligro"><b class="t">Si cambiás la chapa después de anidar</b>
-    <p>Si a un grupo ya anidado le cambiás el material o la medida de chapa, el anidado viejo <b>deja de cobrarse</b>: la tarjeta del Inicio dice «Falta volver a anidar», Chapas avisa que «la chapa cambió después de este anidado» y el PDF lo marca en rojo. Volvé a anidar el grupo.</p>
+    <p>Si a un grupo ya anidado le cambiás la chapa, el anidado viejo <b>deja de valer</b>: la tarjeta del Inicio dice «Falta volver a anidar», Chapas avisa que «la chapa de este grupo cambió después de este anidado» y el PDF lo marca en rojo. Volvé a anidar el grupo.</p>
   </div>
 </section>
 
@@ -433,76 +401,20 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
   </div>
 </section>
 
-<section id="presupuestos">
-  <h2 class="sec"><span class="n">7</span>Presupuestos y aprobación</h2>
-  <p class="lema">Los cuatro estados y quién puede mover cada uno.</p>
-  <p>Un presupuesto pasa por cuatro estados:</p>
-  <div class="flujo">
-    <div class="f"><span class="est borrador">Borrador</span><br>Se arma y se edita.</div><span class="fl">›</span>
-    <div class="f"><span class="est pendiente">Pendiente</span><br>Esperando al dueño. No se edita.</div><span class="fl">›</span>
-    <div class="f"><span class="est aprobado">Aprobado</span><br>Listo. No se edita.</div>
-  </div>
-  <div class="flujo">
-    <div class="f"><span class="est pendiente">Pendiente</span></div><span class="fl">›</span>
-    <div class="f"><span class="est observado">Observado</span><br>El dueño pidió un cambio.</div><span class="fl">›</span>
-    <div class="f"><span class="est pendiente">Pendiente</span><br>Se vuelve a mandar.</div>
-  </div>
-  <div class="tabla"><table>
-    <tr><th>Quiero…</th><th>Hago…</th><th>Quién puede</th></tr>
-    <tr><td>Mandar el presupuesto a revisar</td><td><span class="etq">Mandar a aprobar</span></td><td>Cualquiera</td></tr>
-    <tr><td>Darlo por bueno</td><td><span class="etq">Aprobar</span></td><td>Quien tiene «puede aprobar»</td></tr>
-    <tr><td>Pedir un cambio</td><td><span class="etq">Observar</span>, con un motivo</td><td>Quien tiene «puede aprobar»</td></tr>
-    <tr><td>Volver a editarlo</td><td><span class="etq">Volver a borrador</span>, con un motivo</td><td>Cualquiera, desde Pendiente o Aprobado</td></tr>
-  </table></div>
-  <ul>
-    <li>Un presupuesto <b>pendiente o aprobado queda bloqueado</b>. Para tocarlo hay que volverlo a borrador, y el sistema pide un motivo.</li>
-    <li>Cada cambio queda en el <b>historial</b>: quién lo hizo, cuándo y por qué. El nombre de quien aprueba sale de su sesión; no se escribe a mano.</li>
-    <li>Un <b>observado</b> vuelve a quien lo armó, que lo edita ahí mismo y lo manda de nuevo.</li>
-  </ul>
-  <p>La pantalla <span class="etq">Presupuestos</span> lista todos, de todos los trabajos, para ver de un vistazo cuáles esperan aprobación.</p>
-</section>
 
-<section id="usuarios">
-  <h2 class="sec"><span class="n">8</span>Administrar personas</h2>
-  <p class="lema">Solo para quien tiene el permiso «administra usuarios» (normalmente el dueño).</p>
-
-  <h3>Desde la pantalla (el camino de todos los días)</h3>
-  <p>Con un usuario que administra, aparece <span class="etq">Usuarios</span> en la barra. Ahí podés <b>crear</b> una persona, <b>editarla</b>, <b>restablecerle la contraseña</b>, y darla de <b>baja</b> o de <b>alta</b>.</p>
-  <ul>
-    <li>Al crear o restablecer, el sistema muestra una <b>contraseña temporal una sola vez</b>: anotala y pasásela a la persona. En su primer ingreso tendrá que elegir una propia.</li>
-    <li><b>«Borrar» es dar de baja.</b> Nadie se elimina: el historial de quién aprobó o cambió qué tiene que seguir diciendo quién fue.</li>
-    <li>Tiene que quedar <b>siempre al menos una persona</b> que administre usuarios; el sistema no deja darla de baja ni sacarle el permiso si es la última.</li>
-  </ul>
-
-  <h3>Desde la terminal</h3>
-  <p>Sirve para administrar sin abrir el navegador, o contra la app ya instalada en un servidor. Habla con la app (no con la base) y hace lo mismo que la pantalla. Desde la carpeta <code>backend/</code>:</p>
-<pre><code>python scripts/administrar_usuarios.py
-python scripts/administrar_usuarios.py --url https://tu-dominio/api   <span class="c"># contra el servidor</span></code></pre>
-  <p>Pide usuario y contraseña (si no administrás usuarios, no pasa de ahí) y muestra este menú:</p>
-<pre><code>1. Crear   2. Editar   3. Restablecer contraseña   4. Dar de baja   5. Ver dados de baja (N)   0. Salir</code></pre>
-  <p>La opción 5 solo aparece si hay alguien dado de baja; elegir a uno lo vuelve a dar de alta, con la misma contraseña que tenía.</p>
-
-  <h3>Emergencia: nadie puede entrar</h3>
-  <p>Si la app está caída o se bloqueó la única cuenta que administra, el menú no sirve. Quien tiene acceso al servidor puede usar, desde <code>backend/</code>:</p>
-<pre><code>python -m app.usuarios restablecer enzo     <span class="c"># da una contraseña temporal y levanta el bloqueo</span>
-python -m app.usuarios listar</code></pre>
-  <p>El manual completo, con todas las opciones y la limpieza de la base de pruebas, está en <code>docs/MANUAL-USUARIOS.md</code>.</p>
-</section>
 
 <section id="problemas">
-  <h2 class="sec"><span class="n">9</span>Cuando algo no sale como esperabas</h2>
+  <h2 class="sec"><span class="n">7</span>Cuando algo no sale como esperabas</h2>
   <p class="lema">Los problemas más comunes y qué hacer.</p>
   <div class="tabla"><table>
     <tr><th>Qué ves</th><th>Qué significa y qué hacer</th></tr>
-    <tr><td>«Usuario o contraseña incorrectos»</td><td>El sistema no dice cuál de los dos falló, a propósito. Probá de nuevo; si fallás 5 veces, esperá 15 minutos o pedí que te restablezcan la contraseña.</td></tr>
+    <tr><td>El navegador dice que no puede abrir <code>localhost:8000</code></td><td>El sistema no está corriendo. Doble clic en el acceso <span class="etq">Cartelería</span> del escritorio.</td></tr>
     <tr><td>La referencia dice un tamaño absurdo</td><td>La escala está mal. Corregila (1 para milímetros, 10 para centímetros, 1000 para metros) antes de cargar.</td></tr>
     <tr><td>«Se ignoraron N entidades…»</td><td>El dibujo trae texto, imágenes o rellenos que no se cortan. Si el texto tenía que cortarse, convertilo a curvas en Corel y exportá de nuevo.</td></tr>
     <tr><td>«N contornos no se pudieron cerrar»</td><td>Hay figuras con huecos en los empalmes. Cerralas en Corel y volvé a exportar.</td></tr>
-    <tr><td>«No entra en la chapa…» en una pieza</td><td>La pieza es más grande que la chapa. Usá <span class="etq">Seccionar</span> o elegí una chapa más grande.</td></tr>
+    <tr><td>«No entra en la chapa…» en una pieza, o «Estas piezas no entran en la chapa…» al anidar</td><td>La pieza es más grande que la chapa del grupo. Usá <span class="etq">Seccionar</span> en Piezas o elegí una chapa más grande en Grupos.</td></tr>
     <tr><td>«Falta volver a anidar» en la tarjeta</td><td>Cambiaste la chapa de un grupo después de anidar. Volvé a anidar ese grupo.</td></tr>
-    <tr><td>«El material … no tiene parámetros de corte»</td><td>Falta cargar kerf, margen y separación del material. Usá materiales de la planilla.</td></tr>
-    <tr><td>No puedo editar un presupuesto</td><td>Está pendiente o aprobado. Volvelo a borrador (con un motivo).</td></tr>
-    <tr><td>No veo «Usuarios» en la barra</td><td>No tenés el permiso «administra usuarios».</td></tr>
+    <tr><td>«El material no tiene parámetros de corte configurados»</td><td>A ese material todavía no le cargaron el kerf, el margen y la separación, y sin eso no se puede anidar. Avisá para que los carguen, o elegí otra chapa.</td></tr>
   </table></div>
   <div class="aviso tip"><b class="t">Qué nos sirve que anotes</b>
     <p>Cualquier cosa que te confunda (aunque funcione), el nombre de la pieza o del trabajo, la escala que usaste y en qué paso pasó. Si algo no anda, copiá el texto del error tal cual.</p>
@@ -510,7 +422,7 @@ python -m app.usuarios listar</code></pre>
 </section>
 
 <section id="glosario">
-  <h2 class="sec"><span class="n">10</span>Glosario</h2>
+  <h2 class="sec"><span class="n">8</span>Glosario</h2>
   <p class="lema">Las palabras del sistema, en lenguaje corriente.</p>
   <div class="tabla"><table>
     <tr><th>Palabra</th><th>Qué es</th></tr>
@@ -523,8 +435,7 @@ python -m app.usuarios listar</code></pre>
     <tr><td><b>Retazo</b></td><td>El sobrante de una chapa, guardado para usarlo después.</td></tr>
     <tr><td><b>Seccionar</b></td><td>Partir una pieza que no entra entera en una chapa, en tramos que sí entran (después se sueldan).</td></tr>
     <tr><td><b>Tramo</b></td><td>Cada parte en que queda una pieza seccionada.</td></tr>
-    <tr><td><b>Costeo</b></td><td>Sumar todo lo que cuesta hacer el cartel. El precio sale de sumarle el margen.</td></tr>
-    <tr><td><b>Precio sugerido</b></td><td>El precio que propone el sistema, con el margen de la empresa.</td></tr>
+    <tr><td><b>Definitivo</b></td><td>El anidado de un grupo que se marcó para cortar. Es el que va a Chapas, al DXF y al PDF.</td></tr>
     <tr><td><b>Kerf</b></td><td>El ancho de material que se come la herramienta al cortar.</td></tr>
     <tr><td><b>Escala</b></td><td>Cuántos milímetros vale cada unidad del dibujo.</td></tr>
     <tr><td><b>Aprovechamiento</b></td><td>El porcentaje de la chapa que se usa en piezas (el resto es sobrante).</td></tr>
@@ -532,18 +443,18 @@ python -m app.usuarios listar</code></pre>
 </section>
 
 <section id="todavia-no">
-  <h2 class="sec"><span class="n">11</span>Lo que todavía no hace</h2>
+  <h2 class="sec"><span class="n">9</span>Lo que todavía no hace</h2>
   <p class="lema">Para no esperar de más.</p>
   <ul>
-    <li><b>Entrar desde el celular o desde otra computadora:</b> el sistema todavía no está en un servidor. Es lo próximo que se construye (empaquetado en Docker, copias de seguridad diarias y base PostgreSQL).</li>
-    <li><b>Mail:</b> todavía no avisa al dueño ni manda el presupuesto al cliente. La aprobación se hace dentro del sistema, con el usuario de cada uno.</li>
-    <li><b>WhatsApp, panel de control rápido y fotomontaje</b> (pegar el cartel sobre la foto del local): más adelante.</li>
+    <li><b>Deshacer cualquier movimiento en Chapas:</b> hoy solo se puede deshacer el reacomodo de una chapa. Un botón para volver atrás arrastrar, girar o pasar una pieza de chapa está en camino.</li>
+    <li><b>Ver todos los retazos juntos, agrupados por material:</b> hoy se ven dentro de cada material. Está en camino.</li>
+    <li><b>Compartir los datos entre computadoras:</b> cada instalación guarda los suyos (ver la <a href="#abrir">sección 2</a>).</li>
     <li><b>Archivos <code>.cdr</code>:</b> hoy se exporta a DXF desde Corel; leer <code>.cdr</code> directo está en espera.</li>
   </ul>
-  <p>El orden de lo que viene está en <code>docs/plan/PLAN-MAESTRO.md</code>.</p>
+  <p>El orden de lo que viene está en <code>docs/plan/PLAN-MAESTRO.md</code>. El presupuesto, la aprobación y los usuarios se sacaron el 2026-11-18, a pedido del cliente.</p>
 </section>
 
-    <footer class="pie">Cotizador · Guía del usuario · Actualizada el 2026-11-11 · Si algo no se entiende, es un error de la guía.</footer>
+    <footer class="pie">Cartelería · Guía del usuario · Actualizada el 2026-11-18 · Si algo no se entiende, es un error de la guía.</footer>
   </main>
 </div>
 <script>

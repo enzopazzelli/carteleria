@@ -1,4 +1,4 @@
-"""Las contraseñas (1.1, `docs/plan/1.1-servidor-y-login/diseno.md §4.1`).
+"""Las contraseñas (1.1, `docs/historico/1.1-servidor-y-login/diseno.md §4.1`).
 
 La contraseña **no se guarda**: se guarda una huella (`argon2id`) que no se puede volver a la
 contraseña. Para saber si una contraseña es la buena se calcula su huella y se compara.

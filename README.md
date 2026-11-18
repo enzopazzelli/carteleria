@@ -1,16 +1,14 @@
-# Sistema de Cotización, Nesting y Aprobación para Cartelería
+# Sistema de Nesting para Cartelería
 
-Un sistema a medida para una empresa de cartelería de gran formato en chapa. Hace tres cosas que hoy se hacen a mano y llevan mucho tiempo:
+Un sistema a medida para una empresa de cartelería de gran formato en chapa. Lleva el dibujo del cartel hasta lo que va a la máquina de corte, algo que hoy se hace a mano y lleva mucho tiempo:
 
-1. **Presupuestar:** calcula el costo de un cartel y sugiere el precio con el margen de la empresa.
+1. **Leer el dibujo:** toma el DXF que sale de CorelDRAW y separa cada forma en una pieza para cortar.
 2. **Acomodar las piezas en la chapa** (el *anidado*, o *nesting*), para desperdiciar lo menos posible.
-3. **Hacer aprobar el presupuesto** al dueño antes de que llegue al cliente.
+3. **Sacar lo que se corta:** un DXF por chapa para la máquina y un PDF del diseño anidado para imprimir.
 
-Más adelante: mandarle el presupuesto al cliente con el fotomontaje del cartel sobre el frente de su local.
+> **Hoy (2026-11-18):** funciona de punta a punta y **se instala en cada computadora** de la empresa, sin internet, sin servidor y sin usuarios. Después de la demo del 2026-11-18, el cliente pidió quitar el login, el presupuesto y la comparación de chapas: **el producto final es el DXF y el PDF** ([`A26`](docs/plan/A26-sacar-lo-que-no-va/diseno.md)).
 
-> **Hoy:** el cotizador funciona de punta a punta **en tu computadora**: se carga el dibujo, se acomodan las piezas, se calcula el presupuesto, se aprueba y se baja el PDF. Hay usuarios con contraseña. **Todavía no está en un servidor** y no manda mails.
-
-**Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) · **Equipo:** Enzo (todo lo que no es el motor) y Vale (motor de anidado) · **Última actualización:** 2026-11-11 · **Versión etiquetada:** `v2026.11.09` (una foto del estado de ese día; todavía no hay numeración) · [Bitácora](docs/BITACORA.md)
+**Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) · **Equipo:** Enzo (todo lo que no es el motor) y Vale (motor de anidado) · **Última actualización:** 2026-11-18 · **Versión etiquetada:** `v2026.11.09` (una foto del estado de ese día; todavía no hay numeración) · [Bitácora](docs/BITACORA.md)
 
 ---
 
@@ -24,60 +22,43 @@ Más adelante: mandarle el presupuesto al cliente con el fotomontaje del cartel 
 | Probarlo en mi computadora | [Probar el sistema](#probar-el-sistema-en-tu-computadora) y la [guía completa](docs/GUIA-PROBAR-EL-SISTEMA.md) |
 | Aprender a usar el sistema, paso a paso | [`GUIA-DEL-USUARIO.html`](docs/guias/GUIA-DEL-USUARIO.html) |
 | Sumarme al desarrollo (arquitectura, convenciones, recetas) | [`GUIA-DEL-DESARROLLO.html`](docs/guias/GUIA-DEL-DESARROLLO.html) |
-| Administrar usuarios o limpiar la base de pruebas | [`MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md) |
+| Limpiar la base de pruebas | [`MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md) |
 | Ver el orden de lo que se va a construir | [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) |
 | Saber qué pasó en los últimos días | [`BITACORA.md`](docs/BITACORA.md) |
 | Escribir código | [`CONVENCIONES.md`](docs/CONVENCIONES.md) y la [guía de lectura](#guía-de-lectura) |
 | Buscar un documento | [Índice de documentos](#índice-de-documentos) |
 
-**En este README:** [Qué hace el sistema](#qué-hace-el-sistema) · [Cómo está armado](#cómo-está-armado) · [El presupuesto y sus estados](#el-presupuesto-y-sus-estados) · [En qué estamos](#en-qué-estamos) · [Lo que A17 cambió en el motor](#lo-que-a17-cambió-en-el-motor-2026-10-29) · [Probar el sistema](#probar-el-sistema-en-tu-computadora) · [Dónde está cada cosa](#dónde-está-cada-cosa) · [Hoja de ruta](#hoja-de-ruta) · [Guía de lectura](#guía-de-lectura) · [Índice de documentos](#índice-de-documentos) · [Reglas](#las-tres-reglas-que-no-se-negocian) · [Equipo](#equipo-y-división-del-trabajo) · [Tecnología](#tecnología) · [Glosario](#glosario) · [Contribuir](#contribuir)
+**En este README:** [Qué hace el sistema](#qué-hace-el-sistema) · [Cómo está armado](#cómo-está-armado) · [El presupuesto, apagado](#el-presupuesto-apagado) · [En qué estamos](#en-qué-estamos) · [Lo que A17 cambió en el motor](#lo-que-a17-cambió-en-el-motor-2026-10-29) · [Probar el sistema](#probar-el-sistema-en-tu-computadora) · [Dónde está cada cosa](#dónde-está-cada-cosa) · [Hoja de ruta](#hoja-de-ruta) · [Guía de lectura](#guía-de-lectura) · [Índice de documentos](#índice-de-documentos) · [Reglas](#las-tres-reglas-que-no-se-negocian) · [Equipo](#equipo-y-división-del-trabajo) · [Tecnología](#tecnología) · [Glosario](#glosario) · [Contribuir](#contribuir)
 
 ---
 
 ## Qué hace el sistema
 
-El recorrido de un cartel, desde el dibujo hasta el cliente. En verde, lo que ya funciona; en gris, lo que falta.
+El recorrido de un cartel, desde el dibujo hasta el corte. Todo funciona.
 
 ```mermaid
 flowchart LR
     A["1. Subir el dibujo<br/>(DXF de CorelDRAW)"] --> B["2. Ver cómo lo leyó<br/>y corregir con clics"]
     B --> C["3. Piezas"]
-    C --> D["4. Grupos:<br/>qué chapa usa<br/>cada pieza"]
+    C --> D["4. Grupos:<br/>elegir la chapa<br/>de cada grupo"]
     D --> E["5. Anidado:<br/>acomodar las piezas<br/>en la chapa"]
     E --> F["6. Chapas:<br/>revisar y mover piezas"]
-    F --> G["7. Costeo:<br/>materiales, mano de obra<br/>y margen"]
-    G --> H["8. Presupuesto<br/>con precio sugerido"]
-    H --> I["9. Aprobación<br/>del dueño"]
-    I -.-> J["10. Aviso por mail<br/>y envío al cliente"]
     F --> K["Para el taller:<br/>PDF del diseño anidado<br/>y un DXF por chapa"]
-    H --> L["Para el cliente:<br/>PDF del presupuesto<br/>con la marca de la empresa"]
 
     classDef hecho fill:#cfe8d5,stroke:#3d7a52,color:#14351f
-    classDef falta fill:#eeeeee,stroke:#999,color:#555
-    class A,B,C,D,E,F,G,H,I,K,L hecho
-    class J falta
+    class A,B,C,D,E,F,K hecho
 ```
 
 En palabras simples:
 
 - **1 y 2.** El diseñador exporta el dibujo desde CorelDRAW como **DXF**. El sistema lo lee y muestra una imagen de cómo lo entendió; si se equivocó, se corrige con clics. Esas correcciones se recuerdan si el mismo archivo vuelve a llegar.
-- **3 y 4.** Cada forma del dibujo es una **pieza**. Las piezas se reparten en **grupos**, uno por material (por ejemplo, chapa negra y acrílico).
+- **3 y 4.** Cada forma del dibujo es una **pieza**. Las piezas se reparten en **grupos**, y cada grupo elige **una chapa** del catálogo (o un retazo).
 - **5 y 6.** El **anidado** acomoda las piezas sobre las chapas. Lo hace **Sparrow**: usa los huecos de las piezas grandes para meter las chicas, gira las piezas y parte (*secciona*) las que no entran enteras en una chapa. Después se revisa, y se puede pasar una pieza de una chapa a otra.
-- **7 y 8.** El **costeo** suma el material usado, los artículos del catálogo (vinilos, pintura, tornillos...), la mano de obra, el IVA y el margen. El sistema **sugiere el precio** y marca en amarillo lo que queda por debajo.
-- **9.** El dueño aprueba, observa o devuelve el presupuesto. Ver [sus estados](#el-presupuesto-y-sus-estados).
-- **10.** Falta: que el dueño reciba un aviso por mail con un link, y que el presupuesto aprobado salga al cliente.
+- **Al final**, Chapas baja el **DXF de cada chapa** para la máquina y el **PDF** del diseño anidado. El sobrante de una chapa se puede guardar como **retazo**.
 
-### Quién puede hacer qué
+### Cómo se instala
 
-Cada persona entra con **usuario y contraseña**. Hay dos permisos, que se combinan:
-
-| Persona | Permisos | Qué puede hacer |
-|---|---|---|
-| **Diseñador** | ninguno | Armar trabajos y presupuestos, y mandarlos a aprobar |
-| **Quien aprueba** | «puede aprobar» | Aprobar o devolver presupuestos |
-| **Quien administra** | «administra usuarios» | Crear usuarios, cambiar permisos, dar de baja y restablecer contraseñas |
-
-El dueño suele tener los dos. Todos ven todos los trabajos. Cómo se administra: [`docs/MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md).
+Con un instalador para Windows que trae su propio Python: copia el programa a `C:\Carteleria`, deja un acceso en el escritorio y arranca solo al prender la computadora. Se abre en `http://localhost:8000`, y desde otra compu o un celular del mismo wifi, con la dirección de esa computadora. **Cada instalación guarda sus propios datos.** No hay usuarios ni contraseñas. El instalador vive fuera del repositorio porque trae la base con datos del cliente.
 
 ---
 
@@ -86,12 +67,11 @@ El dueño suele tener los dos. Todos ven todos los trabajos. Cómo se administra
 ```mermaid
 flowchart TB
     P["Pantalla en el navegador<br/>React"] -->|"pedidos a /api"| API["Servidor (API)<br/>Python + FastAPI"]
-    API --> DB[("Base de datos<br/>SQLite en tu computadora<br/>PostgreSQL en el servidor")]
+    API --> DB[("Base de datos<br/>SQLite en cada computadora")]
     API --> ARCH["Archivos de cada trabajo<br/>el DXF guardado"]
     API -->|"lanza y vigila"| S["Sparrow<br/>proceso aparte que anida"]
     API --> PDF["Generador de PDF<br/>ReportLab"]
     X["Planilla de precios<br/>de la empresa (Excel)"] -->|"se sube en Materiales<br/>y se revisa antes de aplicar"| API
-    M1["Menú de usuarios<br/>en la terminal"] -->|"habla con la app"| API
     M2["Script para limpiar<br/>la base de pruebas"] -.->|"toca la base directo,<br/>solo en desarrollo"| DB
 ```
 
@@ -99,70 +79,58 @@ flowchart TB
 - **El servidor** guarda los trabajos en la **base de datos** y el dibujo original en archivos. Al arrancar, si la base está atrasada respecto del código, **se actualiza sola** y antes deja un respaldo en `backend/local/respaldo-<fecha>-.../`.
 - **Sparrow** corre en un proceso aparte porque tarda: el servidor sigue respondiendo y la pantalla muestra una barra de avance (con tiempo máximo y botón de cancelar). Se pueden hacer varios anidados a la vez.
 - **La planilla de precios** de la empresa es la fuente de los materiales y sus precios. No se cargan a mano: se sube, se miran los cambios y se aplican.
-- **Los menús de la terminal** están en `backend/scripts/`. Se explican en el [manual](docs/MANUAL-USUARIOS.md).
+- **Las herramientas de la terminal** (limpiar la base de pruebas, copiarla para probar) están en `backend/scripts/`. Se explican en el [manual](docs/MANUAL-USUARIOS.md).
 
 ---
 
-## El presupuesto y sus estados
+## El presupuesto, apagado
 
-Un presupuesto pasa por cuatro estados. Lo que está **pendiente** o **aprobado** no se edita; para tocarlo hay que volverlo a borrador, y el sistema pide un motivo y lo deja en el historial.
+Hasta el 2026-11-18 el sistema también presupuestaba (costeo, precio sugerido, PDF para el cliente), hacía aprobar el presupuesto al dueño (cuatro estados con historial) y tenía usuarios con login. **El cliente pidió sacarlo** después de la demo. Se apagó, no se borró:
 
-```mermaid
-stateDiagram-v2
-    state "Pendiente de aprobación" as Pendiente
-    [*] --> Borrador
-    Borrador --> Pendiente: mandar a aprobar
-    Pendiente --> Aprobado: aprobar
-    Pendiente --> Observado: observar, con motivo
-    Pendiente --> Borrador: volver a borrador, con motivo
-    Observado --> Pendiente: volver a mandar
-    Aprobado --> Borrador: volver a borrador, con motivo
-```
+- **La pantalla** ya no muestra Presupuestos, Costeo, Usuarios ni «Entrar»; los enlaces viejos llevan al inicio o a Chapas.
+- **El servidor** sigue teniendo esas rutas, con sus pruebas, sin pantalla que las use. Ninguna ruta pide sesión.
+- **La base** conserva las tablas y los datos (usuarios, presupuestos, clientes, aprobaciones): no hubo migración.
 
-- **Observado** quiere decir que el dueño lo miró y pidió un cambio. Vuelve a quien lo armó, que lo edita ahí mismo.
-- Cada cambio de estado queda en el **historial**: quién lo hizo, cuándo y por qué.
-- Aprobar necesita el permiso «puede aprobar». El nombre de quien aprueba sale de su sesión: ya no se escribe a mano.
+Si vuelve a hacer falta, el código está en el historial de git y el diseño en [`docs/historico/`](docs/historico/) (A19 a A23 y 1.1).
 
 ---
 
 ## En qué estamos
 
-*Actualizado el 2026-11-11. El detalle vive en el [`PLAN-MAESTRO.md §7`](docs/plan/PLAN-MAESTRO.md) y el mapa en [`MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md).*
+*Actualizado el 2026-11-18. El detalle vive en el [`PLAN-MAESTRO.md §0`](docs/plan/PLAN-MAESTRO.md) y el mapa en [`MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md).*
 
 ### Qué hay hoy
 
 | Área | Qué funciona |
 |---|---|
-| **Leer el dibujo** | Se ve una imagen de cómo se leyó el DXF antes de cargarlo, se corrige con clics, y las piezas que no entran en una chapa se seccionan solas. Las correcciones se recuerdan por el contenido del archivo. |
+| **Leer el dibujo** | Se ve una imagen de cómo se leyó el DXF antes de cargarlo, se corrige con clics, y las piezas que no entran en una chapa se seccionan. Las correcciones se recuerdan por el contenido del archivo. |
+| **Grupos y chapa** | Cada grupo elige **una** chapa del catálogo o un retazo, sin anidar antes (desde A26; antes había que comparar al menos dos). |
 | **Anidado y chapas** | Sparrow como motor principal. Varios anidados a la vez, piezas chicas en los huecos de las grandes, giro libre, el material usado en ancho × alto, todas las chapas juntas con piezas movibles entre ellas. El sobrante de una chapa se guarda como **retazo**, que dice de dónde salió y si está disponible, en uso o usado. |
-| **Salida para el taller** | Un PDF del diseño anidado (la hoja del diseño completo más las chapas) y un DXF por chapa para la máquina. |
+| **Salida para el taller** | Un PDF del diseño anidado (la hoja del diseño completo más las chapas) y un DXF por chapa para la máquina. **Es el producto final.** |
 | **Materiales y precios** | Pantalla de Materiales alimentada por la planilla de la empresa: 44 materiales, 59 medidas y 288 artículos cargados. |
-| **Presupuesto** | Costeo con precio sugerido, artículos del catálogo, lista de todos los presupuestos y PDF para el cliente con la marca de la empresa (logo, negro y naranja, datos de contacto). Sin costos ni márgenes a la vista. |
-| **Aprobación** | Cuatro estados con historial y bloqueo de edición. |
-| **Usuarios** | Login, dos permisos, «Mi cuenta» para cambiar la contraseña, bloqueo de 15 minutos tras 5 intentos fallidos, pantalla de Usuarios y un menú en la terminal. |
-| **Inicio** | Una barra fija arriba y una página con las tarjetas de los trabajos, cada una con la miniatura pintada por chapa y en qué paso quedó. |
+| **Inicio** | Una barra fija arriba y una página con las tarjetas de los trabajos, cada una con la miniatura pintada por chapa y en qué paso quedó («Listo para cortar» cuando está todo anidado). |
+| **Instalación** | Un instalador para Windows, con Python portátil, que se corre en cada computadora y se vuelve a correr para actualizar sin perder los datos. |
 
-Una sola regla del servidor decide qué anidado cuenta para el presupuesto: el costeo, la tarjeta del inicio, el PDF y Chapas dicen lo mismo. Si se cambia la chapa de un grupo ya anidado, ninguno lo da por terminado ni lo cobra.
+Una sola regla del servidor decide qué anidado cuenta: la tarjeta del inicio, el PDF y Chapas dicen lo mismo. Si se cambia la chapa de un grupo ya anidado, ninguno lo da por terminado.
 
-### Lo que falta y quién lo mueve
+### Lo que sigue
 
 | Qué | Para qué | Quién |
 |---|---|---|
-| **Entrega A3 del servidor:** Docker, copias de seguridad diarias y llevar el catálogo a PostgreSQL | Que todo levante con un comando, igual que en el servidor | **Vale** (acordado el 2026-11-11). Se verifica en el CI de GitHub y, desde el 2026-11-18, también en la máquina de Enzo, que ya tiene Docker ([plan](docs/plan/1.1-servidor-y-login/plan.md)) |
-| **El servidor real:** alquilarlo, el dominio y HTTPS | Entrar desde el celular | Enzo, etapa 4 |
-| **Mail real y aviso al dueño; envío al cliente** con el presupuesto congelado | Cerrar la aprobación | Después del servidor |
-| **WhatsApp** | Avisos por ese canal | Etapa 4 |
+| **A26: sacar lo que no va** (login, presupuesto, comparar formatos) | Lo que pidió el cliente en la demo | Enzo, en curso ([plan](docs/plan/A26-sacar-lo-que-no-va/plan.md)) |
+| **A27: deshacer en el ajuste del anidado** | Volver atrás arrastrar, girar o pasar una pieza de chapa. Hoy, al devolver una pieza a su chapa, cae en otro lugar | Enzo, después de A26 |
+| **A28: retazos agrupados por material** | Ver todos los retazos juntos y saber qué hay de cada material | Enzo, después de A27 |
+| **Kerf, margen y separación de 15 materiales** (ACM, PVC, Metalex, Polyfan, entre otros) | Sin esos valores no se puede anidar con esas chapas | Falta el dato del taller |
+| **Rearmar el instalador** con esta versión | Que la cartelería tenga lo nuevo | Enzo, cuando cierre A26 |
 | **Medir la segunda tanda de A17** (unos 75 minutos con la máquina libre) | Decidir cómo repartir el tiempo del anidado | Enzo, solo cuando la pida |
+
+**Abierto (2026-11-18):** si la empresa instala en varias computadoras, cada una tiene su base: los retazos usados en una siguen apareciendo disponibles en la otra. La alternativa es que una sola computadora tenga el sistema y las demás entren por wifi, como en la demo.
+
+**Ya no se hace (2026-11-18):** el servidor y el dominio, Docker, PostgreSQL y las copias en la nube, el mail y WhatsApp, y todo lo del presupuesto. El estudio del servidor quedó en [`docs/historico/1.1-servidor-y-login/`](docs/historico/1.1-servidor-y-login/B1-servidor-y-dominio.md).
 
 **En espera por decisión de Enzo (2026-10-22):** colores de referencia por pieza y leer archivos `.cdr`.
 
-**Más adelante, sin fecha:** cobrar por lo que realmente se usa de cada chapa, proponer un retazo al anidar un trabajo nuevo, mano de obra por etapa, el dashboard rápido y el fotomontaje.
-
 **Decidido no hacer (2026-11-09):** importar varios diseños a la vez en pantalla (el propósito es **un diseño por trabajo**; los grupos de chapas cubren los materiales distintos) y cambiar cómo decide el lector qué es pieza y qué es agujero (se midió y el valor hoy es bajo).
-
-**Descartado como pedido (2026-11-11):** lo que no se puede saber desde desarrollo y ensuciaba la lista: las dos medidas de catálogo sin precio, el código repetido de la planilla, la hoja impresa para medir, las dudas del dueño, el aro soldado del diseñador y la veta (las chapas son uniformes).
-
-**Anotado para decidir cuando haga falta (revisión de la aprobación):** editar un cliente cambia el PDF de un presupuesto ya aprobado; dos personas aprobando u observando a la vez el mismo presupuesto; y las piezas y el anidado siguen editables con el presupuesto aprobado. Ver [`A20`](docs/historico/A20-aprobacion-del-presupuesto/diseno.md).
 
 **Lo ya hecho, entrega por entrega,** con fechas y migraciones aplicadas: [`docs/historico/ENTREGAS-HECHAS.md`](docs/historico/ENTREGAS-HECHAS.md).
 
@@ -202,14 +170,6 @@ python -m venv .venv
 .venv\Scripts\python -m pip install -r scripts/requirements-scripts.txt
 .venv\Scripts\python -m uvicorn app.api.app:app --reload
 ```
-
-**Una sola vez, el primer usuario** (sin él la pantalla no deja entrar), con el servidor ya arrancado:
-
-```
-.venv\Scripts\python -m app.usuarios crear enzo --nombre "Enzo" --administrador --puede-aprobar --generar
-```
-
-Imprime una contraseña temporal; al entrar, la pantalla te pide elegir una propia (al menos 10 caracteres).
 
 **Terminal 2: datos de demostración** (con el servidor corriendo)
 
@@ -254,19 +214,19 @@ cartelería/
 ├── backend/               ← el servidor, en Python
 │   ├── app/api/           Las rutas: lo que la pantalla le pide al servidor
 │   ├── app/services/      La lógica, por tema: ingesta (leer el DXF), nesting,
-│   │                      seccionado, piezas, catalogo, presupuesto, usuarios
+│   │                      seccionado, piezas, catalogo (y presupuesto y usuarios, apagados)
 │   ├── app/modelos/       Las tablas de la base de datos
 │   ├── app/cola/          Los anidados que corren en segundo plano
 │   ├── alembic/           Migraciones: los cambios de la base, versionados
-│   ├── scripts/           Herramientas: menú de usuarios, limpiar la base, copiar la
+│   ├── scripts/           Herramientas: limpiar la base, copiar la
 │   │                      base para probar, datos de demostración, extractores del Excel
 │   ├── tests/             Las pruebas automáticas, espejo de app/
 │   └── local/             Tu base, los DXF guardados, los respaldos y el logo de la
 │                          empresa. NO va a git: tiene datos del cliente
 │
 ├── frontend/              ← la pantalla (React + Vite + TypeScript + Tailwind)
-│   └── src/routes/        Inicio, Trabajos, Presupuestos, Materiales, Usuarios, Mi cuenta
-│                          y el espacio de trabajo con sus cinco etapas
+│   └── src/routes/        Inicio, Trabajos, Materiales y el espacio de trabajo
+│                          con sus cuatro etapas
 │
 ├── nesting-engine/        ← Deepnest, un motor estudiado y medido; hoy sin interfaz
 └── prototipo-dashboard/   ← maqueta HTML del dashboard rápido (se abre en el navegador)
@@ -280,29 +240,20 @@ cartelería/
 
 ```mermaid
 flowchart LR
-    H["HECHO<br/>El cotizador en tu computadora:<br/>dibujo, anidado, costeo,<br/>presupuesto, aprobación, PDF<br/>y usuarios con login"]
-    N["AHORA<br/>Empaquetar para el servidor:<br/>Docker, copias de seguridad<br/>y PostgreSQL"]
-    D["DESPUÉS<br/>Servidor y dominio con HTTPS,<br/>mail real, aviso al dueño<br/>y envío al cliente"]
-    M["MÁS ADELANTE<br/>WhatsApp, dashboard rápido<br/>y fotomontaje"]
-    H --> N --> D --> M
+    H["HECHO<br/>Del dibujo al corte:<br/>lectura, grupos, anidado,<br/>chapas, DXF y PDF,<br/>materiales e instalador"]
+    N["AHORA<br/>A26: sacar el login,<br/>el presupuesto y la<br/>comparación de chapas"]
+    D["DESPUÉS<br/>A27: deshacer en el ajuste<br/>A28: retazos por material"]
+    H --> N --> D
 
     classDef hecho fill:#cfe8d5,stroke:#3d7a52,color:#14351f
     classDef ahora fill:#ffe3cc,stroke:#ff5d00,color:#5a2300
     classDef luego fill:#eeeeee,stroke:#999,color:#555
     class H hecho
     class N ahora
-    class D,M luego
+    class D luego
 ```
 
-El orden vigente es el del [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md), en cinco etapas:
-
-1. **Preparar:** documentación al día.
-2. **Recorrido fino:** login, presupuesto sin anidado, PDF, aprobación del dueño y envío por mail, todo en Docker local igual que en el servidor.
-3. **Engordar:** importar y revisar, catálogo y precios, cotizador completo, aprobación y envío completos.
-4. **Resto del alcance:** dashboard y fotomontaje.
-5. **Conectar lo externo:** servidor real, mail, WhatsApp y formato de la empresa. Hasta acá, nada de afuera frena el trabajo: se usan reemplazos locales.
-
-El motor de anidado se conecta en paralelo, y hoy ya está en el producto (Sparrow). Los hitos y las semanas de la estimación original siguen en [`docs/EPICA.md §8`](docs/EPICA.md).
+El rumbo cambió el 2026-11-18, después de la demo: el producto final es el DXF y el PDF, y se instala en cada computadora. Las etapas del [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) que eran del ciclo de cotización y del servidor (login, aprobación, mail, servidor, WhatsApp) ya no se siguen; el plan maestro lo dice en su §0. Los hitos y las semanas de la estimación original siguen en [`docs/EPICA.md §8`](docs/EPICA.md).
 
 ---
 
@@ -361,9 +312,9 @@ Lo que vale siempre. Se edita.
 | [`BITACORA.md`](docs/BITACORA.md) | Registro cronológico: qué se hizo, qué se decidió, qué cambió en el registro, qué queda pendiente | **Al cerrar cada jornada de trabajo** |
 | [`CONVENCIONES.md`](docs/CONVENCIONES.md) | Regla de no-hardcode, división del trabajo, Git y commits, migraciones, código, **dónde va cada documento** (§8 bis) | Cuando acordamos una regla nueva |
 | [`DECISIONES-Y-BLOQUEANTES.md`](docs/DECISIONES-Y-BLOQUEANTES.md) | Las correcciones a la especificación técnica original, con severidad e historia que las resuelve. Más `ADR-03` en detalle (fotomontaje) | Rara vez — es un documento de cierre |
-| [`guias/GUIA-DEL-USUARIO.html`](docs/guias/GUIA-DEL-USUARIO.html) | **Guía completa para quien usa el sistema:** el recorrido de un cartel, cada pantalla, estados del presupuesto, problemas comunes y glosario. Con la marca; se abre en el navegador | Cuando cambia una pantalla o un permiso |
+| [`guias/GUIA-DEL-USUARIO.html`](docs/guias/GUIA-DEL-USUARIO.html) | **Guía completa para quien usa el sistema:** cómo abrirlo, el recorrido de un cartel, cada pantalla, problemas comunes y glosario. Con la marca; se abre en el navegador | Cuando cambia una pantalla |
 | [`guias/GUIA-DEL-DESARROLLO.html`](docs/guias/GUIA-DEL-DESARROLLO.html) | **Guía completa para desarrolladores:** arquitectura, puesta en marcha, dominio, pruebas y CI, Git, recetas y prácticas que sirven en otros proyectos | Cuando cambia la arquitectura o una convención |
-| [`MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md) | **Manual para el dueño:** cómo entrar y cambiar la contraseña, cómo administrar usuarios (pantalla y menú de la terminal) y cómo limpiar la base de desarrollo | Cuando cambian los permisos o los menús |
+| [`MANUAL-USUARIOS.md`](docs/MANUAL-USUARIOS.md) | Cómo limpiar la base de desarrollo. La parte de usuarios quedó como referencia: desde A26 no hay login | Cuando cambian los menús |
 | [`GUIA-PROBAR-EL-SISTEMA.md`](docs/GUIA-PROBAR-EL-SISTEMA.md) | El recorrido paso a paso por las pantallas, cómo probar con tus propios DXF y qué tener en cuenta | Cuando cambia una pantalla del recorrido |
 | [`GUIA-PRUEBAS-LOCALES.md`](docs/GUIA-PRUEBAS-LOCALES.md) | Cómo probar con datos reales del cliente: el xlsx de AppSheet y los DXF de `modelos/`. Nunca se commitea lo que producen | Cuando cambian los datos reales disponibles |
 
@@ -371,7 +322,7 @@ Lo que vale siempre. Se edita.
 
 | Documento | Qué contiene |
 |---|---|
-| [`1.1-servidor-y-login/`](docs/plan/1.1-servidor-y-login/diseno.md) | Usuarios, Docker, PostgreSQL, copias de seguridad y el servidor alquilado. El login ya está; sigue la entrega A3 ([`plan.md`](docs/plan/1.1-servidor-y-login/plan.md)) |
+| [`A26-sacar-lo-que-no-va/`](docs/plan/A26-sacar-lo-que-no-va/diseno.md) | Lo que pidió el cliente en la demo del 2026-11-18: sin login, sin presupuesto, una sola chapa por grupo ([`plan.md`](docs/plan/A26-sacar-lo-que-no-va/plan.md)) |
 | [`PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) | **El plan vigente.** Etapas, sub-proyectos en orden, el enchufe del motor y las decisiones abiertas. Cada sub-proyecto suma acá su propia carpeta con `diseno.md` y `plan.md` |
 
 ### `docs/motor/` — el motor de anidado
@@ -411,6 +362,7 @@ Lo que vale siempre. Se edita.
 | [`FACTIBILIDAD-NESTING-WEB.md`](docs/historico/FACTIBILIDAD-NESTING-WEB.md) | Investigación de SVGnest, Deepnest y SheetNest como motores en el navegador |
 | [`ENTREGAS-HECHAS.md`](docs/historico/ENTREGAS-HECHAS.md) | Lo que ya está en `main`, entrega por entrega (A10 a A25), con fechas y migraciones aplicadas en la base real |
 | [`SPIKE-CDR.md`](docs/historico/SPIKE-CDR.md) | ¿Se puede leer `.cdr` sin CorelDRAW? Sí, con dos límites conocidos. Lo cita `D-11` |
+| [`1.1-servidor-y-login/`](docs/historico/1.1-servidor-y-login/diseno.md) | Usuarios y login (hecho el 2026-11-09, apagado el 2026-11-18), Docker, PostgreSQL, copias y el servidor alquilado (no se hace: el cliente instala en cada computadora) |
 
 ### `fuentes/` — documentos originales
 
@@ -430,7 +382,7 @@ Desarrolladas en [`docs/CONVENCIONES.md`](docs/CONVENCIONES.md). Si te llevás s
 
 **1. No hardcode.** Ningún valor configurable va escrito en la lógica ni repetido en dos documentos. Todo default tiene un `PAR-xx` en [`docs/REGISTRO.md`](docs/REGISTRO.md) y el resto lo referencia por ID. Lo mismo con supuestos (`SUP-xx`) y dudas (`P-xx`). Si al cambiar un valor hay que tocar más de un lugar, es que estaba hardcodeado en algún lado.
 
-**2. Todo en milímetros.** Toda medida geométrica en mm, toda área en mm², y la unidad va en el nombre de la variable (`ancho_mm`, `area_mm2`). La conversión a m² es solo de presentación. Un SVG en px interpretado como mm produce un presupuesto catastróficamente equivocado que nadie detecta hasta que llega la chapa cortada.
+**2. Todo en milímetros.** Toda medida geométrica en mm, toda área en mm², y la unidad va en el nombre de la variable (`ancho_mm`, `area_mm2`). La conversión a m² es solo de presentación. Un SVG en px interpretado como mm produce un corte catastróficamente equivocado que nadie detecta hasta que llega la chapa cortada.
 
 **3. Se documenta a medida que se avanza.** Entrada en [`docs/BITACORA.md`](docs/BITACORA.md) al cerrar cada jornada, y [`docs/REGISTRO.md`](docs/REGISTRO.md) actualizado al abrir y cerrar cada sprint. Un registro desactualizado es peor que no tenerlo, porque genera confianza falsa.
 
@@ -442,9 +394,8 @@ Desarrolladas en [`docs/CONVENCIONES.md`](docs/CONVENCIONES.md). Si te llevás s
 |---|---|---|
 | **Producto** | Enzo | Todo lo que no es el motor de anidado, en el orden del plan maestro |
 | **Motor** | Vale | El motor de anidado y sus mejoras |
-| **Despliegue** | Vale | Dockerizar el proyecto y desplegarlo (entrega A3 y servidor), desde el 2026-11-11 |
 
-Detalle, zona compartida y propiedad del código en [`docs/CONVENCIONES.md §2-3`](docs/CONVENCIONES.md). **Capacidad asumida:** part-time, unas 15 a 20 horas por semana cada uno (`SUP-15`).
+Sin despliegue desde el 2026-11-18: el cliente instala el sistema en cada computadora. Detalle, zona compartida y propiedad del código en [`docs/CONVENCIONES.md §2-3`](docs/CONVENCIONES.md). **Capacidad asumida:** part-time, unas 15 a 20 horas por semana cada uno (`SUP-15`).
 
 ---
 
@@ -453,16 +404,15 @@ Detalle, zona compartida y propiedad del código en [`docs/CONVENCIONES.md §2-3
 | Capa | Qué se usa |
 |---|---|
 | Servidor | Python 3.11 o más nuevo, con FastAPI |
-| Base de datos | SQLAlchemy y Alembic. SQLite en tu computadora, PostgreSQL en el servidor |
-| Usuarios | Contraseñas con `argon2`; sesión por cookie |
+| Base de datos | SQLAlchemy y Alembic. SQLite en cada computadora |
+| Usuarios | Apagados desde A26 (el código con `argon2` y sesión por cookie queda, sin uso) |
 | Anidado | **Sparrow** (`spyrrow`), el motor principal. `rectpack` queda como motor de prueba. Deepnest se estudió y no está conectado |
 | Geometría y DXF | `shapely` y `ezdxf` |
 | PDF | ReportLab |
 | Excel | `openpyxl`, para la planilla de precios |
 | Pantalla | React 18, Vite, TypeScript, Tailwind y React Query |
 | Tareas largas | Hilos y un proceso aparte para Sparrow |
-| Servidor real (planeado) | Docker Compose, Caddy para el HTTPS y `restic` para las copias |
-| Mensajería (planeada) | Mail y WhatsApp Business |
+| Instalación | Un instalador para Windows con Python portátil (fuera del repositorio) |
 | Fotomontaje (planeado) | OpenCV y Pillow |
 
 Python en el servidor es casi obligatorio: la geometría computacional, la lectura de CAD y la visión por computadora viven ahí. Ver `ADR-05` en [`docs/EPICA.md §9`](docs/EPICA.md).
@@ -481,7 +431,7 @@ Python en el servidor es casi obligatorio: la geometría computacional, la lectu
 | **Chapa (o plancha)** | La hoja de material de la que se cortan las piezas |
 | **Retazo** | El sobrante de una chapa que se guarda para usarlo después |
 | **Seccionar** | Partir una pieza que no entra entera en una chapa, en tramos que sí entran |
-| **Costeo** | Sumar todo lo que cuesta hacer el cartel; el precio sale de sumarle el margen |
+| **Definitivo** | El anidado de un grupo que se marcó para cortar: el que va a Chapas, al DXF y al PDF |
 | **Kerf** | El ancho de material que se come la herramienta al cortar |
 | **Veta** | La dirección del material; si la tiene, las piezas no se pueden girar libremente |
 | **Desarrollo de plegado** | La medida plana que hay que cortar para que, doblada, dé la pieza final |

@@ -1,5 +1,7 @@
 # Manual de usuarios y de la base de desarrollo
 
+> **Desde el 2026-11-18 no hay login** (A26, a pedido del cliente): la app entra directo y no hay pantallas de usuarios. Lo que vale hoy de este manual es **cómo limpiar la base** cuando se está probando. Las secciones de usuarios quedan como referencia, por si el login vuelve: el código y las tablas siguen ahí, apagados ([`plan/A26-sacar-lo-que-no-va/diseno.md`](plan/A26-sacar-lo-que-no-va/diseno.md)).
+
 Para el dueño. Cómo entrar, cómo se administran las personas que usan el sistema y cómo limpiar la base cuando se está probando. Todo en lenguaje corriente: si algo no se entiende, es un error del manual.
 
 ## 1. Quién puede hacer qué

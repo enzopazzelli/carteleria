@@ -1,4 +1,4 @@
-"""La sesión en el servidor (1.1, `docs/plan/1.1-servidor-y-login/diseno.md §4.2` y `§4.3`).
+"""La sesión en el servidor (1.1, `docs/historico/1.1-servidor-y-login/diseno.md §4.2` y `§4.3`).
 
 **Desde A26 la app no tiene login** (el cliente lo pidió en la demo del 2026-11-18): las rutas del sistema
 piden solo `pedido_propio`. `usuario_actual` y `exigir_permiso` quedan para las rutas de usuarios y de

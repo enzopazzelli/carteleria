@@ -87,12 +87,13 @@
 
 ## Tarea 4 · Documentación
 
-- [ ] `README.md`, «En qué estamos»: el rumbo nuevo (sin login, sin presupuesto, sin despliegue; producto final DXF + PDF; se instala en cada PC).
-- [ ] `PLAN-MAESTRO.md §1`: las decisiones del 2026-11-18, que reemplazan el ciclo de cotización y el servidor.
-- [ ] `docs/plan/1.1-servidor-y-login/` pasa entera a `docs/historico/` (ya no se sigue), actualizando las rutas que la citan.
-- [ ] `docs/guias/GUIA-DEL-USUARIO.html`: sin entrar, sin comparar, sin presupuesto; cómo elegir la chapa. `GUIA-PROBAR-EL-SISTEMA.md` y `MANUAL-USUARIOS.md`, lo mismo si lo nombran.
-- [ ] `BITACORA.md`: la entrada de la demo y de este pedido.
-- [ ] Commit: `docs(a26): el rumbo nuevo después de la demo`.
+- [x] `README.md`, «En qué estamos»: el rumbo nuevo (sin login, sin presupuesto, sin despliegue; producto final DXF + PDF; se instala en cada PC).
+- [x] `PLAN-MAESTRO.md §1`: las decisiones del 2026-11-18, que reemplazan el ciclo de cotización y el servidor.
+- [x] `docs/plan/1.1-servidor-y-login/` pasa entera a `docs/historico/` (ya no se sigue), actualizando las rutas que la citan.
+- [x] `docs/guias/GUIA-DEL-USUARIO.html`: sin entrar, sin comparar, sin presupuesto; cómo elegir la chapa. `GUIA-PROBAR-EL-SISTEMA.md` y `MANUAL-USUARIOS.md`, lo mismo si lo nombran.
+- [x] `BITACORA.md`: la entrada de la demo y de este pedido.
+- [x] También: `MAPA-DEL-PROYECTO.md §0`, `CONVENCIONES.md` (el ejemplo de carpeta de plan) y la guía del usuario con «Abrir el sistema» en lugar de «Entrar y tu cuenta». Sin enlaces rotos en lo tocado.
+- [x] Commit: `docs(a26): el rumbo nuevo después de la demo`.
 - [ ] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 5 · Verificar y cerrar

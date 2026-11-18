@@ -32,13 +32,7 @@ python -m venv .venv
 
 La base se crea o se actualiza sola al arrancar; si estaba atrasada, antes guarda un respaldo en `backend/local/respaldo-…`.
 
-**Una sola vez, el primer usuario** (sin él la pantalla no deja entrar). Con el backend ya arrancado una vez:
-
-```
-.venv\Scripts\python -m app.usuarios crear enzo --nombre "Enzo" --administrador --puede-aprobar --generar
-```
-
-Imprime una contraseña temporal; al entrar, la pantalla te pide elegir una propia (al menos 10 caracteres). Después, las demás personas se crean desde la pantalla **Usuarios** o con el menú de la terminal: [`docs/MANUAL-USUARIOS.md`](MANUAL-USUARIOS.md).
+No hace falta crear ningún usuario: desde A26 (2026-11-18) la app entra directo, sin login.
 
 Usamos `.venv\Scripts\python` en vez de "activar" el entorno: evita el bloqueo de scripts de PowerShell y que se mezcle con otro Python. Cuando termine de arrancar, `http://localhost:8000/docs` tiene que mostrar la documentación de la API.
 
@@ -66,30 +60,25 @@ Abrí **exactamente** `http://localhost:5173` (no `127.0.0.1`, no otro puerto): 
 
 | # | Dónde | Qué hacer | Qué tendrías que ver |
 |---|---|---|---|
-| 1 | **Inicio** | En «Nuevo trabajo», escribí un nombre y apretá «Crear y cargar el DXF» | Entrás al trabajo: arriba queda la barra (Inicio · Trabajos) y a la izquierda las cinco etapas: Piezas, Grupos, Anidado, Chapas, Costeo |
+| 1 | **Inicio** | En «Nuevo trabajo», escribí un nombre y apretá «Crear y cargar el DXF» | Entrás al trabajo: arriba queda la barra (Inicio · Trabajos · Materiales) y a la izquierda las cuatro etapas: Piezas, Grupos, Anidado, Chapas |
 | 2 | **Piezas** | Dejá la escala en `1`, elegí el archivo `backend/local/demo.dxf` | **11 piezas** con su dibujo, y un aviso: *"Se ignoraron 1 entidad(es)… (1 TEXT)"*. El aviso es a propósito: el texto del dibujo no se corta |
 | 3 | **Grupos** | "Nuevo grupo" (ej. «Chapa negra») → tildá "Seleccionar todas" → elegí el grupo en "Mover a grupo…" → "Mover" | Las piezas pasan al grupo |
-| 4 | **Grupos** | En el grupo, "Comparar formatos" → tildá 2 o más formatos «DEMO» → "Comparar" → "Usar este" en el que prefieras | Una tabla con planchas, aprovechamiento y costo (marcado "(simulado)"); el grupo queda con su material |
+| 4 | **Grupos** | En el grupo, «Elegir chapa» → tildá una chapa «DEMO» → «Usar esta chapa» | El grupo muestra su chapa por nombre («Chapa: DEMO … · 1220 × 2440 mm»). Una sola chapa: la que se va a anidar |
 | 5 | **Anidado** | "Anidar" | La ejecución pasa a **lista**, con planchas y % de aprovechamiento. Probá "Marcar definitiva" |
 | 6 | **Anidado** | Cambiá kerf, margen, separación o rotación y apretá "Aplicar y recalcular"; probá también "Aprovechar huecos" | Se crea una ejecución nueva; la anterior queda en el historial |
 | 7 | **Chapas** | Elegí el grupo arriba. Pasá el mouse por una pieza o una chapa; arrastrá una pieza a otra chapa o a «Chapa nueva». Doble clic en una chapa para retocarla: arrastrá piezas y girá con la rueda del mouse (o los botones ±15° / ±90°) | Todas las chapas juntas y el diseño inicial pintado por chapa; lo que está bajo el mouse se ilumina en los dos. Una pieza que se sale o choca se marca en rojo. "Ver plano imprimible" y "Descargar DXF de corte" exportan cada chapa. "Descargar PDF", arriba a la derecha, baja el PDF del trabajo entero para imprimir en A4 |
-| 8 | **Costeo** | Elegí «+ Cliente nuevo…» → "Crear primera opción de presupuesto" → "Recalcular materiales" → agregá líneas (mano de obra, flete…) | El desglose por rubro, con margen, IVA y total |
-| 9 | **Anidado** | Con el anidado listo, mirá la tabla de chapas del resumen y apretá «Guardar como retazo» al lado de un sobrante | El botón pasa a «guardado como retazo». En **Materiales**, el material muestra «Retazos: 1 retazo disponible · … m²» y de dónde salió |
-| 10 | **Costeo** | «Agregar del catálogo», buscá «corrug», elegí el artículo, escribí una cantidad y «Agregar». Hace falta la planilla cargada: en Materiales, «Actualizar desde la planilla» | La línea con su costo y, en «Presupuesto para el cliente», el precio sugerido con el margen de la planilla |
-| 11 | **Costeo** | Apretá «Mandar a aprobar»; después «Aprobar» u «Observar» (con un motivo). Aprobar pide el permiso «puede aprobar»; el nombre sale de tu sesión | El estado cambia y queda el historial. Un presupuesto pendiente o aprobado queda bloqueado hasta que lo vuelvas a borrador |
-| 12 | **Costeo** | «Descargar PDF» | El PDF del cliente, sin costos ni márgenes. Con la marca de la empresa si existe `backend/local/empresa/` (ver abajo); sin esa carpeta, sale sin logo ni pie |
-| 13 | **Inicio** | Volvé con «Inicio» en la barra | La tarjeta del trabajo, con la miniatura pintada por chapa, los cuatro pasos en verde y el presupuesto. En «Trabajos» están todas, con un buscador; el «⋯» de una tarjeta borra el trabajo, con confirmación |
-| 14 | **Piezas** | Cargá un DXF marcando una forma como «no va» y apretá «Cargar»; en otro trabajo elegí el mismo archivo y apretá «Ver cómo se lee» | El dibujo aparece con esa forma ya marcada y el aviso «Se aplicó 1 corrección de la vez anterior», con «Empezar de cero». Si tocás otra forma, el aviso se esconde |
-| 15 | **Grupos** | Con un grupo ya anidado, cambiale la chapa al grupo (en Grupos, o en Costeo con «Cambiar material o comparar formatos») y volvé a **Inicio** | La tarjeta dice «Falta volver a anidar»; Chapas y el resumen de Anidado dicen «La chapa cambió después de este anidado: no se cobra»; el PDF lo avisa en rojo; el costeo no lo cobra |
+| 8 | **Anidado** | Con el anidado listo, mirá la tabla de chapas del resumen y apretá «Guardar como retazo» al lado de un sobrante | El botón pasa a «guardado como retazo». En **Materiales**, el material muestra «Retazos: 1 retazo disponible · … m²» y de dónde salió |
+| 9 | **Inicio** | Volvé con «Inicio» en la barra | La tarjeta del trabajo, con la miniatura pintada por chapa, los tres pasos en verde y «Listo para cortar»; tocarla lleva a Chapas. En «Trabajos» están todas, con un buscador; el «⋯» de una tarjeta borra el trabajo, con confirmación |
+| 10 | **Piezas** | Cargá un DXF marcando una forma como «no va» y apretá «Cargar»; en otro trabajo elegí el mismo archivo y apretá «Ver cómo se lee» | El dibujo aparece con esa forma ya marcada y el aviso «Se aplicó 1 corrección de la vez anterior», con «Empezar de cero». Si tocás otra forma, el aviso se esconde |
+| 11 | **Grupos** | Con un grupo ya anidado, «Cambiar chapa», tildá otra y «Usar esta chapa»; volvé a **Inicio** | Antes de confirmar avisa «Si el grupo ya estaba anidado, hay que volver a anidarlo». La tarjeta dice «Falta volver a anidar»; Chapas y el resumen de Anidado dicen «La chapa cambió después de este anidado: hay que volver a anidar»; el PDF lo avisa en rojo |
 
 ## Qué tener en cuenta (no son errores)
 
 - **Los precios de la demo son inventados.** Cualquier costo marcado "(simulado)" no es un dato real.
 - **Kerf, margen y separación son provisorios** (2 / 10 / 5 mm): todavía no se confirmaron con el taller.
 - **El anidado acomoda el rectángulo que envuelve a cada pieza**, no su forma real: con piezas curvas o muy irregulares va a dejar huecos. "Aprovechar huecos" intenta meter piezas chicas adentro de los agujeros de otras.
-- **Todavía no hay** aviso por mail ni envío al cliente: la aprobación se hace dentro de la app, con tu usuario. El login ya existe (ver el primer usuario, en el paso 2).
-- **El logo y los datos de contacto del PDF** viven en `backend/local/empresa/` (`logo.png` y `datos.json`), fuera de git. Sin esa carpeta el PDF sale igual, sin logo ni pie. El formato, en [`docs/GUIA-PRUEBAS-LOCALES.md §5`](GUIA-PRUEBAS-LOCALES.md).
-- Todo lo que cargues se guarda en `backend/local/` (no se sube a Git). **Para empezar de cero:** frená el backend y corré `python scripts/limpiar_base.py` desde `backend/`: ofrece borrar solo los trabajos, trabajos y clientes, o dejar todo de fábrica, siempre con respaldo y conservando los usuarios ([manual](MANUAL-USUARIOS.md)). Después repetí el paso 3 si borraste el catálogo.
+- **No hay login, presupuesto ni comparación de chapas** desde A26 (2026-11-18): el cliente los pidió sacar. El recorrido termina en Chapas, con el DXF y el PDF.
+- Todo lo que cargues se guarda en `backend/local/` (no se sube a Git). **Para empezar de cero:** frená el backend y corré `python scripts/limpiar_base.py` desde `backend/`: ofrece borrar solo los trabajos, trabajos y clientes, o dejar todo de fábrica, siempre con respaldo ([manual](MANUAL-USUARIOS.md)). Después repetí el paso 3 si borraste el catálogo.
 
 ## Probar con tus propios DXF
 

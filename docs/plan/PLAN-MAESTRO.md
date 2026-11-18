@@ -4,9 +4,33 @@
 >
 > Índice del proyecto: [`README.md`](../../README.md) · [`MAPA-DEL-PROYECTO.md`](../MAPA-DEL-PROYECTO.md) · [`EPICA.md`](../EPICA.md) · [`BACKLOG.md`](../BACKLOG.md) · [`REGISTRO.md`](../REGISTRO.md) · [`motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md`](../motor/PLAN-RUMBO-ANIDADO-Y-REVISION.md) · [`motor/CONTRATO-NESTING-ENGINE.md`](../motor/CONTRATO-NESTING-ENGINE.md) · [`historico/frontend-cotizador/diseno.md`](../historico/frontend-cotizador/diseno.md)
 >
-> **Versión:** 1.0 · **Fecha:** 2026-10-05
+> **Versión:** 1.1 · **Fecha:** 2026-10-05 · **Rumbo nuevo:** 2026-11-18 (§0)
 >
 > **Sobre los valores.** Los parámetros, supuestos, insumos y decisiones se citan por ID (`PAR-xx`, `B-xx`, `T-xx`, `D-xx`) y viven en `REGISTRO.md`. Este documento no repite ningún valor. Las decisiones marcadas «nueva» se dieron de alta en el registro en la etapa 0 (§5).
+
+---
+
+## 0. Rumbo nuevo después de la demo (2026-11-18)
+
+**Esta sección manda sobre el resto del plan.** El 2026-11-18 Enzo dejó una demo instalada en una computadora de la cartelería. El cliente la usó y pidió:
+
+| Pedido | Qué cambia en el plan |
+|---|---|
+| **El producto final es el DXF y el PDF** | El ciclo de cotización (§1: armar el presupuesto, aprobarlo, mandarlo al cliente) deja de ser la meta. El recorrido termina en Chapas, con el DXF de cada chapa y el PDF del diseño anidado |
+| **Quitar el presupuesto** | Se apagan el costeo, el presupuesto, el PDF para el cliente y la aprobación (A19 a A23). 1.2 a 1.5 y 2.3 a 2.4 ya no se siguen |
+| **Quitar el login** | Se apaga 1.1 (usuarios, A2). La carpeta pasó a [`../historico/1.1-servidor-y-login/`](../historico/1.1-servidor-y-login/diseno.md) |
+| **No habrá despliegue** | El cliente instala el sistema en cada computadora, como la demo. La etapa 4 (servidor, dominio, mail, WhatsApp) y la entrega A3 (Docker, copias, PostgreSQL) no se hacen |
+| **Quitar «Comparar formatos»** | Cada grupo elige una sola chapa, la que se va a anidar |
+| **Deshacer en el ajuste del anidado** | Pedido nuevo: A27 |
+| **Retazos agrupados por material** | Pedido nuevo: A28 |
+
+**En qué orden:** A26 (sacar lo que no va: [`A26-sacar-lo-que-no-va/`](A26-sacar-lo-que-no-va/diseno.md)), después A27 y A28. El motor sigue en su carril.
+
+**Apagar, no borrar.** Lo que se saca deja de verse y de pedirse, pero el código del servidor y las tablas de la base quedan (A26, diseño §2). Si el cliente lo vuelve a pedir, vuelve sin cargar datos de nuevo.
+
+**Abierto:** si se instala en varias computadoras, cada una tiene su base (los retazos de una no se ven en la otra). La alternativa es una sola computadora con el sistema y las demás entrando por wifi.
+
+Lo que sigue de este documento (§1 a §12) es el plan del 2026-10-05, que se conserva para entender por qué el código es como es.
 
 ---
 
@@ -187,7 +211,7 @@ Sin código de producto.
 
 | Sub-proyecto | Lo mínimo para el recorrido | Se posterga a la etapa 2 | Historias que toca | Reemplazo local hasta la etapa 4 |
 |---|---|---|---|---|
-| **1.1 Servidor y login** | Todo levantado con Docker y PostgreSQL, igual que en el servidor, sin credenciales en el repositorio (`ADR-10`), con backup diario. Usuarios con nombre de usuario y contraseña, y los permisos «puede aprobar» y «administra usuarios». Todas las rutas exigen sesión. **El primer usuario se crea por línea de comandos; el resto, el dueño desde una pantalla** (Enzo, 2026-11-09). Lista de motores con ninguno habilitado (§4.4, cambios 1 y 2). **Se planifica junto con 4.1, en dos fases:** [`1.1-servidor-y-login/`](1.1-servidor-y-login/diseno.md) | Menú por rol, auditoría general | `CART-001`, `CART-002` | Docker local en vez del servidor; backup a una carpeta |
+| **1.1 Servidor y login** | Todo levantado con Docker y PostgreSQL, igual que en el servidor, sin credenciales en el repositorio (`ADR-10`), con backup diario. Usuarios con nombre de usuario y contraseña, y los permisos «puede aprobar» y «administra usuarios». Todas las rutas exigen sesión. **El primer usuario se crea por línea de comandos; el resto, el dueño desde una pantalla** (Enzo, 2026-11-09). Lista de motores con ninguno habilitado (§4.4, cambios 1 y 2). **Se planifica junto con 4.1, en dos fases:** [`1.1-servidor-y-login/`](../historico/1.1-servidor-y-login/diseno.md) | Menú por rol, auditoría general | `CART-001`, `CART-002` | Docker local en vez del servidor; backup a una carpeta |
 | **1.2 Presupuesto sin anidado** | Lista de presupuestos fuera del espacio de trabajo: cliente, líneas a mano por rubro, margen, IVA y total. El material figura «pendiente de anidado» | Insumos elegidos de un catálogo, mano de obra por etapa | `CART-301`, `CART-304` a `CART-308` | Validez y margen a mano |
 | **1.3 PDF mínimo** | Una plantilla: logo, cliente, código, fecha, validez, ítems y total. Sin costos internos ni márgenes | Documento interno, plano de corte adentro, fotomontaje | `CART-309` | Plantilla propia, logo como espacio reservado |
 | **1.4 Aprobación mínima** | Estados borrador, pendiente, observado y aprobado. Aviso al dueño por mail con link firmado (`PAR-17`). El dueño aprueba u observa sin iniciar sesión. Historial de quién cambió qué estado | Vencimiento automático, anulación, resumen agrupado de avisos | `CART-401` a `CART-404` | Usuario de prueba que aprueba; buzón de prueba |
@@ -296,7 +320,7 @@ Los del motor (1 a 3) van primero (Enzo). El orden del 4 al 8 es una propuesta, 
 5. **Cambiar cómo decide el lector qué es pieza y qué es agujero.** Tres lecturas que salen mal quedaron con su prueba marcada como falla conocida: la franja chica enganchada en otra, la letra con el hueco cerca del borde y el agujero adentro de dos formas que se pisan. Arreglarlas cambiaba la lectura de otros archivos. **Medido el 2026-11-09, y decidido dejarlo como está (Enzo):** el agujero adentro de dos formas que se pisan se probó con dos reglas contra los 9 dibujos de prueba. Contar la cadena más larga de formas que se contienen arregla el centro de una «D» pero rompe el hueco de una «A» (en `Corporeas`) y suma 12 formas diminutas en `strat`. Contar como un solo nivel las formas que se pisan sin contenerse arregla los 6 tornillos de `strat` y el centro de la «D», sin romper la «A» (queda 1 forma diminuta nueva en `strat` por mirar); **`Complejo` y otros 5 dibujos se leen idéntico con las dos reglas.** La única diferencia grande es el texto del cuadro de la cotización de `Muestra Vectores` (146 centros de letra dejan de ser piezas y 218 letras pasan a serlo; 152 piezas más), que es de un formato viejo: antes el diseñador dibujaba en el mismo archivo la cotización, las chapas horizontales y otras referencias, y desde que se pidió que solo manden el diseño casi no hay letras afuera. Por eso no se toca el lector: el valor hoy es bajo. Si hiciera falta, la segunda regla es un cambio chico, y los guiones de medición y las imágenes están en `backend/local/herramientas-lector-2026-11-09/` (fuera de git). **También va acá la regla del tablero:** hoy un rectángulo es un tablero si no entra en ninguna chapa, y eso depende de qué medidas se miran; por eso la lectura usa solo las familias de `PAR-60` (A18, 2026-11-06). Decidirlo por lo que tiene adentro dejaría leer también diseños para MDF o ACM, con el riesgo de que una placa con muchos calados parezca un tablero.
 6. ~~La importación de varios diseños en pantalla~~ **No se construye (Enzo, 2026-11-09).** El propósito de la app es cargar un diseño por trabajo, y los grupos de chapas dentro del trabajo cubren los materiales distintos; un archivo con dos diseños (como el de Parador, con el de un consultorio odontológico) se resuelve marcando «no va» el que sobra. Solo existe por la API (`/importaciones/dxf/...`): no une ni deja corregir, cada trabajo tendría de fondo el archivo entero, y sus mensajes se revisaron sin miniaturas. Si algún día llegan muchos archivos así, se retoma.
 7. **En espera por decisión de Enzo** (2026-10-22): los colores de referencia por pieza y leer el `.cdr` (la última fila de la tabla de arriba).
-8. **Lo de afuera** (etapa 4): el servidor real, el mail real, WhatsApp, y el logo y los datos fiscales en el PDF. ~~Usuarios y login~~ **Hechos el 2026-11-09 (1.1, entrega A2):** [`1.1-servidor-y-login/`](1.1-servidor-y-login/diseno.md). La app pide entrar, hay permisos «puede aprobar» y «administra usuarios», y se administran desde la pantalla de usuarios o con el menú de la terminal ([`MANUAL-USUARIOS.md`](../MANUAL-USUARIOS.md)). Sigue A3 (Docker, copias de seguridad y llevar el catálogo a PostgreSQL, verificadas en el CI) y la fase B (el servidor alquilado).
+8. **Lo de afuera** (etapa 4): el servidor real, el mail real, WhatsApp, y el logo y los datos fiscales en el PDF. ~~Usuarios y login~~ **Hechos el 2026-11-09 (1.1, entrega A2):** [`1.1-servidor-y-login/`](../historico/1.1-servidor-y-login/diseno.md). La app pide entrar, hay permisos «puede aprobar» y «administra usuarios», y se administran desde la pantalla de usuarios o con el menú de la terminal ([`MANUAL-USUARIOS.md`](../MANUAL-USUARIOS.md)). Sigue A3 (Docker, copias de seguridad y llevar el catálogo a PostgreSQL, verificadas en el CI) y la fase B (el servidor alquilado).
 9. ~~Una sola regla de qué anidado cuenta para el presupuesto, y por qué no~~ **Hecha el 2026-11-09 (A25):** [`historico/A25-regla-unica-del-anidado/`](../historico/A25-regla-unica-del-anidado/diseno.md). El costeo, la tarjeta del inicio, el PDF y Chapas preguntan a un solo módulo del servidor (`app/anidado_que_cuenta.py`); el caso «la chapa cambió después de anidar» se trata igual en los cuatro, y una prueba guardiana impide que la regla se vuelva a repartir.
 
 **Resueltos por el camino**, antes de A17. Estaban al pie de las tablas de pendientes:
@@ -379,4 +403,4 @@ Se aplican en la etapa 0.
 1. **E1**, el primer sub-proyecto con su propio diseño, porque es corto y es lo único que el carril del motor espera de este lado. Se escribe con el valor por defecto de `D-14`.
 2. Después **1.1**.
 
-**Cada sub-proyecto vive en su propia carpeta** dentro de `docs/plan/`, con el número de este documento: `docs/plan/E1-enchufe-del-motor/`, `docs/plan/1.1-servidor-y-login/`, etc. Adentro van `diseno.md` y, cuando se escriba, `plan.md`. Al terminar un sub-proyecto, su carpeta pasa a `docs/historico/`. La regla completa está en [`CONVENCIONES.md §8 bis`](../CONVENCIONES.md).
+**Cada sub-proyecto vive en su propia carpeta** dentro de `docs/plan/`, con el número de este documento: `docs/plan/E1-enchufe-del-motor/`, `docs/historico/1.1-servidor-y-login/`, etc. Adentro van `diseno.md` y, cuando se escriba, `plan.md`. Al terminar un sub-proyecto, su carpeta pasa a `docs/historico/`. La regla completa está en [`CONVENCIONES.md §8 bis`](../CONVENCIONES.md).

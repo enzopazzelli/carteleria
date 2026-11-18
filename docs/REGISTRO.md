@@ -86,7 +86,7 @@ Cosas que damos por ciertas sin haberlas confirmado. Un supuesto que se cae pued
 | **SUP-39** | El precio de una línea del catálogo se copia al agregarla y no cambia solo cuando cambia la planilla (`historico/A23-materiales-en-el-presupuesto/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: igual que los materiales del anidado (A19) | Un presupuesto armado con precios viejos sigue con ellos aunque la planilla suba |
 | **SUP-40** | Un artículo sin margen de venta en la planilla (66 de 288) usa el margen general del presupuesto (`historico/A23-materiales-en-el-presupuesto/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: es lo que ya pasa con lo que no tiene margen | Si el margen general está vacío, el artículo queda sin precio sugerido y hay que ponerle un precio a mano |
 | **SUP-41** | Con dos proveedores para un mismo código, la línea toma el que cuenta (el último que cambió de precio, o el marcado con «Usar este») (`historico/A23-materiales-en-el-presupuesto/diseno.md §4`) | 🟡 | Enzo, 2026-11-08: es la regla de A18 | Se cotiza con un proveedor distinto del que se le compra a la empresa en ese momento |
-| **SUP-42** | Hasta tres personas usan el sistema a la vez, y como mucho tres anidados corren juntos (`plan/1.1-servidor-y-login/diseno.md` §2) | 🟢 | Enzo, 2026-11-09 | El servidor quedaría corto: con más de tres a la vez hay que alquilar uno con más procesadores, y con muchos más, separar el cálculo de anidados en otro servidor |
+| **SUP-42** | Hasta tres personas usan el sistema a la vez, y como mucho tres anidados corren juntos (`historico/1.1-servidor-y-login/diseno.md` §2) | 🟢 | Enzo, 2026-11-09 | El servidor quedaría corto: con más de tres a la vez hay que alquilar uno con más procesadores, y con muchos más, separar el cálculo de anidados en otro servidor |
 
 > **SUP-04 y SUP-08 son los dos que más pueden doler.** El primero reordena el roadmap; el segundo invalida los cálculos del motor. Los dos se responden en el encuentro 2 del relevamiento ([§6](#6-guion-de-relevamiento)).
 
@@ -163,14 +163,14 @@ Columna **Ámbito**: a qué nivel se configura. Columna **Dónde vive**: qué ta
 
 | ID | Parámetro | Default provisorio | Unidad | Ámbito | Dónde vive | Historia | Estado |
 |---|---|---|---|---|---|---|---|
-| **PAR-62** | Cuánto dura una sesión sin uso: pasado este tiempo sin actividad, hay que volver a entrar | 12 | horas | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
-| **PAR-63** | Cuánto dura una sesión abierta con «mantener la sesión abierta en este dispositivo» (pensada para el celular del dueño) | 30 | días | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
-| **PAR-64** | Largo mínimo de una contraseña | 10 | caracteres | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
-| **PAR-65** | Intentos fallidos seguidos de entrar con un usuario antes de bloquear su cuenta | 5 | intentos | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
-| **PAR-66** | Cuánto dura el bloqueo de una cuenta después de esos intentos | 15 | minutos | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
-| **PAR-67** | Cuántos días de copias diarias se guardan en el almacenamiento aparte del servidor | 30 | días | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.11 | 🟢 decidido por Enzo el 2026-11-09 |
-| **PAR-68** | A qué hora se hace la copia diaria | 03:00 | hora de Argentina | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.11 | 🟡 provisorio — propuesto el 2026-11-09. Una hora en que nadie usa el sistema |
-| **PAR-69** | Cuántas horas sin una copia buena antes de que el estado de salud diga «backup atrasado» | 26 | horas | Sistema | Config | `plan/1.1-servidor-y-login/diseno.md` §4.11 | 🟡 provisorio — propuesto el 2026-11-09. Un día más dos horas de margen |
+| **PAR-62** | Cuánto dura una sesión sin uso: pasado este tiempo sin actividad, hay que volver a entrar | 12 | horas | Sistema | Config | `historico/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
+| **PAR-63** | Cuánto dura una sesión abierta con «mantener la sesión abierta en este dispositivo» (pensada para el celular del dueño) | 30 | días | Sistema | Config | `historico/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
+| **PAR-64** | Largo mínimo de una contraseña | 10 | caracteres | Sistema | Config | `historico/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
+| **PAR-65** | Intentos fallidos seguidos de entrar con un usuario antes de bloquear su cuenta | 5 | intentos | Sistema | Config | `historico/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
+| **PAR-66** | Cuánto dura el bloqueo de una cuenta después de esos intentos | 15 | minutos | Sistema | Config | `historico/1.1-servidor-y-login/diseno.md` §4.2 | 🟡 provisorio — propuesto el 2026-11-09 |
+| **PAR-67** | Cuántos días de copias diarias se guardan en el almacenamiento aparte del servidor | 30 | días | Sistema | Config | `historico/1.1-servidor-y-login/diseno.md` §4.11 | 🟢 decidido por Enzo el 2026-11-09 |
+| **PAR-68** | A qué hora se hace la copia diaria | 03:00 | hora de Argentina | Sistema | Config | `historico/1.1-servidor-y-login/diseno.md` §4.11 | 🟡 provisorio — propuesto el 2026-11-09. Una hora en que nadie usa el sistema |
+| **PAR-69** | Cuántas horas sin una copia buena antes de que el estado de salud diga «backup atrasado» | 26 | horas | Sistema | Config | `historico/1.1-servidor-y-login/diseno.md` §4.11 | 🟡 provisorio — propuesto el 2026-11-09. Un día más dos horas de margen |
 
 ### 2.4 Parámetros del dashboard
 

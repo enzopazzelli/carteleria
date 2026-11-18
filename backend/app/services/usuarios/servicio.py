@@ -1,5 +1,5 @@
 """Entrar, las sesiones y las reglas de los usuarios (1.1,
-`docs/plan/1.1-servidor-y-login/diseno.md §4`).
+`docs/historico/1.1-servidor-y-login/diseno.md §4`).
 
 Sin nada de HTTP: recibe la sesión de la base y, cuando importa el reloj, `ahora`, para que las
 pruebas no tengan que esperar. **Cada función que cambia algo guarda ella misma** (`commit`):
