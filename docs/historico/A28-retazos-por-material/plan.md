@@ -27,17 +27,17 @@
 - [x] `retazosPorMaterial(catalogo, { todos })` en `components/Materiales/retazos.ts`: devuelve, por material con espesor, sus medidas (del lado más largo × el más corto, de la más grande a la más chica) con sus retazos, y las cuentas por medida, por material y total.
 - [x] Pruebas: una por punto del Review Focus, más el orden y el material con dos espesores.
 - [x] `npm test` y `npm run build` en verde. Commit: `feat(a28): retazos agrupados por material y medida`.
-- [ ] **Pausa: mostrar a Enzo y esperar el ok.**
+- [x] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 2 · La vista
 
 - [x] `RetazosPorMaterial.tsx`: la cuenta de arriba, el buscador, la casilla, un bloque por material con sus medidas abribles y el enlace al material.
 - [x] `routes/Materiales.tsx`: los botones «Materiales» / «Retazos»; el enlace de un material vuelve a «Materiales» con ese material elegido.
 - [x] `npm test` y `npm run build` en verde. Commit: `feat(a28): la vista Retazos en Materiales`.
-- [ ] **Pausa: mostrar a Enzo y esperar el ok.**
+- [x] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 3 · Verificar, documentar y cerrar
 
 - [x] Recorrido en Chrome sin ventana contra una copia: guardar un sobrante como retazo, ver «Retazos», abrir una medida, la casilla, el buscador y el enlace al material.
 - [x] Guía del usuario, README, entregas hechas y bitácora.
-- [ ] PR a `main`. Con el ok de Enzo, fusionar, pasar la carpeta a `docs/historico/` y borrar la rama.
+- [x] PR #39, CI en verde, fusionado el 2026-11-18 con el ok de Enzo; carpeta en `docs/historico/` y rama borrada.
