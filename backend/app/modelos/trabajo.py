@@ -240,6 +240,10 @@ class EjecucionNesting(Base):
     colocaciones: Mapped[list[Colocacion]] = relationship(
         back_populates="ejecucion", cascade="all, delete-orphan"
     )
+    #: Lo que se puede deshacer del ajuste, del más viejo al más nuevo (A27).
+    pasos_del_ajuste: Mapped[list[PasoDelAjuste]] = relationship(
+        back_populates="ejecucion", cascade="all, delete-orphan", order_by="PasoDelAjuste.id"
+    )
 
     @property
     def error_completo(self) -> dict | None:
@@ -295,3 +299,26 @@ class Colocacion(Base):
 
     ejecucion: Mapped[EjecucionNesting] = relationship(back_populates="colocaciones")
     pieza: Mapped[Pieza] = relationship(back_populates="colocaciones")
+
+
+class PasoDelAjuste(Base):
+    """Un cambio del ajuste que se puede deshacer (A27, `docs/plan/A27-deshacer-en-el-ajuste/diseno.md §5`).
+
+    Guarda la **foto** del anidado de antes del cambio: deshacer vuelve a ella.
+    Se escribe en la base, no en la memoria, para que sobreviva a apagar la
+    computadora."""
+
+    __tablename__ = "pasos_del_ajuste"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ejecucion_id: Mapped[int] = mapped_column(ForeignKey("ejecuciones_nesting.id", ondelete="CASCADE"))
+    #: `mover`, `girar` o `pasar`.
+    tipo: Mapped[str] = mapped_column(String(20))
+    #: Qué pieza, como `pieza_id#instancia`: junta los giros seguidos de la misma.
+    pieza: Mapped[str] = mapped_column(String(40))
+    #: Lo que dice el botón: «pasar «P12» a la chapa 3».
+    descripcion: Mapped[str] = mapped_column(String(200))
+    #: El anidado antes del cambio (`services/nesting/deshacer.py`).
+    foto: Mapped[dict] = mapped_column(JSON)
+
+    ejecucion: Mapped[EjecucionNesting] = relationship(back_populates="pasos_del_ajuste")

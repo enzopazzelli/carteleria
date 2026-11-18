@@ -30,6 +30,7 @@ from .trabajo import (
     EjecucionNesting,
     EstadoEjecucion,
     GrupoDeCorte,
+    PasoDelAjuste,
     Pieza,
     Trabajo,
 )
@@ -53,6 +54,7 @@ __all__ = [
     "Material",
     "Moneda",
     "ParametrosCorteMaterial",
+    "PasoDelAjuste",
     "Pieza",
     "Presupuesto",
     "RubroLineaCosto",
