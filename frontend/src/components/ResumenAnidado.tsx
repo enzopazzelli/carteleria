@@ -46,7 +46,7 @@ export default function ResumenAnidado({ grupo, ejecucionId }: { grupo: GrupoDeC
         <h2 className="text-xl font-semibold">{snapshot?.material_nombre ?? material?.nombre ?? "Sin material asignado"} {snapshot?.espesor ?? material?.espesor ?? ""}</h2>
         <p className="text-sm text-ink/70">{ancho > 0 ? `${ancho} × ${alto} mm por plancha` : "Elegí el material en Grupos"}{formato?.precio_simulado ? " · catálogo de prueba" : ""}</p>
       </div>
-      <Link className="text-sm underline self-center" to={`/trabajos/${grupo.trabajo_id}/grupos`}>Cambiar material o comparar formatos</Link>
+      <Link className="text-sm underline self-center" to={`/trabajos/${grupo.trabajo_id}/grupos`}>Cambiar la chapa</Link>
     </div>
     {formatoCambio && <p role="alert" className="text-conflict mb-3">El material elegido cambió. Este plano corresponde al formato anterior; calculá un nuevo anidado antes de presupuestar.</p>}
     {ejecucion ? <>

@@ -61,12 +61,14 @@
 
 ## Tarea 2 · Elegir la chapa del grupo
 
-- [ ] En `GruposTab.tsx`, cada grupo muestra su chapa por nombre (material, espesor y medida; «Sin chapa» si no tiene) y el botón «Elegir chapa» / «Cambiar chapa».
-- [ ] El botón abre `ListaDeFormatos` con `unaSola`, con la chapa actual tildada, y «Usar esta chapa» (deshabilitado sin una tildada) llama a `asignarFormato`. Cierra el panel al asignar.
-- [ ] Sale todo lo de comparar: motor, tiempo, criterio, progreso, tabla de resultados, retomar la última comparación. Se borran `comparacionEnCurso.ts` y los ganchos/llamadas de la comparación que queden sin uso.
-- [ ] `ResumenAnidado.tsx`: el enlace dice «Cambiar la chapa».
-- [ ] Pruebas de la pantalla: el texto de la chapa del grupo (con y sin chapa) en una función aparte con su prueba.
-- [ ] `npm test` y `npm run build` en verde. Commit: `feat(a26): cada grupo elige su chapa, sin comparar`.
+- [x] En `GruposTab.tsx`, cada grupo muestra su chapa por nombre (material, espesor y medida; «Sin chapa» si no tiene) y el botón «Elegir chapa» / «Cambiar chapa».
+- [x] El botón abre `ListaDeFormatos` con `unaSola`, con la chapa actual tildada, y «Usar esta chapa» (deshabilitado sin una tildada) llama a `asignarFormato`. Cierra el panel al asignar.
+- [x] Sale todo lo de comparar: motor, tiempo, criterio, progreso, tabla de resultados, retomar la última comparación. Se borran `comparacionEnCurso.ts` y los ganchos/llamadas de la comparación que queden sin uso.
+- [x] `ResumenAnidado.tsx`: el enlace dice «Cambiar la chapa».
+- [x] **Visto en el navegador** contra una copia: «Elegida: …», «Usar esta chapa» y «Cancelar» van **arriba** de la lista (el catálogo es largo y abajo no se veían).
+- [x] **Queda sin uso, para la limpieza:** en `PiezasTab.tsx`, la lectura de `?seccionar=…&formato=…`, que armaba solo la comparación. Lo que no entra en la chapa del grupo lo sigue diciendo Piezas (`useASeccionar`) y el anidado («Estas piezas no entran en la chapa…»).
+- [x] Pruebas de la pantalla: el texto de la chapa del grupo (con y sin chapa) en una función aparte con su prueba.
+- [x] `npm test` y `npm run build` en verde. Commit: `feat(a26): cada grupo elige su chapa, sin comparar`.
 - [ ] **Pausa: mostrar a Enzo y esperar el ok.**
 
 ## Tarea 3 · El presupuesto

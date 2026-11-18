@@ -34,8 +34,11 @@ function PiezasDelTrabajo() {
   const id = Number(trabajoId);
   const [busqueda] = useSearchParams();
   const revisar = new Set((busqueda.get("revisar") ?? "").split(",").filter(Boolean).map(Number));
-  // Las piezas que la comparación de formatos (pestaña Grupos) mandó a
-  // seccionar y contra qué chapa: llegan en el enlace de su aviso.
+  // Las piezas que la comparación de formatos (pestaña Grupos) mandaba a
+  // seccionar y contra qué chapa, en el enlace de su aviso. La comparación
+  // salió en A26 y ya nada arma ese enlace; lo que no entra en la chapa del
+  // grupo lo sigue diciendo esta pestaña (`useASeccionar`). Se deja para la
+  // limpieza del código que quedó sin uso.
   const pedidas = new Set((busqueda.get("seccionar") ?? "").split(",").filter(Boolean).map(Number));
   const formatoPedido = Number(busqueda.get("formato")) || null;
   const { data: piezas, isLoading } = usePiezas(id);
