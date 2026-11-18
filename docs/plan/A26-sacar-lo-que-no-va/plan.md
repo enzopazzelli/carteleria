@@ -98,5 +98,5 @@
 
 ## Tarea 5 · Verificar y cerrar
 
-- [ ] Recorrido en Chrome sin ventana contra una copia de la base: entra directo; importar el Complejo; armar el grupo; elegir la chapa; anidar; Chapas con DXF y PDF; cambiar la chapa y ver «Falta volver a anidar»; los enlaces viejos del Review Focus.
+- [x] Recorrido en Chrome sin ventana contra una copia de la base: entra directo; crear un trabajo y cargar el DXF de demostración (11 piezas); armar el grupo; elegir la chapa (CHAPA NEGRA cal. 14); anidar; DXF (200, `application/dxf`) y PDF (200, `application/pdf`) desde Anidado y Chapas; «Listo para cortar» lleva a Chapas; cambiar la chapa y ver «Falta volver a anidar» y «anidá de nuevo antes de cortar»; los cinco enlaces viejos. Sin errores de consola. (En lugar del Complejo, el DXF de demostración: anidar el Complejo tarda unos 4 minutos y no prueba nada distinto de A26.)
 - [ ] PR a `main` con el resumen y las capturas. Después del ok de Enzo, fusionar, pasar la carpeta a `docs/historico/` y borrar la rama.
