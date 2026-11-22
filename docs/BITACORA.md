@@ -58,6 +58,32 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-22 — Instalador rearmado y limpieza de `backend/local`
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+- **Instalador rearmado** con `main` (`6fbeae8`, A26 a A29). Cambió solo `programa\pantalla\`: el servidor, `requirements.txt` y la guía eran idénticos. Probado en una instalación limpia con el Python portátil (arranca, migra la base con respaldo, salud `ok`, trae la pantalla nueva). No probado: la PC de la cartelería.
+- **Icono del acceso del escritorio:** el monograma «AD» del logo sobre un cuadrado blanco redondeado (`programa\carteleria.ico`, de 16 a 256 px). Antes era un engranaje genérico de Windows. Aprobado por Enzo.
+- **Limpieza de `backend/local`** (fuera de git): de 403 MB a 128 MB.
+  - Respaldos automáticos de la base: de 12 a 3. Quedan el del 2026-10-08 (el Complejo viejo), el del 2026-11-09 antes de usuarios y el del 2026-11-11 antes de la contraseña.
+  - Borrado: la copia de la base dentro de `herramientas-reunion-2026-10-22` (los guiones se quedan), todas las carpetas `capturas*` de los recorridos, los logs, HTML y PNG sueltos de pruebas viejas, la presentación vieja del cotizador (`presentacion-2026-10-22`) y una carpeta `tmp` vacía.
+  - Se conserva: la base real y sus DXF, el logo y los datos de la empresa, los catálogos JSON, `lectura-del-corpus.json` (referencia para cualquier cambio del lector), los guiones de las entregas (los citan los documentos) y `herramientas-a29`.
+
+### Qué se decidió
+- Enzo: «limpiá todo». Esto reemplaza lo que había decidido el 2026-11-09 de no tocar los logs y HTML sueltos, `herramientas-reunion-2026-10-22` ni `presentacion*`.
+- Decisión mía, a corregir: los guiones y `lectura-del-corpus.json` se conservan aunque son «de prueba», porque los documentos los citan y A17 tanda 2 y el lector los usan.
+
+### Cambios en el registro
+Sin cambios.
+
+### Pendiente
+- Llevar el instalador a la cartelería y correr `INSTALAR.bat`.
+- Decidir una PC con el sistema y las demás por wifi, o una instalación por PC.
+- 15 de los 44 materiales sin kerf, margen y separación (dato del taller).
+
+---
+
 ## 2026-11-22 — Simplificar la pantalla de Anidado (A29)
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —
