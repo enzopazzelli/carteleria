@@ -64,7 +64,7 @@ Qué queda abierto y cuál es el próximo paso.
 
 ### Qué se hizo
 - **El pedido:** que Anidado muestre solo lo que decide quien corta, sin lo del motor.
-- **A29** ([diseño](plan/A29-simplificar-anidado/diseno.md)), solo pantalla, sin servidor ni migración:
+- **A29** ([diseño](historico/A29-simplificar-anidado/diseno.md)), solo pantalla, sin servidor ni migración:
   - Salen el motor, la semilla, los segundos por chapa, el tiempo máximo, la simplificación, «Vaciar chapas», la columna «Motor» del historial y los textos que nombran a Sparrow (también en el resumen de Chapas).
   - «Opciones avanzadas» arranca abierto con tres ajustes: aprovechar huecos, girar a cualquier ángulo y dónde queda el sobrante.
   - El pedido al servidor es idéntico al de antes (una prueba lo compara campo por campo).

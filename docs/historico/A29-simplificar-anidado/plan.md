@@ -8,7 +8,7 @@
 
 **Tecnología:** React 18 + TypeScript, vitest (`npm test` dentro de `frontend/`), `npm run build` (incluye `tsc -b`).
 
-**Diseño:** `docs/plan/A29-simplificar-anidado/diseno.md`
+**Diseño:** `docs/historico/A29-simplificar-anidado/diseno.md`
 
 ## Restricciones globales
 

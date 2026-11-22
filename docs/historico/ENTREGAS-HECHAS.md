@@ -10,6 +10,12 @@
 
 
 **Ya está en `main`:**
+- **Simplificar la pantalla de Anidado (A29), desde el 2026-11-22.**
+  - **Para qué:** que quien corta vea solo lo que decide, sin lo del motor.
+  - **Lo que se nota:** Anidado muestra el formulario de kerf, margen y separación, y un desplegable «Opciones avanzadas» (abierto) con tres ajustes: aprovechar huecos, girar a cualquier ángulo y dónde queda el sobrante. Ya no se ven el motor, la semilla, los segundos por chapa, el tiempo máximo, la simplificación, «Vaciar chapas» ni la columna «Motor» del historial.
+  - **Sin migración ni cambios en el servidor:** el pedido manda los mismos valores de siempre.
+
+  Ver [`historico/A29-simplificar-anidado/`](A29-simplificar-anidado/diseno.md).
 - **Retazos agrupados por material (A28), desde el 2026-11-18.**
   - **Para qué:** saber qué retazos hay sin entrar material por material.
   - **Lo que se nota:** Materiales tiene dos vistas, «Materiales» y «Retazos». «Retazos» muestra un bloque por material con cuántos disponibles hay y cuántos m², las medidas iguales juntas (600 × 400 y 400 × 600 son la misma) y, al abrir una medida, de dónde salió cada retazo y en qué anda. Un buscador y una casilla para sumar usados y quitados. Solo se mira.
