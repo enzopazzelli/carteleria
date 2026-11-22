@@ -97,7 +97,7 @@ Si vuelve a hacer falta, el código está en el historial de git y el diseño en
 
 ## En qué estamos
 
-*Actualizado el 2026-11-18. El detalle vive en el [`PLAN-MAESTRO.md §0`](docs/plan/PLAN-MAESTRO.md) y el mapa en [`MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md).*
+*Actualizado el 2026-11-22. El detalle vive en el [`PLAN-MAESTRO.md §0`](docs/plan/PLAN-MAESTRO.md) y el mapa en [`MAPA-DEL-PROYECTO.md`](docs/MAPA-DEL-PROYECTO.md).*
 
 ### Qué hay hoy
 
@@ -105,7 +105,7 @@ Si vuelve a hacer falta, el código está en el historial de git y el diseño en
 |---|---|
 | **Leer el dibujo** | Se ve una imagen de cómo se leyó el DXF antes de cargarlo, se corrige con clics, y las piezas que no entran en una chapa se seccionan. Las correcciones se recuerdan por el contenido del archivo. |
 | **Grupos y chapa** | Cada grupo elige **una** chapa del catálogo o un retazo, sin anidar antes (desde A26; antes había que comparar al menos dos). |
-| **Anidado y chapas** | Sparrow como motor principal. Varios anidados a la vez, piezas chicas en los huecos de las grandes, giro libre, el material usado en ancho × alto, todas las chapas juntas con piezas movibles entre ellas. El sobrante de una chapa se guarda como **retazo**, que dice de dónde salió y si está disponible, en uso o usado. |
+| **Anidado y chapas** | La pantalla de Anidado muestra solo parámetros de corte: kerf, margen y separación, y en «Opciones avanzadas» aprovechar huecos, girar a cualquier ángulo y dónde queda el sobrante (A29). Varios anidados a la vez, piezas chicas en los huecos de las grandes, giro libre, el material usado en ancho × alto, todas las chapas juntas con piezas movibles entre ellas. El sobrante de una chapa se guarda como **retazo**, que dice de dónde salió y si está disponible, en uso o usado. |
 | **Salida para el taller** | Un PDF del diseño anidado (la hoja del diseño completo más las chapas) y un DXF por chapa para la máquina. **Es el producto final.** |
 | **Materiales y precios** | Pantalla de Materiales alimentada por la planilla de la empresa: 44 materiales, 59 medidas y 288 artículos cargados. |
 | **Inicio** | Una barra fija arriba y una página con las tarjetas de los trabajos, cada una con la miniatura pintada por chapa y en qué paso quedó («Listo para cortar» cuando está todo anidado). |
@@ -117,7 +117,6 @@ Una sola regla del servidor decide qué anidado cuenta: la tarjeta del inicio, e
 
 | Qué | Para qué | Quién |
 |---|---|---|
-| **A29: simplificar Anidado** | Sacar de la pantalla lo del motor (Sparrow, semilla y similares): que queden solo los parámetros de corte | Enzo, el próximo pedido (sin diseño todavía) |
 | **Kerf, margen y separación de 15 materiales** (ACM, PVC, Metalex, Polyfan, entre otros) | Sin esos valores no se puede anidar con esas chapas | Falta el dato del taller |
 | **Rearmar el instalador** con esta versión | Que la cartelería tenga lo nuevo (A26 ya está en `main`) | Enzo, cuando lo pida |
 | **Medir la segunda tanda de A17** (unos 75 minutos con la máquina libre) | Decidir cómo repartir el tiempo del anidado | Enzo, solo cuando la pida |

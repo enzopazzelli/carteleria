@@ -58,6 +58,30 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-22 — Simplificar la pantalla de Anidado (A29)
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+- **El pedido:** que Anidado muestre solo lo que decide quien corta, sin lo del motor.
+- **A29** ([diseño](plan/A29-simplificar-anidado/diseno.md)), solo pantalla, sin servidor ni migración:
+  - Salen el motor, la semilla, los segundos por chapa, el tiempo máximo, la simplificación, «Vaciar chapas», la columna «Motor» del historial y los textos que nombran a Sparrow (también en el resumen de Chapas).
+  - «Opciones avanzadas» arranca abierto con tres ajustes: aprovechar huecos, girar a cualquier ángulo y dónde queda el sobrante.
+  - El pedido al servidor es idéntico al de antes (una prueba lo compara campo por campo).
+  - `armarOpciones` y `cambiadas` en `opcionesAvanzadas.ts`.
+
+### Qué se decidió
+- Enzo: huecos y giro libre son parámetros de corte, van adentro del desplegable; el sobrante también y se sigue pudiendo elegir.
+- Decisiones mías, a corregir: el desplegable arranca abierto; los valores del motor quedan fijos en la pantalla, no se sacan del pedido.
+
+### Cambios en el registro
+Sin cambios.
+
+### Pendiente
+- Rearmar el instalador con A26 a A29.
+
+---
+
 ## 2026-11-18 — Retazos agrupados por material (A28)
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —
