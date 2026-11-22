@@ -323,7 +323,7 @@ function PiezasDelTrabajo() {
     <div>
       <h1 className="text-2xl font-semibold mb-4">Piezas</h1>
       {revisar.size > 0 && <div className="mb-4">
-        <Banner variante="aviso">Estas {revisar.size} piezas impiden el cálculo con Sparrow. Revisá sus contornos y huecos en el DXF. Descartar una pieza la excluye de todo el trabajo; usalo solo si no corresponde cortarla.</Banner>
+        <Banner variante="aviso">Estas {revisar.size} piezas impiden el cálculo del anidado. Revisá sus contornos y huecos en el DXF. Descartar una pieza la excluye de todo el trabajo; usalo solo si no corresponde cortarla.</Banner>
         <Link className="underline text-sm" to={`/trabajos/${id}/piezas`}>Mostrar todas las piezas</Link>
       </div>}
       {aSeccionar.size > 0 && <div className="mb-4">
