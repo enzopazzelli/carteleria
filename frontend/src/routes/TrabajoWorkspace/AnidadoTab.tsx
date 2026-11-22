@@ -18,7 +18,7 @@ import ResumenAnidado from "../../components/ResumenAnidado";
 import { ejecucionALaVista, queMostrarDelHistorial } from "./historial";
 import BarraDeProgreso from "../../components/BarraDeProgreso";
 import { giroLibreSeAplica } from "./giroLibre";
-import { cambiadas, POR_DEFECTO } from "./opcionesAvanzadas";
+import { AJUSTES_POR_DEFECTO, armarOpciones, cambiadas, type Ajustes } from "./opcionesAvanzadas";
 import Mensaje from "../../components/Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 
@@ -176,31 +176,18 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
   const activa = historial?.find((e) => !ESTADOS_TERMINALES.has(e.estado));
   const { data: enCurso } = useEjecucion(ejecucionEnCurso ?? activa?.id ?? null);
   const [error, setError] = useState<QueMostrar | null>(null);
-  // Marcada por defecto (Enzo, 2026-10-22, A10). Solo con Sparrow.
-  const [usarHuecos, setUsarHuecos] = useState(true);
-  const [motor, setMotor] = useState(POR_DEFECTO.motor);
   const [verEjecucion, setVerEjecucion] = useState<number | undefined>();
   const vista = ejecucionALaVista(historial, verEjecucion);
   const delHistorial = vista && vista.id !== enCurso?.id ? queMostrarDelHistorial(vista) : null;
-  const [semilla, setSemilla] = useState(POR_DEFECTO.semilla);
-  const [busqueda, setBusqueda] = useState(POR_DEFECTO.busqueda);
-  const [limite, setLimite] = useState(POR_DEFECTO.limite);
-  const [simplificacion, setSimplificacion] = useState(POR_DEFECTO.simplificacion);
-  const [vaciarChapas, setVaciarChapas] = useState(POR_DEFECTO.vaciarChapas);
-  const avanzadasCambiadas = cambiadas({ motor, semilla, busqueda, limite, simplificacion, vaciarChapas });
-  // Marcada por defecto (Enzo, 2026-10-14). Con veta no se aplica.
-  const [giroLibre, setGiroLibre] = useState(true);
-  // El sobrante arriba, como bloque, por defecto (Enzo, 2026-10-23, A12).
-  const [sobrante, setSobrante] = useState<"arriba" | "costado">("arriba");
+  // Huecos y giro marcados, sobrante arriba: los de siempre (ver opcionesAvanzadas.ts).
+  const [ajustes, setAjustes] = useState<Ajustes>(AJUSTES_POR_DEFECTO);
+  const avanzadasCambiadas = cambiadas(ajustes);
   const { data: formato } = useFormato(grupo.formato_id);
   const { data: parametrosMaterial } = useParametrosCorteMaterial(formato?.material_id ?? null);
   const giroLibreAplica = giroLibreSeAplica(
     (grupo.parametros_usados ?? parametrosMaterial)?.rotaciones_permitidas,
   );
-  const huecosAplica = motor === "sparrow";
-  const opciones = { motor, usar_anidado_en_huecos: usarHuecos && huecosAplica, semilla,
-    segundos_por_busqueda: busqueda, tiempo_maximo_s: limite, simplificacion_mm: simplificacion,
-    vaciar_chapas: vaciarChapas, giro_libre: giroLibre && giroLibreAplica, sobrante };
+  const opciones = armarOpciones(ajustes, giroLibreAplica);
 
   const definitiva = historial?.find((e) => e.es_definitiva) ?? null;
   const { data: colocacionesDefinitiva } = useColocaciones(definitiva?.id ?? null);
@@ -281,91 +268,60 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-medium">{grupo.nombre}</h3>
         <div className="flex items-center gap-3">
-          <label
-            className={`text-xs flex items-center gap-1 ${huecosAplica ? "cursor-pointer" : "opacity-60"}`}
-            title={huecosAplica ? "Mete las piezas chicas en los huecos de las grandes antes de acomodar" : "Solo con Sparrow"}
-          >
-            <input
-              type="checkbox"
-              checked={usarHuecos && huecosAplica}
-              disabled={!huecosAplica}
-              onChange={(e) => setUsarHuecos(e.target.checked)}
-            />
-            Aprovechar huecos
-          </label>
           <button className="bg-cut text-negro rounded px-3 py-1 text-sm" disabled={anidar.isPending || !!activa || (ejecucionEnCurso !== null && (!enCurso || !ESTADOS_TERMINALES.has(enCurso.estado)))} onClick={alAnidar}>
             Anidar
           </button>
         </div>
       </div>
 
-      {motor === "sparrow" && (
-        <div className="flex flex-wrap items-center gap-3 text-xs mb-2">
+      {/* Los tres ajustes de corte. Abierto: son lo que más se usa (A29). */}
+      <details open className="text-xs mb-3 rounded border border-line/70 px-3 py-2">
+        <summary className="cursor-pointer select-none">
+          Opciones avanzadas
+          {avanzadasCambiadas && <span className="ml-2 text-bronze">cambiadas</span>}
+        </summary>
+        <div className="flex flex-wrap items-center gap-3 mt-2">
+          <label
+            className="flex items-center gap-1 cursor-pointer"
+            title="Mete las piezas chicas en los huecos de las grandes antes de acomodar"
+          >
+            <input
+              type="checkbox"
+              checked={ajustes.usarHuecos}
+              onChange={(e) => setAjustes({ ...ajustes, usarHuecos: e.target.checked })}
+            />
+            Aprovechar huecos
+          </label>
           <label
             className={`flex items-center gap-1 ${giroLibreAplica ? "cursor-pointer" : "opacity-60"}`}
             title={
               giroLibreAplica
-                ? "Sparrow prueba las piezas a cualquier ángulo, no solo de a cuartos de vuelta."
+                ? "Prueba las piezas a cualquier ángulo, no solo de a cuartos de vuelta."
                 : "El material tiene veta: las piezas solo giran media vuelta."
             }
           >
             <input
               type="checkbox"
-              checked={giroLibre && giroLibreAplica}
+              checked={ajustes.giroLibre && giroLibreAplica}
               disabled={!giroLibreAplica}
-              onChange={(e) => setGiroLibre(e.target.checked)}
+              onChange={(e) => setAjustes({ ...ajustes, giroLibre: e.target.checked })}
             />
             Girar a cualquier ángulo
           </label>
           <fieldset className="flex flex-wrap items-center gap-3">
             <legend className="float-left mr-1">El sobrante de cada chapa:</legend>
             <label className="flex items-center gap-1 cursor-pointer" title="Las piezas se juntan abajo, usando todo el ancho, y sobra arriba un pedazo de chapa entero, como una chapa más corta.">
-              <input type="radio" name={`sobrante-${grupo.id}`} checked={sobrante === "arriba"} onChange={() => setSobrante("arriba")} />
+              <input type="radio" name={`sobrante-${grupo.id}`} checked={ajustes.sobrante === "arriba"} onChange={() => setAjustes({ ...ajustes, sobrante: "arriba" })} />
               <ChapaConSobrante arriba />
               Arriba, como bloque
             </label>
             <label className="flex items-center gap-1 cursor-pointer" title="Las piezas se juntan a la izquierda, usando todo el alto, y sobra una tira a la derecha.">
-              <input type="radio" name={`sobrante-${grupo.id}`} checked={sobrante === "costado"} onChange={() => setSobrante("costado")} />
+              <input type="radio" name={`sobrante-${grupo.id}`} checked={ajustes.sobrante === "costado"} onChange={() => setAjustes({ ...ajustes, sobrante: "costado" })} />
               <ChapaConSobrante arriba={false} />
               Al costado, como tira (como hasta ahora)
             </label>
           </fieldset>
-          <p className="basis-full text-xs text-ink/70">Con «Aprovechar huecos», primero mete las piezas chicas en los huecos de las grandes, y después acomoda el resto.</p>
-        </div>
-      )}
-      {/* Cerrado cada vez que se abre la pestaña (diseño §5.8). */}
-      <details className="text-xs mb-3 rounded border border-line/70 px-3 py-2">
-        <summary className="cursor-pointer select-none">
-          Opciones avanzadas
-          {avanzadasCambiadas && <span className="ml-2 text-bronze">cambiadas</span>}
-        </summary>
-        <div className="flex flex-wrap items-center gap-3 mt-2">
-          <label>
-            Motor{" "}
-            <select value={motor} onChange={(e) => setMotor(e.target.value as "rectpack" | "sparrow")} className="border rounded p-1">
-              <option value="rectpack">Rectangular</option>
-              <option value="sparrow">Sparrow irregular (prueba)</option>
-            </select>
-          </label>
-          {motor === "sparrow" && (
-            <>
-              <label>Semilla <input type="number" min="0" max="2147483647" value={semilla} onChange={(e) => setSemilla(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
-              <label>Búsqueda por chapa (s) <input type="number" min="1" max="30" value={busqueda} onChange={(e) => setBusqueda(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
-              <label>Tiempo máximo total (s) <input type="number" min="5" max="300" value={limite} onChange={(e) => setLimite(Number(e.target.value))} className="border rounded p-1 w-20" /></label>
-              <label>Simplificación (mm) <input type="number" min="0" max="2" step="0.1" value={simplificacion} onChange={(e) => setSimplificacion(Number(e.target.value))} className="border rounded p-1 w-16" /></label>
-              <label
-                className="flex items-center gap-1 cursor-pointer"
-                title="Después de repartir en chapas, intenta vaciar las que quedaron a medio llenar pasando sus piezas a las demás. Usa el tiempo que sobra del máximo."
-              >
-                <input type="checkbox" checked={vaciarChapas} onChange={(e) => setVaciarChapas(e.target.checked)} />
-                Vaciar chapas
-              </label>
-              <p className="basis-full">
-                Acomoda las piezas, las reparte en chapas y, si «Vaciar chapas» está marcado, usa el tiempo que sobra para vaciar las que
-                quedaron a medio llenar. Conserva el anidado validado con menos planchas. No se garantiza el óptimo global.
-              </p>
-            </>
-          )}
+          <p className="basis-full text-ink/70">Con «Aprovechar huecos», primero mete las piezas chicas en los huecos de las grandes, y después acomoda el resto.</p>
         </div>
       </details>
       <ParametrosCorteForm grupo={grupo} onCambio={alCambiarParametros} />
@@ -389,7 +345,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
         <thead>
           <tr className="text-left border-b border-line">
             <th>Anidado</th>
-            <th>Motor</th><th>Tiempo</th><th>Estado</th>
+            <th>Tiempo</th><th>Estado</th>
             <th>Planchas</th>
             <th>Aprov.</th>
             <th></th>
@@ -399,7 +355,7 @@ function PanelDeGrupo({ grupo, trabajoId }: { grupo: GrupoDeCorte; trabajoId: nu
           {historial?.map((ejecucion) => (
             <tr key={ejecucion.id} className="border-b border-line">
               <td className="font-mono">#{ejecucion.id}</td>
-              <td>{ejecucion.motor}{ejecucion.semilla !== null && <span className="text-xs ml-1">(semilla {ejecucion.semilla})</span>}</td><td>{ejecucion.milisegundos !== null ? `${(ejecucion.milisegundos / 1000).toFixed(1)} s` : "—"}</td>
+              <td>{ejecucion.milisegundos !== null ? `${(ejecucion.milisegundos / 1000).toFixed(1)} s` : "—"}</td>
               <td>
                 {ejecucion.estado === "lista" && <button className="text-xs underline mr-3" onClick={() => setVerEjecucion(ejecucion.id)}>Ver anidado</button>}
                 {ejecucion.estado === "error" && <button className="text-xs underline mr-3" onClick={() => setVerEjecucion(ejecucion.id)}>Ver por qué</button>}
