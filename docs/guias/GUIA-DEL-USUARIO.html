@@ -264,6 +264,17 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
   <div class="aviso tip"><b class="t">Si no abre</b>
     <p>Si <code>localhost:8000</code> no carga, el sistema no está corriendo: doble clic en el acceso del escritorio lo levanta. Si algo falla, lo que pasó queda anotado en <code>C:\Carteleria\datos\servidor.log</code>.</p>
   </div>
+  <h3>Instalar o actualizar</h3>
+  <ol class="pasos">
+    <li>Si el instalador viene en un zip, <b>descomprimilo entero</b> (clic derecho → Extraer todo) antes de usarlo.</li>
+    <li>Doble clic en <span class="etq">INSTALAR.bat</span> y esperá 1 o 2 minutos. No hace falta internet ni instalar nada más.</li>
+    <li>Cuando Windows pida permiso de administrador, <b>aceptá</b>: sirve para que otras compus del wifi puedan entrar.</li>
+    <li>Al terminar se abre el navegador con el sistema, y en el escritorio queda el acceso <b>Cartelería</b>. La pantalla muestra también la dirección para entrar desde otra compu o el celular.</li>
+  </ol>
+  <p>Para actualizar a una versión nueva se hace lo mismo: el programa se reemplaza y <b>los datos cargados se conservan</b>. Si la versión nueva cambia algo de la base, se ajusta sola al abrir y antes se guarda un respaldo en <code>C:\Carteleria\datos</code>.</p>
+  <div class="aviso ojo"><b class="t">Copia de seguridad</b>
+    <p>No hay copias automáticas. Para guardar una, con nadie usando el sistema, copiá la carpeta <code>C:\Carteleria\datos</code> entera a un pendrive.</p>
+  </div>
 </section>
 
 <section id="pantalla">
@@ -343,23 +354,27 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
   </ol>
 
   <h3 id="t-anidado">5.4 Anidado: acomodar las piezas</h3>
-  <p>El programa que lo hace se llama <b>Sparrow</b>. Usa los huecos de las piezas grandes para meter las chicas y gira las piezas para aprovechar mejor la chapa.</p>
+  <p>El sistema reparte las piezas del grupo sobre la chapa elegida, aprovechando los huecos de las piezas grandes para meter las chicas y girándolas para que sobre lo menos posible.</p>
   <ol class="pasos">
-    <li>Elegí el grupo y tocá <span class="btn">Anidar</span>. Aparece una <b>barra de avance</b> con tiempo máximo y botón para cancelar. Podés seguir usando el sistema mientras tanto, y se pueden hacer varios anidados a la vez.</li>
-    <li>Cuando termina, la ejecución pasa a <b>lista</b>, con la cantidad de chapas y el porcentaje de aprovechamiento.</li>
-    <li>Si querés cambiar algo, ajustá el <b>kerf</b>, el <b>margen</b>, la <b>separación</b> o la rotación y tocá <span class="etq">Aplicar y recalcular</span>. Se crea una ejecución nueva y la anterior queda en el historial.</li>
-    <li>Probá <span class="etq">Aprovechar huecos</span> para que las piezas chicas entren dentro de los agujeros de las grandes.</li>
+    <li>Elegí el grupo y tocá <span class="btn">Anidar</span>. Aparece una <b>barra de avance</b> y un botón <span class="etq">Cancelar</span>. Podés seguir usando el sistema mientras tanto, y se pueden hacer varios anidados a la vez.</li>
+    <li>Cuando termina, el anidado queda en <b>lista</b> en la tabla de abajo, con la cantidad de chapas (<i>Planchas</i>) y el porcentaje de aprovechamiento (<i>Aprov.</i>). Tocá <span class="etq">Ver anidado</span> para verlo.</li>
+    <li>Si querés cambiar algo, ajustá las opciones (más abajo) o el <b>kerf</b>, el <b>margen</b>, la <b>separación</b> y la rotación, y tocá <span class="etq">Aplicar y recalcular</span> (los cambios de kerf, margen y separación) o volvé a tocar <span class="btn">Anidar</span> (las opciones avanzadas). Se crea un anidado nuevo y el anterior queda en la tabla, con <span class="etq">Borrar</span> si ya no lo querés.</li>
     <li>Cuando estés conforme, <span class="etq">Marcar definitiva</span>. Ese es el anidado que va a Chapas, al DXF y al PDF. Si no marcás ninguno, va el más reciente.</li>
   </ol>
-  <div class="aviso nota"><b class="t">Girar a cualquier ángulo</b>
-    <p>La casilla <span class="etq">Girar a cualquier ángulo</span> deja que las piezas giren libremente. Entran más piezas en cada chapa, pero la disposición queda menos «ordenada». Si la desmarcás, las piezas solo giran en cuartos de vuelta.</p>
-  </div>
+  <h4>Opciones avanzadas</h4>
+  <p>Arriba del grupo hay un recuadro con tres ajustes. Vienen listos para usar; tocalos solo si el resultado no te convence.</p>
+  <div class="tabla"><table>
+    <tr><th>Opción</th><th>Qué hace</th></tr>
+    <tr><td><b>Aprovechar huecos</b></td><td>Mete las piezas chicas en los agujeros de las grandes (por ejemplo, dentro de una letra «O») antes de acomodar el resto.</td></tr>
+    <tr><td><b>Girar a cualquier ángulo</b></td><td>Las piezas pueden girar libremente, no solo de a cuartos de vuelta. Entran más piezas en cada chapa, pero la disposición queda menos «ordenada». Si el material tiene veta, queda apagada y las piezas solo giran media vuelta.</td></tr>
+    <tr><td><b>El sobrante de cada chapa</b></td><td><b>Arriba, como bloque:</b> las piezas se juntan abajo y sobra arriba un pedazo entero de chapa, como una chapa más corta. <b>Al costado, como tira:</b> las piezas se juntan a la izquierda y sobra una tira a la derecha.</td></tr>
+  </table></div>
   <div class="tabla"><table>
     <tr><th>Parámetro</th><th>Qué es</th></tr>
     <tr><td><b>Kerf</b></td><td>El ancho de material que se come la herramienta al cortar.</td></tr>
     <tr><td><b>Margen</b></td><td>La franja del borde de la chapa donde no se acomoda nada.</td></tr>
     <tr><td><b>Separación</b></td><td>La distancia mínima entre una pieza y la siguiente.</td></tr>
-    <tr><td><b>Rotación</b></td><td>Cuánto pueden girar las piezas: media vuelta, cuartos de vuelta o cualquier ángulo.</td></tr>
+    <tr><td><b>Rotación</b></td><td>«Libre (0°/90°)» deja girar las piezas un cuarto de vuelta; «Solo 0°/180° (con veta)» solo media vuelta, para materiales con veta.</td></tr>
   </table></div>
   <div class="aviso ojo"><b class="t">Valores provisorios</b>
     <p>Los valores de kerf, margen y separación que trae el sistema son provisorios: todavía no se confirmaron con el taller.</p>
@@ -395,14 +410,30 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
 
 <section id="materiales">
   <h2 class="sec"><span class="n">6</span>Materiales y precios</h2>
-  <p class="lema">De dónde salen los precios y cómo se actualizan.</p>
-  <p>Los materiales, sus medidas de chapa, los artículos (vinilos, pintura, tornillos…) y los precios <b>vienen de la planilla de la empresa</b>. No se cargan a mano.</p>
+  <p class="lema">De dónde salen los precios, cómo se actualizan y cómo cargar un material nuevo.</p>
+  <p>Los materiales, sus medidas de chapa, los artículos (vinilos, pintura, tornillos…) y los precios <b>vienen de la planilla de la empresa</b>. Para ponerlos al día:</p>
   <ol class="pasos">
     <li>Entrá a <span class="etq">Materiales</span> y tocá <span class="etq">Actualizar desde la planilla</span>.</li>
     <li>Elegí el archivo Excel. El sistema lo lee y te muestra una <b>revisión</b>: qué materiales y precios cambian.</li>
     <li>Revisá los cambios y <b>aplicalos</b> (o cancelá si algo no cierra). Nada cambia hasta que aplicás.</li>
   </ol>
   <p>Cada material muestra sus medidas, sus precios y los <b>retazos</b> guardados.</p>
+
+  <h3 id="t-a-mano">Cargar un material o una chapa a mano</h3>
+  <p>Si trabajan con una chapa que no está en la planilla, la pueden cargar ustedes, sin planilla. Después aparece en <span class="etq">Elegir chapa</span> de Grupos, como cualquier otra.</p>
+  <ol class="pasos">
+    <li>En <span class="etq">Materiales</span>, tocá <span class="etq">+ Nuevo material</span>.</li>
+    <li>Escribí el <b>nombre</b> (por ejemplo «Acero corten»), el <b>espesor</b> si tiene, y el <b>ancho y el alto</b> de la chapa, en milímetros.</li>
+    <li>La <b>categoría</b> puede quedar en «Automática» (la elige el sistema según el nombre) o elegís una de las que ya hay.</li>
+    <li>Tocá <span class="etq">Crear material</span>. Queda elegido a la derecha.</li>
+    <li>En «Corte» cargale el <b>kerf, el margen y la separación</b>. Sin eso el anidado avisa que no tiene parámetros de corte.</li>
+  </ol>
+  <p>Debajo de las medidas de cualquier material, en <b>Cargar a mano</b>, están los botones <span class="etq">+ Medida</span> (otro tamaño de chapa) y <span class="etq">+ Espesor</span> (otro espesor del mismo material).</p>
+  <div class="aviso ojo"><b class="t">El costo por m²</b>
+    <p>Es opcional. El anidado funciona sin él. Pero <b>sin costo por m² no se pueden guardar retazos de esa chapa</b>: el sistema los cobra por m². Si pensás guardar sobrantes, cargalo (por ejemplo 13720,5).</p>
+  </div>
+  <p>En lo que cargaste a mano también aparecen <span class="etq">Editar nombre y espesor</span>, <span class="etq">Quitar</span> (una medida) y <span class="etq">Borrar material</span>. Si un trabajo ya usa esa chapa, el sistema avisa y no la borra. Lo que viene de la planilla no se edita desde acá: se cambia subiendo la planilla nueva.</p>
+
   <h3>Ver todos los retazos juntos</h3>
   <p>Arriba en Materiales hay dos vistas: <span class="etq">Materiales</span> y <span class="etq">Retazos</span>. «Retazos» junta los de todos los materiales para saber qué hay:</p>
   <ul>
@@ -429,7 +460,7 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
     <tr><td>«N contornos no se pudieron cerrar»</td><td>Hay figuras con huecos en los empalmes. Cerralas en Corel y volvé a exportar.</td></tr>
     <tr><td>«No entra en la chapa…» en una pieza, o «Estas piezas no entran en la chapa…» al anidar</td><td>La pieza es más grande que la chapa del grupo. Usá <span class="etq">Seccionar</span> en Piezas o elegí una chapa más grande en Grupos.</td></tr>
     <tr><td>«Falta volver a anidar» en la tarjeta</td><td>Cambiaste la chapa de un grupo después de anidar. Volvé a anidar ese grupo.</td></tr>
-    <tr><td>«El material no tiene parámetros de corte configurados»</td><td>A ese material todavía no le cargaron el kerf, el margen y la separación, y sin eso no se puede anidar. Avisá para que los carguen, o elegí otra chapa.</td></tr>
+    <tr><td>«El material no tiene parámetros de corte configurados»</td><td>A ese material todavía no le cargaron el kerf, el margen y la separación, y sin eso no se puede anidar. Se cargan en <b>Materiales</b>, en «Corte» del material (ver la <a href="#materiales">sección 6</a>), o elegí otra chapa.</td></tr>
   </table></div>
   <div class="aviso tip"><b class="t">Qué nos sirve que anotes</b>
     <p>Cualquier cosa que te confunda (aunque funcione), el nombre de la pieza o del trabajo, la escala que usaste y en qué paso pasó. Si algo no anda, copiá el texto del error tal cual.</p>
@@ -442,7 +473,6 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
   <div class="tabla"><table>
     <tr><th>Palabra</th><th>Qué es</th></tr>
     <tr><td><b>Anidado (nesting)</b></td><td>Acomodar las piezas dentro de la chapa para desperdiciar lo menos posible.</td></tr>
-    <tr><td><b>Sparrow</b></td><td>El programa que hace el anidado.</td></tr>
     <tr><td><b>DXF</b></td><td>El tipo de archivo de dibujo que sale de CorelDRAW y que el sistema lee.</td></tr>
     <tr><td><b>Pieza</b></td><td>Cada forma cerrada del dibujo que hay que cortar.</td></tr>
     <tr><td><b>Grupo (de corte)</b></td><td>Las piezas de un trabajo que se cortan del mismo material.</td></tr>
@@ -462,12 +492,10 @@ footer.pie { color: var(--apoyo); font-size: 13px; text-align: center; padding: 
   <p class="lema">Para no esperar de más.</p>
   <ul>
     <li><b>Compartir los datos entre computadoras:</b> cada instalación guarda los suyos (ver la <a href="#abrir">sección 2</a>).</li>
-    <li><b>Archivos <code>.cdr</code>:</b> hoy se exporta a DXF desde Corel; leer <code>.cdr</code> directo está en espera.</li>
   </ul>
-  <p>El orden de lo que viene está en <code>docs/plan/PLAN-MAESTRO.md</code>. El presupuesto, la aprobación y los usuarios se sacaron el 2026-11-18, a pedido del cliente.</p>
 </section>
 
-    <footer class="pie">Cartelería · Guía del usuario · Actualizada el 2026-11-18 · Si algo no se entiende, es un error de la guía.</footer>
+    <footer class="pie">Cartelería · Guía del usuario · Actualizada el 2026-11-26 · Si algo no se entiende, es un error de la guía.</footer>
   </main>
 </div>
 <script>
