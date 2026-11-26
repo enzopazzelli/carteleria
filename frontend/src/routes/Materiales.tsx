@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { Catalogo, Revision } from "../api/materiales";
 import DetalleDelInsumo from "../components/Materiales/DetalleDelInsumo";
+import { NuevoMaterial } from "../components/Materiales/FormulariosAMano";
 import DetalleDelMaterial from "../components/Materiales/DetalleDelMaterial";
 import ListaDeCategorias from "../components/Materiales/ListaDeCategorias";
 import RetazosPorMaterial from "../components/Materiales/RetazosPorMaterial";
 import RevisionDePlanilla from "../components/Materiales/RevisionDePlanilla";
-import { diaDeLaPlanilla, filtrarCatalogo, primeraEleccion, type Eleccion } from "../components/Materiales/arbol";
+import { diaDeLaPlanilla, filtrarCatalogo, nombreParaMostrar, primeraEleccion, type Eleccion } from "../components/Materiales/arbol";
 import Mensaje from "../components/Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../components/Mensaje/contenido";
 import { cuantos } from "../components/Tarjeta/formato";
@@ -21,7 +22,13 @@ function categoriaDe(catalogo: Catalogo, eleccion: Eleccion): string | undefined
 }
 
 /** Lo elegido, buscado en el catálogo entero: la búsqueda no lo saca de la derecha. */
-function LoElegido({ catalogo, eleccion }: { catalogo: Catalogo; eleccion: Eleccion | null }) {
+function LoElegido({
+  catalogo, eleccion, alCambiarDeNombre,
+}: {
+  catalogo: Catalogo;
+  eleccion: Eleccion | null;
+  alCambiarDeNombre: (nombre: string) => void;
+}) {
   if (eleccion?.tipo === "material") {
     const material = catalogo.categorias
       .find((c) => c.nombre === eleccion.categoria)
@@ -32,6 +39,7 @@ function LoElegido({ catalogo, eleccion }: { catalogo: Catalogo; eleccion: Elecc
           key={`${eleccion.categoria}-${material.nombre}`}
           material={material}
           hayPlanilla={catalogo.ultima_carga !== null}
+          alCambiarDeNombre={alCambiarDeNombre}
         />
       );
     }
@@ -58,6 +66,8 @@ export default function Materiales() {
   const [errorAlLeer, setErrorAlLeer] = useState<QueMostrar | null>(null);
   const [listo, setListo] = useState<string | null>(null);
   const elegirArchivo = useRef<HTMLInputElement>(null);
+  /** «Nuevo material» (A30). */
+  const [creando, setCreando] = useState(false);
 
   // La revisión y la vuelta a las dos columnas empiezan arriba de todo.
   useEffect(() => {
@@ -143,6 +153,13 @@ export default function Materiales() {
             </span>
             <button
               type="button"
+              className="border border-line bg-white rounded px-3 py-1.5 font-medium"
+              onClick={() => { setCreando(true); setVista("materiales"); }}
+            >
+              + Nuevo material
+            </button>
+            <button
+              type="button"
               className="bg-cut text-negro rounded px-3 py-1.5 font-medium disabled:opacity-50 disabled:cursor-wait"
               disabled={revisar.isPending}
               onClick={() => elegirArchivo.current?.click()}
@@ -175,6 +192,19 @@ export default function Materiales() {
           <Mensaje variante="error" que={errorAlLeer} />
         </div>
       )}
+      {creando && catalogo.data && (
+        <NuevoMaterial
+          categorias={catalogo.data.categorias}
+          alCancelar={() => setCreando(false)}
+          alCrear={(material) => {
+            setCreando(false);
+            setBusqueda("");
+            setEleccion({ tipo: "material", categoria: material.familia, nombre: material.nombre });
+            setAbiertas((antes) => new Set([...antes, material.familia]));
+            setListo(`Listo: se cargó «${nombreParaMostrar(material.nombre)}».`);
+          }}
+        />
+      )}
       {catalogo.isLoading && <p className="text-sm text-ink/60">Cargando…</p>}
       {catalogo.error && <Mensaje variante="error" que={falla(catalogo.error, "No se pudieron cargar los materiales.")} />}
 
@@ -203,7 +233,11 @@ export default function Materiales() {
           </div>
           {/* `min-w-0`: sin esto, una tabla ancha estira la columna y la página entera. */}
           <div className="min-w-0">
-            <LoElegido catalogo={catalogo.data} eleccion={eleccion} />
+            <LoElegido
+              catalogo={catalogo.data}
+              eleccion={eleccion}
+              alCambiarDeNombre={(nombre) => eleccion?.tipo === "material" && setEleccion({ ...eleccion, nombre })}
+            />
           </div>
         </div>
       )}

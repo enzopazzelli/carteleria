@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost, ApiError } from "./client";
+import { apiDelete, apiGet, apiPatch, apiPost, ApiError } from "./client";
 
 export interface Material {
   id: number;
@@ -75,4 +75,33 @@ export async function obtenerParametrosCorteMaterial(
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
   }
+}
+
+// --- Materiales y medidas cargados a mano (A30) -----------------------------
+
+export function crearMaterial(datos: { nombre: string; espesor: string | null; familia: string | null }): Promise<Material> {
+  return apiPost<Material>("/materiales", datos);
+}
+
+export function actualizarMaterial(materialId: number, cambios: { nombre?: string; espesor?: string | null }): Promise<Material> {
+  return apiPatch<Material>(`/materiales/${materialId}`, cambios);
+}
+
+export function borrarMaterial(materialId: number): Promise<void> {
+  return apiDelete(`/materiales/${materialId}`);
+}
+
+/** Una chapa de una medida. El precio por m² es opcional: el anidado no lo usa, pero un retazo sí.
+ * Lleva un código propio «MANO-…»: los retazos de una chapa cuelgan de su código (`código-R`), y sin
+ * código quedarían sueltos en la lista, sin chapa de la que salen. Una planilla nunca trae «MANO-». */
+export function codigoDeMedidaAMano(): string {
+  return `MANO-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
+
+export function crearFormato(materialId: number, anchoMm: string, altoMm: string, precioPorM2: string | null = null): Promise<Formato> {
+  // Un retazo se cobra por m²: sin ese precio no se pueden crear retazos de la chapa (servidor, A8).
+  const precio = precioPorM2 === null ? {} : { unidad_venta: "M2", costo_unidad_venta: precioPorM2 };
+  return apiPost<Formato>(`/materiales/${materialId}/formatos`, {
+    codigo: codigoDeMedidaAMano(), ancho_mm: anchoMm, alto_mm: altoMm, ...precio,
+  });
 }
