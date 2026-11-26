@@ -10,6 +10,12 @@
 
 
 **Ya está en `main`:**
+- **Deshacer «Mover a grupo» en Grupos (PR #43), desde el 2026-11-26.**
+  - **Para qué:** al armar los grupos no había forma de sacar una pieza que se había mandado a un grupo.
+  - **Lo que se nota:** después de un «Mover» aparece «↶ Deshacer: mover N piezas a «grupo»», que devuelve el último movimiento a «sin asignar» y se puede apretar varias veces. Cada grupo dice cuántas piezas tiene. La lista de movimientos vive mientras se está en la pestaña: si se recarga, se pierde.
+  - **Sin migración ni cambios en el servidor.**
+- **El DXF de corte sale sin los nombres de las piezas (PR #42), desde el 2026-11-26.**
+  - **Lo que se nota:** el DXF que baja Chapas ya no trae la capa `TEXTO`, que la máquina no usa y le ensuciaba el dibujo a quien corta. Con `?etiquetas=true` se piden. El plano imprimible y el PDF siguen con los nombres. El contorno de la chapa (capa `GUIA`, no es de corte) se dejó.
 - **Cargar materiales a mano (A30), desde el 2026-11-26.**
   - **Para qué:** que la cartelería cargue ella las chapas y materiales que no están en la planilla, sin pedirle nada a Enzo.
   - **Lo que se nota:** en Materiales, el botón «+ Nuevo material» (nombre, espesor, ancho y alto, costo por m² opcional y categoría) y, debajo de cada material, «+ Medida» y «+ Espesor». En lo cargado a mano se puede editar el nombre y el espesor, quitar una medida y borrar el material; si un trabajo usa la chapa, el sistema avisa y no la borra. Lo que viene de la planilla no se edita desde la pantalla. El material nuevo aparece en «Elegir chapa».

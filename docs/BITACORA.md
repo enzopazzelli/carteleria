@@ -58,6 +58,30 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-26 — Producto entregado e instalado en 4 computadoras
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+- **Entregado e instalado en 4 computadoras de la cartelería** (dicho por Enzo). Se instaló con el zip de `Instalador-Carteleria` (desde un pendrive), con lo último de `main`: A26 a A30, la guía del usuario al día y las dos mejoras de abajo.
+- **El DXF de corte sale sin los nombres de las piezas** (PR #42, `e63ae32`, CI en verde). La capa `TEXTO` ya no se escribe, salvo con `?etiquetas=true`; el plano imprimible y el PDF siguen con los nombres. Lo pidió Enzo al ver el DXF. El contorno de la chapa (capa `GUIA`) se dejó: Enzo no contestó si quería sacarlo.
+- **Deshacer «Mover a grupo»** (PR #43, `4f15d51`, CI en verde). En Grupos, «↶ Deshacer» devuelve el último «Mover» a «sin asignar», varias veces seguidas, y cada grupo dice cuántas piezas tiene. Lo pidió Enzo: al armar los grupos no podía sacar una pieza que había mandado a un grupo. Probado en Chrome contra una copia de la base.
+
+### Qué se decidió
+- **La lista de movimientos de Grupos no se guarda en el servidor** (mía, a corregir): vive mientras se está en la pestaña. El deshacer de Chapas (A27) sí se guarda; si hace falta lo mismo acá, es una tabla nueva.
+- El pendrive se usó para llevar el zip; el zip viejo se reemplazó en el pendrive por el nuevo.
+
+### Cambios en el registro
+Sin cambios.
+
+### Pendiente
+- **Cada una de las 4 computadoras tiene su base:** lo que se carga en una no aparece en las otras (trabajos, materiales, retazos). Sigue abierta la pregunta de si conviene una sola computadora con el sistema y las demás por wifi. Sin decisión.
+- Contar cómo salió el uso en las 4: qué falló, qué pidieron.
+- Comprobar que lo cargado a mano (A30) sobrevive a subir una planilla nueva: se razonó por el código, no se probó.
+- Kerf, margen y separación de los 15 materiales que no los tienen: ahora los puede cargar la cartelería en «Corte».
+
+---
+
 ## 2026-11-26 — Cargar materiales a mano (A30) y guía al día
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —

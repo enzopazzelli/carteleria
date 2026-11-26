@@ -6,7 +6,7 @@ Un sistema a medida para una empresa de cartelería de gran formato en chapa. Ll
 2. **Acomodar las piezas en la chapa** (el *anidado*, o *nesting*), para desperdiciar lo menos posible.
 3. **Sacar lo que se corta:** un DXF por chapa para la máquina y un PDF del diseño anidado para imprimir.
 
-> **Hoy (2026-11-18):** funciona de punta a punta y **se instala en cada computadora** de la empresa, sin internet, sin servidor y sin usuarios. Después de la demo del 2026-11-18, el cliente pidió quitar el login, el presupuesto y la comparación de chapas: **el producto final es el DXF y el PDF** ([`A26`](docs/historico/A26-sacar-lo-que-no-va/diseno.md)).
+> **Hoy (2026-11-26):** el producto está **entregado e instalado en 4 computadoras** de la empresa. Funciona de punta a punta, sin internet, sin servidor y sin usuarios, y **se instala en cada computadora**. Después de la demo del 2026-11-18, el cliente pidió quitar el login, el presupuesto y la comparación de chapas: **el producto final es el DXF y el PDF** ([`A26`](docs/historico/A26-sacar-lo-que-no-va/diseno.md)).
 
 **Qué sigue:** [`docs/plan/PLAN-MAESTRO.md`](docs/plan/PLAN-MAESTRO.md) · **Equipo:** Enzo (todo lo que no es el motor) y Vale (motor de anidado) · **Última actualización:** 2026-11-18 · **Versión etiquetada:** `v2026.11.09` (una foto del estado de ese día; todavía no hay numeración) · [Bitácora](docs/BITACORA.md)
 
@@ -117,11 +117,11 @@ Una sola regla del servidor decide qué anidado cuenta: la tarjeta del inicio, e
 
 | Qué | Para qué | Quién |
 |---|---|---|
-| **Kerf, margen y separación de 15 materiales** (ACM, PVC, Metalex, Polyfan, entre otros) | Sin esos valores no se puede anidar con esas chapas | Falta el dato del taller |
-| **Rearmar el instalador** con esta versión | Que la cartelería tenga lo nuevo (A26 ya está en `main`) | Enzo, cuando lo pida |
+| **Kerf, margen y separación de 15 materiales** (ACM, PVC, Metalex, Polyfan, entre otros) | Sin esos valores no se puede anidar con esas chapas. Se cargan en Materiales, en «Corte» de cada material | La cartelería, con el dato del taller |
+| **Comprobar que lo cargado a mano sobrevive a subir una planilla nueva** | Se razonó por el código (A30), no se probó | Enzo, en la próxima planilla |
 | **Medir la segunda tanda de A17** (unos 75 minutos con la máquina libre) | Decidir cómo repartir el tiempo del anidado | Enzo, solo cuando la pida |
 
-**Abierto (2026-11-18):** si la empresa instala en varias computadoras, cada una tiene su base: los retazos usados en una siguen apareciendo disponibles en la otra. La alternativa es que una sola computadora tenga el sistema y las demás entren por wifi, como en la demo.
+**Abierto (2026-11-26):** el sistema está instalado en 4 computadoras y cada una tiene su base: lo que se carga en una (trabajos, materiales, retazos) no aparece en las otras, y los retazos usados en una siguen apareciendo disponibles en las demás. La alternativa es que una sola computadora tenga el sistema y las demás entren por wifi, como en la demo.
 
 **Ya no se hace (2026-11-18):** el servidor y el dominio, Docker, PostgreSQL y las copias en la nube, el mail y WhatsApp, y todo lo del presupuesto. El estudio del servidor quedó en [`docs/historico/1.1-servidor-y-login/`](docs/historico/1.1-servidor-y-login/B1-servidor-y-dominio.md).
 
@@ -237,8 +237,8 @@ cartelería/
 
 ```mermaid
 flowchart LR
-    H["HECHO<br/>Del dibujo al corte:<br/>lectura, grupos, anidado,<br/>chapas, DXF y PDF,<br/>materiales e instalador.<br/>A26: sin login ni presupuesto.<br/>A27: deshacer en el ajuste.<br/>A28: retazos por material"]
-    N["AHORA<br/>Rearmar el instalador<br/>con lo nuevo"]
+    H["HECHO<br/>Del dibujo al corte:<br/>lectura, grupos, anidado,<br/>chapas, DXF y PDF,<br/>materiales e instalador.<br/>A26: sin login ni presupuesto.<br/>A27: deshacer en el ajuste.<br/>A28: retazos por material.<br/>A29: Anidado sin lo del motor.<br/>A30: materiales a mano.<br/>Entregado e instalado<br/>en 4 computadoras"]
+    N["AHORA<br/>Soporte y lo que pida<br/>la cartelería"]
     H --> N
 
     classDef hecho fill:#cfe8d5,stroke:#3d7a52,color:#14351f
