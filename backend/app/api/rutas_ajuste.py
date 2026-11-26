@@ -529,14 +529,18 @@ def obtener_plano(
 
 @router.get("/ejecuciones/{ejecucion_id}/dxf")
 def obtener_dxf(
-    ejecucion_id: int, plancha: int = 0, sesion: Session = Depends(obtener_sesion)
+    ejecucion_id: int, plancha: int = 0, etiquetas: bool = False, sesion: Session = Depends(obtener_sesion)
 ) -> Response:
-    """El DXF de corte de una plancha, para la máquina — `exportar_plancha_a_dxf`."""
+    """El DXF de corte de una plancha, para la máquina — `exportar_plancha_a_dxf`.
+
+    Sin los nombres de las piezas (la capa `TEXTO`), salvo que se pidan con
+    `?etiquetas=true`: la máquina no los necesita y a quien corta le ensucian
+    el dibujo. Los nombres siguen en el plano imprimible y en el PDF."""
     ejecucion = _ejecucion_o_404(sesion, ejecucion_id)
     _validar_lista_y_plancha(ejecucion, plancha)
     resultado, geometrias = _resultado_y_geometrias(ejecucion)
     plancha_dominio = _plancha_de(sesion, ejecucion)
-    contenido = exportar_plancha_a_dxf(resultado, plancha_dominio, plancha, geometrias)
+    contenido = exportar_plancha_a_dxf(resultado, plancha_dominio, plancha, geometrias, incluir_etiquetas=etiquetas)
     nombre = nombre_de_archivo(f"ejecucion-{ejecucion_id}", plancha, ejecucion.planchas_usadas or 1)
     return Response(
         content=contenido,

@@ -6,6 +6,7 @@ from __future__ import annotations
 import math
 import time
 from decimal import Decimal
+from io import StringIO
 
 import ezdxf
 import pytest
@@ -268,6 +269,22 @@ def test_dxf_de_corte_tiene_las_capas_esperadas(cliente, tmp_path):
     assert "GUIA" in respuesta.text
 
 
+def test_dxf_de_corte_sale_sin_los_nombres_de_las_piezas(cliente, tmp_path):
+    """Los nombres (capa TEXTO) no se escriben, salvo que se pidan: la máquina no los usa."""
+    trabajo, _grupo, ejecucion_id = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
+    piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
+
+    sin = cliente.get(f"/ejecuciones/{ejecucion_id}/dxf")
+    con = cliente.get(f"/ejecuciones/{ejecucion_id}/dxf", params={"etiquetas": "true"})
+
+    def textos(respuesta) -> list[str]:
+        return [t.dxf.text for t in ezdxf.read(StringIO(respuesta.text)).modelspace().query("TEXT")]
+
+    assert textos(sin) == []
+    assert all(f"{pieza['id']}#0" not in sin.text for pieza in piezas)
+    assert f"{piezas[0]['id']}#0" in textos(con)
+
+
 def test_pieza_descartada_despues_de_anidar_no_sale_en_el_plano_ni_el_dxf(cliente, tmp_path):
     trabajo, _grupo, ejecucion_id = _trabajo_anidado_con_dos_piezas(cliente, tmp_path)
     piezas = cliente.get(f"/trabajos/{trabajo['id']}/piezas").json()
@@ -275,7 +292,7 @@ def test_pieza_descartada_despues_de_anidar_no_sale_en_el_plano_ni_el_dxf(client
     cliente.patch(f"/piezas/{descartada['id']}", json={"descartada": True})
 
     plano = cliente.get(f"/ejecuciones/{ejecucion_id}/plano")
-    dxf = cliente.get(f"/ejecuciones/{ejecucion_id}/dxf")
+    dxf = cliente.get(f"/ejecuciones/{ejecucion_id}/dxf", params={"etiquetas": "true"})
 
     assert plano.text.count("<title>") == 1
     assert f"{sobreviviente['id']}#0 —" in plano.text
