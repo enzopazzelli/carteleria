@@ -10,6 +10,7 @@ import PiezaNombrada from "../../components/PiezaNombrada";
 import { falla, type QueMostrar } from "../../components/Mensaje/contenido";
 import { chapaDelGrupo } from "./chapaDelGrupo";
 import { mostrarMedidas } from "./importes";
+import { sinElUltimo, textoDelMovimiento, type Movimiento } from "./movimientosDeGrupo";
 
 /** Con el diseño fijo al costado: las piezas nombradas se iluminan en él (A14). */
 export default function GruposTab() {
@@ -41,8 +42,11 @@ function GruposDelTrabajo() {
   // selecciona todo el rango intermedio.
   const [anclaSeleccion, setAnclaSeleccion] = useState<number | null>(null);
   const [grupoDestino, setGrupoDestino] = useState("");
+  /** Los «Mover» de esta visita, del más viejo al último: «↶ Deshacer» saca el último. */
+  const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
 
   const sinAsignar = piezas?.filter((p) => p.grupo_id === null && !p.descartada) ?? [];
+  const cuantasPiezas = (grupoId: number) => piezas?.filter((p) => p.grupo_id === grupoId && !p.descartada).length ?? 0;
 
   async function alCrearGrupo() {
     if (!nombreNuevoGrupo.trim()) return;
@@ -95,13 +99,40 @@ function GruposDelTrabajo() {
       // backend corre sobre SQLite (un solo escritor). Con pocas piezas
       // la diferencia no se nota, y así un fallo a mitad de camino deja
       // un estado entendible en vez de varias escrituras compitiendo.
-      for (const piezaId of seleccionadas) {
-        await asignarPieza.mutateAsync({ piezaId, grupoId });
+      const movidas: number[] = [];
+      try {
+        for (const piezaId of seleccionadas) {
+          await asignarPieza.mutateAsync({ piezaId, grupoId });
+          movidas.push(piezaId);
+        }
+      } finally {
+        // También las que alcanzaron a moverse si falla una a mitad de camino.
+        const nombre = grupos?.find((g) => g.id === grupoId)?.nombre ?? "otro grupo";
+        if (movidas.length > 0) setMovimientos((antes) => [...antes, { piezaIds: movidas, grupo: nombre }]);
       }
       setSeleccionadas(new Set());
       setAnclaSeleccion(null);
     } catch (e) {
       setError(falla(e, "No se pudieron mover todas las piezas."));
+    }
+  }
+
+  /** Devuelve a «sin asignar» lo que mandó el último «Mover». Si algo falla, el movimiento queda en la lista. */
+  async function alDeshacerElMovimiento() {
+    const ultimo = movimientos[movimientos.length - 1];
+    if (!ultimo) return;
+    setError(null);
+    const faltan = [...ultimo.piezaIds];
+    try {
+      while (faltan.length > 0) {
+        await asignarPieza.mutateAsync({ piezaId: faltan[0], grupoId: null });
+        faltan.shift();
+      }
+      setMovimientos(sinElUltimo(movimientos));
+    } catch (e) {
+      // Las que ya volvieron no se vuelven a mandar.
+      setMovimientos([...sinElUltimo(movimientos), { ...ultimo, piezaIds: faltan }]);
+      setError(falla(e, "No se pudo deshacer: las piezas siguen en su grupo."));
     }
   }
 
@@ -142,6 +173,17 @@ function GruposDelTrabajo() {
         <button className="bg-cut text-negro rounded px-4 py-2" onClick={alCrearGrupo}>
           Nuevo grupo
         </button>
+        {movimientos.length > 0 && (
+          <button
+            type="button"
+            className="ml-auto border border-line bg-white rounded px-3 py-2 text-sm hover:bg-line/40 disabled:opacity-50"
+            disabled={asignarPieza.isPending}
+            title="Devuelve las piezas a «sin asignar». Se puede apretar varias veces."
+            onClick={() => void alDeshacerElMovimiento()}
+          >
+            ↶ Deshacer: {textoDelMovimiento(movimientos[movimientos.length - 1])}
+          </button>
+        )}
       </div>
 
       {sinAsignar.length > 0 && (
@@ -220,7 +262,12 @@ function GruposDelTrabajo() {
       {grupos?.map((grupo) => (
         <div key={grupo.id} className="border border-line rounded p-4 mb-4">
           <div className="flex justify-between items-center gap-4">
-            <h3 className="font-medium">{grupo.nombre}</h3>
+            <h3 className="font-medium">
+              {grupo.nombre}
+              <span className="ml-2 text-sm font-normal text-ink/60">
+                {cuantasPiezas(grupo.id)} {cuantasPiezas(grupo.id) === 1 ? "pieza" : "piezas"}
+              </span>
+            </h3>
             <span className={`text-sm ${grupo.formato_id === null ? "text-conflict" : ""}`}>
               Chapa: {chapaDelGrupo(grupo.formato_id, formatos, materiales)}
             </span>
