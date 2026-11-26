@@ -8,6 +8,7 @@ import { MEDIDA_MAXIMA_DE_RETAZO_MM, medida, medidaDeRetazo } from "../ListaDeFo
 import Mensaje from "../Mensaje/Mensaje";
 import { falla, type QueMostrar } from "../Mensaje/contenido";
 import CorteDelEspesor from "./CorteDelEspesor";
+import { ArreglosAMano } from "./FormulariosAMano";
 import LoQueDiceLaPlanilla from "./LoQueDiceLaPlanilla";
 import { marcasDeLaMedida, nombreParaMostrar } from "./arbol";
 import { cuentaDeRetazos, estadoParaMostrar, origenParaMostrar, retazosDeLasMedidas, textoDeLaCuenta } from "./retazos";
@@ -48,9 +49,11 @@ interface DetalleDelMaterialProps {
   material: MaterialDelCatalogo;
   /** Sin ninguna planilla cargada no se dice qué falta en la planilla. */
   hayPlanilla: boolean;
+  /** Se le cambió el nombre a mano (A30): la pantalla lo sigue eligiendo con el nuevo. */
+  alCambiarDeNombre: (nombre: string) => void;
 }
 
-export default function DetalleDelMaterial({ material, hayPlanilla }: DetalleDelMaterialProps) {
+export default function DetalleDelMaterial({ material, hayPlanilla, alCambiarDeNombre }: DetalleDelMaterialProps) {
   const [error, setError] = useState<QueMostrar | null>(null);
   const cambiarSeAnida = useCambiarSeAnida();
 
@@ -70,6 +73,8 @@ export default function DetalleDelMaterial({ material, hayPlanilla }: DetalleDel
   // «Se anida» se guarda por espesor: la casilla los cambia todos juntos.
   const seAnidan = material.espesores.filter((espesor) => espesor.material.nesteable_por_area).length;
   const todosSeAnidan = seAnidan === material.espesores.length;
+  // Solo lo cargado a mano se edita o se borra: lo que viene de la planilla lo pisaría la próxima carga (A30).
+  const todoAMano = medidas.every((m) => m.cargada_a_mano);
 
   return (
     <article className="rounded border border-line bg-white p-4 sm:p-5">
@@ -142,6 +147,14 @@ export default function DetalleDelMaterial({ material, hayPlanilla }: DetalleDel
       {medidas.length === 0 && <p className="text-sm text-ink/60 mt-2">No tiene medidas cargadas.</p>}
 
       <LoQueDiceLaPlanilla articulos={articulos} />
+
+      <ArreglosAMano
+        key={material.espesores.map((e) => `${e.material.id}:${e.material.espesor}`).join("|") + material.nombre}
+        material={material}
+        familia={material.espesores[0].material.familia}
+        todoAMano={todoAMano}
+        alCambiarDeNombre={alCambiarDeNombre}
+      />
     </article>
   );
 }
@@ -162,6 +175,11 @@ function RenglonesDeLaMedida({
   const otros = m.proveedores.filter((p) => p !== queCuenta);
   const sePuedeElegir = !m.ya_no_esta && m.proveedores.length > 1;
   const celda = "py-1.5 pr-3 align-top";
+
+  function alQuitarLaMedida() {
+    if (!window.confirm(`¿Quitar la medida de ${medida(formato)} mm?`)) return;
+    void hacer(() => quitar.mutateAsync({ formatoId: formato.id, materialId: formato.material_id }), "No se pudo quitar la medida.");
+  }
 
   function alQuitar(retazo: Formato) {
     if (!window.confirm(`¿Quitar el retazo de ${medida(retazo)} mm?`)) return;
@@ -203,6 +221,16 @@ function RenglonesDeLaMedida({
           {!formato.es_retazo && (
             <button type="button" className={BOTON_CHICO} onClick={() => setAgregando(true)} disabled={agregando}>
               + Retazo
+            </button>
+          )}
+          {!formato.es_retazo && m.cargada_a_mano && (
+            <button
+              type="button"
+              className={`${BOTON_CHICO} ml-1`}
+              disabled={quitar.isPending}
+              onClick={() => alQuitarLaMedida()}
+            >
+              Quitar
             </button>
           )}
         </td>
