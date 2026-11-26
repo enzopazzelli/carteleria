@@ -23,9 +23,10 @@
 | **Quitar «Comparar formatos»** | Cada grupo elige una sola chapa, la que se va a anidar |
 | **Deshacer en el ajuste del anidado** | Pedido nuevo: A27 |
 | **Retazos agrupados por material** | Pedido nuevo: A28 |
+| **Cargar materiales a mano** | Pedido nuevo: A30. La cartelería carga sola las chapas y materiales que no están en la planilla ([`A30-materiales-a-mano/`](../historico/A30-materiales-a-mano/diseno.md)) |
 | **Simplificar Anidado** | Pedido nuevo: A29. Sale de la pantalla lo del motor (Sparrow, semilla, segundos por chapa, etc.); quedan los parámetros de corte y, en «Opciones avanzadas», huecos, giro y sobrante |
 
-**En qué orden:** A26 (sacar lo que no va: [`A26-sacar-lo-que-no-va/`](../historico/A26-sacar-lo-que-no-va/diseno.md)), después A27, A28 y A29. El motor sigue en su carril.
+**En qué orden:** A26 (sacar lo que no va: [`A26-sacar-lo-que-no-va/`](../historico/A26-sacar-lo-que-no-va/diseno.md)), después A27, A28, A29 y A30. El motor sigue en su carril.
 
 **Apagar, no borrar.** Lo que se saca deja de verse y de pedirse, pero el código del servidor y las tablas de la base quedan (A26, diseño §2). Si el cliente lo vuelve a pedir, vuelve sin cargar datos de nuevo.
 

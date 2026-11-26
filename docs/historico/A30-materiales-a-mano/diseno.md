@@ -1,6 +1,6 @@
 # A30: cargar materiales a mano
 
-*Diseño corto, 2026-11-26. Pedido de Enzo: la cartelería ahora trabaja con más chapas y materiales que los 44 del instalador, y tienen que poder cargarlos ellos.*
+*Cerrado el 2026-11-26: en `main` (PR #41, `7ea2c65`, CI en verde). Diseño corto, 2026-11-26. Pedido de Enzo: la cartelería ahora trabaja con más chapas y materiales que los 44 del instalador, y tienen que poder cargarlos ellos.*
 
 ## Para qué
 

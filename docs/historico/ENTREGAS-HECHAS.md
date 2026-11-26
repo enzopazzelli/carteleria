@@ -10,6 +10,13 @@
 
 
 **Ya está en `main`:**
+- **Cargar materiales a mano (A30), desde el 2026-11-26.**
+  - **Para qué:** que la cartelería cargue ella las chapas y materiales que no están en la planilla, sin pedirle nada a Enzo.
+  - **Lo que se nota:** en Materiales, el botón «+ Nuevo material» (nombre, espesor, ancho y alto, costo por m² opcional y categoría) y, debajo de cada material, «+ Medida» y «+ Espesor». En lo cargado a mano se puede editar el nombre y el espesor, quitar una medida y borrar el material; si un trabajo usa la chapa, el sistema avisa y no la borra. Lo que viene de la planilla no se edita desde la pantalla. El material nuevo aparece en «Elegir chapa».
+  - **Sin costo por m² no se guardan retazos** de esa chapa: el servidor los cobra por m². La medida a mano lleva un código «MANO-…» para que sus retazos queden colgados de ella.
+  - **Sin migración ni cambios en el servidor.**
+
+  Ver [`A30-materiales-a-mano/`](A30-materiales-a-mano/diseno.md).
 - **Simplificar la pantalla de Anidado (A29), desde el 2026-11-22.**
   - **Para qué:** que quien corta vea solo lo que decide, sin lo del motor.
   - **Lo que se nota:** Anidado muestra el formulario de kerf, margen y separación, y un desplegable «Opciones avanzadas» (abierto) con tres ajustes: aprovechar huecos, girar a cualquier ángulo y dónde queda el sobrante. Ya no se ven el motor, la semilla, los segundos por chapa, el tiempo máximo, la simplificación, «Vaciar chapas» ni la columna «Motor» del historial.

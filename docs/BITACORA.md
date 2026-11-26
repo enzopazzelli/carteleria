@@ -58,6 +58,33 @@ Qué queda abierto y cuál es el próximo paso.
 
 ---
 
+## 2026-11-26 — Cargar materiales a mano (A30) y guía al día
+
+**Quién:** Enzo · **Carril:** A · **Sprint:** —
+
+### Qué se hizo
+- **A30, en `main`** (PR #41, `7ea2c65`, CI en verde; sin migración ni cambios en el servidor). En Materiales: «+ Nuevo material» (nombre, espesor, ancho y alto, costo por m² opcional, categoría), «+ Medida» y «+ Espesor» sobre cualquier material, y editar nombre y espesor, quitar medida y borrar material solo en lo cargado a mano. Las rutas del servidor ya existían; faltaba la pantalla.
+- **Probado** con 345 pruebas del frontend, `tsc` y un recorrido completo en Chrome contra una copia de la base real (`backend/local/herramientas-a30/`, fuera del repo): crear, retazo, + Medida, + Espesor, editar el nombre, quitar y borrar. Sin errores de consola. No probado: la PC de la cartelería.
+- **Guía del usuario al día:** Anidado sin el motor (A29), «Instalar o actualizar» con la copia de seguridad, «Cargar un material o una chapa a mano», y se sacaron «.cdr» y el párrafo del presupuesto de «Lo que todavía no hace».
+- **Instalador rearmado** con A30 y la guía nueva (`LEEME` con un párrafo sobre la carga a mano). Estaba en la papelera de D: (se había borrado del escritorio): se recuperó de ahí y se rehízo. Zip de 75 MB en el escritorio.
+
+### Qué se decidió
+- Enzo pidió «slots» para que cargaran ellos. Se descartó dejar materiales vacíos con nombre fijo: sin poder cambiar el nombre no servían, así que se hizo la pantalla.
+- **Costo por m² opcional**, pero sin él el servidor no deja crear retazos de esa chapa (A8). El formulario y la guía lo avisan.
+- **Código «MANO-XXXXXX» en cada medida a mano** (mío, a corregir): sin código, los retazos de la chapa quedaban sueltos en la lista y no se podían quitar; con código cuelgan de su chapa como en las de la planilla.
+- **El nombre se guarda en mayúsculas**, como los de la planilla (mío): la pantalla lo muestra en minúsculas, igual que hoy.
+- Lo que viene de la planilla no se edita a mano: la próxima carga lo pisaría.
+
+### Cambios en el registro
+Sin cambios.
+
+### Pendiente
+- Llevar el instalador a la cartelería (Enzo lo instala el 2026-11-26) y contar cómo salió.
+- Con una planilla subida después de cargar a mano, comprobar que lo cargado a mano sigue ahí: se razonó por el código, no se probó.
+- Cargar el kerf, el margen y la separación de los 15 materiales que no los tienen: ahora lo puede hacer la cartelería en «Corte».
+
+---
+
 ## 2026-11-22 — Instalador rearmado y limpieza de `backend/local`
 
 **Quién:** Enzo · **Carril:** A · **Sprint:** —

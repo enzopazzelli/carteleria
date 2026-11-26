@@ -107,7 +107,7 @@ Si vuelve a hacer falta, el código está en el historial de git y el diseño en
 | **Grupos y chapa** | Cada grupo elige **una** chapa del catálogo o un retazo, sin anidar antes (desde A26; antes había que comparar al menos dos). |
 | **Anidado y chapas** | La pantalla de Anidado muestra solo parámetros de corte: kerf, margen y separación, y en «Opciones avanzadas» aprovechar huecos, girar a cualquier ángulo y dónde queda el sobrante (A29). Varios anidados a la vez, piezas chicas en los huecos de las grandes, giro libre, el material usado en ancho × alto, todas las chapas juntas con piezas movibles entre ellas. El sobrante de una chapa se guarda como **retazo**, que dice de dónde salió y si está disponible, en uso o usado. |
 | **Salida para el taller** | Un PDF del diseño anidado (la hoja del diseño completo más las chapas) y un DXF por chapa para la máquina. **Es el producto final.** |
-| **Materiales y precios** | Pantalla de Materiales alimentada por la planilla de la empresa: 44 materiales, 59 medidas y 288 artículos cargados. |
+| **Materiales y precios** | Pantalla de Materiales alimentada por la planilla de la empresa: 44 materiales, 59 medidas y 288 artículos cargados. Un material o una chapa que no está en la planilla se carga a mano desde la misma pantalla («+ Nuevo material», «+ Medida», «+ Espesor»), con editar, quitar y borrar para lo cargado a mano (A30). |
 | **Inicio** | Una barra fija arriba y una página con las tarjetas de los trabajos, cada una con la miniatura pintada por chapa y en qué paso quedó («Listo para cortar» cuando está todo anidado). |
 | **Instalación** | Un instalador para Windows, con Python portátil, que se corre en cada computadora y se vuelve a correr para actualizar sin perder los datos. |
 
